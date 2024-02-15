@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "SPIMquant"
+version = "0.1.0"
+description = "Snakebids app for quantitative analysis of SPIM (lightsheet) brains"
+readme = "README.md"
+license = "MIT"
+authors = [
+    "Ali Khan <alik@robarts.ca>"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+snakemake = ">=7.20,<8"
+snakebids = ">=0.10.2"
+pulp = "<2.8.0"
+pandas = [
+    { version = "<=2.0.3", python = "<3.9" },
+    { version = ">=2.1.1", python = ">=3.12" },
+]
+numpy = "^1.26.4"
+dask = "^2024.2.0"
+zarr = "^2.17.0"
+scipy = "^1.12.0"
+
+[tool.poetry.scripts]
+spimquant = "spimquant.run:main"
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
