@@ -1,5 +1,25 @@
-
 #adjust these to use snakebids: inputs['spim'].wildcards, 
+print('inputs:')       
+print(inputs['spim'])
+print('outputs:')
+print(bids(root=root,datatype='micr',desc='downsampled',suffix='spim.nii',**inputs['spim'].wildcards))
+
+
+rule get_downsampled_nii:
+    input:
+        zarr=inputs['spim'].path
+    params:
+        level=config['atlasreg']['level']
+    output:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            suffix="spim.nii",
+            **inputs['spim'].wildcards
+        ),
+    threads: 32
+    script:
+        "../scripts/ome_zarr_to_nii.py"
 
 rule import_anat:
     input:
@@ -51,47 +71,36 @@ rule affine_reg:
         template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
         subject=bids(
             root=root,
-            subject="{subject}",
             datatype="micr",
-            sample="{sample}",
-            acq="{acq}",
-            desc=config["atlasreg"]["desc"],
-            stain=config["atlasreg"]["stain"],
-            level=config["atlasreg"]["level"],
             suffix="spim.nii",
+            **inputs['spim'].wildcards
         ),
     output:
         xfm_ras=bids(
             root=root,
-            subject="{subject}",
             datatype="warps",
-            sample="{sample}",
-            acq="{acq}",
             from_="subject",
             to="{template}",
             type_="ras",
             desc="affine",
             suffix="xfm.txt",
+            **inputs['spim'].wildcards
         ),
         warped=bids(
             root=root,
-            subject="{subject}",
             datatype="warps",
-            sample="{sample}",
-            acq="{acq}",
             space="{template}",
             desc="affinewarped",
             suffix="spim.nii",
+            **inputs['spim'].wildcards
         ),
     log:
         bids(
             root="logs",
-            subject="{subject}",
             datatype="affine_reg",
-            sample="{sample}",
-            acq="{acq}",
             space="{template}",
             suffix="log.txt",
+            **inputs['spim'].wildcards
         ),
     shell:
         "greedy -d 3 -i {input.template} {input.subject} "
@@ -106,46 +115,35 @@ rule deform_reg:
         template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
         subject=bids(
             root=root,
-            subject="{subject}",
             datatype="micr",
-            sample="{sample}",
-            acq="{acq}",
-            desc=config["atlasreg"]["desc"],
-            stain=config["atlasreg"]["stain"],
-            level=config["atlasreg"]["level"],
             suffix="spim.nii",
+            **inputs['spim'].wildcards
         ),
         xfm_ras=rules.affine_reg.output.xfm_ras,
     output:
         warp=bids(
             root=root,
-            subject="{subject}",
             datatype="warps",
-            sample="{sample}",
-            acq="{acq}",
             from_="subject",
             to="{template}",
             suffix="warp.nii",
+            **inputs['spim'].wildcards
         ),
         warped=bids(
             root=root,
-            subject="{subject}",
             datatype="warps",
-            sample="{sample}",
-            acq="{acq}",
             space="{template}",
             desc="deformwarped",
             suffix="spim.nii",
+            **inputs['spim'].wildcards
         ),
     log:
         bids(
             root="logs",
-            subject="{subject}",
             datatype="deform_reg",
-            sample="{sample}",
-            acq="{acq}",
             space="{template}",
             suffix="log.txt",
+            **inputs['spim'].wildcards
         ),
     shell:
         "greedy -d 3 -i {input.template} {input.subject} "
@@ -161,41 +159,27 @@ rule resample_labels_to_zarr:
     input:
         dseg=rules.import_dseg.output.dseg,
         xfm_ras=rules.affine_reg.output.xfm_ras,
-        zarr_zip=bids(
-            root=root,
-            subject="{subject}",
-            datatype="micr",
-            sample="{sample}",
-            acq="{acq}",
-            desc="{desc}",
-            stain=config["atlasreg"]["stain"],
-            suffix="spim.ome.zarr.zip",
-        ),
+        zarr_zip=inputs['spim'].path
     output:
         zarr=temp(
             directory(
                 bids(
                     root=work,
-                    subject="{subject}",
                     datatype="micr",
-                    sample="{sample}",
-                    acq="{acq}",
-                    desc="{desc}",
+                    desc="resampled",
                     from_="{template}",
                     suffix="dseg.zarr",
+                    **inputs['spim'].wildcards
                 )
             )
         ),
     log:
         bids(
             root="logs",
-            subject="{subject}",
             datatype="resample_labels_to_zarr",
-            sample="{sample}",
-            acq="{acq}",
-            desc="{desc}",
             space="{template}",
             suffix="log.txt",
+            **inputs['spim'].wildcards
         ),
     script:
         "../scripts/resample_labels_to_zarr.py"
@@ -203,36 +187,24 @@ rule resample_labels_to_zarr:
 
 rule zarr_to_ome_zarr_labels:
     input:
-        zarr=bids(
-            root=work,
-            subject="{subject}",
-            datatype="micr",
-            sample="{sample}",
-            acq="{acq}",
-            desc="{desc}",
-            from_="{template}",
-            suffix="dseg.zarr",
-        ),
-        metadata_json=rules.raw_to_metadata.output.metadata_json,
+        zarr=rules.resample_labels_to_zarr.output.zarr,
+        metadata_json=inputs['metadata'].path,
         label_tsv=bids_tpl(root=root, template="{template}", suffix="dseg.tsv"),
     params:
         max_downsampling_layers=config["ome_zarr"]["max_downsampling_layers"],
         rechunk_size=config["ome_zarr"]["rechunk_size"],
         scaling_method="nearest",
-        downsampling=config["bigstitcher"]["fuse_dataset"]["downsampling"],
         label_name="dseg_{template}",
     output:
         zarr=temp(
             directory(
                 bids(
                     root=work,
-                    subject="{subject}",
                     datatype="micr",
-                    sample="{sample}",
-                    acq="{acq}",
-                    desc="{desc}",
+                    desc="resampled",
                     from_="{template}",
                     suffix="dseg.ome.zarr",
+                    **inputs['spim'].wildcards
                 )
             )
         ),
@@ -244,13 +216,27 @@ rule zarr_to_ome_zarr_labels:
     log:
         bids(
             root="logs",
-            subject="{subject}",
             datatype="zarr_to_ome_zarr_labels",
-            sample="{sample}",
-            acq="{acq}",
-            desc="{desc}",
             space="{template}",
             suffix="log.txt",
+            **inputs['spim'].wildcards
         ),
     script:
         "../scripts/zarr_to_ome_zarr_labels.py"
+
+
+
+rule ome_zarr_to_zipstore:
+    """ generic rule to process any ome.zarr from work """
+    input:
+        zarr=f"{work}/{{prefix}}.ome.zarr",
+    output:
+        zarr_zip=f"{root}/{{prefix}}.ome.zarr.zip",
+    log:
+        "logs/ome_zarr_to_zipstore/{prefix}.log",
+    group:
+        "preproc"
+    shell:
+        "7z a -mx0 -tzip {output.zarr_zip} {input.zarr}/. &> {log}"
+
+

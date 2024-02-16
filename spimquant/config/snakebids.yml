@@ -1,5 +1,5 @@
-bids_dir: '/path/to/bids_dir'
-output_dir: '/path/to/output_dir'
+bids_dir: '/home/ROBARTS/alik/graham/cfmm-bids/Prado/LightsheetMicroscopy/bids_spimprep_20240215'
+output_dir: '.'
 
 #enable printing debug statements during parsing -- disable if generating dag visualization
 debug: False
@@ -32,6 +32,16 @@ pybids_inputs:
       - sample
       - acquisition
       - staining
+  metadata:
+    filters:
+      suffix: spim
+      extension: 'metadata.json'
+    wildcards:
+      - subject
+      - sample
+      - acquisition
+
+
 
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
@@ -92,4 +102,34 @@ parse_args:
 
 containers:
   spimprep: 'docker://khanlab/spimprep-deps:main'
+
+
+root: 'results'
+work: 'work'
+
+
+ome_zarr:
+  max_downsampling_layers: 4 # e.g. 4 levels: { 0: orig, 1: ds2, 2: ds4, 3: ds8, 4: ds16}
+  rechunk_size: #z, y, x
+    - 1 
+    - 1024
+    - 1024
+  scaling_method: 'local_mean' #can be nearest, gaussian, local_mean, zoom (zoom uses spline interp)
+
+
+templates: 
+  - ABAv3
+
+atlases:
+  ABAv3:
+    anat: 'resources/ABAv3/P56_Atlas.nii.gz'
+    dseg: 'resources/ABAv3/P56_Annotation.nii.gz'
+    lut: 'resources/ABAv3/labelmapper_ABAv3_to_all.json'
+
+atlasreg:
+  stain: autof
+  level: 4
+  desc: stitchedflatcorr
+
+
 
