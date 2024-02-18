@@ -159,42 +159,13 @@ rule resample_labels_to_zarr:
     input:
         dseg=rules.import_dseg.output.dseg,
         xfm_ras=rules.affine_reg.output.xfm_ras,
-        zarr_zip=inputs['spim'].path
-    output:
-        zarr=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    desc="resampled",
-                    from_="{template}",
-                    suffix="dseg.zarr",
-                    **inputs['spim'].wildcards
-                )
-            )
-        ),
-    log:
-        bids(
-            root="logs",
-            datatype="resample_labels_to_zarr",
-            space="{template}",
-            suffix="log.txt",
-            **inputs['spim'].wildcards
-        ),
-    script:
-        "../scripts/resample_labels_to_zarr.py"
-
-
-rule zarr_to_ome_zarr_labels:
-    input:
-        zarr=rules.resample_labels_to_zarr.output.zarr,
-        metadata_json=inputs['metadata'].path,
         label_tsv=bids_tpl(root=root, template="{template}", suffix="dseg.tsv"),
+        zarr_zip=inputs['spim'].path
     params:
-        max_downsampling_layers=config["ome_zarr"]["max_downsampling_layers"],
-        rechunk_size=config["ome_zarr"]["rechunk_size"],
-        scaling_method="nearest",
-        label_name="dseg_{template}",
+        level_to_resample_to=0,
+        max_downsampling_layers=config['ome_zarr']['max_downsampling_layers'],
+        label_name='dseg',
+        scaling_method='nearest'
     output:
         zarr=temp(
             directory(
@@ -208,22 +179,17 @@ rule zarr_to_ome_zarr_labels:
                 )
             )
         ),
-    threads: 32
-    container:
-        config["containers"]["spimprep"]
-    group:
-        "preproc"
+    threads: 10
     log:
         bids(
             root="logs",
-            datatype="zarr_to_ome_zarr_labels",
+            datatype="resample_labels_to_zarr",
             space="{template}",
             suffix="log.txt",
             **inputs['spim'].wildcards
         ),
     script:
-        "../scripts/zarr_to_ome_zarr_labels.py"
-
+        "../scripts/resample_labels_to_zarr.py"
 
 
 rule ome_zarr_to_zipstore:

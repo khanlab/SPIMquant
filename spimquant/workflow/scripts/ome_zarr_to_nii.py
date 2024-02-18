@@ -8,6 +8,7 @@ from ome_zarr.reader import Reader
 
 in_zarr = snakemake.input.zarr
 
+
 zi = zarr.open(in_zarr)
 
 attrs=zi['/'].attrs.asdict()

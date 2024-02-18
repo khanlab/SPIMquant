@@ -25,7 +25,7 @@ pybids_inputs:
   spim:
     filters:
       suffix: spim
-      acquisition: 4x
+      acquisition: 1x
       extension: 'ome.zarr.zip'
     wildcards:
       - subject
@@ -129,7 +129,6 @@ atlases:
 atlasreg:
   stain: autof
   level: 4
-  desc: stitchedflatcorr
 
 
 
