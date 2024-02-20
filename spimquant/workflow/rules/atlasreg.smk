@@ -205,4 +205,34 @@ rule ome_zarr_to_zipstore:
     shell:
         "7z a -mx0 -tzip {output.zarr_zip} {input.zarr}/. &> {log}"
 
+#--- processing to get mask
+rule n4:
+    input:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            suffix="spim.nii",
+            **inputs['spim'].wildcards
+        ),
+    output:
+        corrected=bids(
+            root=root,
+            datatype="micr",
+            desc='n4corrected',
+            suffix="spim.nii",
+            **inputs['spim'].wildcards
+        ),
+        biasfield=bids(
+            root=root,
+            datatype="micr",
+            desc='n4biasfield',
+            suffix="spim.nii",
+            **inputs['spim'].wildcards
+        ),
+    container: None
+    shell:
+        'N4BiasFieldCorrection -i {input}'
+        ' -o [{output.corrected},{output.biasfield}]'
+        ' -d 3 -v '
 
+        
