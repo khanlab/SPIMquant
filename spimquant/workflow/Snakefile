@@ -2,7 +2,9 @@ from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_
 
 set_bids_spec("v0_11_0")
 
-configfile: 'config/snakebids.yml'
+
+configfile: "config/snakebids.yml"
+
 
 # use expandvars so we can use e.g. '$SLURM_TMPDIR'
 root = os.path.expandvars(config["root"])
@@ -18,28 +20,31 @@ inputs = generate_inputs(
     derivatives=config.get("derivatives", None),
     participant_label=config.get("participant_label", None),
     exclude_participant_label=config.get("exclude_participant_label", None),
-    validate=not config.get("plugins.validator.skip", False)
+    validate=not config.get("plugins.validator.skip", False),
 )
 
-root='results'
+root = "results"
+
 
 container: config["containers"]["spimprep"]
 
 
 rule all_atlasreg:
-    input: 
-        inputs['spim'].filter(stain='autof').expand(
-                bids(
-                    root=root,
-                    datatype="micr",
-                    desc="resampled",
-                    from_="{template}",
-                    suffix="dseg.ome.zarr.zip",
-                    **inputs['spim'].wildcards
-                ),
-            template='ABAv3',
-        )
+    input:
+        inputs["spim"]
+        .filter(stain="autof")
+        .expand(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="resampled",
+                from_="{template}",
+                suffix="dseg.ome.zarr.zip",
+                **inputs["spim"].wildcards
+            ),
+            template="ABAv3",
+        ),
 
 
-include: 'rules/common.smk'
-include: 'rules/atlasreg.smk'
+include: "rules/common.smk"
+include: "rules/atlasreg.smk"

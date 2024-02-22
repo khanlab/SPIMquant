@@ -1,25 +1,21 @@
-#adjust these to use snakebids: inputs['spim'].wildcards, 
-print('inputs:')       
-print(inputs['spim'])
-print('outputs:')
-print(bids(root=root,datatype='micr',desc='downsampled',suffix='spim.nii',**inputs['spim'].wildcards))
-
-
 rule get_downsampled_nii:
     input:
-        zarr=inputs['spim'].path
+        zarr=inputs["spim"].path,
     params:
-        level=config['atlasreg']['level']
+        channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
     output:
         nii=bids(
             root=root,
             datatype="micr",
+            stain="{stain}",
+            level="{level}",
             suffix="spim.nii",
-            **inputs['spim'].wildcards
+            **inputs["spim"].wildcards
         ),
     threads: 32
     script:
         "../scripts/ome_zarr_to_nii.py"
+
 
 rule import_anat:
     input:
@@ -72,8 +68,10 @@ rule affine_reg:
         subject=bids(
             root=root,
             datatype="micr",
+            stain=config["atlasreg"]["stain"],
+            level=config["atlasreg"]["level"],
             suffix="spim.nii",
-            **inputs['spim'].wildcards
+            **inputs["spim"].wildcards
         ),
     output:
         xfm_ras=bids(
@@ -84,7 +82,7 @@ rule affine_reg:
             type_="ras",
             desc="affine",
             suffix="xfm.txt",
-            **inputs['spim'].wildcards
+            **inputs["spim"].wildcards
         ),
         warped=bids(
             root=root,
@@ -92,7 +90,7 @@ rule affine_reg:
             space="{template}",
             desc="affinewarped",
             suffix="spim.nii",
-            **inputs['spim'].wildcards
+            **inputs["spim"].wildcards
         ),
     log:
         bids(
@@ -100,7 +98,7 @@ rule affine_reg:
             datatype="affine_reg",
             space="{template}",
             suffix="log.txt",
-            **inputs['spim'].wildcards
+            **inputs["spim"].wildcards
         ),
     shell:
         "greedy -d 3 -i {input.template} {input.subject} "
@@ -114,10 +112,7 @@ rule deform_reg:
     input:
         template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
         subject=bids(
-            root=root,
-            datatype="micr",
-            suffix="spim.nii",
-            **inputs['spim'].wildcards
+            root=root, datatype="micr", suffix="spim.nii", **inputs["spim"].wildcards
         ),
         xfm_ras=rules.affine_reg.output.xfm_ras,
     output:
@@ -127,7 +122,7 @@ rule deform_reg:
             from_="subject",
             to="{template}",
             suffix="warp.nii",
-            **inputs['spim'].wildcards
+            **inputs["spim"].wildcards
         ),
         warped=bids(
             root=root,
@@ -135,7 +130,7 @@ rule deform_reg:
             space="{template}",
             desc="deformwarped",
             suffix="spim.nii",
-            **inputs['spim'].wildcards
+            **inputs["spim"].wildcards
         ),
     log:
         bids(
@@ -143,7 +138,7 @@ rule deform_reg:
             datatype="deform_reg",
             space="{template}",
             suffix="log.txt",
-            **inputs['spim'].wildcards
+            **inputs["spim"].wildcards
         ),
     shell:
         "greedy -d 3 -i {input.template} {input.subject} "
@@ -160,12 +155,12 @@ rule resample_labels_to_zarr:
         dseg=rules.import_dseg.output.dseg,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         label_tsv=bids_tpl(root=root, template="{template}", suffix="dseg.tsv"),
-        zarr_zip=inputs['spim'].path
+        zarr_zip=inputs["spim"].path,
     params:
         level_to_resample_to=0,
-        max_downsampling_layers=config['ome_zarr']['max_downsampling_layers'],
-        label_name='dseg',
-        scaling_method='nearest'
+        max_downsampling_layers=config["ome_zarr"]["max_downsampling_layers"],
+        label_name="dseg",
+        scaling_method="nearest",
     output:
         zarr=temp(
             directory(
@@ -175,7 +170,7 @@ rule resample_labels_to_zarr:
                     desc="resampled",
                     from_="{template}",
                     suffix="dseg.ome.zarr",
-                    **inputs['spim'].wildcards
+                    **inputs["spim"].wildcards
                 )
             )
         ),
@@ -186,7 +181,7 @@ rule resample_labels_to_zarr:
             datatype="resample_labels_to_zarr",
             space="{template}",
             suffix="log.txt",
-            **inputs['spim'].wildcards
+            **inputs["spim"].wildcards
         ),
     script:
         "../scripts/resample_labels_to_zarr.py"
@@ -205,34 +200,31 @@ rule ome_zarr_to_zipstore:
     shell:
         "7z a -mx0 -tzip {output.zarr_zip} {input.zarr}/. &> {log}"
 
-#--- processing to get mask
+
+# --- processing to get mask
 rule n4:
     input:
         nii=bids(
-            root=root,
-            datatype="micr",
-            suffix="spim.nii",
-            **inputs['spim'].wildcards
+            root=root, datatype="micr", suffix="spim.nii", **inputs["spim"].wildcards
         ),
     output:
         corrected=bids(
             root=root,
             datatype="micr",
-            desc='n4corrected',
+            desc="n4corrected",
             suffix="spim.nii",
-            **inputs['spim'].wildcards
+            **inputs["spim"].wildcards
         ),
         biasfield=bids(
             root=root,
             datatype="micr",
-            desc='n4biasfield',
+            desc="n4biasfield",
             suffix="spim.nii",
-            **inputs['spim'].wildcards
+            **inputs["spim"].wildcards
         ),
-    container: None
+    container:
+        None
     shell:
-        'N4BiasFieldCorrection -i {input}'
-        ' -o [{output.corrected},{output.biasfield}]'
-        ' -d 3 -v '
-
-        
+        "N4BiasFieldCorrection -i {input}"
+        " -o [{output.corrected},{output.biasfield}]"
+        " -d 3 -v "

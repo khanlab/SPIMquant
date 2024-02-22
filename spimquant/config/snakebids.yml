@@ -1,4 +1,4 @@
-bids_dir: '/home/ROBARTS/alik/graham/cfmm-bids/Prado/LightsheetMicroscopy/bids_spimprep_20240215'
+bids_dir: '/home/ROBARTS/alik/graham/cfmm-bids/Prado/LightsheetMicroscopy/bids_spimprep_20240218'
 output_dir: '.'
 
 #enable printing debug statements during parsing -- disable if generating dag visualization
@@ -126,8 +126,12 @@ atlases:
     dseg: 'resources/ABAv3/P56_Annotation.nii.gz'
     lut: 'resources/ABAv3/labelmapper_ABAv3_to_all.json'
 
+channel_mapping:
+  abeta: 0
+  autof: 1
+
 atlasreg:
-  stain: autof
+  stain: autof #- use channel index until the omero metadata exists
   level: 4
 
 

@@ -23,8 +23,8 @@ label_name=snakemake.params.label_name
 
 
 
-#load dask array from zarr reference image
-darr = da.from_zarr(in_zarr,component=f'/{level}')
+#load dask array from zarr reference image, grabbing first channel (any channel will do)
+darr = da.from_zarr(in_zarr,component=f'/{level}')[0,:,:,:].squeeze()
 
 #load template dseg
 dseg_nib = nib.load(in_template_dseg)
@@ -46,9 +46,13 @@ multiscale=0 #first multiscale image
 transforms = attrs['multiscales'][multiscale]['datasets'][level]['coordinateTransformations']
 
 #for writing metadata:
-axes = attrs['multiscales'][multiscale]['axes']
+axes = attrs['multiscales'][multiscale]['axes'][-3:] #only grab the spatial axes
 coordinate_transformations = [ attrs['multiscales'][multiscale]['datasets'][level]['coordinateTransformations'] for level in range(level,max_layer+1)]
 
+#only grab the spatial axes for scale transforms too:
+for level_i in range(len(coordinate_transformations)):
+    for t in range(len(coordinate_transformations[level_i])):
+        coordinate_transformations[level_i][t]['scale'] = coordinate_transformations[level_i][t]['scale'][-3:]
 
 #need to put together the sequence of transforms to apply
 
