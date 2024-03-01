@@ -32,6 +32,7 @@ scikit-learn = "^1.4.1.post1"
 seaborn = "^0.13.2"
 stardist = "^0.8.5"
 dask-image = "^2023.8.1"
+ome-zarr = "^0.8.3"
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:main"
