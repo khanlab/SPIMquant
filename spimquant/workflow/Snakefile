@@ -31,19 +31,33 @@ container: config["containers"]["spimprep"]
 
 rule all_atlasreg:
     input:
-        inputs["spim"]
-        .filter(stain="autof")
-        .expand(
-            bids(
-                root=root,
-                datatype="micr",
-                desc="resampled",
-                from_="{template}",
-                suffix="dseg.ome.zarr.zip",
-                **inputs["spim"].wildcards
+        dseg=inputs["spim"]
+            .filter(stain="autof")
+            .expand(
+                bids(
+                    root=root,
+                    datatype="micr",
+                    desc="resampled",
+                    from_="{template}",
+                    suffix="dseg.ome.zarr.zip",
+                    **inputs["spim"].wildcards
+                ),
+                template="ABAv3",
             ),
-            template="ABAv3",
-        ),
+        spim=inputs["spim"]
+            .expand(
+                bids(
+                    root=root,
+                    datatype="micr",
+                    desc="resampled",
+                    space="{template}",
+                    stain="{stain}",
+                    suffix="spim.nii",
+                    **inputs["spim"].wildcards
+                ),
+                template="ABAv3",
+                stain=['autof','abeta'],
+            ),
 
 
 include: "rules/common.smk"

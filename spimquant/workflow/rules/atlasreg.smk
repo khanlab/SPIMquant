@@ -186,6 +186,26 @@ rule resample_labels_to_zarr:
     script:
         "../scripts/resample_labels_to_zarr.py"
 
+rule transform_channel_to_template_nii:
+    input:
+        ome_zarr=inputs["spim"].path,
+        xfm_ras=rules.affine_reg.output.xfm_ras,
+        ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+    params:
+        channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
+    output:
+        nii=bids(
+                    root=root,
+                    datatype="micr",
+                    desc="resampled",
+                    space="{template}",
+                    stain="{stain}",
+                    suffix="spim.nii",
+                    **inputs["spim"].wildcards
+                )
+    container: None
+    script: '../scripts/transform_channel_to_template_nii.py'
+
 
 rule ome_zarr_to_zipstore:
     """ generic rule to process any ome.zarr from work """

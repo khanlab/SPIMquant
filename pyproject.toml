@@ -33,6 +33,7 @@ seaborn = "^0.13.2"
 stardist = "^0.8.5"
 dask-image = "^2023.8.1"
 ome-zarr = "^0.8.3"
+ome-zarr-neuro = {path = "/local/scratch/ome-zarr-neuro", develop = true}
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:main"

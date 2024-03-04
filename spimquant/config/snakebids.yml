@@ -1,4 +1,4 @@
-bids_dir: '/home/ROBARTS/alik/graham/cfmm-bids/Prado/LightsheetMicroscopy/bids_spimprep_20240218'
+bids_dir: '/home/ROBARTS/alik/graham/cfmm-bids/Prado/LightsheetMicroscopy/bids_spimprep_20240223'
 output_dir: '.'
 
 #enable printing debug statements during parsing -- disable if generating dag visualization
