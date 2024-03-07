@@ -1,4 +1,4 @@
-bids_dir: '/home/ROBARTS/alik/graham/cfmm-bids/Prado/LightsheetMicroscopy/bids_spimprep_20240223'
+bids_dir: '/cifs/prado/Kelly/data/lightsheet/bids/test_bids'
 output_dir: '.'
 
 #enable printing debug statements during parsing -- disable if generating dag visualization
@@ -24,23 +24,14 @@ targets_by_analysis_level:
 pybids_inputs:
   spim:
     filters:
-      suffix: spim
+      suffix: 'spim'
       acquisition: 1x
-      extension: 'ome.zarr.zip'
+      extension: 'ome.zarr'
     wildcards:
       - subject
       - sample
       - acquisition
       - staining
-  metadata:
-    filters:
-      suffix: spim
-      extension: 'metadata.json'
-    wildcards:
-      - subject
-      - sample
-      - acquisition
-
 
 
 #configuration for the command-line parameters to make available
@@ -119,12 +110,17 @@ ome_zarr:
 
 templates: 
   - ABAv3
+  - gubra
 
 atlases:
   ABAv3:
-    anat: 'resources/ABAv3/P56_Atlas.nii.gz'
-    dseg: 'resources/ABAv3/P56_Annotation.nii.gz'
-    lut: 'resources/ABAv3/labelmapper_ABAv3_to_all.json'
+    anat: '{workflow.basedir}/../resources/ABAv3/P56_Atlas.nii.gz'
+    dseg: '{workflow.basedir}/../resources/ABAv3/P56_Annotation.nii.gz'
+    lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
+  gubra:
+    anat: '{workflow.basedir}/../resources/gubra/gubra_template_olf_affine_padABAv3.nii.gz'
+    dseg: '{workflow.basedir}/../resources/gubra/gubra_ano_olf_affine_padABAv3.nii.gz'
+    lut: '{workflow.basedir}/../resources/gubra/ARA2_annotation_info.csv'
 
 channel_mapping:
   abeta: 0
@@ -133,6 +129,10 @@ channel_mapping:
 atlasreg:
   stain: autof #- use channel index until the omero metadata exists
   level: 4
+  desc: N4brain
 
+masking:
+  gmm_k: 9
+  gmm_bg_class: 1
 
 
