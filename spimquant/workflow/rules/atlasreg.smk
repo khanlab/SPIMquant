@@ -265,7 +265,6 @@ rule affine_reg:
         "  -rm {input.subject} {output.warped} "
         "  -r {output.xfm_ras}"
 
-
 rule deform_reg:
     input:
         template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
@@ -279,6 +278,11 @@ rule deform_reg:
             **inputs["spim"].wildcards
         ),
         xfm_ras=rules.affine_reg.output.xfm_ras,
+    params:
+        iters='100x50',
+        metric='NMI',
+        sigma1='5vox',
+        sigma2='3vox'
     output:
         warp=bids(
             root=root,
@@ -306,8 +310,8 @@ rule deform_reg:
         ),
     shell:
         "greedy -d 3 -i {input.template} {input.subject} "
-        " -it {input.xfm_ras} -m NMI "
-        " -o {output.warp} -n 100x50 && "
+        " -it {input.xfm_ras} -m {params.metric} "
+        " -o {output.warp} -n {params.iters} -s {params.sigma1} {params.sigma2} && "
         " greedy -d 3 -rf {input.template} "
         "  -rm {input.subject} {output.warped} "
         "  -r {output.warp} {input.xfm_ras}"
@@ -357,6 +361,7 @@ rule transform_channel_to_template_nii:
     input:
         ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
+        warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
         channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],

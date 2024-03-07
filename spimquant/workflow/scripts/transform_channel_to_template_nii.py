@@ -1,10 +1,11 @@
 import nibabel as nib
-from  ome_zarr_neuro.transform import apply_transform
+from  ome_zarr_neuro.transform import apply_transform, TransformSpec
 from dask.diagnostics import ProgressBar
 
 darr_interp = apply_transform(flo_img_path=snakemake.input.ome_zarr,
                 ref_img_path=snakemake.input.ref_nii,
-                transform_specs=[{'path':snakemake.input.xfm_ras,'type':'affine_ras'}],
+                transform_specs=[TransformSpec.displacement_from_nifti(snakemake.input.warp_nii),
+                    TransformSpec.affine_ras_from_txt(snakemake.input.xfm_ras)],
                 flo_channel=snakemake.params.channel_index,
                 ref_chunks=(100,100,100))
 
