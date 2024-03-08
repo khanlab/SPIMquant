@@ -6,6 +6,7 @@ rule get_downsampled_nii:
         zarr=inputs["spim"].path,
     params:
         channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
+        zdownsampling=config['atlasreg']['zdownsampling']
     output:
         nii=bids(
             root=root,
@@ -281,8 +282,8 @@ rule deform_reg:
     params:
         iters='100x50',
         metric='NMI',
-        sigma1='5vox',
-        sigma2='3vox'
+        sigma1='4vox',
+        sigma2='2vox'
     output:
         warp=bids(
             root=root,
@@ -357,7 +358,28 @@ rule resample_labels_to_zarr:
     script:
         "../scripts/resample_labels_to_zarr.py"
 
-rule transform_channel_to_template_nii:
+rule affine_transform_channel_to_template_nii:
+    input:
+        ome_zarr=inputs["spim"].path,
+        xfm_ras=rules.affine_reg.output.xfm_ras,
+        ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+    params:
+        channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
+    output:
+        nii=bids(
+                    root=root,
+                    datatype="micr",
+                    desc="affine",
+                    space="{template}",
+                    stain="{stain}",
+                    suffix="spim.nii",
+                    **inputs["spim"].wildcards
+                )
+    container: None
+    threads: 32
+    script: '../scripts/affine_transform_channel_to_template_nii.py'
+
+rule deform_transform_channel_to_template_nii:
     input:
         ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
@@ -369,7 +391,7 @@ rule transform_channel_to_template_nii:
         nii=bids(
                     root=root,
                     datatype="micr",
-                    desc="resampled",
+                    desc="deform",
                     space="{template}",
                     stain="{stain}",
                     suffix="spim.nii",
@@ -377,7 +399,9 @@ rule transform_channel_to_template_nii:
                 )
     container: None
     threads: 32
-    script: '../scripts/transform_channel_to_template_nii.py'
+    script: '../scripts/deform_transform_channel_to_template_nii.py'
+
+
 
 
 rule ome_zarr_to_zipstore:

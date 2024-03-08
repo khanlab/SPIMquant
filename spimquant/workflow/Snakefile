@@ -30,14 +30,14 @@ root = "results"
 container: config["containers"]["spimprep"]
 
 
-rule all_atlasreg_warped:
+rule all_atlasreg_deform:
     input:
         spim=inputs["spim"]
             .expand(
                 bids(
                     root=root,
                     datatype="micr",
-                    desc="resampled",
+                    desc="deform",
                     space="{template}",
                     stain="{stain}",
                     suffix="spim.nii",
