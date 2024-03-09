@@ -14,11 +14,10 @@ ref_nib = nib.load(snakemake.input.ref_nii)
 
 with ProgressBar():
     interp_vol = darr_interp.compute(scheduler='single-threaded') # uses too much memory otherwise
-    #interp_vol = darr_interp.compute() # uses too much memory otherwise
+    #interp_vol = darr_interp.compute() 
 
 out_nib = nib.Nifti1Image(interp_vol,
-                       affine=ref_nib.affine,
-                        header=ref_nib.header)
+                       affine=ref_nib.affine)
 
 
 out_nib.to_filename(snakemake.output.nii)

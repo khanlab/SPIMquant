@@ -53,7 +53,7 @@ rule import_dseg:
         "cp {input} {output}"
 
 
-rule import_lut:
+rule import_labelmapper_lut:
     input:
         json=lambda wildcards: format(config["atlases"][wildcards.template]["lut"]),
     output:
@@ -64,6 +64,19 @@ rule import_lut:
         ),
     script:
         "../scripts/import_labelmapper_lut.py"
+
+
+    
+
+
+rule make_itksnap_lut:
+    input:
+        tsv=bids_tpl(root=root, template="{template}", suffix="dseg.tsv"),
+    output:
+        lut=bids_tpl(root=root, template="{template}", desc='itksnap',suffix="labels.txt"),
+    script:
+        "../scripts/lut_bids_to_itksnap.py"
+
 
 
 # --- processing to get mask
@@ -113,6 +126,114 @@ rule atropos_seg:
         " --output [{output.dseg},{output.posteriors_dir}/class-%02d.nii] "
         " --mask-image ones.nii --mrf [{params.mrf_smoothing},{params.mrf_radius}]"
 
+rule init_affine_reg:
+    input:
+        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        subject=bids(
+            root=root,
+            datatype="micr",
+            stain=config["atlasreg"]["stain"],
+            level=config["atlasreg"]["level"],
+            suffix="spim.nii",
+            **inputs["spim"].wildcards
+        ),
+    output:
+        xfm_ras=bids(
+            root=root,
+            datatype="warps",
+            from_="subject",
+            to="{template}",
+            type_="ras",
+            desc="initaffine",
+            suffix="xfm.txt",
+            **inputs["spim"].wildcards
+        ),
+        warped=bids(
+            root=root,
+            datatype="warps",
+            space="{template}",
+            desc="initaffinewarped",
+            suffix="spim.nii",
+            **inputs["spim"].wildcards
+        ),
+    log:
+        bids(
+            root="logs",
+            datatype="init_affine_reg",
+            space="{template}",
+            suffix="log.txt",
+            **inputs["spim"].wildcards
+        ),
+    shell:
+        "greedy -d 3 -i {input.template} {input.subject} "
+        " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} && "
+        " greedy -d 3 -rf {input.template} "
+        "  -rm {input.subject} {output.warped} "
+        "  -r {output.xfm_ras}"
+
+rule transform_template_dseg_to_subject:
+    input:
+        ref=bids(
+            root=root,
+            datatype="micr",
+            stain=config["atlasreg"]["stain"],
+            level=config["atlasreg"]["level"],
+            suffix="spim.nii",
+            **inputs["spim"].wildcards
+        ),
+        dseg=rules.import_dseg.output.dseg,
+        xfm_ras=rules.init_affine_reg.output.xfm_ras,
+    output:
+        dseg=bids(
+                    root=root,
+                    datatype="micr",
+                    desc="initaffine",
+                    from_="{template}",
+                    suffix="dseg.nii.gz",
+                    **inputs["spim"].wildcards
+            )
+    shell:
+        " greedy -d 3 -rf {input.ref} "
+        "  -rm {input.dseg} {output.dseg} "
+        "  -r {input.xfm_ras},1 "
+        " -ri NEAREST"
+
+rule create_mask_from_gmm_and_prior:
+    input:
+        tissue_dseg=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc='Atropos',
+            k=config['masking']['gmm_k'],
+            suffix="dseg.nii",
+            **inputs["spim"].wildcards
+        ),
+        atlas_dseg=bids(
+                    root=root,
+                    datatype="micr",
+                    desc="initaffine",
+                    from_=config['atlasreg']['atlas_prior_for_mask'],
+                    suffix="dseg.nii.gz",
+                    **inputs["spim"].wildcards
+            )
+    params:
+            k=config['masking']['gmm_k'],
+    output:
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc='brain',
+            suffix="mask.nii",
+            **inputs["spim"].wildcards
+        ),  
+    script:
+        '../scripts/create_mask_from_gmm_and_prior.py'
+    
+
 rule create_mask_from_gmm:
     input:
         dseg=bids(
@@ -133,7 +254,7 @@ rule create_mask_from_gmm:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='brain',
+            desc='brain1class',
             suffix="mask.nii",
             **inputs["spim"].wildcards
         ),  
@@ -293,6 +414,14 @@ rule deform_reg:
             suffix="warp.nii",
             **inputs["spim"].wildcards
         ),
+        invwarp=bids(
+            root=root,
+            datatype="warps",
+            from_="{template}",
+            to="subject",
+            suffix="warp.nii",
+            **inputs["spim"].wildcards
+        ),
         warped=bids(
             root=root,
             datatype="warps",
@@ -312,13 +441,11 @@ rule deform_reg:
     shell:
         "greedy -d 3 -i {input.template} {input.subject} "
         " -it {input.xfm_ras} -m {params.metric} "
+        " -oinv {output.invwarp} "
         " -o {output.warp} -n {params.iters} -s {params.sigma1} {params.sigma2} && "
         " greedy -d 3 -rf {input.template} "
         "  -rm {input.subject} {output.warped} "
-        "  -r {output.warp} {input.xfm_ras}"
-
-
-#TODO: add ANTS deformable reg, and do some parameter tuning.. 
+        "  -r {output.warp} {input.xfm_ras} "
 
 
 rule resample_labels_to_zarr:
@@ -400,7 +527,6 @@ rule deform_transform_channel_to_template_nii:
     container: None
     threads: 32
     script: '../scripts/deform_transform_channel_to_template_nii.py'
-
 
 
 

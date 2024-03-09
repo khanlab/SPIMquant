@@ -109,7 +109,6 @@ ome_zarr:
 
 
 templates: 
-  - ABAv3
   - gubra
 
 atlases:
@@ -119,8 +118,8 @@ atlases:
     lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
   gubra:
     anat: '{workflow.basedir}/../resources/gubra/gubra_template_olf_affine_padABAv3.nii.gz'
-    dseg: '{workflow.basedir}/../resources/gubra/gubra_ano_olf_affine_padABAv3.nii.gz'
-    lut: '{workflow.basedir}/../resources/gubra/ARA2_annotation_info.csv'
+    dseg: '{workflow.basedir}/../resources/gubra/gubra_ano_olf_affine_padABAv3_remap.nii.gz'
+    lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
 
 channel_mapping:
   abeta: 0
@@ -131,6 +130,7 @@ atlasreg:
   level: 4
   zdownsampling: 4
   desc: N4brain
+  atlas_prior_for_mask: ABAv3
 
 masking:
   gmm_k: 9
