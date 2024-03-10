@@ -6,7 +6,6 @@ rule get_downsampled_nii:
         zarr=inputs["spim"].path,
     params:
         channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
-        zdownsampling=config['atlasreg']['zdownsampling']
     output:
         nii=bids(
             root=root,
@@ -195,8 +194,8 @@ rule transform_template_dseg_to_subject:
     shell:
         " greedy -d 3 -rf {input.ref} "
         "  -rm {input.dseg} {output.dseg} "
-        "  -r {input.xfm_ras},1 "
-        " -ri NEAREST"
+        "  -r {input.xfm_ras},-1 "
+        " -ri NN"
 
 rule create_mask_from_gmm_and_prior:
     input:
@@ -485,7 +484,7 @@ rule resample_labels_to_zarr:
     script:
         "../scripts/resample_labels_to_zarr.py"
 
-rule affine_transform_channel_to_template_nii:
+rule affine_to_template_nii:
     input:
         ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
@@ -504,9 +503,31 @@ rule affine_transform_channel_to_template_nii:
                 )
     container: None
     threads: 32
-    script: '../scripts/affine_transform_channel_to_template_nii.py'
+    script: '../scripts/affine_to_template_nii.py'
 
-rule deform_transform_channel_to_template_nii:
+rule affine_to_template_ome_zarr:
+    input:
+        ome_zarr=inputs["spim"].path,
+        xfm_ras=rules.affine_reg.output.xfm_ras,
+        ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+    params:
+        channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
+    output:
+        ome_zarr=directory(bids(
+                    root=root,
+                    datatype="micr",
+                    desc="affine",
+                    space="{template}",
+                    stain="{stain}",
+                    suffix="spim.ome.zarr",
+                    **inputs["spim"].wildcards
+                ))
+    container: None
+    threads: 32
+    script: '../scripts/affine_to_template_ome_zarr.py'
+
+
+rule deform_to_template_nii:
     input:
         ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
@@ -526,7 +547,28 @@ rule deform_transform_channel_to_template_nii:
                 )
     container: None
     threads: 32
+    script: '../scripts/deform_to_template_nii.py'
+
+
+rule deform_transform_labels_to_subj:
+    input:
+        ref_ome_zarr=inputs["spim"].path,
+        xfm_ras=rules.affine_reg.output.xfm_ras,
+        invwarp_nii=rules.deform_reg.output.invwarp,
+        flo_nii=bids_tpl(root=root, template="{template}", suffix="dseg.nii.gz"),
+    output:
+        zarr=directory(bids(
+                    root=root,
+                    datatype="micr",
+                    desc="deform",
+                    space="subject",
+                    suffix="dseg.zarr",
+                    **inputs["spim"].wildcards
+                ))
+    container: None
+    threads: 32
     script: '../scripts/deform_transform_channel_to_template_nii.py'
+
 
 
 
