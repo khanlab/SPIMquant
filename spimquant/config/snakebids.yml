@@ -25,7 +25,7 @@ pybids_inputs:
   spim:
     filters:
       suffix: 'spim'
-      acquisition: 1x
+      acquisition: 4x
       extension: 'ome.zarr'
     wildcards:
       - subject
@@ -129,7 +129,7 @@ atlasreg:
   stain: autof #- use channel index until the omero metadata exists
   level: 4
   desc: N4brain
-  atlas_prior_for_mask: ABAv3
+  atlas_prior_for_mask: gubra
 
 masking:
   gmm_k: 9

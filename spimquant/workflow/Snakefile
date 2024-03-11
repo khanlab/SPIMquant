@@ -32,6 +32,22 @@ container: config["containers"]["spimprep"]
 
 rule all_atlasreg_deform:
     input:
+        spim_zoomed=inputs["spim"]
+            .expand(
+                bids(
+                    root=root,
+                    datatype="micr",
+                    desc="deform",
+                    space="{template}",
+                    stain="{stain}",
+                    res="{res}um",
+                    suffix="spim.nii",
+                    **inputs["spim"].wildcards
+                ),
+                template=config['templates'],
+                stain=['autof','abeta'],
+                res=[10], 
+            ),
         spim=inputs["spim"]
             .expand(
                 bids(

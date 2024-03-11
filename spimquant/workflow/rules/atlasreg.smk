@@ -526,7 +526,6 @@ rule affine_to_template_ome_zarr:
     threads: 32
     script: '../scripts/affine_to_template_ome_zarr.py'
 
-
 rule deform_to_template_nii:
     input:
         ome_zarr=inputs["spim"].path,
@@ -535,6 +534,8 @@ rule deform_to_template_nii:
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
         channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
+        chunks=(50,50,50),
+        zooms=None,
     output:
         nii=bids(
                     root=root,
@@ -548,6 +549,56 @@ rule deform_to_template_nii:
     container: None
     threads: 32
     script: '../scripts/deform_to_template_nii.py'
+
+
+rule deform_to_template_nii_zoomed:
+    input:
+        ome_zarr=inputs["spim"].path,
+        xfm_ras=rules.affine_reg.output.xfm_ras,
+        warp_nii=rules.deform_reg.output.warp,
+        ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+    params:
+        channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
+        chunks=(50,50,50),
+        zooms=lambda wildcards: (float(wildcards.res)/1000,float(wildcards.res)/1000,float(wildcards.res)/1000) #None #same resolution as template if NOne
+    output:
+        nii=bids(
+                    root=root,
+                    datatype="micr",
+                    desc="deform",
+                    space="{template}",
+                    stain="{stain}",
+                    res="{res}um",
+                    suffix="spim.nii",
+                    **inputs["spim"].wildcards
+                )
+    container: None
+    threads: 32
+    script: '../scripts/deform_to_template_nii.py'
+
+rule deform_to_template_nii_nb:
+    input:
+        ome_zarr=inputs["spim"].path,
+        xfm_ras=rules.affine_reg.output.xfm_ras,
+        warp_nii=rules.deform_reg.output.warp,
+        ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+    params:
+        channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
+        chunks=(20,20,20),
+        zooms=None #same resolution as template if NOne
+    output:
+        nii=bids(
+                    root=root,
+                    datatype="micr",
+                    desc="deformnb",
+                    space="{template}",
+                    stain="{stain}",
+                    suffix="spim.nii",
+                    **inputs["spim"].wildcards
+                )
+    container: None
+    threads: 32
+    notebook: '../notebooks/deform_to_template_nii.py.ipynb'
 
 
 rule deform_transform_labels_to_subj:
