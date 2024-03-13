@@ -622,6 +622,32 @@ rule deform_transform_labels_to_subj:
 
 
 
+rule transform_labels_to_zoomed_template:
+    input:
+        dseg=bids_tpl(root=root, template="{template}", suffix="dseg.nii.gz"),
+        ref=bids(
+                    root=root,
+                    datatype="micr",
+                    desc="deform",
+                    space="{template}",
+                    stain=config['atlasreg']['stain'],
+                    res="{res}um",
+                    suffix="spim.nii",
+                    **inputs["spim"].wildcards
+                )
+    output:
+        dseg=bids(
+                    root=root,
+                    datatype="micr",
+                    space="{template}",
+                    res="{res}um",
+                    suffix="dseg.nii",
+                    **inputs["spim"].wildcards
+                )
+    shell:
+        "antsApplyTransforms -d 3 -v -n NearestNeighbor "
+        " -i {input.dseg} -o {output.dseg} "
+        " -r {input.ref} "
 
 rule ome_zarr_to_zipstore:
     """ generic rule to process any ome.zarr from work """
