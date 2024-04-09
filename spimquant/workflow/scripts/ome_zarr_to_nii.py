@@ -8,14 +8,16 @@ from ome_zarr.io import parse_url
 from ome_zarr.reader import Reader
 from dask.diagnostics import ProgressBar
 
-#TODO: grab channel name from OMERO metadata 
 
 in_zarr = snakemake.input.zarr
-channel_index = snakemake.params.channel_index
 
 zi = zarr.open(in_zarr)
 
 attrs=zi['/'].attrs.asdict()
+
+#get channel index from omero metadata
+channel_labels = [channel_dict['label'] for channel_dict in attrs['omero']['channels']]
+channel_index = channel_labels.index(snakemake.wildcards.stain)
 
 level=int(snakemake.wildcards.level)
 

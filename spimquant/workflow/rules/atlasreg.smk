@@ -1,11 +1,10 @@
 wildcard_constraints:
-    level='[0-9]+'
+    level='[0-9]+',
+    template='[a-zA-Z0-9]+'
 
 rule get_downsampled_nii:
     input:
         zarr=inputs["spim"].path,
-    params:
-        channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
     output:
         nii=bids(
             root=root,
@@ -490,7 +489,8 @@ rule affine_to_template_nii:
         xfm_ras=rules.affine_reg.output.xfm_ras,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
+        chunks=(50,50,50),
+        zooms=None,
     output:
         nii=bids(
                     root=root,
@@ -511,7 +511,8 @@ rule affine_to_template_ome_zarr:
         xfm_ras=rules.affine_reg.output.xfm_ras,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
+        chunks=(50,50,50),
+        zooms=None,
     output:
         ome_zarr=directory(bids(
                     root=root,
@@ -533,7 +534,6 @@ rule deform_to_template_nii:
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
         chunks=(50,50,50),
         zooms=None,
     output:
@@ -558,7 +558,6 @@ rule deform_to_template_nii_zoomed:
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
         chunks=(50,50,50),
         zooms=lambda wildcards: (float(wildcards.res)/1000,float(wildcards.res)/1000,float(wildcards.res)/1000) #None #same resolution as template if NOne
     output:
@@ -583,7 +582,6 @@ rule deform_to_template_nii_nb:
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        channel_index=lambda wildcards: config["channel_mapping"][wildcards.stain],
         chunks=(20,20,20),
         zooms=None #same resolution as template if NOne
     output:
