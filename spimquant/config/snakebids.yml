@@ -123,10 +123,13 @@ atlases:
 
 
 atlasreg:
-  stain: autof #set this to PI for lifecanvas data 
-  level: 4
+  stain: PI #set this to PI for lifecanvas data 
+  level: 5
   desc: N4brain
   atlas_prior_for_mask: ABAv3
+  zooms:
+    - 20
+    - 40
 
 masking:
   gmm_k: 9

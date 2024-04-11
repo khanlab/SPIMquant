@@ -11,7 +11,7 @@ rule get_downsampled_nii:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
     threads: 32
@@ -85,7 +85,7 @@ rule atropos_seg:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
     params:
@@ -132,7 +132,7 @@ rule init_affine_reg:
             datatype="micr",
             stain=config["atlasreg"]["stain"],
             level=config["atlasreg"]["level"],
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
     output:
@@ -151,7 +151,7 @@ rule init_affine_reg:
             datatype="warps",
             space="{template}",
             desc="initaffinewarped",
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
     log:
@@ -176,7 +176,7 @@ rule transform_template_dseg_to_subject:
             datatype="micr",
             stain=config["atlasreg"]["stain"],
             level=config["atlasreg"]["level"],
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
         dseg=rules.import_dseg.output.dseg,
@@ -192,9 +192,9 @@ rule transform_template_dseg_to_subject:
             )
     shell:
         " greedy -d 3 -rf {input.ref} "
+        " -ri NN"
         "  -rm {input.dseg} {output.dseg} "
         "  -r {input.xfm_ras},-1 "
-        " -ri NN"
 
 rule create_mask_from_gmm_and_prior:
     input:
@@ -267,7 +267,7 @@ rule n4:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
         mask=bids(
@@ -287,7 +287,7 @@ rule n4:
             stain="{stain}",
             level="{level}",
             desc='N4',
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
         biasfield=bids(
@@ -315,7 +315,7 @@ rule apply_mask_to_corrected:
             stain="{stain}",
             level="{level}",
             desc='N4',
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
         mask=bids(
@@ -333,7 +333,7 @@ rule apply_mask_to_corrected:
             stain="{stain}",
             level="{level}",
             desc='N4brain',
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
     shell:
@@ -348,7 +348,7 @@ rule affine_reg:
             stain=config["atlasreg"]["stain"],
             level=config["atlasreg"]["level"],
             desc=config["atlasreg"]["desc"],
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
     output:
@@ -367,7 +367,7 @@ rule affine_reg:
             datatype="warps",
             space="{template}",
             desc="affinewarped",
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
     log:
@@ -394,7 +394,7 @@ rule deform_reg:
             stain=config["atlasreg"]["stain"],
             level=config["atlasreg"]["level"],
             desc=config["atlasreg"]["desc"],
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
         xfm_ras=rules.affine_reg.output.xfm_ras,
@@ -425,7 +425,7 @@ rule deform_reg:
             datatype="warps",
             space="{template}",
             desc="deformwarped",
-            suffix="spim.nii",
+            suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
     log:
@@ -498,7 +498,7 @@ rule affine_to_template_nii:
                     desc="affine",
                     space="{template}",
                     stain="{stain}",
-                    suffix="spim.nii",
+                    suffix="SPIM.nii",
                     **inputs["spim"].wildcards
                 )
     container: None
@@ -543,7 +543,7 @@ rule deform_to_template_nii:
                     desc="deform",
                     space="{template}",
                     stain="{stain}",
-                    suffix="spim.nii",
+                    suffix="SPIM.nii",
                     **inputs["spim"].wildcards
                 )
     container: None
@@ -568,7 +568,7 @@ rule deform_to_template_nii_zoomed:
                     space="{template}",
                     stain="{stain}",
                     res="{res}um",
-                    suffix="spim.nii",
+                    suffix="SPIM.nii",
                     **inputs["spim"].wildcards
                 )
     container: None
@@ -591,7 +591,7 @@ rule deform_to_template_nii_nb:
                     desc="deformnb",
                     space="{template}",
                     stain="{stain}",
-                    suffix="spim.nii",
+                    suffix="SPIM.nii",
                     **inputs["spim"].wildcards
                 )
     container: None
@@ -630,7 +630,7 @@ rule transform_labels_to_zoomed_template:
                     space="{template}",
                     stain=config['atlasreg']['stain'],
                     res="{res}um",
-                    suffix="spim.nii",
+                    suffix="SPIM.nii",
                     **inputs["spim"].wildcards
                 )
     output:

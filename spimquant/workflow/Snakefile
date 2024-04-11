@@ -30,7 +30,7 @@ root = "results"
 container: config["containers"]["spimprep"]
 
 
-rule all_atlasreg_deform:
+rule all_atlasreg_deform_zooms:
     input:
         spim_zoomed=inputs["spim"]
             .expand(
@@ -41,13 +41,16 @@ rule all_atlasreg_deform:
                     space="{template}",
                     stain="{stain}",
                     res="{res}um",
-                    suffix="spim.nii",
+                    suffix="SPIM.nii",
                     **inputs["spim"].wildcards
                 ),
                 template=config['templates'],
                 stain=['autof','abeta'],
-                res=[10], 
+                res=config['atlasreg']['zooms'],
             ),
+
+rule all_atlasreg_deform:
+    input:
         spim=inputs["spim"]
             .expand(
                 bids(
@@ -56,12 +59,12 @@ rule all_atlasreg_deform:
                     desc="deform",
                     space="{template}",
                     stain="{stain}",
-                    suffix="spim.nii",
+                    suffix="SPIM.nii",
                     **inputs["spim"].wildcards
                 ),
                 template=config['templates'],
                 stain=['autof','abeta'],
-            ),
+            )
 
 rule all_atlasreg_lbl:
     input:
@@ -77,7 +80,7 @@ rule all_atlasreg_lbl:
                     **inputs["spim"].wildcards
                 ),
                 template=config['templates'],
-            ),
+            )
 
 include: "rules/common.smk"
 include: "rules/atlasreg.smk"
