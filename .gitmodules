@@ -1,0 +1,3 @@
+[submodule "pybids"]
+	path = pybids
+	url = https://github.com/akhanf/pybids

@@ -13,9 +13,9 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
-snakemake = ">=7.20,<8"
-snakebids = {git = "https://github.com/khanlab/snakebids", rev = "main"}
+python = ">=3.11,<3.12"
+snakemake = ">=8.0.0"
+snakebids = {git = "https://github.com/akhanf/snakebids"}
 pulp = "<2.8.0"
 pandas = [
     { version = "<=2.0.3", python = "<3.9" },
@@ -33,8 +33,8 @@ seaborn = "^0.13.2"
 stardist = "^0.8.5"
 dask-image = "^2023.8.1"
 ome-zarr = "^0.8.3"
-ome-zarr-neuro = {path = "/local/scratch/ome-zarr-neuro", develop = true}
-pybids = {path = "../pybids", develop = true}
+ome-zarr-neuro = {git = "https://github.com/khanlab/ome-zarr-neuro", develop = true}
+pybids = {path = "pybids", develop = true }
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:main"
