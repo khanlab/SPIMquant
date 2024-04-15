@@ -1,3 +1,6 @@
 [submodule "pybids"]
 	path = pybids
 	url = https://github.com/akhanf/pybids
+[submodule "snakebids"]
+	path = snakebids
+	url = https://github.com/akhanf/snakebids
