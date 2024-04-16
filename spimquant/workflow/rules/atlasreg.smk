@@ -116,9 +116,13 @@ rule atropos_seg:
     container:
         None
     shadow: 'minimal'
+    threads: 1
+    resources:
+        mem_mb=16000
     shell:
         "mkdir -p {output.posteriors_dir} && "
         "c3d {input.nii} -scale 0 -shift 1 ones.nii && "
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "Atropos -v -d 3 --initialization KMeans[{wildcards.k}] "
         " --intensity-image {input.nii} "
         " --output [{output.dseg},{output.posteriors_dir}/class-%02d.nii] "
@@ -162,10 +166,11 @@ rule init_affine_reg:
             suffix="log.txt",
             **inputs["spim"].wildcards
         ),
+    threads: 32
     shell:
-        "greedy -d 3 -i {input.template} {input.subject} "
+        "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} && "
-        " greedy -d 3 -rf {input.template} "
+        " greedy -threads {threads} -d 3 -rf {input.template} "
         "  -rm {input.subject} {output.warped} "
         "  -r {output.xfm_ras}"
 
@@ -190,8 +195,9 @@ rule transform_template_dseg_to_subject:
                     suffix="dseg.nii.gz",
                     **inputs["spim"].wildcards
             )
+    threads: 32
     shell:
-        " greedy -d 3 -rf {input.ref} "
+        " greedy -threads {threads} -d 3 -rf {input.ref} "
         " -ri NN"
         "  -rm {input.dseg} {output.dseg} "
         "  -r {input.xfm_ras},-1 "
@@ -378,10 +384,11 @@ rule affine_reg:
             suffix="log.txt",
             **inputs["spim"].wildcards
         ),
+    threads: 32
     shell:
-        "greedy -d 3 -i {input.template} {input.subject} "
+        "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} && "
-        " greedy -d 3 -rf {input.template} "
+        " greedy -threads {threads} -d 3 -rf {input.template} "
         "  -rm {input.subject} {output.warped} "
         "  -r {output.xfm_ras}"
 
@@ -436,12 +443,15 @@ rule deform_reg:
             suffix="log.txt",
             **inputs["spim"].wildcards
         ),
+    threads: 32
+    resources:
+        mem_mb=16000
     shell:
-        "greedy -d 3 -i {input.template} {input.subject} "
+        "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -it {input.xfm_ras} -m {params.metric} "
         " -oinv {output.invwarp} "
         " -o {output.warp} -n {params.iters} -s {params.sigma1} {params.sigma2} && "
-        " greedy -d 3 -rf {input.template} "
+        " greedy -threads {threads} -d 3 -rf {input.template} "
         "  -rm {input.subject} {output.warped} "
         "  -r {output.warp} {input.xfm_ras} "
 
@@ -642,7 +652,9 @@ rule transform_labels_to_zoomed_template:
                     suffix="dseg.nii",
                     **inputs["spim"].wildcards
                 )
+    threads: 32
     shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n NearestNeighbor "
         " -i {input.dseg} -o {output.dseg} "
         " -r {input.ref} "

@@ -26,7 +26,7 @@ pybids_inputs:
     filters:
       suffix: 'SPIM'
       #      acquisition: 4x
-      extension: 'ome.zarr'
+      extension: 'ome.zarr.zip'
     wildcards:
       - subject
       - sample
