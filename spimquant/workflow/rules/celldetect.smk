@@ -1,3 +1,24 @@
+rule blob_detection:
+    input:
+        zarr=inputs["spim"].path,
+    params:
+        level=2,  #downsample-level to perform on       
+        min_sigma_um=1,
+        max_sigma_um=100,
+        threshold=0.06,
+
+    output:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            suffix="blobs.npy",
+            **inputs["spim"].wildcards
+        ),
+    script:
+        '../scripts/blob_detection.py'
+
+
 """
 As a first pass, re-implement basic steps from following, but with skimage+dask:
   https://github.com/ChristophKirst/ClearMap/blob/master/ClearMap/ImageProcessing/SpotDetection.py
