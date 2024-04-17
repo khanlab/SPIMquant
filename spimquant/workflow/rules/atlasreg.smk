@@ -493,7 +493,7 @@ rule resample_labels_to_zarr:
     script:
         "../scripts/resample_labels_to_zarr.py"
 
-rule affine_to_template_nii:
+rule affine_zarr_to_template_nii:
     input:
         ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
@@ -515,7 +515,7 @@ rule affine_to_template_nii:
     threads: 32
     script: '../scripts/affine_to_template_nii.py'
 
-rule affine_to_template_ome_zarr:
+rule affine_zarr_to_template_ome_zarr:
     input:
         ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
@@ -537,7 +537,7 @@ rule affine_to_template_ome_zarr:
     threads: 32
     script: '../scripts/affine_to_template_ome_zarr.py'
 
-rule deform_to_template_nii:
+rule deform_zarr_to_template_nii:
     input:
         ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,

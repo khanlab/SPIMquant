@@ -45,7 +45,7 @@ rule all_atlasreg_deform_zooms:
                     **inputs["spim"].wildcards
                 ),
                 template=config['templates'],
-                stain=['autof','abeta'],
+                stain=config['stains'],
                 res=config['atlasreg']['zooms'],
             ),
 
@@ -63,13 +63,12 @@ rule all_atlasreg_deform:
                     **inputs["spim"].wildcards
                 ),
                 template=config['templates'],
-                stain=['autof','abeta'],
+                stain=config['stains'],
             )
 
 rule all_atlasreg_lbl:
     input:
         dseg=inputs["spim"]
-            .filter(stain="autof")
             .expand(
                 bids(
                     root=root,
