@@ -129,12 +129,14 @@ atlasreg:
   stain: PI #set this to PI for lifecanvas data 
   level: 5
   desc: N4brain
-  atlas_prior_for_mask: ABAv3
   zooms:
     #    - 20
     - 40
 
 masking:
+  stain: PI #set this to PI for lifecanvas data 
+  level: 5
+  atlas_prior_for_mask: ABAv3
   gmm_k: 9
   gmm_bg_class: 1
 

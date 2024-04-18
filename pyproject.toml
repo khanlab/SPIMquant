@@ -36,6 +36,10 @@ ome-zarr = "^0.8.3"
 ome-zarr-neuro = {git = "https://github.com/khanlab/ome-zarr-neuro", develop = true}
 pybids = {git = "https://github.com/akhanf/pybids", rev = 'snakebids' }
 attrs = "22.2.0"
+napari = "0.4.19"
+napari-ome-zarr = "^0.5.2"
+pyqt5 = "=5.15.10"   
+pyqt5-qt5 = "=5.15.2"
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:main"

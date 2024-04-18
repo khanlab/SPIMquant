@@ -1,17 +1,90 @@
-rule blob_detection:
+rule brainmask_penalty:
+    """ generates a distance-based term to penalize blob detection
+        at the brain boundary and outside it. Uses a signed distance transform
+        (sdt) followed by scaled logistic function. 
+    """ 
     input:
-        zarr=inputs["spim"].path,
-    params:
-        level=2,  #downsample-level to perform on       
-        min_sigma_um=1,
-        max_sigma_um=100,
-        threshold=0.06,
-
-    output:
-        nii=bids(
+        mask=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
+            level="{level}",
+            desc='brain',
+            suffix="mask.nii",
+            **inputs["spim"].wildcards
+        ),  
+    params:
+        k=50, #steepness of logistic function (how fast it drops off) (penalty_weight)
+        x0=0.1, #distance from boundary where it is penalized by 50%, in millimeters (penalty_distance_mm)
+        
+
+    output:
+        sdt=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc='brain',
+            suffix="sdt.nii",
+            **inputs["spim"].wildcards
+        ),  
+        penalty=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc='brain',
+            suffix="penalty.nii",
+            **inputs["spim"].wildcards
+        ),  
+    shell:
+        'c3d {input.mask} -sdt -scale -1 -o {output.sdt} -shift -{params.x0} -scale -{params.k} -exp -shift 1 -reciprocal '
+        ' -o {output.penalty}'
+
+rule blob_detection_betaamyloid:
+    input:
+        zarr=inputs["spim"].path,
+        penalty=bids(
+            root=root,
+            datatype="micr",
+            stain=config['masking']['stain'],
+            level=config['masking']['level'],
+            desc='brain',
+            suffix="penalty.nii",
+            **inputs["spim"].wildcards
+        ),
+    params:
+        level=3,  #downsample-level to perform blob detection on
+        min_sigma_um=1,
+        max_sigma_um=100, # also serves as size of chunk borders
+        threshold=0.06,
+        chunks=(1,400,200,200),
+    output:
+        npy=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain,BetaAmyloid}",
+            suffix="blobs.npy",
+            **inputs["spim"].wildcards
+        ),
+    script:
+        '../scripts/blob_detection.py'
+
+
+rule blob_detection_PI:
+    input:
+        zarr=inputs["spim"].path,
+    params:
+        level=3,  #downsample-level to perform blob detection on
+        min_sigma_um=1,
+        max_sigma_um=50, # also serves as size of chunk borders
+        threshold=0.06,
+        chunks=(1,400,200,200),
+    output:
+        npy=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain,PI}",
             suffix="blobs.npy",
             **inputs["spim"].wildcards
         ),

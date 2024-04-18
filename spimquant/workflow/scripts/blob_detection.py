@@ -1,4 +1,6 @@
+import zarr
 import dask.array as da
+from dask.array.overlap import overlap
 import numpy as np
 from math import sqrt
 from skimage.feature import blob_dog
@@ -21,19 +23,22 @@ level=snakemake.params.level
 transforms = attrs['multiscales'][0]['datasets'][level]['coordinateTransformations']
 
 
-darr_chan = da.from_zarr(in_zarr,component=f'{level}')[channel_index,:,:,:]
+darr_chan = da.from_zarr(in_zarr,component=f'{level}',chunks=snakemake.params.chunks)[channel_index,:,:,:]
 
 #adjust sigma based on physical size of voxels --- TODO check this! 
-raw_pix_um=transforms[0]['scale'][1:]
+# get um per pixel from the scaling transforms
+# then convert from um to pixel by dividing by it
+scaling_zyx=np.array(transforms[0]['scale'][1:])
+print(f'scaling_zyx: {scaling_zyx}') 
+#mm per pixel
 
-ds_byax = np.array((1,2**level,2**level))
-ds_um_per_pix = raw_pix_um*ds_byax
-ds_um_per_pix
+min_sigma_px = snakemake.params.min_sigma_um *1e-3 / scaling_zyx 
+max_sigma_px = snakemake.params.max_sigma_um *1e-3 / scaling_zyx
+boundary_px = tuple(max_sigma_px.astype('int').tolist())
 
-min_sigma_px = min_sigma_um / ds_um_per_pix
-max_sigma_px = max_sigma_um / ds_um_per_pix
-
-
+print(f'min_sigma_px: {min_sigma_px}')
+print(f'max_sigma_px: {max_sigma_px}')
+print(f'boundary_px: {boundary_px}')
 
 
 def detect_blobs(x,block_info=None):
@@ -42,30 +47,28 @@ def detect_blobs(x,block_info=None):
     #coords into global blob coords
     arr_location = block_info[0]['array-location']
 
-    blobs_dog = blob_dog(x, min_sigma=min_sigma_px, max_sigma=max_sigma_px, threshold=threshold)
-    blobs_dog[:, -1] = blobs_dog[:, -1] * sqrt(2) #adjust to get radius
+    blobs_dog = blob_dog(x, min_sigma=min_sigma_px, max_sigma=max_sigma_px, 
+            threshold=snakemake.params.threshold, exclude_border=boundary_px)
+    blobs_dog[:, -1] = blobs_dog[:, -1] * (2 ** 0.3333)  #adjust to get radius
 
     #offset by chunk location, then scale by header
     for ax in range(3):
         #scale the coordinates
-
-        #TODO: add exclude on edges?
         blobs_dog[:,ax] = scaling_zyx[ax] * (arr_location[ax][0] + blobs_dog[:,ax])
 
-        #and the radii #TODO CHECK THIS!
-        blobs_dog[:,ax+3] =  (arr_location[ax][0] + blobs_dog[:,ax+3]) / scaling_zyx[ax]
+        #and the radii 
+        blobs_dog[:,ax+3] =  scaling_zyx[ax] * blobs_dog[:,ax+3]
 
 
     return blobs_dog
 
-#TODO: pick depth according to max sigma? 
-expanded = overlap(arr, depth=2, boundary=0)
+expanded = overlap(darr_chan, depth=boundary_px, boundary=0)
 
-darr_blobs = darr_chan.map_blocks(detect_blobs,drop_axis=[2],dtype='float')
+darr_blobs = expanded.map_blocks(detect_blobs,drop_axis=[2],dtype='float')
 
 with ProgressBar():
     computed_blobs = darr_blobs.compute()
 
-#TODO: pick a better format? napari points layer native?
+#TODO: pick a better format? tsv? 
 np.save(snakemake.output.npy,computed_blobs)
 

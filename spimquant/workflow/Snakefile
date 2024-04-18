@@ -49,6 +49,19 @@ rule all_atlasreg_deform_zooms:
                 res=config['atlasreg']['zooms'],
             ),
 
+rule all_blobs:
+    input:
+        spim_zoomed=inputs["spim"]
+            .expand(bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            suffix="blobs.npy",
+            **inputs["spim"].wildcards
+        ),
+        stain=config['stains']
+        )
+
 rule all_atlasreg_deform:
     input:
         spim=inputs["spim"]
@@ -82,4 +95,7 @@ rule all_atlasreg_lbl:
             )
 
 include: "rules/common.smk"
+include: "rules/import.smk"
+include: "rules/masking.smk"
 include: "rules/atlasreg.smk"
+include: "rules/celldetect.smk"
