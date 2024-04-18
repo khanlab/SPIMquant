@@ -1,3 +1,4 @@
+import zarr
 import nibabel as nib
 from  ome_zarr_neuro.transform import DaskImage, TransformSpec
 from dask.diagnostics import ProgressBar
