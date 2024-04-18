@@ -3573,7 +3573,7 @@ category = "main"
 optional = false
 python-versions = ">=3.8"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 bids-validator = ">=1.11"
@@ -3589,13 +3589,13 @@ sqlalchemy = ">=1.3.16"
 [package.extras]
 ci-tests = ["pybids[test]", "pytest-xdist"]
 dev = ["pybids[doc,plotting,test]"]
-doc = ["jupytext", "myst-nb", "numpydoc", "sphinx (>=2.2,!=5.1.0)", "sphinx-rtd-theme"]
+doc = ["jupytext", "myst_nb", "numpydoc", "sphinx (>=2.2,!=5.1.0)", "sphinx_rtd_theme"]
 docs = ["pybids[doc]"]
 model-reports = ["altair", "jinja2"]
 plotting = ["graphviz"]
 test = ["altair", "bsmschema", "coverage[toml]", "pytest (>=3.3)", "pytest-cov"]
 tests = ["pybids[test]"]
-tutorial = ["ipykernel", "jinja2", "jupyter-client", "markupsafe", "nbconvert"]
+tutorial = ["ipykernel", "jinja2", "jupyter_client", "markupsafe", "nbconvert"]
 
 [package.source]
 type = "git"
@@ -4695,7 +4695,7 @@ category = "main"
 optional = false
 python-versions = ">=3.11,<4.0"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 attrs = ">=21.2.0"
@@ -5650,4 +5650,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "00c0d2ad0dc4f4d2632787f73b222b9de920248307eeff1d9399fb77de2bbe31"
+content-hash = "402a8e0083784d7e184ed430d4427786e0f93a53493b81f737012efb914b1ea3"

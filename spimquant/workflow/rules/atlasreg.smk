@@ -89,6 +89,7 @@ rule atropos_seg:
             **inputs["spim"].wildcards
         ),
     params:
+        downsampling='50%',
         mrf_smoothing=0.3,
         mrf_radius='2x2x2',
     output:
@@ -121,12 +122,13 @@ rule atropos_seg:
         mem_mb=16000
     shell:
         "mkdir -p {output.posteriors_dir} && "
-        "c3d {input.nii} -scale 0 -shift 1 ones.nii && "
+        "c3d {input.nii} -resample {params.downsampling} -o downsampled.nii -scale 0 -shift 1 -o ones.nii && "
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "Atropos -v -d 3 --initialization KMeans[{wildcards.k}] "
-        " --intensity-image {input.nii} "
-        " --output [{output.dseg},{output.posteriors_dir}/class-%02d.nii] "
-        " --mask-image ones.nii --mrf [{params.mrf_smoothing},{params.mrf_radius}]"
+        " --intensity-image downsampled.nii "
+        " --output [dseg_downsampled.nii,{output.posteriors_dir}/class-%02d.nii] "
+        " --mask-image ones.nii --mrf [{params.mrf_smoothing},{params.mrf_radius}] && "
+        "c3d {input.nii} dseg_downsampled.nii -reslice-identity -o {output.dseg}"
 
 rule init_affine_reg:
     input:
@@ -511,7 +513,6 @@ rule affine_zarr_to_template_nii:
                     suffix="SPIM.nii",
                     **inputs["spim"].wildcards
                 )
-    container: None
     threads: 32
     script: '../scripts/affine_to_template_nii.py'
 
@@ -533,7 +534,6 @@ rule affine_zarr_to_template_ome_zarr:
                     suffix="spim.ome.zarr",
                     **inputs["spim"].wildcards
                 ))
-    container: None
     threads: 32
     script: '../scripts/affine_to_template_ome_zarr.py'
 
@@ -556,7 +556,6 @@ rule deform_zarr_to_template_nii:
                     suffix="SPIM.nii",
                     **inputs["spim"].wildcards
                 )
-    container: None
     threads: 32
     script: '../scripts/deform_to_template_nii.py'
 
@@ -581,7 +580,6 @@ rule deform_to_template_nii_zoomed:
                     suffix="SPIM.nii",
                     **inputs["spim"].wildcards
                 )
-    container: None
     threads: 32
     script: '../scripts/deform_to_template_nii.py'
 
