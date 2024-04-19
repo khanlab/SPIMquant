@@ -23,7 +23,11 @@ level=snakemake.params.level
 transforms = attrs['multiscales'][0]['datasets'][level]['coordinateTransformations']
 
 
-darr_chan = da.from_zarr(in_zarr,component=f'{level}',chunks=snakemake.params.chunks)[channel_index,:,:,:]
+#darr_chan = da.from_zarr(in_zarr,component=f'{level}',chunks=snakemake.params.chunks)[channel_index,:,:,:]
+darr_chan = da.from_zarr(in_zarr,component=f'{level}',chunks=(1,1,50,50))[channel_index,:,:,:]
+
+print(f'shape: {darr_chan.shape}')
+print(f'chunks: {darr_chan.chunks}')
 
 #adjust sigma based on physical size of voxels --- TODO check this! 
 # get um per pixel from the scaling transforms
@@ -62,11 +66,13 @@ def detect_blobs(x,block_info=None):
 
     return blobs_dog
 
-expanded = overlap(darr_chan, depth=boundary_px, boundary=0)
+#expanded = overlap(darr_chan, depth=boundary_px, boundary=0)
 
-darr_blobs = expanded.map_blocks(detect_blobs,drop_axis=[2],dtype='float')
+#darr_blobs = expanded.map_blocks(detect_blobs,drop_axis=[2],dtype='float')
+darr_blobs = darr_chan.map_blocks(detect_blobs,drop_axis=[2],dtype='float')
 
 with ProgressBar():
+#    da.to_zarr(darr_blobs,snakemake.output.zarr)
     computed_blobs = darr_blobs.compute()
 
 #TODO: pick a better format? tsv? 

@@ -54,11 +54,11 @@ rule blob_detection_betaamyloid:
             **inputs["spim"].wildcards
         ),
     params:
-        level=3,  #downsample-level to perform blob detection on
+        level=5,  #downsample-level to perform blob detection on
         min_sigma_um=1,
         max_sigma_um=100, # also serves as size of chunk borders
         threshold=0.06,
-        chunks=(1,400,200,200),
+#        chunks=(1,400,100,100),
     output:
         npy=bids(
             root=root,
@@ -90,6 +90,26 @@ rule blob_detection_PI:
         ),
     script:
         '../scripts/blob_detection.py'
+
+
+rule cellpose_BetaAmyloid:
+    input:
+        zarr=inputs["spim"].path,
+    params:
+        level=5,  #downsample-level to perform segmentation on
+        chunks=(1,100,50,50),
+    output:
+        zarr=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain,BetaAmyloid}",
+            desc='cellpose',
+            suffix="dseg.zarr",
+            **inputs["spim"].wildcards
+        ),
+    container: None
+    script:
+        '../scripts/cellpose.py'
 
 
 """
