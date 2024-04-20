@@ -96,18 +96,19 @@ rule cellpose_BetaAmyloid:
     input:
         zarr=inputs["spim"].path,
     params:
-        level=5,  #downsample-level to perform segmentation on
-        chunks=(1,100,50,50),
+        level=2,  #downsample-level to perform segmentation on
+        chunks=(200,200,200)
     output:
-        zarr=bids(
+        zarr=directory(bids(
             root=root,
             datatype="micr",
             stain="{stain,BetaAmyloid}",
             desc='cellpose',
             suffix="dseg.zarr",
             **inputs["spim"].wildcards
-        ),
+        )),
     container: None
+    threads: 32
     script:
         '../scripts/cellpose.py'
 

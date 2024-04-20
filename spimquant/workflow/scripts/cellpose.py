@@ -6,6 +6,10 @@ from dask.diagnostics import ProgressBar
 from skimage import color
 import torch
 from cellpose import models
+from dask.distributed import LocalCluster
+import dask
+
+dask.config.set(scheduler='threads',num_workers=6)
 
 
 # ## Load the 3D Cellpose model
@@ -31,19 +35,17 @@ channel_index = channel_labels.index(snakemake.wildcards.stain)
 
 level = snakemake.params.level
 
-img_da = da.from_zarr(in_zarr,component=f'{level}',chunks=snakemake.params.chunks)[channel_index,:,:,:]
+img_da = da.from_zarr(in_zarr,component=f'{level}')[channel_index,:,:,:].squeeze().rechunk(chunks=snakemake.params.chunks)
 
-
-labels = relabel.image2labels(
-        img_da,seg_fn=cellposeLabel,
-        overlaps=[0, 64, 64],
-        ndim=3,
-        segmentation_fn_kwargs={"model": model})
+labels = da.map_blocks(
+        cellposeLabel,
+        img_da,
+        model=model,
+        dtype=np.int32,
+        meta=np.empty((0, 0), dtype=np.int32)
+    )
 
 
 with ProgressBar():
-    labels.rechunk(chunks=snakemake.params.chunks).to_zarr(snakemake.output.zarr)
-
-
-
+    labels.to_zarr(snakemake.output.zarr)
 
