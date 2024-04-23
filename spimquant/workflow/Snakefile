@@ -32,67 +32,68 @@ container: config["containers"]["spimprep"]
 
 rule all_atlasreg_deform_zooms:
     input:
-        spim_zoomed=inputs["spim"]
-            .expand(
-                bids(
-                    root=root,
-                    datatype="micr",
-                    desc="deform",
-                    space="{template}",
-                    stain="{stain}",
-                    res="{res}um",
-                    suffix="SPIM.nii",
-                    **inputs["spim"].wildcards
-                ),
-                template=config['templates'],
-                stain=config['stains'],
-                res=config['atlasreg']['zooms'],
+        spim_zoomed=inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="deform",
+                space="{template}",
+                stain="{stain}",
+                res="{res}um",
+                suffix="SPIM.nii",
+                **inputs["spim"].wildcards
             ),
+            template=config["templates"],
+            stain=config["stains"],
+            res=config["atlasreg"]["zooms"],
+        ),
+
 
 rule all_blobs:
     input:
-        spim_zoomed=inputs["spim"]
-            .expand(bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            suffix="blobs.npy",
-            **inputs["spim"].wildcards
+        spim_zoomed=inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                suffix="blobs.npy",
+                **inputs["spim"].wildcards
+            ),
+            stain=config["stains"],
         ),
-        stain=config['stains']
-        )
+
 
 rule all_atlasreg_deform:
     input:
-        spim=inputs["spim"]
-            .expand(
-                bids(
-                    root=root,
-                    datatype="micr",
-                    desc="deform",
-                    space="{template}",
-                    stain="{stain}",
-                    suffix="SPIM.nii",
-                    **inputs["spim"].wildcards
-                ),
-                template=config['templates'],
-                stain=config['stains'],
-            )
+        spim=inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="deform",
+                space="{template}",
+                stain="{stain}",
+                suffix="SPIM.nii",
+                **inputs["spim"].wildcards
+            ),
+            template=config["templates"],
+            stain=config["stains"],
+        ),
+
 
 rule all_atlasreg_lbl:
     input:
-        dseg=inputs["spim"]
-            .expand(
-                bids(
-                    root=root,
-                    datatype="micr",
-                    desc="resampled",
-                    from_="{template}",
-                    suffix="dseg.ome.zarr.zip",
-                    **inputs["spim"].wildcards
-                ),
-                template=config['templates'],
-            )
+        dseg=inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="resampled",
+                from_="{template}",
+                suffix="dseg.ome.zarr.zip",
+                **inputs["spim"].wildcards
+            ),
+            template=config["templates"],
+        ),
+
 
 include: "rules/common.smk"
 include: "rules/import.smk"

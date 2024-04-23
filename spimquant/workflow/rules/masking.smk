@@ -9,37 +9,39 @@ rule atropos_seg:
             **inputs["spim"].wildcards
         ),
     params:
-        downsampling='50%',
+        downsampling="50%",
         mrf_smoothing=0.3,
-        mrf_radius='2x2x2',
+        mrf_radius="2x2x2",
     output:
         dseg=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='Atropos',
-            k='{k}',
+            desc="Atropos",
+            k="{k}",
             suffix="dseg.nii",
             **inputs["spim"].wildcards
         ),
-        posteriors_dir=directory(bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            desc='Atropos',
-            k='{k}',
-            suffix="posteriors",
-            **inputs["spim"].wildcards
-        )),
-
+        posteriors_dir=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="Atropos",
+                k="{k}",
+                suffix="posteriors",
+                **inputs["spim"].wildcards
+            )
+        ),
     container:
         None
-    shadow: 'minimal'
+    shadow:
+        "minimal"
     threads: 1
     resources:
-        mem_mb=16000
+        mem_mb=16000,
     shell:
         "mkdir -p {output.posteriors_dir} && "
         "c3d {input.nii} -resample {params.downsampling} -o downsampled.nii -scale 0 -shift 1 -o ones.nii && "
@@ -49,6 +51,7 @@ rule atropos_seg:
         " --output [dseg_downsampled.nii,{output.posteriors_dir}/class-%02d.nii] "
         " --mask-image ones.nii --mrf [{params.mrf_smoothing},{params.mrf_radius}] && "
         "c3d -interpolation NearestNeighbor {input.nii} dseg_downsampled.nii -reslice-identity -o {output.dseg}"
+
 
 rule init_affine_reg:
     """initial affine registration used to obtain priors for brainmasking"""
@@ -97,6 +100,7 @@ rule init_affine_reg:
         "  -rm {input.subject} {output.warped} "
         "  -r {output.xfm_ras}"
 
+
 rule transform_template_dseg_to_subject:
     input:
         ref=bids(
@@ -111,20 +115,19 @@ rule transform_template_dseg_to_subject:
         xfm_ras=rules.init_affine_reg.output.xfm_ras,
     output:
         dseg=bids(
-                    root=root,
-                    datatype="micr",
-                    desc="initaffine",
-                    from_="{template}",
-                    suffix="dseg.nii.gz",
-                    **inputs["spim"].wildcards
-            )
+            root=root,
+            datatype="micr",
+            desc="initaffine",
+            from_="{template}",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards
+        ),
     threads: 32
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         " -ri NN"
         "  -rm {input.dseg} {output.dseg} "
         "  -r {input.xfm_ras},-1 "
-
 
 
 rule create_mask_from_gmm_and_prior:
@@ -134,34 +137,34 @@ rule create_mask_from_gmm_and_prior:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='Atropos',
-            k=config['masking']['gmm_k'],
+            desc="Atropos",
+            k=config["masking"]["gmm_k"],
             suffix="dseg.nii",
             **inputs["spim"].wildcards
         ),
         atlas_dseg=bids(
-                    root=root,
-                    datatype="micr",
-                    desc="initaffine",
-                    from_=config['masking']['atlas_prior_for_mask'],
-                    suffix="dseg.nii.gz",
-                    **inputs["spim"].wildcards
-            )
+            root=root,
+            datatype="micr",
+            desc="initaffine",
+            from_=config["masking"]["atlas_prior_for_mask"],
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards
+        ),
     params:
-            k=config['masking']['gmm_k'],
+        k=config["masking"]["gmm_k"],
     output:
         mask=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='brain',
+            desc="brain",
             suffix="mask.nii",
             **inputs["spim"].wildcards
-        ),  
+        ),
     script:
-        '../scripts/create_mask_from_gmm_and_prior.py'
-    
+        "../scripts/create_mask_from_gmm_and_prior.py"
+
 
 rule create_mask_from_gmm:
     input:
@@ -170,24 +173,22 @@ rule create_mask_from_gmm:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='Atropos',
-            k=config['masking']['gmm_k'],
+            desc="Atropos",
+            k=config["masking"]["gmm_k"],
             suffix="dseg.nii",
             **inputs["spim"].wildcards
         ),
     params:
-        bg_label=config['masking']['gmm_bg_class']
+        bg_label=config["masking"]["gmm_bg_class"],
     output:
         mask=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='brain1class',
+            desc="brain1class",
             suffix="mask.nii",
             **inputs["spim"].wildcards
-        ),  
+        ),
     shell:
-        'c3d {input} -threshold {params.bg_label} {params.bg_label} 0 1 -o {output}'
-
-
+        "c3d {input} -threshold {params.bg_label} {params.bg_label} 0 1 -o {output}"

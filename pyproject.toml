@@ -41,6 +41,8 @@ napari-ome-zarr = "^0.5.2"
 pyqt5 = "=5.15.10"   
 pyqt5-qt5 = "=5.15.2"
 cellpose = "^3.0.7"
+sparse = "^0.15.1"
+napari-nibabel = "^0.1.0"
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:main"

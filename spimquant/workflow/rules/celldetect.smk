@@ -2,44 +2,43 @@ rule brainmask_penalty:
     """ generates a distance-based term to penalize blob detection
         at the brain boundary and outside it. Uses a signed distance transform
         (sdt) followed by scaled logistic function. 
-    """ 
+    """
     input:
         mask=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='brain',
+            desc="brain",
             suffix="mask.nii",
             **inputs["spim"].wildcards
-        ),  
+        ),
     params:
-        k=50, #steepness of logistic function (how fast it drops off) (penalty_weight)
-        x0=0.1, #distance from boundary where it is penalized by 50%, in millimeters (penalty_distance_mm)
-        
-
+        k=50,  #steepness of logistic function (how fast it drops off) (penalty_weight)
+        x0=0.1,  #distance from boundary where it is penalized by 50%, in millimeters (penalty_distance_mm)
     output:
         sdt=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='brain',
+            desc="brain",
             suffix="sdt.nii",
             **inputs["spim"].wildcards
-        ),  
+        ),
         penalty=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='brain',
+            desc="brain",
             suffix="penalty.nii",
             **inputs["spim"].wildcards
-        ),  
+        ),
     shell:
-        'c3d {input.mask} -sdt -scale -1 -o {output.sdt} -shift -{params.x0} -scale -{params.k} -exp -shift 1 -reciprocal '
-        ' -o {output.penalty}'
+        "c3d {input.mask} -sdt -scale -1 -o {output.sdt} -shift -{params.x0} -scale -{params.k} -exp -shift 1 -reciprocal "
+        " -o {output.penalty}"
+
 
 rule blob_detection_betaamyloid:
     input:
@@ -47,29 +46,75 @@ rule blob_detection_betaamyloid:
         penalty=bids(
             root=root,
             datatype="micr",
-            stain=config['masking']['stain'],
-            level=config['masking']['level'],
-            desc='brain',
+            stain=config["masking"]["stain"],
+            level=config["masking"]["level"],
+            desc="brain",
             suffix="penalty.nii",
             **inputs["spim"].wildcards
         ),
     params:
-        level=5,  #downsample-level to perform blob detection on
+        level=lambda wildcards: int(wildcards.level),  #downsample-level to perform blob detection on
         min_sigma_um=1,
-        max_sigma_um=100, # also serves as size of chunk borders
+        max_sigma_um=100,  # also serves as size of chunk borders
         threshold=0.06,
-#        chunks=(1,400,100,100),
+        chunks=(1,127,122,116),
     output:
-        npy=bids(
+        sparse_npz=bids(
             root=root,
             datatype="micr",
+            level='{level}',
             stain="{stain,BetaAmyloid}",
-            suffix="blobs.npy",
+            suffix="sparseblobs.npz",
+            **inputs["spim"].wildcards
+        ),
+        points_npy=bids(
+            root=root,
+            datatype="micr",
+            level='{level}',
+            stain="{stain,BetaAmyloid}",
+            suffix="points.npy",
+            **inputs["spim"].wildcards
+        ),
+    threads: 6
+    container: None
+    shadow: 'minimal'
+    script:
+        "../scripts/blob_detection.py"
+
+rule filter_blobs:
+    input:
+        points_npy=bids(
+            root=root,
+            datatype="micr",
+            level='{level}',
+            stain="{stain,BetaAmyloid}",
+            suffix="points.npy",
+            **inputs["spim"].wildcards
+        ),
+        penalty=bids(
+            root=root,
+            datatype="micr",
+            stain=config["masking"]["stain"],
+            level=config["masking"]["level"],
+            desc="brain",
+            suffix="penalty.nii",
+            **inputs["spim"].wildcards
+        ), 
+    params:
+        #penalty is from 0 to 1 (0.5 at the penalty_distance)
+        threshold=0.5
+    output:
+        points_npy=bids(
+            root=root,
+            datatype="micr",
+            level='{level}',
+            desc='filtered',
+            stain="{stain,BetaAmyloid}",
+            suffix="points.npy",
             **inputs["spim"].wildcards
         ),
     script:
-        '../scripts/blob_detection.py'
-
+        '../scripts/filter_blobs.py'
 
 rule blob_detection_PI:
     input:
@@ -77,40 +122,44 @@ rule blob_detection_PI:
     params:
         level=3,  #downsample-level to perform blob detection on
         min_sigma_um=1,
-        max_sigma_um=50, # also serves as size of chunk borders
+        max_sigma_um=50,  # also serves as size of chunk borders
         threshold=0.06,
-        chunks=(1,400,200,200),
-    output:
-        npy=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain,PI}",
-            suffix="blobs.npy",
-            **inputs["spim"].wildcards
-        ),
-    script:
-        '../scripts/blob_detection.py'
-
-
-rule cellpose_BetaAmyloid:
-    input:
-        zarr=inputs["spim"].path,
-    params:
-        level=2,  #downsample-level to perform segmentation on
-        chunks=(200,200,200)
+        chunks=(1, 400, 200, 200),
     output:
         zarr=directory(bids(
             root=root,
             datatype="micr",
-            stain="{stain,BetaAmyloid}",
-            desc='cellpose',
-            suffix="dseg.zarr",
+            stain="{stain,PI}",
+            suffix="blobs.zarr",
             **inputs["spim"].wildcards
         )),
-    container: None
-    threads: 32
     script:
-        '../scripts/cellpose.py'
+        "../scripts/blob_detection.py"
+
+
+rule cellpose:
+    input:
+        zarr=inputs["spim"].path,
+    params:
+        level=lambda wildcards: int(wildcards.level),  #downsample-level to perform segmentation on
+        chunks=(200, 200, 200),
+    output:
+        zarr=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="cellpose",
+                suffix="dseg.zarr",
+                **inputs["spim"].wildcards
+            )
+        ),
+    container:
+        None
+    threads: 6
+    script:
+        "../scripts/cellpose.py"
 
 
 """
@@ -179,26 +228,24 @@ detectCellShapeParameter = {
 """
 
 
-#perhaps illumination correction not needed if this is already done at the tile level
+# perhaps illumination correction not needed if this is already done at the tile level
 
-#background removal is via subtraction of morphological opening with disk (size=
+# background removal is via subtraction of morphological opening with disk (size=
 #  can use: skimage.morphology.opening
 
-#difference of gaussian
+# difference of gaussian
 #  sigma=
 #   can use skimage.feature.blob_dog
 
 
-#maximum detection:
+# maximum detection:
 # can use: skimage.feature.peak_local_max
 #
 
-#cell shape detection:
+# cell shape detection:
 #     imgws = watershed(-img, imgpeaks, mask = imgmask);
 #
 #     can use skimage.segmentation.watershed
 #
-
-
-#cell intensity and size measurements
+# cell intensity and size measurements
 # skimage.measure.regionprops

@@ -1,4 +1,4 @@
-    
+
 rule n4:
     input:
         nii=bids(
@@ -14,18 +14,17 @@ rule n4:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='brain',
+            desc="brain",
             suffix="mask.nii",
             **inputs["spim"].wildcards
-        ),  
-
+        ),
     output:
         corrected=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='N4',
+            desc="N4",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
@@ -34,7 +33,7 @@ rule n4:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='N4',
+            desc="N4",
             suffix="biasfield.nii",
             **inputs["spim"].wildcards
         ),
@@ -46,6 +45,7 @@ rule n4:
         " -x {input.mask} "
         " -d 3 -v "
 
+
 rule apply_mask_to_corrected:
     input:
         corrected=bids(
@@ -53,7 +53,7 @@ rule apply_mask_to_corrected:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='N4',
+            desc="N4",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
@@ -62,21 +62,23 @@ rule apply_mask_to_corrected:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='brain',
+            desc="brain",
             suffix="mask.nii",
-            **inputs["spim"].wildcards)
+            **inputs["spim"].wildcards
+        ),
     output:
         masked=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc='N4brain',
+            desc="N4brain",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
     shell:
-        'c3d {input.corrected} {input.mask} -multiply -o {output.masked}'
+        "c3d {input.corrected} {input.mask} -multiply -o {output.masked}"
+
 
 rule affine_reg:
     input:
@@ -125,6 +127,7 @@ rule affine_reg:
         "  -rm {input.subject} {output.warped} "
         "  -r {output.xfm_ras}"
 
+
 rule deform_reg:
     input:
         template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
@@ -139,10 +142,10 @@ rule deform_reg:
         ),
         xfm_ras=rules.affine_reg.output.xfm_ras,
     params:
-        iters='100x50',
-        metric='NMI',
-        sigma1='4vox',
-        sigma2='2vox'
+        iters="100x50",
+        metric="NMI",
+        sigma1="4vox",
+        sigma2="2vox",
     output:
         warp=bids(
             root=root,
@@ -178,7 +181,7 @@ rule deform_reg:
         ),
     threads: 32
     resources:
-        mem_mb=16000
+        mem_mb=16000,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -it {input.xfm_ras} -m {params.metric} "
@@ -226,26 +229,29 @@ rule resample_labels_to_zarr:
     script:
         "../scripts/resample_labels_to_zarr.py"
 
+
 rule affine_zarr_to_template_nii:
     input:
         ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        chunks=(50,50,50),
+        chunks=(50, 50, 50),
         zooms=None,
     output:
         nii=bids(
-                    root=root,
-                    datatype="micr",
-                    desc="affine",
-                    space="{template}",
-                    stain="{stain}",
-                    suffix="SPIM.nii",
-                    **inputs["spim"].wildcards
-                )
+            root=root,
+            datatype="micr",
+            desc="affine",
+            space="{template}",
+            stain="{stain}",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards
+        ),
     threads: 32
-    script: '../scripts/affine_to_template_nii.py'
+    script:
+        "../scripts/affine_to_template_nii.py"
+
 
 rule affine_zarr_to_template_ome_zarr:
     input:
@@ -253,20 +259,24 @@ rule affine_zarr_to_template_ome_zarr:
         xfm_ras=rules.affine_reg.output.xfm_ras,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        chunks=(50,50,50),
+        chunks=(50, 50, 50),
         zooms=None,
     output:
-        ome_zarr=directory(bids(
-                    root=root,
-                    datatype="micr",
-                    desc="affine",
-                    space="{template}",
-                    stain="{stain}",
-                    suffix="spim.ome.zarr",
-                    **inputs["spim"].wildcards
-                ))
+        ome_zarr=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="affine",
+                space="{template}",
+                stain="{stain}",
+                suffix="spim.ome.zarr",
+                **inputs["spim"].wildcards
+            )
+        ),
     threads: 32
-    script: '../scripts/affine_to_template_ome_zarr.py'
+    script:
+        "../scripts/affine_to_template_ome_zarr.py"
+
 
 rule deform_zarr_to_template_nii:
     input:
@@ -275,20 +285,21 @@ rule deform_zarr_to_template_nii:
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        chunks=(50,50,50),
+        chunks=(50, 50, 50),
         zooms=None,
     output:
         nii=bids(
-                    root=root,
-                    datatype="micr",
-                    desc="deform",
-                    space="{template}",
-                    stain="{stain}",
-                    suffix="SPIM.nii",
-                    **inputs["spim"].wildcards
-                )
+            root=root,
+            datatype="micr",
+            desc="deform",
+            space="{template}",
+            stain="{stain}",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards
+        ),
     threads: 32
-    script: '../scripts/deform_to_template_nii.py'
+    script:
+        "../scripts/deform_to_template_nii.py"
 
 
 rule deform_to_template_nii_zoomed:
@@ -298,21 +309,27 @@ rule deform_to_template_nii_zoomed:
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        chunks=(50,50,50),
-        zooms=lambda wildcards: (float(wildcards.res)/1000,float(wildcards.res)/1000,float(wildcards.res)/1000) #None #same resolution as template if NOne
+        chunks=(50, 50, 50),
+        zooms=lambda wildcards: (
+            float(wildcards.res) / 1000,
+            float(wildcards.res) / 1000,
+            float(wildcards.res) / 1000,
+        ),  #None #same resolution as template if NOne
     output:
         nii=bids(
-                    root=root,
-                    datatype="micr",
-                    desc="deform",
-                    space="{template}",
-                    stain="{stain}",
-                    res="{res}um",
-                    suffix="SPIM.nii",
-                    **inputs["spim"].wildcards
-                )
+            root=root,
+            datatype="micr",
+            desc="deform",
+            space="{template}",
+            stain="{stain}",
+            res="{res}um",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards
+        ),
     threads: 32
-    script: '../scripts/deform_to_template_nii.py'
+    script:
+        "../scripts/deform_to_template_nii.py"
+
 
 rule deform_to_template_nii_nb:
     input:
@@ -321,21 +338,23 @@ rule deform_to_template_nii_nb:
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        chunks=(20,20,20),
-        zooms=None #same resolution as template if NOne
+        chunks=(20, 20, 20),
+        zooms=None,  #same resolution as template if NOne
     output:
         nii=bids(
-                    root=root,
-                    datatype="micr",
-                    desc="deformnb",
-                    space="{template}",
-                    stain="{stain}",
-                    suffix="SPIM.nii",
-                    **inputs["spim"].wildcards
-                )
-    container: None
+            root=root,
+            datatype="micr",
+            desc="deformnb",
+            space="{template}",
+            stain="{stain}",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards
+        ),
+    container:
+        None
     threads: 32
-    notebook: '../notebooks/deform_to_template_nii.py.ipynb'
+    notebook:
+        "../notebooks/deform_to_template_nii.py.ipynb"
 
 
 rule deform_transform_labels_to_subj:
@@ -345,47 +364,48 @@ rule deform_transform_labels_to_subj:
         invwarp_nii=rules.deform_reg.output.invwarp,
         flo_nii=bids_tpl(root=root, template="{template}", suffix="dseg.nii.gz"),
     output:
-        zarr=directory(bids(
-                    root=root,
-                    datatype="micr",
-                    desc="deform",
-                    space="subject",
-                    suffix="dseg.zarr",
-                    **inputs["spim"].wildcards
-                ))
-    container: None
+        zarr=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="deform",
+                space="subject",
+                suffix="dseg.zarr",
+                **inputs["spim"].wildcards
+            )
+        ),
+    container:
+        None
     threads: 32
-    script: '../scripts/deform_transform_channel_to_template_nii.py'
-
+    script:
+        "../scripts/deform_transform_channel_to_template_nii.py"
 
 
 rule transform_labels_to_zoomed_template:
     input:
         dseg=bids_tpl(root=root, template="{template}", suffix="dseg.nii.gz"),
         ref=bids(
-                    root=root,
-                    datatype="micr",
-                    desc="deform",
-                    space="{template}",
-                    stain=config['atlasreg']['stain'],
-                    res="{res}um",
-                    suffix="SPIM.nii",
-                    **inputs["spim"].wildcards
-                )
+            root=root,
+            datatype="micr",
+            desc="deform",
+            space="{template}",
+            stain=config["atlasreg"]["stain"],
+            res="{res}um",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards
+        ),
     output:
         dseg=bids(
-                    root=root,
-                    datatype="micr",
-                    space="{template}",
-                    res="{res}um",
-                    suffix="dseg.nii",
-                    **inputs["spim"].wildcards
-                )
+            root=root,
+            datatype="micr",
+            space="{template}",
+            res="{res}um",
+            suffix="dseg.nii",
+            **inputs["spim"].wildcards
+        ),
     threads: 32
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n NearestNeighbor "
         " -i {input.dseg} -o {output.dseg} "
         " -r {input.ref} "
-
-

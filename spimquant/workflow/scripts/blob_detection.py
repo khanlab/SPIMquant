@@ -1,11 +1,15 @@
 import zarr
 import dask.array as da
-from dask.array.overlap import overlap
+import dask
+from dask.array.overlap import overlap, trim_overlap
 import numpy as np
 from math import sqrt
 from skimage.feature import blob_dog
 from dask.diagnostics import ProgressBar
+import sparse
 
+#set threads
+dask.config.set(scheduler='threads',num_workers=snakemake.threads)
 
 in_zarr = snakemake.input.zarr
 
@@ -23,9 +27,9 @@ level=snakemake.params.level
 transforms = attrs['multiscales'][0]['datasets'][level]['coordinateTransformations']
 
 
-#darr_chan = da.from_zarr(in_zarr,component=f'{level}',chunks=snakemake.params.chunks)[channel_index,:,:,:]
-darr_chan = da.from_zarr(in_zarr,component=f'{level}',chunks=(1,1,50,50))[channel_index,:,:,:]
+darr_chan = da.from_zarr(in_zarr,component=f'{level}',chunks=snakemake.params.chunks)[channel_index,:,:,:]
 
+print(f'before adding overlap:')
 print(f'shape: {darr_chan.shape}')
 print(f'chunks: {darr_chan.chunks}')
 
@@ -53,28 +57,51 @@ def detect_blobs(x,block_info=None):
 
     blobs_dog = blob_dog(x, min_sigma=min_sigma_px, max_sigma=max_sigma_px, 
             threshold=snakemake.params.threshold, exclude_border=boundary_px)
-    blobs_dog[:, -1] = blobs_dog[:, -1] * (2 ** 0.3333)  #adjust to get radius
 
-    #offset by chunk location, then scale by header
-    for ax in range(3):
-        #scale the coordinates
-        blobs_dog[:,ax] = scaling_zyx[ax] * (arr_location[ax][0] + blobs_dog[:,ax])
+    #we have coordinates, now convert to a volumetric representation
+    #-- (index,sigma_0,sigma_1,sigma_2) -- this requires 
 
-        #and the radii 
-        blobs_dog[:,ax+3] =  scaling_zyx[ax] * blobs_dog[:,ax+3]
+    blobs_dog[:, 3:] = blobs_dog[:, 3:] * sqrt(3) #adjust each sigma to get radius (this is still in pixels)
+
+    blobs_img = np.zeros((x.shape[0],x.shape[1],x.shape[2],4),dtype=np.float32)
+    for i in range(blobs_dog.shape[0]):
+        blobs_img[int(blobs_dog[i,0]),int(blobs_dog[i,1]),int(blobs_dog[i,2]),0] = i+1 #set to index for now (1-indexed)
+        for sigma_i in range(3):
+            blobs_img[int(blobs_dog[i,0]),int(blobs_dog[i,1]),int(blobs_dog[i,2]),1+sigma_i] = blobs_dog[i,sigma_i] 
+
+    return blobs_img
+
+expanded = overlap(darr_chan, depth=boundary_px, boundary=0)
+
+print(f'after adding overlap:')
+print(f'shape: {expanded.shape}')
+print(f'chunks: {expanded.chunks}')
 
 
-    return blobs_dog
+darr_blobs = expanded.map_blocks(detect_blobs,dtype=np.float32,meta=np.array((), dtype=np.float32))
 
-#expanded = overlap(darr_chan, depth=boundary_px, boundary=0)
+darr_blobs_trim = trim_overlap(darr_blobs,depth=boundary_px,boundary=0)
 
-#darr_blobs = expanded.map_blocks(detect_blobs,drop_axis=[2],dtype='float')
-darr_blobs = darr_chan.map_blocks(detect_blobs,drop_axis=[2],dtype='float')
 
+"""
+#save to zarr 
 with ProgressBar():
-#    da.to_zarr(darr_blobs,snakemake.output.zarr)
-    computed_blobs = darr_blobs.compute()
+    darr_blobs_trim.to_zarr('temp.zarr')
 
-#TODO: pick a better format? tsv? 
-np.save(snakemake.output.npy,computed_blobs)
+#now convert the saved zarr to a sparse array
+with ProgressBar():
+    sparse_array = da.from_zarr('temp.zarr').map_blocks(sparse.COO).compute()
+"""
 
+
+#try skipping the zarr intermediary - but below might be too memory-intensive??
+with ProgressBar():
+    sparse_array = darr_blobs_trim.map_blocks(sparse.COO).compute()
+
+#save the sparse array
+sparse.save_npz(snakemake.output.sparse_npz,sparse_array)
+
+#multiply coords with physical size
+scaled_coords = sparse_array[:,:,:,0].coords.T * scaling_zyx.reshape(1,3)
+
+np.save(snakemake.output.points_npy,scaled_coords)
