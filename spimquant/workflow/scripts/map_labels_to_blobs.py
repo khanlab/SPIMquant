@@ -55,11 +55,11 @@ print(f'label_at_points, shape: {label_at_points.shape}, mean: {label_at_points.
 
 
 #save the points plus labels as a tsv
-df = pd.DataFrame(np.hstack((points,label_at_points.reshape((label_at_points.shape[0],1)))),columns=['z','y','x','label_index'],dtype={'label_index': 'int'})
+df = pd.DataFrame(np.hstack((points,label_at_points.reshape((label_at_points.shape[0],1)))),columns=['z','y','x','label_index'])
 
 
 
-df.to_csv(snakemake.output.cells_tsv,sep='\t',index=False)
+df.to_csv(snakemake.output.blobs_tsv,sep='\t',index=False)
 
 
 

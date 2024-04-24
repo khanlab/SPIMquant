@@ -2,20 +2,14 @@ import nibabel as nib
 import pandas as pd
 import numpy as np
 
-dseg_df = pd.read_table(snakemake.input.label_tsv )
+dseg_df = pd.read_csv(snakemake.input.volumes_tsv,sep='\t')
 
+blobs_df = pd.read_csv(snakemake.input.blobs_tsv,sep='\t')
 
-img_nib = nib.load(snakemake.input.dseg)
-img = img_nib.get_fdata()
-zooms = img_nib.header.get_zooms()
+merged_df = dseg_df.merge(blobs_df.groupby('label_index').size().reset_index(name='blob_count'), how='left', left_on='index', right_on='label_index')
 
-# voxel size in mm^3
-voxel_mm3 = np.prod(zooms)
+merged_df = merged_df.drop(columns=['label_index'])
 
-#loop through labels
-def calc_label_volume(x,img,voxel_mm3):
-    return np.sum(img == x)*voxel_mm3
+merged_df['density'] = merged_df['blob_count'] / merged_df['volume']
 
-dseg_df['volume'] = dseg_df['index'].apply(calc_label_volume,args=(img,voxel_mm3))
-
-dseg_df.to_csv(snakemake.output.volumes_tsv, sep="\t", index=False)
+merged_df.to_csv(snakemake.output.density_tsv, sep="\t", index=False)
