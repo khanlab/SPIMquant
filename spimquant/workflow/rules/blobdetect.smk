@@ -150,4 +150,62 @@ rule map_labels_to_blobs:
         '../scripts/map_labels_to_blobs.py'
 
 
+rule generate_subject_density_tsv:
+    """ this reads in the dseg to calc volume, blobs.tsv to calculate number per label, and calculates the density, writing out density and volume for each label in a new tsv file (number of rows = number of labels in atlas)"""
+    input:
+        dseg=bids(
+            root=root,
+            datatype="micr",
+            desc="deform",
+            level=config['blobdetect']['dseg_level'],
+            from_=config['blobdetect']['dseg_template'],
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards
+        ),
+        cells_tsv=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            suffix="blobs.tsv",
+            **inputs["spim"].wildcards
+        ),
+    output:
+        density_tsv=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            suffix="blobdensity.tsv",
+            **inputs["spim"].wildcards
+        ),
+    script: '../scripts/generate_subject_density_tsv.py'
 
+
+
+rule generate_subject_density_nii:
+    """ generates a heatmap """
+    input:
+         density_tsv=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            suffix="blobdensity.tsv",
+            **inputs["spim"].wildcards
+        ),   
+        dseg=bids(
+            root=root,
+            datatype="micr",
+            desc="deform",
+            level=config['blobdetect']['dseg_level'],
+            from_=config['blobdetect']['dseg_template'],
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards
+        ),
+    output:
+         density_nii=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            suffix="blobdensity.nii",
+            **inputs["spim"].wildcards
+        ),
+    script: '../scripts/generate_subject_density_nii.py'
