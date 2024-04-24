@@ -86,9 +86,9 @@ rule affine_reg:
         subject=bids(
             root=root,
             datatype="micr",
-            stain=config["atlasreg"]["stain"],
-            level=config["atlasreg"]["level"],
-            desc=config["atlasreg"]["desc"],
+            stain=config["templatereg"]["stain"],
+            level=config["templatereg"]["level"],
+            desc=config["templatereg"]["desc"],
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
@@ -134,9 +134,9 @@ rule deform_reg:
         subject=bids(
             root=root,
             datatype="micr",
-            stain=config["atlasreg"]["stain"],
-            level=config["atlasreg"]["level"],
-            desc=config["atlasreg"]["desc"],
+            stain=config["templatereg"]["stain"],
+            level=config["templatereg"]["level"],
+            desc=config["templatereg"]["desc"],
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
@@ -195,9 +195,9 @@ rule deform_reg:
 rule resample_labels_to_zarr:
     """TODO: add required OME metadata"""
     input:
-        dseg=rules.import_dseg.output.dseg,
+        dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        label_tsv=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.tsv"),
         xfm_ras=rules.affine_reg.output.xfm_ras,
-        label_tsv=bids_tpl(root=root, template="{template}", suffix="dseg.tsv"),
         zarr_zip=inputs["spim"].path,
     params:
         level_to_resample_to=0,
@@ -357,12 +357,44 @@ rule deform_to_template_nii_nb:
         "../notebooks/deform_to_template_nii.py.ipynb"
 
 
+rule deform_template_dseg_to_subject_nii:
+    """ use this to interpolate labels for each blob, and to calculate volumes"""
+    input:
+        ref=bids(
+            root=root,
+            datatype="micr",
+            stain=config["templatereg"]["stain"],
+            level="{level}",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards
+        ),
+        dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        xfm_ras=rules.init_affine_reg.output.xfm_ras,
+        invwarp=rules.deform_reg.output.invwarp,
+    output:
+        dseg=bids(
+            root=root,
+            datatype="micr",
+            desc="deform",
+            level="{level}",
+            from_="{template}",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards
+        ),
+    threads: 32
+    shell:
+        " greedy -threads {threads} -d 3 -rf {input.ref} "
+        " -ri LABEL 0.2vox " #should be better than NN
+        "  -rm {input.dseg} {output.dseg} "
+        "  -r {input.xfm_ras},-1 {input.invwarp}"
+
+
 rule deform_transform_labels_to_subj:
     input:
         ref_ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         invwarp_nii=rules.deform_reg.output.invwarp,
-        flo_nii=bids_tpl(root=root, template="{template}", suffix="dseg.nii.gz"),
+        flo_nii=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
     output:
         zarr=directory(
             bids(
@@ -377,19 +409,19 @@ rule deform_transform_labels_to_subj:
     container:
         None
     threads: 32
-    script:
+    script:  #TODO this script doesn't exist??
         "../scripts/deform_transform_channel_to_template_nii.py"
 
 
 rule transform_labels_to_zoomed_template:
     input:
-        dseg=bids_tpl(root=root, template="{template}", suffix="dseg.nii.gz"),
+        dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
         ref=bids(
             root=root,
             datatype="micr",
             desc="deform",
             space="{template}",
-            stain=config["atlasreg"]["stain"],
+            stain=config["templatereg"]["stain"],
             res="{res}um",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards

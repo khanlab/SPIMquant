@@ -108,10 +108,9 @@ ome_zarr:
   scaling_method: 'local_mean' #can be nearest, gaussian, local_mean, zoom (zoom uses spline interp)
 
 
-templates: 
-  - ABAv3
+template: ABAv3 #template to use
 
-atlases:
+templates:
   ABAv3:
     anat: '{workflow.basedir}/../resources/ABAv3/P56_Atlas.nii.gz'
     dseg: '{workflow.basedir}/../resources/ABAv3/P56_Annotation.nii.gz'
@@ -125,7 +124,7 @@ stains:
   - PI
   - BetaAmyloid
 
-atlasreg:
+templatereg:
   stain: PI #set this to PI for lifecanvas data 
   level: 5
   desc: N4brain
@@ -136,8 +135,11 @@ atlasreg:
 masking:
   stain: PI #set this to PI for lifecanvas data 
   level: 5
-  atlas_prior_for_mask: ABAv3
+  priors_template: ABAv3
   gmm_k: 9
   gmm_bg_class: 1
 
-
+blobdetect:
+  level: 2 #downsampling level to use for blob detection
+  dseg_level: 3 # downsampling level to use for template when assigning labels to blobs
+  dseg_template: ABAv3

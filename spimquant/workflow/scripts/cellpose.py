@@ -9,7 +9,7 @@ from cellpose import models
 from dask.distributed import LocalCluster
 import dask
 
-dask.config.set(scheduler='threads',num_workers=6)
+dask.config.set(scheduler='threads',num_workers=snakemake.threads)
 
 
 # ## Load the 3D Cellpose model

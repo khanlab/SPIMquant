@@ -30,7 +30,7 @@ root = "results"
 container: config["containers"]["spimprep"]
 
 
-rule all_atlasreg_deform_zooms:
+rule all_templatereg_deform_zooms:
     input:
         spim_zoomed=inputs["spim"].expand(
             bids(
@@ -43,9 +43,9 @@ rule all_atlasreg_deform_zooms:
                 suffix="SPIM.nii",
                 **inputs["spim"].wildcards
             ),
-            template=config["templates"],
+            template=config["template"],
             stain=config["stains"],
-            res=config["atlasreg"]["zooms"],
+            res=config["templatereg"]["zooms"],
         ),
 
 
@@ -63,7 +63,7 @@ rule all_blobs:
         ),
 
 
-rule all_atlasreg_deform:
+rule all_templatereg_deform:
     input:
         spim=inputs["spim"].expand(
             bids(
@@ -80,7 +80,7 @@ rule all_atlasreg_deform:
         ),
 
 
-rule all_atlasreg_lbl:
+rule all_templatereg_lbl:
     input:
         dseg=inputs["spim"].expand(
             bids(
@@ -98,5 +98,5 @@ rule all_atlasreg_lbl:
 include: "rules/common.smk"
 include: "rules/import.smk"
 include: "rules/masking.smk"
-include: "rules/atlasreg.smk"
-include: "rules/celldetect.smk"
+include: "rules/templatereg.smk"
+include: "rules/blobdetect.smk"

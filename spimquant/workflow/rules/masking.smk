@@ -101,7 +101,7 @@ rule init_affine_reg:
         "  -r {output.xfm_ras}"
 
 
-rule transform_template_dseg_to_subject:
+rule affine_transform_template_dseg_to_subject:
     input:
         ref=bids(
             root=root,
@@ -146,7 +146,7 @@ rule create_mask_from_gmm_and_prior:
             root=root,
             datatype="micr",
             desc="initaffine",
-            from_=config["masking"]["atlas_prior_for_mask"],
+            from_=config["masking"]["priors_template"],
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards
         ),

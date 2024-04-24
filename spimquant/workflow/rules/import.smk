@@ -22,7 +22,7 @@ rule get_downsampled_nii:
 
 rule import_anat:
     input:
-        anat=lambda wildcards: format(config["atlases"][wildcards.template]["anat"]),
+        anat=lambda wildcards: format(config["templates"][wildcards.template]["anat"]),
     output:
         anat=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     log:
@@ -38,7 +38,7 @@ rule import_anat:
 
 rule import_dseg:
     input:
-        dseg=lambda wildcards: format(config["atlases"][wildcards.template]["dseg"]),
+        dseg=lambda wildcards: format(config["templates"][wildcards.template]["dseg"]),
     output:
         dseg=bids_tpl(root=root, template="{template}", suffix="dseg.nii.gz"),
     log:
@@ -54,7 +54,7 @@ rule import_dseg:
 
 rule import_labelmapper_lut:
     input:
-        json=lambda wildcards: format(config["atlases"][wildcards.template]["lut"]),
+        json=lambda wildcards: format(config["templates"][wildcards.template]["lut"]),
     output:
         tsv=bids_tpl(root=root, template="{template}", suffix="dseg.tsv"),
     log:
