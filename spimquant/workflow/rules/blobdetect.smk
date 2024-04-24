@@ -139,7 +139,7 @@ rule map_labels_to_blobs:
             **inputs["spim"].wildcards
         ),
     output:
-        cells_tsv=bids(
+        blobs_tsv=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
@@ -172,5 +172,34 @@ rule generate_subject_volumes_tsv:
             **inputs["spim"].wildcards
         ),
     script: '../scripts/generate_subject_volumes_tsv.py'
+
+
+rule generate_subject_density_tsv:
+    """ this reads in the blobs.tsv to calculate number blobs per label, and writes this into the label tsv, along with density (norm by volume"""
+    input:
+        volumes_tsv=bids(
+            root=root,
+            datatype="micr",
+            from_='{template}',
+            suffix="volumes.tsv",
+            **inputs["spim"].wildcards
+        ),
+        blobs_tsv=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            suffix="blobs.tsv",
+            **inputs["spim"].wildcards
+        ),
+    output:
+        density_tsv=bids(
+            root=root,
+            datatype="micr",
+            from_='{template}',
+            stain="{stain}",
+            suffix="blobdensity.tsv",
+            **inputs["spim"].wildcards
+        ),
+    script: '../scripts/generate_subject_density_tsv.py'
 
 
