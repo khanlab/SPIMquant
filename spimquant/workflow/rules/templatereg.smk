@@ -384,7 +384,7 @@ rule deform_template_dseg_to_subject_nii:
     threads: 32
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
-        " -ri LABEL 0.2vox " #should be better than NN
+        " -ri NN " #note: LABEL interpolation not possible with >1000 labels
         "  -rm {input.dseg} {output.dseg} "
         "  -r {input.xfm_ras},-1 {input.invwarp}"
 

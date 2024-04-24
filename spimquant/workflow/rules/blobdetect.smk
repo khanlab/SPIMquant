@@ -147,7 +147,7 @@ rule map_labels_to_blobs:
             **inputs["spim"].wildcards
         ),
     script: 
-        '../map_labels_blobs.py'
+        '../scripts/map_labels_to_blobs.py'
 
 
 

@@ -18,7 +18,7 @@ dseg_grid = (np.arange(dseg_vol.shape[0]),
 # load the coordinates of points (Nx3)
 points = np.load(snakemake.input.points_npy)
 
-print(f'points, mean: {points.mean(axis=0)}, max: {points.max(axis=0)}, min: {points.min(axis=0)}')
+print(f'points, shape: {points.shape}, mean: {points.mean(axis=0)}, max: {points.max(axis=0)}, min: {points.min(axis=0)}')
 
 # points are in RAS (physical) space -- we want to transform them to voxel 
 # space (relative to the dseg_vol), so we can use the dseg_ras2vox for this
@@ -44,12 +44,20 @@ label_at_points = interpn(dseg_grid,
                                 bounds_error=False,
                                 fill_value=0)
 
-print(f'dseg at points, median: {dseg_at_points.median()}, max: {dseg_at_points.max()}, min: {dseg_at_points.min()}')
+print(f'label_at_points, shape: {label_at_points.shape}, mean: {label_at_points.mean()}, max: {label_at_points.max()}, min: {label_at_points.min()}')
 
-#now I have the Nx3 points, and a Nx1 dseg_at_points
+#now I have the Nx3 points, and a Nx1 label_at_points
+
+
+# TODO instead of concatenating arrays, should concat dataframes (to keep points as float, and labels as int)
+
+# TODO add label names too (lookup from dseg tsv)
+
 
 #save the points plus labels as a tsv
-df = pd.DataFrame(np.hstack(points,dseg_at_points),columns='z','y','x','label_index')
+df = pd.DataFrame(np.hstack((points,label_at_points.reshape((label_at_points.shape[0],1)))),columns=['z','y','x','label_index'],dtype={'label_index': 'int'})
+
+
 
 df.to_csv(snakemake.output.cells_tsv,sep='\t',index=False)
 
