@@ -203,3 +203,94 @@ rule generate_subject_density_tsv:
     script: '../scripts/generate_subject_density_tsv.py'
 
 
+rule map_density_tsv_dseg_to_nii:
+    """ uses generic script that paints regions with column data (e.g. use this to make density heat-maps)"""
+    input:
+        tsv=bids(
+            root=root,
+            datatype="micr",
+            from_='{template}',
+            stain="{stain}",
+            suffix="blobdensity.tsv",
+            **inputs["spim"].wildcards
+        ),
+        dseg=bids(
+            root=root,
+            datatype="micr",
+            desc="deform",
+            level=config['blobdetect']['dseg_level'],
+            from_='{template}',
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards
+        ),
+    params:
+        label_column='index',
+        feature_column='density'
+    output:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            from_='{template}',
+            stain="{stain}",
+            suffix="blobdensity.nii",
+            **inputs["spim"].wildcards
+        ),
+    script:
+        '../scripts/map_tsv_dseg_to_nii.py'
+
+
+rule map_density_tsv_dseg_to_template_nii:
+    """ uses generic script that paints regions with column data (e.g. use this to make density heat-maps)"""
+    input:
+        tsv=bids(
+            root=root,
+            datatype="micr",
+            from_='{template}',
+            stain="{stain}",
+            suffix="blobdensity.tsv",
+            **inputs["spim"].wildcards
+        ),
+        dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+    params:
+        label_column='index',
+        feature_column='density'
+    output:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            space='{template}',
+            stain="{stain}",
+            suffix="blobdensity.nii",
+            **inputs["spim"].wildcards
+        ),
+    script:
+        '../scripts/map_tsv_dseg_to_nii.py'
+
+
+
+rule map_volume_tsv_dseg_to_template_nii:
+    """ uses generic script that paints regions with column data (e.g. use this to make density heat-maps)"""
+    input:
+        tsv=bids(
+            root=root,
+            datatype="micr",
+            from_='{template}',
+            stain="{stain}",
+            suffix="blobdensity.tsv",
+            **inputs["spim"].wildcards
+        ),
+        dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+    params:
+        label_column='index',
+        feature_column='volume'
+    output:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            space='{template}',
+            stain="{stain}",
+            suffix="volume.nii",
+            **inputs["spim"].wildcards
+        ),
+    script:
+        '../scripts/map_tsv_dseg_to_nii.py'
