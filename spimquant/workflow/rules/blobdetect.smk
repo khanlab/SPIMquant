@@ -35,6 +35,7 @@ rule brainmask_penalty:
             suffix="penalty.nii",
             **inputs["spim"].wildcards
         ),
+    container: config['containers']['itksnap']
     shell:
         "c3d {input.mask} -sdt -scale -1 -o {output.sdt} -shift -{params.x0} -scale -{params.k} -exp -shift 1 -reciprocal "
         " -o {output.penalty}"
@@ -76,7 +77,7 @@ rule blob_detection_betaamyloid:
             **inputs["spim"].wildcards
         ),
     threads: 6
-    container: None
+    container: None  # since sparse is not in spimprep container yet
     shadow: 'minimal'
     script:
         "../scripts/blob_detection.py"

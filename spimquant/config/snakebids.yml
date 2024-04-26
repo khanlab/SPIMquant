@@ -93,7 +93,8 @@ parse_args:
 
 containers:
   spimprep: 'docker://khanlab/spimprep-deps:main'
-
+  ants: 'docker://kaczmarj/ants:2.3.4'
+  itksnap: 'docker://khanlab/itksnap:latest' 
 
 root: 'results'
 work: 'work'

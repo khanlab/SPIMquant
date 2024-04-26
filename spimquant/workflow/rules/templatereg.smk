@@ -37,8 +37,7 @@ rule n4:
             suffix="biasfield.nii",
             **inputs["spim"].wildcards
         ),
-    container:
-        None
+    container: config['container']['ants']
     shell:
         "N4BiasFieldCorrection -i {input.nii}"
         " -o [{output.corrected},{output.biasfield}]"
@@ -76,6 +75,7 @@ rule apply_mask_to_corrected:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
+    container: config['containers']['itksnap']
     shell:
         "c3d {input.corrected} {input.mask} -multiply -o {output.masked}"
 
@@ -120,6 +120,7 @@ rule affine_reg:
             **inputs["spim"].wildcards
         ),
     threads: 32
+    container: config['containers']['itksnap']
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} && "
@@ -182,6 +183,7 @@ rule deform_reg:
     threads: 32
     resources:
         mem_mb=16000,
+    container: config['containers']['itksnap']
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -it {input.xfm_ras} -m {params.metric} "
@@ -382,6 +384,7 @@ rule deform_template_dseg_to_subject_nii:
             **inputs["spim"].wildcards
         ),
     threads: 32
+    container: config['containers']['itksnap']
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         " -ri NN " #note: LABEL interpolation not possible with >1000 labels
@@ -436,6 +439,7 @@ rule transform_labels_to_zoomed_template:
             **inputs["spim"].wildcards
         ),
     threads: 32
+    container: config['container']['ants']
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n NearestNeighbor "

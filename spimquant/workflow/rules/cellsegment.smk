@@ -18,7 +18,7 @@ rule cellpose:
             )
         ),
     container:
-        None
+        None #since cellpose not in container yet
     threads: 6
     script:
         "../scripts/cellpose.py"
