@@ -77,7 +77,7 @@ rule atropos_seg:
         "Atropos -v -d 3 --initialization KMeans[{wildcards.k}] "
         " --intensity-image {input.downsampled} "
         " --output [{output.dseg},{output.posteriors_dir}/class-%02d.nii] "
-        " --mask-image {input.mask} --mrf [{params.mrf_smoothing},{params.mrf_radius}] && "
+        " --mask-image {input.mask} --mrf [{params.mrf_smoothing},{params.mrf_radius}]"
 
 rule post_atropos:
     input:
