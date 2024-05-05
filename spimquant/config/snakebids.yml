@@ -1,4 +1,4 @@
-bids_dir: '/cifs/prado/Kelly/data/lightsheet/bids/test_bids'
+bids_dir: '/cifs/prado/Kate/AK_Pipeline_LSM/spimprep/bids/'
 output_dir: '.'
 
 #enable printing debug statements during parsing -- disable if generating dag visualization
@@ -25,7 +25,7 @@ pybids_inputs:
   spim:
     filters:
       suffix: 'SPIM'
-      #      acquisition: 4x
+      #      acquisition: 4x #this will need to be blaze4x
       extension: 'ome.zarr'
     wildcards:
       - subject
@@ -139,6 +139,7 @@ masking:
   priors_template: ABAv3
   gmm_k: 9
   gmm_bg_class: 1
+  pre_atropos_downsampling: '50%'
 
 blobdetect:
   level: 2 #downsampling level to use for blob detection

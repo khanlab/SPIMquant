@@ -34,7 +34,7 @@ stardist = "^0.8.5"
 dask-image = "^2023.8.1"
 ome-zarr = "^0.8.3"
 ome-zarr-neuro = {git = "https://github.com/khanlab/ome-zarr-neuro", develop = true}
-pybids = {git = "https://github.com/akhanf/pybids", rev = 'master' }
+pybids = {git = "https://github.com/bids-standard/pybids", rev = 'master' }
 attrs = "22.2.0"
 napari = "0.4.19"
 napari-ome-zarr = "^0.5.2"

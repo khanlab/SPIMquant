@@ -8,6 +8,8 @@ rule pre_atropos:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
+    params:
+        downsampling=config['masking']['pre_atropos_downsampling']
     output:
         downsampled=temp(bids(
             root=root,
@@ -78,7 +80,7 @@ rule atropos_seg:
         " --mask-image {input.mask} --mrf [{params.mrf_smoothing},{params.mrf_radius}] && "
 
 rule post_atropos:
-    input
+    input:
         ref=bids(
             root=root,
             datatype="micr",

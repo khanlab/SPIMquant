@@ -4462,7 +4462,7 @@ numpy = ">=1.16.6"
 
 [[package]]
 name = "pybids"
-version = "0.16.4.dev0"
+version = "0.16.4.post0.dev34"
 description = "bids: interface with datasets conforming to BIDS"
 category = "main"
 optional = false
@@ -4482,21 +4482,21 @@ scipy = ">=1.5"
 sqlalchemy = ">=1.3.16"
 
 [package.extras]
-ci-tests = ["pybids[test]", "pytest-xdist"]
+ci-tests = ["pybids[test]"]
 dev = ["pybids[doc,plotting,test]"]
-doc = ["jupytext", "myst_nb", "numpydoc", "sphinx (>=2.2,!=5.1.0)", "sphinx_rtd_theme"]
+doc = ["jupytext", "myst-nb", "numpydoc", "sphinx (>=2.2,!=5.1.0)", "sphinx-rtd-theme"]
 docs = ["pybids[doc]"]
 model-reports = ["altair", "jinja2"]
 plotting = ["graphviz"]
-test = ["altair", "bsmschema", "coverage[toml]", "pytest (>=3.3)", "pytest-cov"]
+test = ["altair", "bsmschema", "coverage[toml]", "pytest (>=3.3)", "pytest-cov", "pytest-xdist"]
 tests = ["pybids[test]"]
-tutorial = ["ipykernel", "jinja2", "jupyter_client", "markupsafe", "nbconvert"]
+tutorial = ["ipykernel", "jinja2", "jupyter-client", "markupsafe", "nbconvert"]
 
 [package.source]
 type = "git"
-url = "https://github.com/akhanf/pybids"
+url = "https://github.com/bids-standard/pybids"
 reference = 'master'
-resolved_reference = "98145903bbb4c7b4db524109cb5796c4b11c49b9"
+resolved_reference = "235cd25d22a56f2b6f8198d6dad5a7ce5235f19e"
 
 [[package]]
 name = "pyconify"
@@ -7128,4 +7128,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "a05275a1c0104ae7c5870e9792c18f88d46ba8b600b932d517958f5dd47c52b2"
+content-hash = "36b6d6d07d46a1391ceba40f554e0692c1d2c0d0349de446cbcff39d8fd780ea"

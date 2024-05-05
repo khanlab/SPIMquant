@@ -37,7 +37,7 @@ rule n4:
             suffix="biasfield.nii",
             **inputs["spim"].wildcards
         ),
-    container: config['container']['ants']
+    container: config['containers']['ants']
     shell:
         "N4BiasFieldCorrection -i {input.nii}"
         " -o [{output.corrected},{output.biasfield}]"
@@ -439,7 +439,7 @@ rule transform_labels_to_zoomed_template:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container: config['container']['ants']
+    container: config['containers']['ants']
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n NearestNeighbor "
