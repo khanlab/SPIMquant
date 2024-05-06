@@ -24,6 +24,7 @@ pybids_inputs:
     filters:
       suffix: 'SPIM'
       #      acquisition: 4x #this will need to be blaze4x
+      subject: o28
       extension: 'ome.zarr'
     wildcards:
       - subject
