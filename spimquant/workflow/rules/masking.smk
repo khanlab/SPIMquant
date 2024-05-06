@@ -9,27 +9,32 @@ rule pre_atropos:
             **inputs["spim"].wildcards
         ),
     params:
-        downsampling=config['masking']['pre_atropos_downsampling']
+        downsampling=config["masking"]["pre_atropos_downsampling"],
     output:
-        downsampled=temp(bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            desc="preAtropos",
-            suffix="SPIM.nii",
-            **inputs["spim"].wildcards
-        )),
-        mask=temp(bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            desc="preAtropos",
-            suffix="mask.nii",
-            **inputs["spim"].wildcards
-        )),
-    container: config['containers']['itksnap']
+        downsampled=temp(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="preAtropos",
+                suffix="SPIM.nii",
+                **inputs["spim"].wildcards
+            )
+        ),
+        mask=temp(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="preAtropos",
+                suffix="mask.nii",
+                **inputs["spim"].wildcards
+            )
+        ),
+    container:
+        config["containers"]["itksnap"]
     shell:
         "c3d {input.nii} -resample {params.downsampling} -o {output.downsampled} -scale 0 -shift 1 -o {output.mask}"
 
@@ -37,21 +42,23 @@ rule pre_atropos:
 rule atropos_seg:
     input:
         downsampled=rules.pre_atropos.output.downsampled,
-        mask=rules.pre_atropos.output.mask
+        mask=rules.pre_atropos.output.mask,
     params:
         mrf_smoothing=0.3,
         mrf_radius="2x2x2",
     output:
-        dseg=temp(bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            desc="dsAtropos",
-            k="{k}",
-            suffix="dseg.nii",
-            **inputs["spim"].wildcards
-        )),
+        dseg=temp(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="dsAtropos",
+                k="{k}",
+                suffix="dseg.nii",
+                **inputs["spim"].wildcards
+            )
+        ),
         posteriors_dir=directory(
             bids(
                 root=root,
@@ -65,7 +72,7 @@ rule atropos_seg:
             )
         ),
     container:
-        config['containers']['ants']
+        config["containers"]["ants"]
     shadow:
         "minimal"
     threads: 1
@@ -79,6 +86,7 @@ rule atropos_seg:
         " --output [{output.dseg},{output.posteriors_dir}/class-%02d.nii] "
         " --mask-image {input.mask} --mrf [{params.mrf_smoothing},{params.mrf_radius}]"
 
+
 rule post_atropos:
     input:
         ref=bids(
@@ -89,7 +97,7 @@ rule post_atropos:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
-        dseg=rules.atropos_seg.output.dseg
+        dseg=rules.atropos_seg.output.dseg,
     output:
         dseg=bids(
             root=root,
@@ -101,7 +109,8 @@ rule post_atropos:
             suffix="dseg.nii",
             **inputs["spim"].wildcards
         ),
-    container: config['containers']['itksnap']
+    container:
+        config["containers"]["itksnap"]
     shell:
         "c3d -interpolation NearestNeighbor {input.ref} {input.dseg} -reslice-identity -o {output.dseg}"
 
@@ -146,7 +155,8 @@ rule init_affine_reg:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container: config['containers']['itksnap']
+    container:
+        config["containers"]["itksnap"]
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} && "
@@ -177,7 +187,8 @@ rule affine_transform_template_dseg_to_subject:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container: config['containers']['itksnap']
+    container:
+        config["containers"]["itksnap"]
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         " -ri NN"
@@ -245,6 +256,7 @@ rule create_mask_from_gmm:
             suffix="mask.nii",
             **inputs["spim"].wildcards
         ),
-    container: config['containers']['itksnap']
+    container:
+        config["containers"]["itksnap"]
     shell:
         "c3d {input} -threshold {params.bg_label} {params.bg_label} 0 1 -o {output}"

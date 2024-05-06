@@ -48,20 +48,22 @@ rule all_templatereg_deform_zooms:
             res=config["templatereg"]["zooms"],
         ),
 
+
 rule all_blobdensity:
-    input: 
+    input:
         blob_density=inputs["spim"].expand(
             bids(
-            root=root,
-            datatype="micr",
-            space='{template}',
-            stain="{stain}",
-            suffix="blobdensity.nii",
-            **inputs["spim"].wildcards
+                root=root,
+                datatype="micr",
+                space="{template}",
+                stain="{stain}",
+                suffix="blobdensity.nii",
+                **inputs["spim"].wildcards
+            ),
+            stain=config["blobdetect"]["stain"],
+            template=config["template"],
         ),
-        stain=config['blobdetect']['stain'],
-        template=config['template']
-)
+
 
 rule all_blobs:
     input:

@@ -98,7 +98,8 @@ rule lateralize_atlas_labels:
         offset_rh=10000,
     output:
         dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
-    container: config['containers']['itksnap']
+    container:
+        config["containers"]["itksnap"]
     shell:
         "c3d {input.dseg} -as SEG -cmv -pop -pop -threshold 50% inf 1 0 -as MASK_RH "
         " -push SEG -times -as SEG_RH "
