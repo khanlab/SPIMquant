@@ -1,4 +1,5 @@
 from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
+from snakemake.utils import format
 
 set_bids_spec("v0_11_0")
 
@@ -29,11 +30,73 @@ root = "results"
 container: config["containers"]["spimprep"]
 
 
-rule all_atlasreg:
+rule all_templatereg_deform_zooms:
     input:
-        inputs["spim"]
-        .filter(stain="autof")
-        .expand(
+        spim_zoomed=inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="deform",
+                space="{template}",
+                stain="{stain}",
+                res="{res}um",
+                suffix="SPIM.nii",
+                **inputs["spim"].wildcards
+            ),
+            template=config["template"],
+            stain=config["stains"],
+            res=config["templatereg"]["zooms"],
+        ),
+
+rule all_blobdensity:
+    input: 
+        blob_density=inputs["spim"].expand(
+            bids(
+            root=root,
+            datatype="micr",
+            space='{template}',
+            stain="{stain}",
+            suffix="blobdensity.nii",
+            **inputs["spim"].wildcards
+        ),
+        stain=config['blobdetect']['stain'],
+        template=config['template']
+)
+
+rule all_blobs:
+    input:
+        spim_zoomed=inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                suffix="blobs.npy",
+                **inputs["spim"].wildcards
+            ),
+            stain=config["stains"],
+        ),
+
+
+rule all_templatereg_deform:
+    input:
+        spim=inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="deform",
+                space="{template}",
+                stain="{stain}",
+                suffix="SPIM.nii",
+                **inputs["spim"].wildcards
+            ),
+            template=config["templates"],
+            stain=config["stains"],
+        ),
+
+
+rule all_templatereg_lbl:
+    input:
+        dseg=inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="micr",
@@ -42,9 +105,12 @@ rule all_atlasreg:
                 suffix="dseg.ome.zarr.zip",
                 **inputs["spim"].wildcards
             ),
-            template="ABAv3",
+            template=config["templates"],
         ),
 
 
 include: "rules/common.smk"
-include: "rules/atlasreg.smk"
+include: "rules/import.smk"
+include: "rules/masking.smk"
+include: "rules/templatereg.smk"
+include: "rules/blobdetect.smk"

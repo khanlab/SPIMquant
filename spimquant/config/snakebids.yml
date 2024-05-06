@@ -1,10 +1,6 @@
-bids_dir: '/home/ROBARTS/alik/graham/cfmm-bids/Prado/LightsheetMicroscopy/bids_spimprep_20240218'
+bids_dir: '/cifs/prado/Kate/AK_Pipeline_LSM/spimprep/bids/'
 output_dir: '.'
 
-#enable printing debug statements during parsing -- disable if generating dag visualization
-debug: False
-
-derivatives: False #will search in bids/derivatives if True; can also be path(s) to derivatives datasets
 
 #list of analysis levels in the bids app
 analysis_levels: &analysis_levels
@@ -16,81 +12,35 @@ targets_by_analysis_level:
   participant:
     - ''  # if '', then the first rule is run
 
-#this configures the pybids grabber - create an entry for each type of input you want to grab
-# indexed by name of input
-#   dictionary for each input is passed directly to pybids get()
-#    https://bids-standard.github.io/pybids/generated/bids.layout.BIDSLayout.html#bids.layout.BIDSLayout.get
-
+# Configure components:
+# Each entry creates a new component that can be retreived within the workflow
+# via `generate_inputs`.
+# Filters are used to select paths: each filter has an `entity` key and a
+# single value or list of values to select.
+# Wildcards are used to mark variable parts of paths. Each wildcard is an
+# entity, such as `subject` or `session`, that may vary across component paths.
 pybids_inputs:
   spim:
     filters:
-      suffix: spim
-      acquisition: 1x
-      extension: 'ome.zarr.zip'
+      suffix: 'SPIM'
+      #      acquisition: 4x #this will need to be blaze4x
+      subject: o28
+      extension: 'ome.zarr'
     wildcards:
       - subject
       - sample
       - acquisition
       - staining
-  metadata:
-    filters:
-      suffix: spim
-      extension: 'metadata.json'
-    wildcards:
-      - subject
-      - sample
-      - acquisition
-
 
 
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
 parse_args:
-
-#---  core BIDS-app options --- (do not modify below)
-
-  bids_dir:
-    help: The directory with the input dataset formatted according
-          to the BIDS standard.
-
-  output_dir:
-    help: The directory where the output files
-          should be stored. If you are running group level analysis
-          this folder should be prepopulated with the results of the
-          participant level analysis.
-
-  analysis_level:
-    help: Level of the analysis that will be performed.
-    choices: *analysis_levels
-
-  --participant-label:
-    help: The label(s) of the participant(s) that should be analyzed. The label
-          corresponds to sub-<participant_label> from the BIDS spec
-          (so it does not include "sub-"). If this parameter is not
-          provided all subjects should be analyzed. Multiple
-          participants can be specified with a space separated list.
-    nargs: '+'
-
-  --exclude-participant-label:
-    help: The label(s) of the participant(s) that should be excluded. The label
-          corresponds to sub-<participant_label> from the BIDS spec
-          (so it does not include "sub-"). If this parameter is not
-          provided all subjects should be analyzed. Multiple
-          participants can be specified with a space separated list.
-    nargs: '+'
-
-  --derivatives:
-    help: 'Path(s) to a derivatives dataset, for folder(s) that contains multiple derivatives datasets (default: %(default)s) '
-    default: False
-    nargs: '+'
-
-
- # custom command-line parameters can then be added, these will get added to the config and also accessible to plugins
- # below are examples for plugin and custom parameters (e.g. config['smoothing_fwhm'])
   --skip-bids-validation:
-    help: 'Skip validation of BIDS dataset. BIDS validation is performed by
-          default using the bids-validator plugin (if installed/enabled) or with the pybids
-          validator implementation (if bids-validator is not installed/enabled).'
+    help: |
+      Skip validation of BIDS dataset. BIDS validation is performed by
+      default using the bids-validator plugin (if installed/enabled) or with the pybids
+      validator implementation (if bids-validator is not installed/enabled).
     dest: "plugins.validator.skip"
     action: "store_true"
     default: False
@@ -102,7 +52,8 @@ parse_args:
 
 containers:
   spimprep: 'docker://khanlab/spimprep-deps:main'
-
+  ants: 'docker://kaczmarj/ants:2.3.4'
+  itksnap: 'docker://khanlab/itksnap:latest' 
 
 root: 'results'
 work: 'work'
@@ -117,22 +68,40 @@ ome_zarr:
   scaling_method: 'local_mean' #can be nearest, gaussian, local_mean, zoom (zoom uses spline interp)
 
 
-templates: 
-  - ABAv3
+template: ABAv3 #template to use
 
-atlases:
+templates:
   ABAv3:
-    anat: 'resources/ABAv3/P56_Atlas.nii.gz'
-    dseg: 'resources/ABAv3/P56_Annotation.nii.gz'
-    lut: 'resources/ABAv3/labelmapper_ABAv3_to_all.json'
+    anat: '{workflow.basedir}/../resources/ABAv3/P56_Atlas.nii.gz'
+    dseg: '{workflow.basedir}/../resources/ABAv3/P56_Annotation.nii.gz'
+    lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
+  gubra:
+    anat: '{workflow.basedir}/../resources/gubra/gubra_template_olf_affine_padABAv3.nii.gz'
+    dseg: '{workflow.basedir}/../resources/gubra/gubra_ano_olf_affine_padABAv3_remap.nii.gz'
+    lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
 
-channel_mapping:
-  abeta: 0
-  autof: 1
+stains:
+  - PI
+  - BetaAmyloid
 
-atlasreg:
-  stain: autof #- use channel index until the omero metadata exists
-  level: 4
+templatereg:
+  stain: PI #set this to PI for lifecanvas data 
+  level: 5
+  desc: N4brain
+  zooms:
+    #    - 20
+    - 40
 
+masking:
+  stain: PI #set this to PI for lifecanvas data 
+  level: 5
+  priors_template: ABAv3
+  gmm_k: 9
+  gmm_bg_class: 1
+  pre_atropos_downsampling: '50%'
 
-
+blobdetect:
+  level: 2 #downsampling level to use for blob detection
+  dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
+  dseg_template: ABAv3
+  stain: BetaAmyloid
