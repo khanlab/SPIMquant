@@ -104,3 +104,4 @@ blobdetect:
   level: 2 #downsampling level to use for blob detection
   dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
   dseg_template: ABAv3
+  stain: BetaAmyloid
