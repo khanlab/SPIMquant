@@ -333,30 +333,6 @@ rule deform_to_template_nii_zoomed:
         "../scripts/deform_to_template_nii.py"
 
 
-rule deform_to_template_nii_nb:
-    input:
-        ome_zarr=inputs["spim"].path,
-        xfm_ras=rules.affine_reg.output.xfm_ras,
-        warp_nii=rules.deform_reg.output.warp,
-        ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
-    params:
-        chunks=(20, 20, 20),
-        zooms=None,  #same resolution as template if NOne
-    output:
-        nii=bids(
-            root=root,
-            datatype="micr",
-            desc="deformnb",
-            space="{template}",
-            stain="{stain}",
-            suffix="SPIM.nii",
-            **inputs["spim"].wildcards
-        ),
-    container:
-        None
-    threads: 32
-    notebook:
-        "../notebooks/deform_to_template_nii.py.ipynb"
 
 
 rule deform_template_dseg_to_subject_nii:
