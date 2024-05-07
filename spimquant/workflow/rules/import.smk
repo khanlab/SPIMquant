@@ -67,10 +67,10 @@ rule import_labelmapper_lut:
 
 rule make_itksnap_lut:
     input:
-        tsv=bids_tpl(root=root, template="{template}", suffix="dseg.tsv"),
+        tsv=bids_tpl(root=root, template="{template}", desc="{desc}", suffix="dseg.tsv"),
     output:
         lut=bids_tpl(
-            root=root, template="{template}", desc="itksnap", suffix="labels.txt"
+            root=root, template="{template}", desc="{desc}", suffix="dseg.itksnap.txt"
         ),
     script:
         "../scripts/lut_bids_to_itksnap.py"

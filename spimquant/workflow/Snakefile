@@ -29,6 +29,10 @@ root = "results"
 
 container: config["containers"]["spimprep"]
 
+#wildcard_constraints: **get_wildcard_constraints(config["pybids_inputs"])
+wildcard_constraints:
+    stain='[a-zA-Z0-9]+'
+
 
 rule all_templatereg_deform_zooms:
     input:

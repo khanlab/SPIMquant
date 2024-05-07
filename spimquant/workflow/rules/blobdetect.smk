@@ -92,7 +92,7 @@ rule filter_blobs_betaamyloid:
             root=root,
             datatype="micr",
             level="{level}",
-            stain="{stain,BetaAmyloid}",
+            stain="{stain}",
             suffix="points.npy",
             **inputs["spim"].wildcards
         ),
