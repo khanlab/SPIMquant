@@ -3800,52 +3800,55 @@ files = [
 
 [[package]]
 name = "ome-zarr"
-version = "0.8.3"
+version = "0.9.1.dev0"
 description = "Implementation of images in Zarr files."
 category = "main"
 optional = false
 python-versions = ">=3.6"
-files = [
-    {file = "ome-zarr-0.8.3.tar.gz", hash = "sha256:e98762e6a3cc82e8f6ef50c938e23fc579498d94d1991f3476ccf9726209997b"},
-    {file = "ome_zarr-0.8.3-py3-none-any.whl", hash = "sha256:550543fe4a06f1f5c3f860d000ea84836f29a44b83666f7404102e1672b116ce"},
-]
+files = []
+develop = false
 
 [package.dependencies]
 aiohttp = "<4"
 dask = "*"
 distributed = "*"
-fsspec = {version = ">=0.8,<2021.07.0 || >2021.07.0,<2023.09.0 || >2023.09.0", extras = ["s3"]}
+fsspec = {version = ">=0.8,<2021.07.0 || >2021.07.0", extras = ["s3"]}
 numpy = "*"
 requests = "*"
 scikit-image = "*"
 toolz = "*"
 zarr = ">=2.8.1"
 
+[package.source]
+type = "git"
+url = "https://github.com/ome/ome-zarr-py"
+reference = "master"
+resolved_reference = "b5f850618286951c5984a903bb57af2d976f48a9"
+
 [[package]]
 name = "ome-zarr-neuro"
-version = "0.1.0"
-description = ""
+version = "0.1.0-alpha"
+description = "Package for working with and transforming ome-zarr with nifti transforms"
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 dask = "^2024.2.0"
 nibabel = "^5.2.0"
 numpy = "^1.26.4"
-ome-zarr = "^0.8.3"
+ome-zarr = "^0.9.0"
 pandas = "^2.2.0"
 scipy = "^1.12.0"
-typer = {version = "^0.9.0", extras = ["all"]}
 zarr = "^2.17.0"
 
 [package.source]
 type = "git"
 url = "https://github.com/khanlab/ome-zarr-neuro"
-reference = "HEAD"
-resolved_reference = "95500836783b4e3822ddbc83b5f4bcaa25781138"
+reference = 'extract-subvol'
+resolved_reference = "69652c46a78ce0a684379dc328b388f2205b393b"
 
 [[package]]
 name = "opencv-python-headless"
@@ -3907,6 +3910,7 @@ optional = false
 python-versions = ">=3.9"
 files = [
     {file = "pandas-2.2.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:90c6fca2acf139569e74e8781709dccb6fe25940488755716d1d354d6bc58bce"},
+    {file = "pandas-2.2.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c7adfc142dac335d8c1e0dcbd37eb8617eac386596eb9e1a1b77791cf2498238"},
     {file = "pandas-2.2.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4abfe0be0d7221be4f12552995e58723c7422c80a659da13ca382697de830c08"},
     {file = "pandas-2.2.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8635c16bf3d99040fdf3ca3db669a7250ddf49c55dc4aa8fe0ae0fa8d6dcc1f0"},
     {file = "pandas-2.2.2-cp310-cp310-musllinux_1_1_aarch64.whl", hash = "sha256:40ae1dffb3967a52203105a077415a86044a2bea011b5f321c6aa64b379a3f51"},
@@ -3927,6 +3931,7 @@ files = [
     {file = "pandas-2.2.2-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:43498c0bdb43d55cb162cdc8c06fac328ccb5d2eabe3cadeb3529ae6f0517c32"},
     {file = "pandas-2.2.2-cp312-cp312-win_amd64.whl", hash = "sha256:d187d355ecec3629624fccb01d104da7d7f391db0311145817525281e2804d23"},
     {file = "pandas-2.2.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:0ca6377b8fca51815f382bd0b697a0814c8bda55115678cbc94c30aacbb6eff2"},
+    {file = "pandas-2.2.2-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:9057e6aa78a584bc93a13f0a9bf7e753a5e9770a30b4d758b8d5f2a62a9433cd"},
     {file = "pandas-2.2.2-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:001910ad31abc7bf06f49dcc903755d2f7f3a9186c0c040b827e522e9cef0863"},
     {file = "pandas-2.2.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:66b479b0bd07204e37583c191535505410daa8df638fd8e75ae1b383851fe921"},
     {file = "pandas-2.2.2-cp39-cp39-musllinux_1_1_aarch64.whl", hash = "sha256:a77e9d1c386196879aa5eb712e77461aaee433e54c68cf253053a73b7e49c33a"},
@@ -4495,7 +4500,7 @@ tutorial = ["ipykernel", "jinja2", "jupyter-client", "markupsafe", "nbconvert"]
 [package.source]
 type = "git"
 url = "https://github.com/bids-standard/pybids"
-reference = 'master'
+reference = "master"
 resolved_reference = "235cd25d22a56f2b6f8198d6dad5a7ce5235f19e"
 
 [[package]]
@@ -5606,18 +5611,6 @@ objc = ["pyobjc-framework-Cocoa"]
 win32 = ["pywin32"]
 
 [[package]]
-name = "shellingham"
-version = "1.5.4"
-description = "Tool to Detect Surrounding Shell"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "shellingham-1.5.4-py2.py3-none-any.whl", hash = "sha256:7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686"},
-    {file = "shellingham-1.5.4.tar.gz", hash = "sha256:8dbca0739d487e5bd35ab3ca4b36e11c4078f3a234bfce294b0a0291363404de"},
-]
-
-[[package]]
 name = "simplejson"
 version = "3.19.2"
 description = "Simple, fast, extensible JSON encoder/decoder for Python"
@@ -6680,9 +6673,6 @@ files = [
 
 [package.dependencies]
 click = ">=7.1.1,<9.0.0"
-colorama = {version = ">=0.4.3,<0.5.0", optional = true, markers = "extra == \"all\""}
-rich = {version = ">=10.11.0,<14.0.0", optional = true, markers = "extra == \"all\""}
-shellingham = {version = ">=1.3.0,<2.0.0", optional = true, markers = "extra == \"all\""}
 typing-extensions = ">=3.7.4.3"
 
 [package.extras]
@@ -7128,4 +7118,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "36b6d6d07d46a1391ceba40f554e0692c1d2c0d0349de446cbcff39d8fd780ea"
+content-hash = "deaa51807e0e2d7777cbed9f979866502b0baa207d2ff169e4a553846d9a32ad"
