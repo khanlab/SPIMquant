@@ -3,9 +3,10 @@ wildcard_constraints:
     template="[a-zA-Z0-9]+",
 
 
+
 rule get_downsampled_nii:
-    input:
-        zarr=inputs["spim"].path,
+    params:
+        in_zarr=inputs["spim"].path,
     output:
         nii=bids(
             root=root,
@@ -16,6 +17,7 @@ rule get_downsampled_nii:
             **inputs["spim"].wildcards
         ),
     threads: 32
+    container: None
     script:
         "../scripts/ome_zarr_to_nii.py"
 
@@ -117,3 +119,24 @@ rule lateralize_atlas_tsv:
         tsv=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.tsv"),
     script:
         "../scripts/lateralize_atlas_tsv.py"
+
+
+rule resave_tiny:
+    params:
+        in_zarr=inputs["spim"].path,
+        coiled_cluster_opts={'software': 'blobdetect',
+                                'n_workers': [5,20],
+                                'spot_policy':'spot',
+                                },
+        fov={'z':[1000,1200],'y':[5000,6000],'x':[4000,5000]},
+    output:
+        ome_zarr = directory(bids(
+            root=root,
+            datatype="micr",
+            desc='tiny',
+            suffix="SPIM.ome.zarr",
+            **inputs["spim"].wildcards
+        )),
+    container: None
+    script:
+        '../scripts/resave_tiny.py'

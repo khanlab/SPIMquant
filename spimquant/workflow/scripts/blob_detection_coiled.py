@@ -1,20 +1,30 @@
 import zarr
 import dask.array as da
 import dask
+from ome_zarr.io import parse_url
+from ome_zarr.reader import Reader
+
 from dask.array.overlap import overlap, trim_overlap
 import numpy as np
 from math import sqrt
 from skimage.feature import blob_dog
-from dask.diagnostics import ProgressBar
 import sparse
 
-#set threads
-dask.config.set(scheduler='threads',num_workers=snakemake.threads)
+if snakemake.params.use_coiled:
+    import coiled
+    cluster = coiled.Cluster(**snakemake.params.coiled_cluster_opts)
+    client = cluster.get_client()
+#else:
+#    from dask.distributed import Client, LocalCluster
+#    cluster = LocalCluster()
 
-in_zarr = snakemake.params.in_zarr
+
+in_zarr = snakemake.input.in_zarr
 
 zi = zarr.open(in_zarr)
-attrs=zi['/'].attrs.asdict()
+attrs=zi.attrs.asdict()
+
+print(attrs)
 
 #get channel index from omero metadata
 channel_labels = [channel_dict['label'] for channel_dict in attrs['omero']['channels']]
@@ -25,7 +35,6 @@ level=snakemake.params.level
 
 #read coordinate transform from ome-zarr
 transforms = attrs['multiscales'][0]['datasets'][level]['coordinateTransformations']
-
 
 darr_chan = da.from_zarr(in_zarr,component=f'{level}',chunks=snakemake.params.chunks)[channel_index,:,:,:]
 
@@ -78,25 +87,20 @@ print(f'shape: {expanded.shape}')
 print(f'chunks: {expanded.chunks}')
 
 
-darr_blobs = expanded.map_blocks(detect_blobs,dtype=np.float32,meta=np.array((), dtype=np.float32))
+darr_blobs = expanded.map_blocks(detect_blobs,dtype=np.float32,meta=np.array((), dtype=np.float32),new_axis=[3],chunks=[250,254,254,4])
 
 darr_blobs_trim = trim_overlap(darr_blobs,depth=boundary_px,boundary=0)
 
 
-"""
 #save to zarr 
-with ProgressBar():
-    darr_blobs_trim.to_zarr('temp.zarr')
+darr_blobs_trim.to_zarr(snakemake.params.temp_uri,overwrite=True)
 
 #now convert the saved zarr to a sparse array
-with ProgressBar():
-    sparse_array = da.from_zarr('temp.zarr').map_blocks(sparse.COO).compute()
-"""
+sparse_array = da.from_zarr(snakemake.params.temp_uri).map_blocks(sparse.COO).compute()
 
 
 #try skipping the zarr intermediary - but below might be too memory-intensive??
-with ProgressBar():
-    sparse_array = darr_blobs_trim.map_blocks(sparse.COO).compute()
+#sparse_array = darr_blobs_trim.map_blocks(sparse.COO).compute()
 
 #save the sparse array
 sparse.save_npz(snakemake.output.sparse_npz,sparse_array)
@@ -105,3 +109,6 @@ sparse.save_npz(snakemake.output.sparse_npz,sparse_array)
 scaled_coords = sparse_array[:,:,:,0].coords.T * scaling_zyx.reshape(1,3)
 
 np.save(snakemake.output.points_npy,scaled_coords)
+
+
+cluster.shutdown() 

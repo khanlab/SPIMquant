@@ -9,11 +9,14 @@ from ome_zarr.reader import Reader
 from dask.diagnostics import ProgressBar
 from zarrnii import ZarrNii
 
-in_zarr = snakemake.input.zarr
+in_zarr_url = snakemake.params.in_zarr
 
-zi = zarr.open(in_zarr)
 
-attrs=zi['/'].attrs.asdict()
+loc = parse_url(in_zarr_url,mode='r')
+zarr_reader = Reader(loc).zarr
+
+
+attrs=zarr_reader.root_attrs
 
 #get channel index from omero metadata
 channel_labels = [channel_dict['label'] for channel_dict in attrs['omero']['channels']]
@@ -32,6 +35,7 @@ affine = np.eye(4)
 affine[0,0]=-transforms[0]['scale'][-1] #x
 affine[1,1]=-transforms[0]['scale'][-2] #y
 affine[2,2]=-transforms[0]['scale'][-3] #z
+
 
 
 #downsample in z

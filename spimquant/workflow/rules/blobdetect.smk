@@ -44,22 +44,26 @@ rule brainmask_penalty:
 
 rule blob_detection_betaamyloid:
     input:
-        zarr=inputs["spim"].path,
-        penalty=bids(
+        in_zarr = bids(
             root=root,
             datatype="micr",
-            stain=config["masking"]["stain"],
-            level=config["masking"]["level"],
-            desc="brain",
-            suffix="penalty.nii",
+            desc='tiny',
+            suffix="SPIM.ome.zarr",
             **inputs["spim"].wildcards
         ),
     params:
+        #in_zarr=rules.resave_tiny.output.ome_zarr if config['use_tiny'] else inputs["spim"].path,
         level=lambda wildcards: int(wildcards.level),  #downsample-level to perform blob detection on
         min_sigma_um=1,
         max_sigma_um=100,  # also serves as size of chunk borders
         threshold=0.06,
-        chunks=(1, 127, 122, 116),
+        chunks=(1, 200, 200, 200),
+        use_coiled=config['use_coiled'],
+        coiled_cluster_opts={'software': 'blobdetect',
+                                'n_workers': [5,20],
+                                'spot_policy':'spot',
+                                },
+        temp_uri='gcs://khanlab-scratch/temp_blobs.zarr'
     output:
         sparse_npz=bids(
             root=root,
@@ -82,9 +86,8 @@ rule blob_detection_betaamyloid:
         None  # since sparse is not in spimprep container yet
     shadow:
         "minimal"
-    script:
-        "../scripts/blob_detection.py"
-
+    script: #could use one script eventually (with conditionals to select cluster..)
+        "../scripts/blob_detection_coiled.py" #if config['use_coiled'] else "../scripts/blob_detection.py"
 
 rule filter_blobs_betaamyloid:
     input:

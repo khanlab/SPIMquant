@@ -24,7 +24,6 @@ pybids_inputs:
     filters:
       suffix: 'SPIM'
       #      acquisition: 4x #this will need to be blaze4x
-      subject: o28
       extension: 'ome.zarr'
     wildcards:
       - subject
@@ -101,7 +100,10 @@ masking:
   pre_atropos_downsampling: '50%'
 
 blobdetect:
-  level: 2 #downsampling level to use for blob detection
+  level: 1 #downsampling level to use for blob detection
   dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
   dseg_template: ABAv3
   stain: BetaAmyloid
+
+use_coiled: False
+use_tiny: True
