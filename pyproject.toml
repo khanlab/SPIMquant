@@ -33,8 +33,7 @@ seaborn = "^0.13.2"
 stardist = "^0.8.5"
 dask-image = "^2023.8.1"
 ome-zarr = "^0.9.0"
-ome-zarr-neuro = {git = "https://github.com/khanlab/ome-zarr-neuro", rev = 'extract-subvol' }
-pybids = {git = "https://github.com/bids-standard/pybids", rev = 'master' }
+pybids = "^0.16.5"
 attrs = "22.2.0"
 napari = "0.4.19"
 napari-ome-zarr = "^0.5.2"
@@ -43,6 +42,7 @@ pyqt5-qt5 = "=5.15.2"
 cellpose = "^3.0.7"
 sparse = "^0.15.1"
 napari-nibabel = "^0.1.0"
+zarrnii = "^0.1.0a1"
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:main"

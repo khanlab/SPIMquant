@@ -3826,31 +3826,6 @@ reference = "master"
 resolved_reference = "b5f850618286951c5984a903bb57af2d976f48a9"
 
 [[package]]
-name = "ome-zarr-neuro"
-version = "0.1.0-alpha"
-description = "Package for working with and transforming ome-zarr with nifti transforms"
-category = "main"
-optional = false
-python-versions = ">=3.9,<4.0"
-files = []
-develop = false
-
-[package.dependencies]
-dask = "^2024.2.0"
-nibabel = "^5.2.0"
-numpy = "^1.26.4"
-ome-zarr = "^0.9.0"
-pandas = "^2.2.0"
-scipy = "^1.12.0"
-zarr = "^2.17.0"
-
-[package.source]
-type = "git"
-url = "https://github.com/khanlab/ome-zarr-neuro"
-reference = 'extract-subvol'
-resolved_reference = "69652c46a78ce0a684379dc328b388f2205b393b"
-
-[[package]]
 name = "opencv-python-headless"
 version = "4.9.0.80"
 description = "Wrapper package for OpenCV python bindings."
@@ -4467,13 +4442,15 @@ numpy = ">=1.16.6"
 
 [[package]]
 name = "pybids"
-version = "0.16.4.post0.dev34"
+version = "0.16.5"
 description = "bids: interface with datasets conforming to BIDS"
 category = "main"
 optional = false
 python-versions = ">=3.8"
-files = []
-develop = false
+files = [
+    {file = "pybids-0.16.5-py3-none-any.whl", hash = "sha256:7b3d4b8005644895fcff01d565cc163de9e2aa338f3ef238cec8b2289959eef5"},
+    {file = "pybids-0.16.5.tar.gz", hash = "sha256:e4c029e426253a1d56c6c5ce13f2c754d9bf2b854615a2ca59a68a6302a34083"},
+]
 
 [package.dependencies]
 bids-validator = ">=1.11"
@@ -4489,19 +4466,13 @@ sqlalchemy = ">=1.3.16"
 [package.extras]
 ci-tests = ["pybids[test]"]
 dev = ["pybids[doc,plotting,test]"]
-doc = ["jupytext", "myst-nb", "numpydoc", "sphinx (>=2.2,!=5.1.0)", "sphinx-rtd-theme"]
+doc = ["jupytext", "myst-nb", "numpydoc", "sphinx (>=6.2)", "sphinx-rtd-theme"]
 docs = ["pybids[doc]"]
 model-reports = ["altair", "jinja2"]
 plotting = ["graphviz"]
 test = ["altair", "bsmschema", "coverage[toml]", "pytest (>=3.3)", "pytest-cov", "pytest-xdist"]
 tests = ["pybids[test]"]
 tutorial = ["ipykernel", "jinja2", "jupyter-client", "markupsafe", "nbconvert"]
-
-[package.source]
-type = "git"
-url = "https://github.com/bids-standard/pybids"
-reference = "master"
-resolved_reference = "235cd25d22a56f2b6f8198d6dad5a7ce5235f19e"
 
 [[package]]
 name = "pyconify"
@@ -7088,6 +7059,27 @@ docs = ["numcodecs[msgpack]", "numpydoc", "pydata-sphinx-theme", "sphinx", "sphi
 jupyter = ["ipytree (>=0.2.2)", "ipywidgets (>=8.0.0)", "notebook"]
 
 [[package]]
+name = "zarrnii"
+version = "0.1.0a1"
+description = "Package for working with OME-Zarr and NIFTI images in a unified manner, with a focus on spatial transformations"
+category = "main"
+optional = false
+python-versions = "<4.0,>=3.9"
+files = [
+    {file = "zarrnii-0.1.0a1-py3-none-any.whl", hash = "sha256:0ebad0540c02a99e86ad5c18f5fec280329293bd2ec59cafb796479a387ddcd1"},
+    {file = "zarrnii-0.1.0a1.tar.gz", hash = "sha256:f5f4fba5a7b09d5d006a4ee3a9ca1f3fd53409cc0117fe3e418795a9b73fae85"},
+]
+
+[package.dependencies]
+dask = ">=2024.2.0,<2025.0.0"
+nibabel = ">=5.2.0,<6.0.0"
+numpy = ">=1.26.4,<2.0.0"
+ome-zarr = ">=0.9.0,<0.10.0"
+pandas = ">=2.2.0,<3.0.0"
+scipy = ">=1.12.0,<2.0.0"
+zarr = ">=2.17.0,<3.0.0"
+
+[[package]]
 name = "zict"
 version = "3.0.0"
 description = "Mutable mapping tools"
@@ -7118,4 +7110,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "deaa51807e0e2d7777cbed9f979866502b0baa207d2ff169e4a553846d9a32ad"
+content-hash = "7a1520e57d1583c820094bf5ee76085550abf265b88547bcaff77390a3d5e8a3"
