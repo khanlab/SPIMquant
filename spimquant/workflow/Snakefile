@@ -95,7 +95,7 @@ rule all_templatereg_deform:
                 suffix="SPIM.nii",
                 **inputs["spim"].wildcards
             ),
-            template=config["templates"],
+            template=config["template"],
             stain=config["stains"],
         ),
 
@@ -111,7 +111,7 @@ rule all_templatereg_lbl:
                 suffix="dseg.ome.zarr.zip",
                 **inputs["spim"].wildcards
             ),
-            template=config["templates"],
+            template=config["template"],
         ),
 
 
