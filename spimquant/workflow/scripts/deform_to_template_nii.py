@@ -3,7 +3,7 @@ import nibabel as nib
 from  zarrnii import ZarrNii, Transform
 from dask.distributed import Client
 
-client = Client(n_workers=snakemake.threads, threads_per_worker=1,processes=False)
+client = Client(n_workers=4, threads_per_worker=2,processes=False)
 print(client.dashboard_link)
 
 #get channel index from omero metadata
@@ -17,14 +17,14 @@ channel_index = channel_labels.index(snakemake.wildcards.stain)
 flo_znimg = ZarrNii.from_path(snakemake.input.ome_zarr, channels=[channel_index], **snakemake.params.flo_opts)
 ref_znimg = ZarrNii.from_path_as_ref(snakemake.input.ref_nii, channels=[channel_index],**snakemake.params.ref_opts)
 
-deform_znimg = flo_znimg.apply_transform(Transform.displacement_from_nifti(snakemake.input.warp_nii),
+if snakemake.params.do_downsample:
+    flo_ds_znimg = flo_znimg.downsample(**snakemake.params.downsample_opts)
+
+
+deform_znimg = flo_ds_znimg.apply_transform(Transform.displacement_from_nifti(snakemake.input.warp_nii),
                     Transform.affine_ras_from_txt(snakemake.input.xfm_ras),
                     ref_znimg=ref_znimg)
 
-
-if 'downsample_opts' in snakemake.params:
-    print('downsampling before apply transform')
-    deform_znimg = deform_znimg.downsample(**snakemake.params.downsample_opts)
 
 deform_znimg.to_nifti(snakemake.output.nii)
 

@@ -323,8 +323,9 @@ rule deform_zarr_to_template_nii:
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
         flo_opts={"level": 2}, #downsampling level to use (TODO: set this automatically based on ref resolution?)
-        downsample_opts={'along_z': 6}, #could also be determined automatically 
-        ref_opts={"chunks": (1, 20, 20, 20)},
+        do_downsample=True, #whether to perform further downsampling before transforming
+        downsample_opts={'along_z': 4}, #could also be determined automatically 
+        ref_opts={"chunks": (1, 100, 100, 100)},
     output:
         nii=bids(
             root=root,
@@ -335,7 +336,7 @@ rule deform_zarr_to_template_nii:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
-    threads: 4
+    threads: 32
     container: None
     script:
         "../scripts/deform_to_template_nii.py"
@@ -348,6 +349,9 @@ rule deform_to_template_nii_zoomed:
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
+        flo_opts={"level": 1}, #downsampling level to use (TODO: set this automatically based on ref resolution?)
+        do_downsample=False, #whether to perform further downsampling before transforming
+        downsample_opts={'along_z': 4}, #could also be determined automatically 
         ref_opts=lambda wildcards: {
             "chunks": (1, 50, 50, 50),
             "zooms": (
