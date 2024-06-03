@@ -3,4 +3,3 @@ sphinx-argparse
 furo
 snakebids==0.10.2
 myst_parser
-nbsphinx
