@@ -1,7 +1,6 @@
 ## Command line interface
 
 ```{argparse}
-:filename: ../spimquant/run.py
-:func: get_parser
+:ref: spimquant.run.get_parser
 :prog: spimquant
 ```

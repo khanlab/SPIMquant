@@ -1,5 +1,5 @@
 docutils<0.18
 sphinx-argparse
-furo
-snakebids==0.10.2
+sphinx_rtd_theme
+snakebids
 myst_parser
