@@ -30,7 +30,6 @@ author = "Ali Khan"
 extensions = [
     "sphinxarg.ext",
     "myst_parser",
-    "nbsphinx"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
