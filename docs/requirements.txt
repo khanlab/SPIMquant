@@ -3,3 +3,4 @@ sphinx-argparse
 sphinx_rtd_theme
 snakebids
 myst_parser
+.
