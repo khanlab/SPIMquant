@@ -25,28 +25,23 @@ numpy = "^1.26.4"
 dask = "^2024.2.0"
 zarr = "^2.17.0"
 scipy = "^1.12.0"
-jupyterlab = "^4.1.1"
-matplotlib = "^3.8.3"
 scikit-image = "^0.22.0"
-scikit-learn = "^1.4.1.post1"
-seaborn = "^0.13.2"
-stardist = "^0.8.5"
 dask-image = "^2023.8.1"
 ome-zarr = "^0.9.0"
 pybids = "^0.16.5"
-attrs = "22.2.0"
-napari = "0.4.19"
-napari-ome-zarr = "^0.5.2"
-pyqt5 = "=5.15.10"   
-pyqt5-qt5 = "=5.15.2"
-cellpose = "^3.0.7"
 sparse = "^0.15.1"
-napari-nibabel = "^0.1.0"
-zarrnii = "^0.1.0a1"
+zarrnii = "^0.1.1a1"
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:main"
 
+
+[tool.poetry.group.dev.dependencies]
+jupyterlab = "^4.2.1"
+matplotlib = "^3.9.0"
+seaborn = "^0.13.2"
+napari = {extras = ["all"], version = "^0.4.19.post1"}
+napari-ome-zarr = "^0.5.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
