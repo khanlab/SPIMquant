@@ -34,6 +34,7 @@ wildcard_constraints:
     stain='[a-zA-Z0-9]+'
 
 
+
 rule all_templatereg_deform_zooms:
     input:
         spim_zoomed=inputs["spim"].expand(
@@ -113,6 +114,11 @@ rule all_templatereg_lbl:
             ),
             template=config["template"],
         ),
+
+rule all:
+    default_target: True
+    input:
+       rules.all_templatereg_deform.input,
 
 
 include: "rules/common.smk"
