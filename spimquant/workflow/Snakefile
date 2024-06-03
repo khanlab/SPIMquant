@@ -30,6 +30,11 @@ root = "results"
 container: config["containers"]["spimprep"]
 
 
+# wildcard_constraints: **get_wildcard_constraints(config["pybids_inputs"])
+wildcard_constraints:
+    stain="[a-zA-Z0-9]+",
+
+
 rule all_templatereg_deform_zooms:
     input:
         spim_zoomed=inputs["spim"].expand(
@@ -91,7 +96,7 @@ rule all_templatereg_deform:
                 suffix="SPIM.nii",
                 **inputs["spim"].wildcards
             ),
-            template=config["templates"],
+            template=config["template"],
             stain=config["stains"],
         ),
 
@@ -107,8 +112,14 @@ rule all_templatereg_lbl:
                 suffix="dseg.ome.zarr.zip",
                 **inputs["spim"].wildcards
             ),
-            template=config["templates"],
+            template=config["template"],
         ),
+
+
+rule all:
+    default_target: True
+    input:
+        rules.all_templatereg_deform.input,
 
 
 include: "rules/common.smk"

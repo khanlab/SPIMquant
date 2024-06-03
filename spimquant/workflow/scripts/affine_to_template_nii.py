@@ -1,5 +1,5 @@
 import nibabel as nib
-from  ome_zarr_neuro.transform import DaskImage, TransformSpec
+from  zarrnii import ZarrNii, Transform
 from dask.diagnostics import ProgressBar
 
 #get channel index from omero metadata
@@ -9,15 +9,15 @@ channel_labels = [channel_dict['label'] for channel_dict in attrs['omero']['chan
 channel_index = channel_labels.index(snakemake.wildcards.stain)
 
 
-#member function of floting image
-flo_dimg = DaskImage.from_path(snakemake.input.ome_zarr, channels=[channel_index])
-ref_dimg = DaskImage.from_path_as_ref(snakemake.input.ref_nii, channels=[channel_index],chunks=snakemake.params.chunks,zooms=snakemake.params.zooms)
+#member function of floating image
+flo_znimg = ZarrNii.from_path(snakemake.input.ome_zarr, channels=[channel_index])
+ref_znimg = ZarrNii.from_path_as_ref(snakemake.input.ref_nii, channels=[channel_index],chunks=snakemake.params.chunks,zooms=snakemake.params.zooms)
 
-out_dimg = flo_dimg.apply_transform(TransformSpec.affine_ras_from_txt(snakemake.input.xfm_ras),ref_dimg=ref_dimg)
+out_znimg = flo_znimg.apply_transform(Transform.affine_ras_from_txt(snakemake.input.xfm_ras),ref_znimg=ref_znimg)
 
 with ProgressBar():
 
-    out_dimg.to_nifti(snakemake.output.nii,scheduler='single-threaded')
+    out_znimg.to_nifti(snakemake.output.nii,scheduler='single-threaded')
 
 
 

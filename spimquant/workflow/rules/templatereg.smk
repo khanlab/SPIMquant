@@ -109,6 +109,7 @@ rule affine_reg:
             root=root,
             datatype="warps",
             space="{template}",
+            stain=config["templatereg"]["stain"],
             desc="affinewarped",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
@@ -130,6 +131,35 @@ rule affine_reg:
         " greedy -threads {threads} -d 3 -rf {input.template} "
         "  -rm {input.subject} {output.warped} "
         "  -r {output.xfm_ras}"
+
+
+rule convert_ras_to_itk:
+    input:
+        xfm_ras=bids(
+            root=root,
+            datatype="warps",
+            from_="subject",
+            to="{template}",
+            type_="ras",
+            desc="affine",
+            suffix="xfm.txt",
+            **inputs["spim"].wildcards
+        ),
+    output:
+        xfm_itk=bids(
+            root=root,
+            datatype="warps",
+            from_="subject",
+            to="{template}",
+            type_="itk",
+            desc="affine",
+            suffix="xfm.txt",
+            **inputs["spim"].wildcards
+        ),
+    container:
+        config["containers"]["itksnap"]
+    shell:
+        "c3d_affine_tool {input.xfm_ras} -oitk {output.xfm_itk}"
 
 
 rule deform_reg:
@@ -171,6 +201,7 @@ rule deform_reg:
             root=root,
             datatype="warps",
             space="{template}",
+            stain=config["templatereg"]["stain"],
             desc="deformwarped",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
@@ -338,6 +369,55 @@ rule deform_to_template_nii_zoomed:
     threads: 32
     script:
         "../scripts/deform_to_template_nii.py"
+
+
+rule deform_spim_nii_to_template_nii:
+    input:
+        spim=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards
+        ),
+        ref=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        xfm_itk=bids(
+            root=root,
+            datatype="warps",
+            from_="subject",
+            to="{template}",
+            type_="itk",
+            desc="affine",
+            suffix="xfm.txt",
+            **inputs["spim"].wildcards
+        ),
+        warp=bids(
+            root=root,
+            datatype="warps",
+            from_="subject",
+            to="{template}",
+            suffix="warp.nii",
+            **inputs["spim"].wildcards
+        ),
+    output:
+        spim=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            space="{template}",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards
+        ),
+    threads: 32
+    container:
+        config["containers"]["ants"]
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -v -n Linear "
+        " -i {input.spim} -o {output.spim} "
+        " -r {input.ref} -t {input.warp} {input.xfm_itk}"
 
 
 rule deform_template_dseg_to_subject_nii:
