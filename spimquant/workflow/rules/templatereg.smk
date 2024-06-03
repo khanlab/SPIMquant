@@ -275,8 +275,7 @@ rule affine_zarr_to_template_nii:
         xfm_ras=rules.affine_reg.output.xfm_ras,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        chunks=(50, 50, 50),
-        zooms=None,
+        ref_opts={"chunks": (1, 50, 50, 50)},
     output:
         nii=bids(
             root=root,
@@ -298,8 +297,7 @@ rule affine_zarr_to_template_ome_zarr:
         xfm_ras=rules.affine_reg.output.xfm_ras,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        chunks=(50, 50, 50),
-        zooms=None,
+        ref_opts={"chunks": (1, 50, 50, 50)},
     output:
         ome_zarr=directory(
             bids(
@@ -324,8 +322,9 @@ rule deform_zarr_to_template_nii:
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        chunks=(50, 50, 50),
-        zooms=None,
+        flo_opts={"level": 2}, #downsampling level to use (TODO: set this automatically based on ref resolution?)
+        downsample_opts={'along_z': 6}, #could also be determined automatically 
+        ref_opts={"chunks": (1, 20, 20, 20)},
     output:
         nii=bids(
             root=root,
@@ -336,7 +335,8 @@ rule deform_zarr_to_template_nii:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
-    threads: 32
+    threads: 4
+    container: None
     script:
         "../scripts/deform_to_template_nii.py"
 
@@ -348,13 +348,14 @@ rule deform_to_template_nii_zoomed:
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        chunks=(50, 50, 50),
-        zooms=lambda wildcards: (
-            float(wildcards.res) / 1000,
-            float(wildcards.res) / 1000,
-            float(wildcards.res) / 1000,
-        ),
-        #None #same resolution as template if NOne
+        ref_opts=lambda wildcards: {
+            "chunks": (1, 50, 50, 50),
+            "zooms": (
+                float(wildcards.res) / 1000,
+                float(wildcards.res) / 1000,
+                float(wildcards.res) / 1000,
+            ),
+        },
     output:
         nii=bids(
             root=root,
