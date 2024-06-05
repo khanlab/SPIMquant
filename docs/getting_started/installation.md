@@ -1,9 +1,11 @@
+# Usage
+
 ## Installation
 
 Install from github with pip:
 
 ```bash
-pip install -e git+https://github.com/akhanf/spimquant#egg=spimquant
+pip install -e git+https://github.com/khanlab/spimquant#egg=spimquant
 ```
 
 Note: you can re-run this command to re-install with the latest version
@@ -22,7 +24,7 @@ Run the app, using all cores::
 spimquant /path/to/bids/dir /path/to/output/dir participant --cores all
 ```
 
-If any workflow rules require containers, then run with the `--use-singularity` option.
+If any workflow rules require containers, then run with the `--use-apptainer` option.
 
 ## Generating a report
 
