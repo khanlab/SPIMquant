@@ -30,6 +30,7 @@ author = "Ali Khan"
 extensions = [
     "sphinx_rtd_theme",
     "sphinxarg.ext",
+    "myst_parser",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

@@ -1,4 +1,5 @@
-docutils<0.18
-sphinx-argparse
-sphinx_rtd_theme
-snakebids==0.10.2
+sphinx-argparse==0.4.0
+sphinx-rtd-theme==2.0.0
+snakebids==0.13.1
+myst-parser==3.0.1
+.
