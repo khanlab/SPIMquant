@@ -1,5 +1,3 @@
-# Usage
-
 ## Installation
 
 Install from github with pip:

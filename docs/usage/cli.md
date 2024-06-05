@@ -1,5 +1,3 @@
-# Usage
-
 The spimquant tool command-line interface is a composition of the core (app-based) 
 arguments and options, and the options related to Snakemake. Both are provided on 
 the same command-line, that is, any snakemake CLI option can be used when running spimquant.
