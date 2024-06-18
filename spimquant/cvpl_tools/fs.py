@@ -365,7 +365,7 @@ def im_resize(target_size: tuple, im: np.ndarray, order: int = 0) -> np.ndarray:
     return resized_im
 
 
-if __name__ == '__main__':
+def test():
     assert ImFileType.ftype_from_im_path('./some_root/hello.nii.gz') == ImFileType.FTYPE_NIB
     assert ImFileType.ftype_from_im_path('./some_root/hello_0001.JPG') == ImFileType.FTYPE_JPG
     assert ImFileType.ftype_from_im_path('./a.py') == ImFileType.FTYPE_UNKNOWN

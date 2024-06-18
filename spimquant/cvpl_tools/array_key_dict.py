@@ -159,7 +159,7 @@ class ArrayKeyDict(dict):
         return keylist
 
 
-if __name__ == '__main__':
+def test():
     test_dict1 = ArrayKeyDict()
     test_dict2 = ArrayKeyDict([['file1', 1], ['file2', 3], ['file3', 2]])
     assert len(test_dict1) == 0 and len(test_dict2) == 3
