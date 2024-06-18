@@ -1,0 +1,6 @@
+[submodule "spimquant/submodules/spimquant_CellSeg3D"]
+	path = spimquant/submodules/spimquant_CellSeg3D
+	url = git@github.com:khanlab/spimquant_CellSeg3D.git
+[submodule "spimquant/submodules/spimquant_cellpose"]
+	path = spimquant/submodules/spimquant_cellpose
+	url = git@github.com:khanlab/spimquant_cellpose.git
