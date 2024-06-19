@@ -30,7 +30,7 @@ class DatapointReference:
         return isinstance(self.data_ref, list)
 
     def read_as_np(self, read_setting: fs.ImReadSetting) -> np.ndarray:
-        return fs.ImIO.read_single_image(read_setting, self.data_ref)
+        return fs.ImIO.read_single_image(read_setting, self.data_ref)[0]
 
 
 @dataclass
