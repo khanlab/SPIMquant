@@ -233,7 +233,6 @@ class ImFileType:
 @dataclass
 class ImReadSetting:
     """
-    allowed_ftypes (list|str) - by default allows all ftypes except unknowns; otherwise this is a list of ftypes
     im_format (int) - specifies the data storage layout e.g. ImFileType.FORMAT_UINT8
     stack_axis (int) - if not None, combine several files with different zstacks to the same imid; specify the axis to stack on
     concat_instead (bool) - if True, the stacking are done by np.concatenate() which preserves im dimensions; over the same axis
@@ -241,7 +240,6 @@ class ImReadSetting:
     allow_pickle (bool) - set allow_pickle for np.load and np.save
     imid_keep_dirpath (bool) - keeping the directory path when extracting imid from paths; default to False
     """
-    allowed_ftypes: list = field(default_factory=lambda: ImFileType.all_ftypes)
     im_format: int = ImFileType.FORMAT_UINT8
     stack_axis: int = None
     concat_instead: bool = False
@@ -337,8 +335,6 @@ class ImIO:
         for path in paths:
             ftype = ImFileType.ftype_from_im_path(path)
             if ftype == ImFileType.FTYPE_UNKNOWN:
-                continue
-            elif ftype not in read_setting.allowed_ftypes:
                 continue
             imid, zstack_str = ImFileType.get_imid_and_zstack(path, is_stack=read_setting.stack_axis is not None,
                                                               keep_dirpath=read_setting.imid_keep_dirpath)

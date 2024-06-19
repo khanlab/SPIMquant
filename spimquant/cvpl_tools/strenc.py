@@ -4,7 +4,15 @@ To encode an object supported by this encoder:
 json_string = json.dumps(object, cls=strenc.get_encoder())
 To decode an object:
 object = json.loads(json_string, object_hook=strenc.get_decoder_hook())
+
+Note the behavior of json encode/decode will encode a subfield that is a dataclass as plain dict without
+'__type__' field, as opposed to directly encoding instance of a dataclass class.
 """
+
+
+import json
+import dataclasses
+from datetime import datetime
 
 
 _Encoder = None
@@ -24,9 +32,6 @@ def get_decoder_hook():
 
 
 def init():
-    import json
-    import dataclasses
-    from datetime import datetime
     from .fs import ImReadSetting, ImWriteSetting
     from .array_key_dict import ArrayKeyDict
     from .dataset_reference import DatapointReference, DatasetReference
@@ -54,8 +59,9 @@ def init():
             elif isinstance(o, datetime):
                 d = {
                     '__type__': 'datetime.datetime',
-                    'v1': repr(o)
+                    'v1': o.isoformat()
                 }
+                return d
             elif dataclasses.is_dataclass(o):
                 # reference: https://stackoverflow.com/questions/51286748/make-the-python-json-encoder-support-pythons-new-dataclasses
                 d = dataclasses.asdict(o)
@@ -70,11 +76,9 @@ def init():
             if ty == 'array_key_dict.ArrayKeyDict':
                 return ArrayKeyDict((key, o[key]) for key in o)
             elif ty == 'datetime.datetime':
-                t = o['v1']
-                terms = map(int, t[t.find('(') + 1: t.rfind(')')].split(','))
-                return datetime(*terms)
+                return datetime.fromisoformat(o['v1'])
             else:
-                cls = str_to_cls_map[t]
+                cls = str_to_cls_map[ty]
                 return cls(**o)
         return o
 
@@ -85,5 +89,14 @@ def init():
 
 
 def test():
-    # TODO: test this later once the classes are finalized
-    pass
+    from .fs import ImReadSetting
+    from .dataset_reference import DatasetReference
+    set = ImReadSetting()
+    set_json = json.dumps(set, cls=get_encoder())
+    set2: ImReadSetting = json.loads(set_json, object_hook=get_decoder_hook())
+    assert set2.im_format == set.im_format
+    dr = DatasetReference.empty()
+    dr.im_read_setting = set
+    dr_json = json.dumps(dr, cls=get_encoder())
+    dr2: DatasetReference = json.loads(dr_json, object_hook=get_decoder_hook())
+    assert dr.name == dr2.name

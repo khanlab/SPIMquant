@@ -40,24 +40,31 @@ class DatasetReference:
     and when and how this reference is created.
     """
     datapoint_refs: ArrayKeyDict[str, DatapointReference]
+    im_read_setting: fs.ImReadSetting
     creation_date: datetime
     creation_info: str  # a description of how this dataset is created
     name: str  # name of the dataset reference
 
-    def __init__(self, datapoint_refs: ArrayKeyDict[str, DatapointReference],
+    @classmethod
+    def new(self, datapoint_refs: ArrayKeyDict[str, DatapointReference],
                  dataset_name,
-                 creation_info):
+                 creation_info,
+                 im_read_setting: fs.ImReadSetting):
         # create an empty dataset
-        self.datapoint_refs = datapoint_refs
-        self.creation_date = datetime.now()
-        self.creation_info = creation_info
-        self.name = dataset_name
+        return DatasetReference(
+            datapoint_refs=datapoint_refs,
+            creation_date=datetime.now(),
+            creation_info=creation_info,
+            name=dataset_name,
+            im_read_setting=im_read_setting
+        )
 
     @classmethod
     def empty(cls):
-        return DatasetReference(ArrayKeyDict(),
+        return DatasetReference.new(ArrayKeyDict(),
                                 'Empty Dataset',
-                                'This dataset is created as an empty dataset.')
+                                'This dataset is created as an empty dataset.',
+                                None)
 
 
 def test():
