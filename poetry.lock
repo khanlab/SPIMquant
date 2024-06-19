@@ -6492,14 +6492,14 @@ jupyter = ["ipytree (>=0.2.2)", "ipywidgets (>=8.0.0)", "notebook"]
 
 [[package]]
 name = "zarrnii"
-version = "0.1.1a1"
+version = "0.1.3a1"
 description = "Package for working with OME-Zarr and NIFTI images in a unified manner, with a focus on spatial transformations"
 category = "main"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "zarrnii-0.1.1a1-py3-none-any.whl", hash = "sha256:c61b0cad748f5b1e862560be4f92e5695d37cd23a1534e781809772704c98e1f"},
-    {file = "zarrnii-0.1.1a1.tar.gz", hash = "sha256:0ffc8e5e8d48b5ef9ce65d58dcf6604f342115bb16d9785092573f4fd2111526"},
+    {file = "zarrnii-0.1.3a1-py3-none-any.whl", hash = "sha256:487aeebf45e16b6cd721d8d9ed05a7fdc2196c66f01ebaf5e3e4f27a3747954f"},
+    {file = "zarrnii-0.1.3a1.tar.gz", hash = "sha256:51b46c8b52d4842fe8daf66cbd8498d4287207d90006326ca1f82a3a4454507d"},
 ]
 
 [package.dependencies]
@@ -6542,4 +6542,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "2429d5819d1f2ff3e8ce5f760cba5b03ceb090e3579ac30c4ed8583741e73282"
+content-hash = "849dcf3085436b8d5dce08635b303f581efee7adee34d338154225711ded35f7"
