@@ -35,7 +35,7 @@ def write_cellseg3d_config(config, path: str, write_model=False):
             config.model_weight_path = f'{path}/wnet.pth'
             shutil.copy(cur_path, config.model_weight_path)
     with open(f'{path}/model_config.json', 'w') as outfile:
-        json.dump(ref, outfile, cls=get_encoder(), indent=2)
+        json.dump(config, outfile, cls=get_encoder(), indent=2)
 
 
 def read_cellseg3d_config(path: str):
