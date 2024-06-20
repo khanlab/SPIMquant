@@ -7,6 +7,7 @@ about the object class' instance.
 """
 
 
+import shutil
 import json
 from .fs import ensure_dir_exists
 from .strenc import get_encoder, get_decoder_hook
@@ -23,3 +24,21 @@ def read_dataset_reference(path: str) -> DatasetReference:
     with open(f'{path}/dataset.json', 'r') as infile:
         ref = json.load(infile, object_hook=get_decoder_hook())
     return ref
+
+
+def write_cellseg3d_config(config, path: str, write_model=False):
+    ensure_dir_exists(path, True)
+    if write_model:
+        cur_path = config.model_weight_path
+        if cur_path is None:
+            print('WARNING: cur_path is None while write_model is True!')
+            config.model_weight_path = f'{path}/wnet.pth'
+            shutil.copy(cur_path, config.model_weight_path)
+    with open(f'{path}/model_config.json', 'w') as outfile:
+        json.dump(ref, outfile, cls=get_encoder(), indent=2)
+
+
+def read_cellseg3d_config(path: str):
+    with open(f'{path}/model_config.json', 'r') as infile:
+        config = json.load(infile, object_hook=get_decoder_hook())
+    return config

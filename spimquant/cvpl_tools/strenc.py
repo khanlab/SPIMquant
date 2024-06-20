@@ -37,11 +37,12 @@ def init():
     from .array_key_dict import ArrayKeyDict
     from .dataset_reference import DatapointReference, DatasetReference
     from dataclasses import fields
+    from spimquant.submodules.spimquant_CellSeg3D.napari_cellseg3d.spimquant import CellSeg3DModelConfig
 
 
     # in order to support a more automatic conversion of dataclasses
     dataclasses_names = (
-        ImReadSetting, ImWriteSetting, DatapointReference, DatasetReference
+        ImReadSetting, ImWriteSetting, DatapointReference, DatasetReference, CellSeg3DModelConfig
     )
     # here we use .__name__ to get class names without prefixes to ensure consistency of the class names
     # across Python invokations
