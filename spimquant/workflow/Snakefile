@@ -1,29 +1,17 @@
-from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
+from snakebids import bids, get_wildcard_constraints, set_bids_spec
 from snakemake.utils import format
 
 set_bids_spec("v0_11_0")
 
 
 configfile: "config/snakebids.yml"
+include: "rules/common.smk"
+cconfig = CachedConfig(config)
 
 
 # use expandvars so we can use e.g. '$SLURM_TMPDIR'
 root = os.path.expandvars(config["root"])
 work = os.path.expandvars(config["work"])
-
-
-# Get input wildcards
-inputs = generate_inputs(
-    bids_dir=config["bids_dir"],
-    pybids_inputs=config["pybids_inputs"],
-    pybidsdb_dir=config.get("pybidsdb_dir"),
-    pybidsdb_reset=config.get("pybidsdb_reset"),
-    derivatives=config.get("derivatives", None),
-    participant_label=config.get("participant_label", None),
-    exclude_participant_label=config.get("exclude_participant_label", None),
-    validate=not config.get("plugins.validator.skip", False),
-)
-
 root = "results"
 
 
@@ -37,7 +25,7 @@ wildcard_constraints:
 
 rule all_templatereg_deform_zooms:
     input:
-        spim_zoomed=inputs["spim"].expand(
+        spim_zoomed=cconfig.inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="micr",
@@ -46,7 +34,7 @@ rule all_templatereg_deform_zooms:
                 stain="{stain}",
                 res="{res}um",
                 suffix="SPIM.nii",
-                **inputs["spim"].wildcards
+                **cconfig.inputs["spim"].wildcards
             ),
             template=config["template"],
             stain=config["stains"],
@@ -56,14 +44,14 @@ rule all_templatereg_deform_zooms:
 
 rule all_blobdensity:
     input:
-        blob_density=inputs["spim"].expand(
+        blob_density=cconfig.inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="micr",
                 space="{template}",
                 stain="{stain}",
                 suffix="blobdensity.nii",
-                **inputs["spim"].wildcards
+                **cconfig.inputs["spim"].wildcards
             ),
             stain=config["blobdetect"]["stain"],
             template=config["template"],
@@ -72,13 +60,13 @@ rule all_blobdensity:
 
 rule all_blobs:
     input:
-        spim_zoomed=inputs["spim"].expand(
+        spim_zoomed=cconfig.inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="micr",
                 stain="{stain}",
                 suffix="blobs.npy",
-                **inputs["spim"].wildcards
+                **cconfig.inputs["spim"].wildcards
             ),
             stain=config["stains"],
         ),
@@ -86,7 +74,7 @@ rule all_blobs:
 
 rule all_templatereg_deform:
     input:
-        spim=inputs["spim"].expand(
+        spim=cconfig.inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="micr",
@@ -94,7 +82,7 @@ rule all_templatereg_deform:
                 space="{template}",
                 stain="{stain}",
                 suffix="SPIM.nii",
-                **inputs["spim"].wildcards
+                **cconfig.inputs["spim"].wildcards
             ),
             template=config["template"],
             stain=config["stains"],
@@ -103,14 +91,14 @@ rule all_templatereg_deform:
 
 rule all_templatereg_lbl:
     input:
-        dseg=inputs["spim"].expand(
+        dseg=cconfig.inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="micr",
                 desc="resampled",
                 from_="{template}",
                 suffix="dseg.ome.zarr.zip",
-                **inputs["spim"].wildcards
+                **cconfig.inputs["spim"].wildcards
             ),
             template=config["template"],
         ),
@@ -122,7 +110,6 @@ rule all:
         rules.all_templatereg_deform.input,
 
 
-include: "rules/common.smk"
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"

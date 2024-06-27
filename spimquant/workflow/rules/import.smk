@@ -5,7 +5,7 @@ wildcard_constraints:
 
 rule get_downsampled_nii:
     input:
-        zarr=inputs["spim"].path,
+        zarr=cconfig.inputs["spim"].path,
     output:
         nii=bids(
             root=root,
@@ -13,7 +13,7 @@ rule get_downsampled_nii:
             stain="{stain}",
             level="{level}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **cconfig.inputs["spim"].wildcards
         ),
     threads: 32
     script:
