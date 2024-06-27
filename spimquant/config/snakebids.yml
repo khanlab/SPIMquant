@@ -108,8 +108,9 @@ blobdetect:
 
 cellsegment:
   # CesllSeg3D parameters
-  num_train_chunk: 64  # number of train chunks used for training
-  num_chunk_per_ld: 512  # number of train chunk sampled from each ld; will keep sampling until reaches num_train_chunk
+  zarr: 'gs://khanlab-lightsheet/data/onuska_lifecanvas/bids/sub-o21/micr/sub-o21_sample-brain_acq-prestitched_SPIM.ome.zarr'
+  num_train_chunk: 64  # number of train chunks used for training. recommended: 16384
+  num_chunk_per_ld: 2048  # number of train chunk sampled from each ld; will keep sampling until reaches num_train_chunk
   creation_info: >  # '>' breaks string in yaml to multiple lines, disgarding all '\n', see https://stackoverflow.com/questions/3790454/how-do-i-break-a-string-in-yaml-over-multiple-lines
     This dataset is created from horizontally sampling random slices and take 32*32*32 chunks until
     there are {TOTAL_N} chunks in total. These chunks are filtered so chunks that have nothing are not included
@@ -126,7 +127,7 @@ cellsegment:
   max_brightness: 1000.
   n_cuts_weight: 0.5
   rec_loss_weight: 0.005
-  nepochs: 20
+  nepochs: 1  # recommended: 20-50
   num_classes: 5
   device: "cpu"  # the device for training/prediction
 

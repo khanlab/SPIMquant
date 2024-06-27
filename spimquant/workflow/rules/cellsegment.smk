@@ -30,7 +30,6 @@ checkpoint cellseg3d_create_trainset:
     This command creates the required slices.
     """
     params:
-        zarr = 'gs://khanlab-lightsheet/data/onuska_lifecanvas/bids/sub-o21/micr/sub-o21_sample-brain_acq-prestitched_SPIM.ome.zarr',
         output_dir=config["output_dir"],
         cellsegment=config["cellsegment"],  # pass in the dictionary
         command='init_dataset',
@@ -59,12 +58,13 @@ rule cellseg3d_train:
 
 rule cellseg3d_predict:
     """
-    Taking a model config folder, predicting on a new numpy chunk of arbitrary size > 64*64*64
+    Taking a model config folder, predicting on a new 3d numpy chunk of arbitrary size that is >= 64 * 64 * 64
+    The output of this rule is a .npy file containing the normalized probabilities (0-1) for each classes among the 
+    num_classes classes in the intermediate representation.
     """
     input:
         model_config=f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}_model_config'
     params:
-        zarr = 'gs://khanlab-lightsheet/data/onuska_lifecanvas/bids/sub-o21/micr/sub-o21_sample-brain_acq-prestitched_SPIM.ome.zarr',
         output_dir=config["output_dir"],
         cellsegment=config["cellsegment"],# pass in the dictionary
         command='predict',
