@@ -344,7 +344,7 @@ rule deform_zarr_to_template_nii:
 
 rule deform_to_template_nii_zoomed:
     input:
-        ome_zarr=inputs["spim"].path,
+        ome_zarr=cconfig.inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
@@ -369,7 +369,7 @@ rule deform_to_template_nii_zoomed:
             stain="{stain}",
             res="{res}um",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **cconfig.inputs["spim"].wildcards
         ),
     threads: 32
     script:
@@ -384,7 +384,7 @@ rule deform_spim_nii_to_template_nii:
             stain="{stain}",
             level="{level}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **cconfig.inputs["spim"].wildcards
         ),
         ref=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
         xfm_itk=bids(
@@ -395,7 +395,7 @@ rule deform_spim_nii_to_template_nii:
             type_="itk",
             desc="affine",
             suffix="xfm.txt",
-            **inputs["spim"].wildcards
+            **cconfig.inputs["spim"].wildcards
         ),
         warp=bids(
             root=root,
@@ -403,7 +403,7 @@ rule deform_spim_nii_to_template_nii:
             from_="subject",
             to="{template}",
             suffix="warp.nii",
-            **inputs["spim"].wildcards
+            **cconfig.inputs["spim"].wildcards
         ),
     output:
         spim=bids(
@@ -413,7 +413,7 @@ rule deform_spim_nii_to_template_nii:
             level="{level}",
             space="{template}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **cconfig.inputs["spim"].wildcards
         ),
     threads: 32
     container:
@@ -434,7 +434,7 @@ rule deform_template_dseg_to_subject_nii:
             stain=config["templatereg"]["stain"],
             level="{level}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **cconfig.inputs["spim"].wildcards
         ),
         dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
         xfm_ras=rules.init_affine_reg.output.xfm_ras,
@@ -447,7 +447,7 @@ rule deform_template_dseg_to_subject_nii:
             level="{level}",
             from_="{template}",
             suffix="dseg.nii.gz",
-            **inputs["spim"].wildcards
+            **cconfig.inputs["spim"].wildcards
         ),
     threads: 32
     container:
@@ -462,7 +462,7 @@ rule deform_template_dseg_to_subject_nii:
 
 rule deform_transform_labels_to_subj:
     input:
-        ref_ome_zarr=inputs["spim"].path,
+        ref_ome_zarr=cconfig.inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         invwarp_nii=rules.deform_reg.output.invwarp,
         flo_nii=bids_tpl(
@@ -476,7 +476,7 @@ rule deform_transform_labels_to_subj:
                 desc="deform",
                 space="subject",
                 suffix="dseg.zarr",
-                **inputs["spim"].wildcards
+                **cconfig.inputs["spim"].wildcards
             )
         ),
     container:
@@ -497,7 +497,7 @@ rule transform_labels_to_zoomed_template:
             stain=config["templatereg"]["stain"],
             res="{res}um",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **cconfig.inputs["spim"].wildcards
         ),
     output:
         dseg=bids(
@@ -506,7 +506,7 @@ rule transform_labels_to_zoomed_template:
             space="{template}",
             res="{res}um",
             suffix="dseg.nii",
-            **inputs["spim"].wildcards
+            **cconfig.inputs["spim"].wildcards
         ),
     threads: 32
     container:

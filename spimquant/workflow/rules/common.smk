@@ -4,21 +4,7 @@ from snakebids import generate_inputs
 
 class CachedConfig:
     """
-    For lazy initialization of some variables. For example, the metadata read for a BIDS config needs to be done once
-    and once only for rules that requires to read the BIDS dataset; and it does not need to be read at all for rules
-    that don't require reading the BIDS dataset. This motivates the following pattern:
-
-    class C:
-        ...
-        def get_inputs(self):
-            if self.input is None:
-                inputs = read_bids(...)
-            return inputs
-        ...
-
-    which is more conveniently done using the @cached_property decorator as suggested by
-    https://stackoverflow.com/questions/15226721/python-class-member-lazy-initialization
-    So this class uses this method to do lazy intialization of variables
+    For lazy initialization of some variables.
     """
     def __init__(self, config):
         self.config = config
