@@ -24,6 +24,7 @@ rule cellpose:
         "../scripts/cellpose.py"
 
 
+cellseg3d_dataset_name = config["cellsegment"]["init_dataset"]["dataset_name"]
 checkpoint cellseg3d_create_trainset:
     """
     Training set of CellSeg3D requires to sample slices from the OME_zarr file.
@@ -34,7 +35,7 @@ checkpoint cellseg3d_create_trainset:
         cellsegment=config["cellsegment"]["init_dataset"],  # pass in the dictionary
         command='init_dataset',
     output:
-        dataset_dir=directory(f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}')
+        dataset_dir=directory(f'{config["output_dir"]}/{cellseg3d_dataset_name}')
     script:
         "../../../../spimquant_CellSeg3D/spimquant.py"
 
@@ -44,13 +45,13 @@ rule cellseg3d_train:
     This command creates a model config folder that contains the trained model.
     """
     input:
-        dataset_dir=f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}'
+        dataset_dir=f'{config["output_dir"]}/{cellseg3d_dataset_name}'
     params:
         output_dir=config["output_dir"],
         cellsegment=config["cellsegment"]["init_dataset"] | config["cellsegment"]["train"],
         command='train',
     output:
-        model_config=directory(f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}_model_config')
+        model_config=directory(f'{config["output_dir"]}/{cellseg3d_dataset_name}_model_config')
     container:
         None  # TODO: put this in container
     script:
@@ -63,13 +64,13 @@ rule cellseg3d_predict:
     num_classes classes in the intermediate representation.
     """
     input:
-        model_config=f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}_model_config'
+        model_config=f'{config["output_dir"]}/{cellseg3d_dataset_name}_model_config'
     params:
         output_dir=config["output_dir"],
         cellsegment=config["cellsegment"]["init_dataset"] | config["cellsegment"]["train"] | config["cellsegment"]["predict"],
         command='predict',
     output:
-        pred_result_dir=directory(f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}_pred')
+        pred_result_dir=directory(f'{config["output_dir"]}/{cellseg3d_dataset_name}_pred')
     container:
         None  # TODO: put this in container
     script:
@@ -81,6 +82,6 @@ rule cellseg3d_view:
     The result is a nclass*Depth*Height*Width float image
     """
     input:
-        pred_result_dir=f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}_pred'
+        pred_result_dir=f'{config["output_dir"]}/{cellseg3d_dataset_name}_pred'
     script:
         '../scripts/cellseg3d_napari_pair_overlay.py'
