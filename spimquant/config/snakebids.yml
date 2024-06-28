@@ -133,7 +133,7 @@ cellsegment:
     scratch_dir: "../../../data/scratch"  # will be deleted after a rule is invoked
 
   predict:
-    predict_range: !!python/tuple [[1344, 1386], [512, 2560], [2048, 4096]]
+    predict_range: !!python/tuple [[[1344,1386], [512,2560], [2048,4096]], [[1632,1760], [4096,8192], [3328,3840]], [[1920,1952], [1251,5347], [1289,5385]], [[1216,1248], [7168,9216], [1024,2048]]]
 
 
 
