@@ -120,9 +120,9 @@ cellsegment:
     ld_size: !!python/tuple [32, 4096, 4096]
     train_chunk_size: !!python/tuple [32, 32, 32]
     dataset_name: "mousebrain_chan0_20240620_1"  # this will be used to name subfolders so changing this alone allows preserving results of previous runs while starting a new run
+    im_channel: 1  # the channel to train on; also used for prediction; need this for init_dataset because of variance filtering
 
   train:
-    im_channel: 1  # the channel to train on; also used for prediction
     min_brightness: 0.
     max_brightness: 1000.
     n_cuts_weight: 0.5
