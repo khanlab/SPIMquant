@@ -42,6 +42,6 @@ zdownsampling = 2**(floor(log2(z_ratio)))
 
 
 with ProgressBar():
-    ZarrNii.from_path(in_zarr,level=level).downsample(along_z=zdownsampling).to_nifti(snakemake.output.nii)
+    ZarrNii.from_path(in_zarr,level=level,channels=[channel_index]).downsample(along_z=zdownsampling).to_nifti(snakemake.output.nii)
 
     
