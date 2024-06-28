@@ -34,7 +34,7 @@ bokeh = "^3.4.1"
 zarrnii = "0.1.3a1"
 
 [tool.poetry.scripts]
-spimquant = "spimquant.run:main"
+spimquant = "spimquant.run:app.run"
 
 
 [tool.poetry.group.dev.dependencies]
