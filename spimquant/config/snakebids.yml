@@ -1,4 +1,6 @@
-bids_dir: '/cifs/prado/Kate/AK_Pipeline_LSM/spimprep/bids/'
+bids_dir: 'gcs://khanlab-lightsheet/data/onuska_lifecanvas/bids'
+#bids_dir: /cifs/trident/projects/lightsheet_lifecanvas/bids/
+#bids_dir: /home/ROBARTS/alik/graham/cfmm-bids/Prado/LightsheetMicroscopy/bids_Onuska_LifeCanvas/bids
 output_dir: '.'
 
 

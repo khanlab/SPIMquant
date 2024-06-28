@@ -7,7 +7,7 @@ client = Client(n_workers=4, threads_per_worker=2,processes=False)
 print(client.dashboard_link)
 
 #get channel index from omero metadata
-zi = zarr.open(snakemake.input.ome_zarr)
+zi = zarr.open(snakemake.params.ome_zarr)
 attrs = zi['/'].attrs.asdict()
 channel_labels = [channel_dict['label'] for channel_dict in attrs['omero']['channels']]
 channel_index = channel_labels.index(snakemake.wildcards.stain)

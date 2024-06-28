@@ -12,11 +12,12 @@ from zarrnii import ZarrNii
 in_zarr_url = snakemake.params.in_zarr
 
 
-loc = parse_url(in_zarr_url,mode='r')
-zarr_reader = Reader(loc).zarr
+#loc = parse_url(in_zarr_url,mode='r')
+#zarr_reader = Reader(loc).zarr
 
 
-attrs=zarr_reader.root_attrs
+zi = zarr.open(in_zarr_url)
+attrs=zi['/'].attrs.asdict()
 
 #get channel index from omero metadata
 channel_labels = [channel_dict['label'] for channel_dict in attrs['omero']['channels']]
@@ -46,6 +47,6 @@ zdownsampling = 2**(floor(log2(z_ratio)))
 
 
 with ProgressBar():
-    ZarrNii.from_path(in_zarr,level=level).downsample(along_z=zdownsampling).to_nifti(snakemake.output.nii)
+    ZarrNii.from_path(in_zarr_url,level=level,channels=[channel_index]).downsample(along_z=zdownsampling).to_nifti(snakemake.output.nii)
 
     

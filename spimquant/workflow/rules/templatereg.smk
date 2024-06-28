@@ -317,11 +317,11 @@ rule affine_zarr_to_template_ome_zarr:
 
 rule deform_zarr_to_template_nii:
     input:
-        ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
+        ome_zarr=inputs["spim"].path,
         flo_opts={"level": 2}, #downsampling level to use (TODO: set this automatically based on ref resolution?)
         do_downsample=True, #whether to perform further downsampling before transforming
         downsample_opts={'along_z': 4}, #could also be determined automatically 

@@ -31,7 +31,7 @@ ome-zarr = "^0.9.0"
 pybids = {git = "https://github.com/akhanf/pybids", rev = 'master', develop = true }
 sparse = "^0.15.1"
 bokeh = "^3.4.1"
-zarrnii = "0.1.3a1"
+zarrnii = {git = "https://github.com/khanlab/zarrnii", rev = "main", develop = true }
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:app.run"
@@ -41,7 +41,7 @@ spimquant = "spimquant.run:app.run"
 jupyterlab = "^4.2.1"
 matplotlib = "^3.9.0"
 seaborn = "^0.13.2"
-napari = {extras = ["all"], version = "^0.4.19.post1"}
+#napari = {extras = ["all"], version = "^0.4.19.post1"}
 napari-ome-zarr = "^0.5.2"
 
 [build-system]

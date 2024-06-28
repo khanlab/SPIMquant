@@ -3246,10 +3246,8 @@ lazy-loader = ">=0.2"
 magicgui = ">=0.3.6"
 napari-console = ">=0.0.9"
 napari-plugin-engine = ">=0.1.9"
-napari-plugin-manager = {version = ">=0.1.0a1,<0.2.0", optional = true, markers = "extra == \"all\""}
 napari-svg = ">=0.1.8"
 npe2 = ">=0.7.2"
-numba = {version = ">=0.57.1", optional = true, markers = "extra == \"all\""}
 numpy = ">=1.21,<2"
 numpydoc = ">=0.9.2"
 pandas = {version = ">=1.3.0", markers = "python_version >= \"3.9\""}
@@ -3260,7 +3258,6 @@ psygnal = ">=0.3.4"
 pydantic = ">=1.9.0"
 pygments = ">=2.6.0"
 PyOpenGL = ">=3.1.0"
-PyQt5 = {version = ">=5.12.3,<5.15.0 || >5.15.0", optional = true, markers = "extra == \"all\""}
 PyYAML = ">=5.1"
 qtpy = ">=1.10.0"
 scikit-image = {version = ">=0.19.1", extras = ["data"]}
@@ -3269,7 +3266,6 @@ superqt = ">=0.4.1"
 tifffile = ">=2020.2.16"
 toolz = ">=0.10.0"
 tqdm = ">=4.56.0"
-triangle = {version = "*", optional = true, markers = "platform_machine != \"arm64\" and extra == \"all\""}
 typing-extensions = ">=4.2.0"
 vispy = ">=0.14.1,<0.15"
 wrapt = ">=1.11.1"
@@ -3341,27 +3337,6 @@ files = [
 [package.extras]
 dev = ["pre-commit", "pytest", "pytest-cov", "tox", "tox-conda"]
 test = ["pytest", "pytest-cov"]
-
-[[package]]
-name = "napari-plugin-manager"
-version = "0.1.0a2"
-description = "Install plugins for napari, in napari."
-category = "dev"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "napari-plugin-manager-0.1.0a2.tar.gz", hash = "sha256:70de69b197eed9ad61087d437af7c7a282b9e8521072e5588f2775f15537ad1e"},
-    {file = "napari_plugin_manager-0.1.0a2-py3-none-any.whl", hash = "sha256:8785bb57f9b3b6e063f7e0c4bc40f9a6a422150e19451961513e28c56f4b4060"},
-]
-
-[package.dependencies]
-npe2 = "*"
-pip = "*"
-qtpy = "*"
-superqt = "*"
-
-[package.extras]
-testing = ["pytest", "pytest-cov", "pytest-qt", "virtualenv"]
 
 [[package]]
 name = "napari-svg"
@@ -4075,18 +4050,6 @@ uncertainties = ["uncertainties (>=3.1.6)"]
 xarray = ["xarray"]
 
 [[package]]
-name = "pip"
-version = "24.1.1"
-description = "The PyPA recommended tool for installing Python packages."
-category = "dev"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "pip-24.1.1-py3-none-any.whl", hash = "sha256:efca15145a95e95c00608afeab66311d40bfb73bb2266a855befd705e6bb15a0"},
-    {file = "pip-24.1.1.tar.gz", hash = "sha256:5aa64f65e1952733ee0a9a9b1f52496ebdb3f3077cc46f80a16d983b58d1180a"},
-]
-
-[[package]]
 name = "plac"
 version = "1.4.3"
 description = "The smartest command line arguments parser in the world"
@@ -4481,7 +4444,7 @@ tutorial = ["ipykernel", "jinja2", "jupyter_client", "markupsafe", "nbconvert"]
 [package.source]
 type = "git"
 url = "https://github.com/akhanf/pybids"
-reference = 'master'
+reference = "master"
 resolved_reference = "3fb822b8f56155b8d39643c99b39a7ca3b43cde1"
 
 [[package]]
@@ -4698,69 +4661,6 @@ python-versions = ">=3.7"
 files = [
     {file = "pyproject_hooks-1.1.0-py3-none-any.whl", hash = "sha256:7ceeefe9aec63a1064c18d939bdc3adf2d8aa1988a510afec15151578b232aa2"},
     {file = "pyproject_hooks-1.1.0.tar.gz", hash = "sha256:4b37730834edbd6bd37f26ece6b44802fb1c1ee2ece0e54ddff8bfc06db86965"},
-]
-
-[[package]]
-name = "pyqt5"
-version = "5.15.10"
-description = "Python bindings for the Qt cross platform application toolkit"
-category = "dev"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "PyQt5-5.15.10-cp37-abi3-macosx_10_13_x86_64.whl", hash = "sha256:93288d62ebd47b1933d80c27f5d43c7c435307b84d480af689cef2474e87e4c8"},
-    {file = "PyQt5-5.15.10-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:862cea3be95b4b0a2b9678003b3a18edf7bd5eafd673860f58820f246d4bf616"},
-    {file = "PyQt5-5.15.10-cp37-abi3-manylinux_2_17_x86_64.whl", hash = "sha256:b89478d16d4118664ff58ed609e0a804d002703c9420118de7e4e70fa1cb5486"},
-    {file = "PyQt5-5.15.10-cp37-abi3-win32.whl", hash = "sha256:ff99b4f91aa8eb60510d5889faad07116d3340041916e46c07d519f7cad344e1"},
-    {file = "PyQt5-5.15.10-cp37-abi3-win_amd64.whl", hash = "sha256:501355f327e9a2c38db0428e1a236d25ebcb99304cd6e668c05d1188d514adec"},
-    {file = "PyQt5-5.15.10.tar.gz", hash = "sha256:d46b7804b1b10a4ff91753f8113e5b5580d2b4462f3226288e2d84497334898a"},
-]
-
-[package.dependencies]
-PyQt5-Qt5 = ">=5.15.2"
-PyQt5-sip = ">=12.13,<13"
-
-[[package]]
-name = "pyqt5-qt5"
-version = "5.15.14"
-description = "The subset of a Qt installation needed by PyQt5."
-category = "dev"
-optional = false
-python-versions = "*"
-files = [
-    {file = "PyQt5_Qt5-5.15.14-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:c89b35b2aaf24d2805cc76fe31880c77b7f7557db8aafb26f1015f1bba7031d6"},
-    {file = "PyQt5_Qt5-5.15.14-py3-none-macosx_11_0_arm64.whl", hash = "sha256:730da7e6a97f6bad1b6df21082fe625647730418bc83e20cbc2ff6401ed0a8be"},
-]
-
-[[package]]
-name = "pyqt5-sip"
-version = "12.13.0"
-description = "The sip module support for PyQt5"
-category = "dev"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "PyQt5_sip-12.13.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:a7e3623b2c743753625c4650ec7696362a37fb36433b61824cf257f6d3d43cca"},
-    {file = "PyQt5_sip-12.13.0-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:6e4ac714252370ca037c7d609da92388057165edd4f94e63354f6d65c3ed9d53"},
-    {file = "PyQt5_sip-12.13.0-cp310-cp310-win32.whl", hash = "sha256:d5032da3fff62da055104926ffe76fd6044c1221f8ad35bb60804bcb422fe866"},
-    {file = "PyQt5_sip-12.13.0-cp310-cp310-win_amd64.whl", hash = "sha256:9a8cdd6cb66adcbe5c941723ed1544eba05cf19b6c961851b58ccdae1c894afb"},
-    {file = "PyQt5_sip-12.13.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:0f85fb633a522f04e48008de49dce1ff1d947011b48885b8428838973fbca412"},
-    {file = "PyQt5_sip-12.13.0-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:ec60162e034c42fb99859206d62b83b74f987d58937b3a82bdc07b5c3d190dec"},
-    {file = "PyQt5_sip-12.13.0-cp311-cp311-win32.whl", hash = "sha256:205cd449d08a2b024a468fb6100cd7ed03e946b4f49706f508944006f955ae1a"},
-    {file = "PyQt5_sip-12.13.0-cp311-cp311-win_amd64.whl", hash = "sha256:1c8371682f77852256f1f2d38c41e2e684029f43330f0635870895ab01c02f6c"},
-    {file = "PyQt5_sip-12.13.0-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:7fe3375b508c5bc657d73b9896bba8a768791f1f426c68053311b046bcebdddf"},
-    {file = "PyQt5_sip-12.13.0-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:773731b1b5ab1a7cf5621249f2379c95e3d2905e9bd96ff3611b119586daa876"},
-    {file = "PyQt5_sip-12.13.0-cp312-cp312-win32.whl", hash = "sha256:fb4a5271fa3f6bc2feb303269a837a95a6d8dd16be553aa40e530de7fb81bfdf"},
-    {file = "PyQt5_sip-12.13.0-cp312-cp312-win_amd64.whl", hash = "sha256:3a4498f3b1b15f43f5d12963accdce0fd652b0bcaae6baf8008663365827444c"},
-    {file = "PyQt5_sip-12.13.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:9b984c2620a7a7eaf049221b09ae50a345317add2624c706c7d2e9e6632a9587"},
-    {file = "PyQt5_sip-12.13.0-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:3188a06956aef86f604fb0d14421a110fad70d2a9e943dbacbfc3303f651dade"},
-    {file = "PyQt5_sip-12.13.0-cp38-cp38-win32.whl", hash = "sha256:108a15f603e1886988c4b0d9d41cb74c9f9815bf05cefc843d559e8c298a10ce"},
-    {file = "PyQt5_sip-12.13.0-cp38-cp38-win_amd64.whl", hash = "sha256:db228cd737f5cbfc66a3c3e50042140cb80b30b52edc5756dbbaa2346ec73137"},
-    {file = "PyQt5_sip-12.13.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:5338773bbaedaa4f16a73c142fb23cc18c327be6c338813af70260b756c7bc92"},
-    {file = "PyQt5_sip-12.13.0-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:29fa9cc964517c9fc3f94f072b9a2aeef4e7a2eda1879cb835d9e06971161cdf"},
-    {file = "PyQt5_sip-12.13.0-cp39-cp39-win32.whl", hash = "sha256:96414c93f3d33963887cf562d50d88b955121fbfd73f937c8eca46643e77bf61"},
-    {file = "PyQt5_sip-12.13.0-cp39-cp39-win_amd64.whl", hash = "sha256:bbc7cd498bf19e0862097be1ad2243e824dea56726f00c11cff1b547c2d31d01"},
-    {file = "PyQt5_sip-12.13.0.tar.gz", hash = "sha256:7f321daf84b9c9dbca61b80e1ef37bdaffc0e93312edae2cd7da25b953971d91"},
 ]
 
 [[package]]
@@ -5776,7 +5676,7 @@ typing-extensions = ">=3.10.0"
 [package.source]
 type = "git"
 url = "https://github.com/akhanf/snakebids"
-reference = 'fsspec'
+reference = "fsspec"
 resolved_reference = "39cd92dfbfbb06ec05e5c79f5a1ec25b7b145b6f"
 
 [[package]]
@@ -6464,52 +6364,6 @@ docs = ["myst-parser", "pydata-sphinx-theme", "sphinx"]
 test = ["argcomplete (>=3.0.3)", "mypy (>=1.7.0)", "pre-commit", "pytest (>=7.0,<8.2)", "pytest-mock", "pytest-mypy-testing"]
 
 [[package]]
-name = "triangle"
-version = "20230923"
-description = "Python binding to the triangle library"
-category = "dev"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "triangle-20230923-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:9b73207eaaeab23f3ca4c70ceb6b759e8dff729501b21c12d8ea1d972fecb5e7"},
-    {file = "triangle-20230923-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0a4ec064dbd6b35eb14a552e4435d3e17330f93c3caaebee0ef37b1c60ed13e4"},
-    {file = "triangle-20230923-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3dcf9881b88c9c192c59f911e75808f64dc71506d3dda3423fd3ff99a4eaa9ae"},
-    {file = "triangle-20230923-cp310-cp310-win32.whl", hash = "sha256:c8148839b8e082fa0691c6be651bb2e351357b103754b79216cb3a06cd98e137"},
-    {file = "triangle-20230923-cp310-cp310-win_amd64.whl", hash = "sha256:adcab59db17aaa6f1ff70a1b82952c7ac0342070a4cc39d4fe5f574fc71cfd5b"},
-    {file = "triangle-20230923-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:58c3f1e4c4ed3105dd33f885313200514669cc36b43a9a36101d0c286d2433fc"},
-    {file = "triangle-20230923-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4baec5494bcba194b8c1d435382254bf394dc01f591bed452a8b8bd086b74845"},
-    {file = "triangle-20230923-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:4aae0afb29d286456d9c494f7d7c668994b59ac15026eeeb07ec7e2fbb348ac3"},
-    {file = "triangle-20230923-cp311-cp311-win32.whl", hash = "sha256:aa5018fd5b87d0b798a933d54466bfebc5bb23efa59a59398b198ed19d22cc94"},
-    {file = "triangle-20230923-cp311-cp311-win_amd64.whl", hash = "sha256:f6a5270fb5ff4a48abe6a752420e438b05d087bda98ca807498f4ab720aee096"},
-    {file = "triangle-20230923-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:19dca27055bd9097d2704fce6874ddadd786453e7fb58fa52a7fad9b2c0ccf78"},
-    {file = "triangle-20230923-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:17a61ccd56620ed88c651e73b694c174a8532072618229df6366726c877bb2f0"},
-    {file = "triangle-20230923-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:6b3f149a8535ee1c4ca502150214c9d215690f8f3003d5b0cb971cf04497c96d"},
-    {file = "triangle-20230923-cp312-cp312-win32.whl", hash = "sha256:356dc18d627baa67536bb47c164e30eb5755d7ec2a99a7c87ed997dbd60c96c0"},
-    {file = "triangle-20230923-cp312-cp312-win_amd64.whl", hash = "sha256:f083b4c2a1a11cf89835910a5c93b2c50f94b8ca68af425e9372215ec8e22252"},
-    {file = "triangle-20230923-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:1209da51f034d4b4fd73f3fafaaebb4d19a4c113e58cdf7b8e5b51af5887fa30"},
-    {file = "triangle-20230923-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:14e70116168e4658bb1bf19d91ebbe4bb9fb15a9ee82f0efdd9a7abd35a2005a"},
-    {file = "triangle-20230923-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:0253dc5005751489b6ea8e93034e6e3d028a080f605f5398b0c9b85d55218ca7"},
-    {file = "triangle-20230923-cp37-cp37m-win32.whl", hash = "sha256:c9f04a1963d91cbf7729629fe535851eff13850eca3590a5d8a0d633a5044376"},
-    {file = "triangle-20230923-cp37-cp37m-win_amd64.whl", hash = "sha256:a40c7348a4c40f2c2a5feb54c2cc89a82c48d9bc41dfc03c8f88f44f4b230af8"},
-    {file = "triangle-20230923-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:9251e15e7811d00d4166d0368c62d603c284e04925cd3138caa4743dac8f61a4"},
-    {file = "triangle-20230923-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:542cc693ea6b02d933a3594950e1eaf9c7f175a317c56e30bac4ca6356ef7db0"},
-    {file = "triangle-20230923-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:234ce3c9e9cb9c7be92de6022bafbe6173c064085cdbf9e9a7ea751665ab8a16"},
-    {file = "triangle-20230923-cp38-cp38-win32.whl", hash = "sha256:e3718560534b3b903e77fbc8fdf371429ae4703537392d989307ff2a9f077a45"},
-    {file = "triangle-20230923-cp38-cp38-win_amd64.whl", hash = "sha256:8ea964906da3dd93d3ba952ef18c10e2ec2f46bedf05d7a8024d99f425504bc4"},
-    {file = "triangle-20230923-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:393d0e88c860523fc5a0383332882d1e9de4161dab80e78fc49898974173f407"},
-    {file = "triangle-20230923-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f8fa4906c211b2181b9191239af315079f3211de8eed4715fd1df43376571c77"},
-    {file = "triangle-20230923-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2abf798207d52e9144c03c0191dd48b6cc64e2b32424f08afea7243a4f41a9c0"},
-    {file = "triangle-20230923-cp39-cp39-win32.whl", hash = "sha256:6ec882cc57a161616971c9e7c07c000e5f43e0e60f975e38bd88d477cec377ec"},
-    {file = "triangle-20230923-cp39-cp39-win_amd64.whl", hash = "sha256:177a47d7fbe4ba2318fdbf766c19a0b290d285ca069c33e17014f0056a2abe58"},
-]
-
-[package.dependencies]
-numpy = "*"
-
-[package.extras]
-test = ["pytest"]
-
-[[package]]
 name = "typer"
 version = "0.12.3"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
@@ -6962,24 +6816,28 @@ jupyter = ["ipytree (>=0.2.2)", "ipywidgets (>=8.0.0)", "notebook"]
 
 [[package]]
 name = "zarrnii"
-version = "0.1.3a1"
+version = "0.1.3-alpha.1"
 description = "Package for working with OME-Zarr and NIFTI images in a unified manner, with a focus on spatial transformations"
 category = "main"
 optional = false
-python-versions = "<4.0,>=3.9"
-files = [
-    {file = "zarrnii-0.1.3a1-py3-none-any.whl", hash = "sha256:487aeebf45e16b6cd721d8d9ed05a7fdc2196c66f01ebaf5e3e4f27a3747954f"},
-    {file = "zarrnii-0.1.3a1.tar.gz", hash = "sha256:51b46c8b52d4842fe8daf66cbd8498d4287207d90006326ca1f82a3a4454507d"},
-]
+python-versions = ">=3.9,<4.0"
+files = []
+develop = true
 
 [package.dependencies]
-dask = ">=2024.2.0,<2025.0.0"
-nibabel = ">=5.2.0,<6.0.0"
-numpy = ">=1.26.4,<2.0.0"
-ome-zarr = ">=0.9.0,<0.10.0"
-pandas = ">=2.2.0,<3.0.0"
-scipy = ">=1.12.0,<2.0.0"
-zarr = ">=2.17.0,<3.0.0"
+dask = "^2024.2.0"
+nibabel = "^5.2.0"
+numpy = "^1.26.4"
+ome-zarr = "^0.9.0"
+pandas = "^2.2.0"
+scipy = "^1.12.0"
+zarr = "^2.17.0"
+
+[package.source]
+type = "git"
+url = "https://github.com/khanlab/zarrnii"
+reference = "main"
+resolved_reference = "ad4b3207607b7f46360e258ea94508f12f27cfb9"
 
 [[package]]
 name = "zict"
@@ -7012,4 +6870,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "0137a67a6ca7ac7dfa0d9dd05adbf07b09fa5f0e28f6afacef809109fdc7b7aa"
+content-hash = "cc03cff6341618a5fa538652477073810abb3bbe6dd0fb3971e9ef26b91c6850"
