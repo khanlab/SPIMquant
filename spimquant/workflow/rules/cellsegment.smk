@@ -31,7 +31,7 @@ checkpoint cellseg3d_create_trainset:
     """
     params:
         output_dir=config["output_dir"],
-        cellsegment=config["cellsegment"],  # pass in the dictionary
+        cellsegment=config["cellsegment"]["init_dataset"],  # pass in the dictionary
         command='init_dataset',
     output:
         dataset_dir=directory(f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}')
@@ -47,12 +47,12 @@ rule cellseg3d_train:
         dataset_dir=f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}'
     params:
         output_dir=config["output_dir"],
-        cellsegment=config["cellsegment"],# pass in the dictionary
+        cellsegment=config["cellsegment"]["init_dataset"] | config["cellsegment"]["train"],
         command='train',
     output:
         model_config=directory(f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}_model_config')
     container:
-        None  # TODO: not in container yet, put this in container
+        None  # TODO: put this in container
     script:
         "../../../../spimquant_CellSeg3D/spimquant.py"
 
@@ -66,11 +66,21 @@ rule cellseg3d_predict:
         model_config=f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}_model_config'
     params:
         output_dir=config["output_dir"],
-        cellsegment=config["cellsegment"],# pass in the dictionary
+        cellsegment=config["cellsegment"]["init_dataset"] | config["cellsegment"]["train"] | config["cellsegment"]["predict"],
         command='predict',
     output:
         pred_result_dir=directory(f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}_pred')
     container:
-        None  # TODO: not in container yet, put this in container
+        None  # TODO: put this in container
     script:
         "../../../../spimquant_CellSeg3D/spimquant.py"
+
+rule cellseg3d_view:
+    """
+    View the prediction result with Napari; overlay the results on original image
+    The result is a nclass*Depth*Height*Width float image
+    """
+    input:
+        pred_result_dir=f'{config["output_dir"]}/{config["cellsegment"]["dataset_name"]}_pred'
+    script:
+        '../scripts/cellseg3d_napari_pair_overlay.py'
