@@ -1,5 +1,6 @@
 from snakebids import bids, get_wildcard_constraints, set_bids_spec
 from snakemake.utils import format
+# see details at ./scripts/affine_to_template_nii.py
 
 set_bids_spec("v0_11_0")
 

@@ -25,12 +25,14 @@ rule cellpose:
 
 
 cellseg3d_dataset_name = config["cellsegment"]["init_dataset"]["dataset_name"]
-checkpoint cellseg3d_create_trainset:
+zarr_path_expanded = cconfig.inputs['spim'].expand()[0]
+rule cellseg3d_preprocess:
     """
     Training set of CellSeg3D requires to sample slices from the OME_zarr file.
     This command creates the required slices.
     """
     params:
+        zarr = zarr_path_expanded,
         output_dir=config["output_dir"],
         cellsegment=config["cellsegment"]["init_dataset"],  # pass in the dictionary
         command='init_dataset',
@@ -66,6 +68,7 @@ rule cellseg3d_predict:
     input:
         model_config=f'{config["output_dir"]}/{cellseg3d_dataset_name}_model_config'
     params:
+        zarr = zarr_path_expanded,
         output_dir=config["output_dir"],
         cellsegment=config["cellsegment"]["init_dataset"] | config["cellsegment"]["train"] | config["cellsegment"]["predict"],
         command='predict',
@@ -85,3 +88,18 @@ rule cellseg3d_view:
         pred_result_dir=f'{config["output_dir"]}/{cellseg3d_dataset_name}_pred'
     script:
         '../scripts/cellseg3d_napari_pair_overlay.py'
+
+rule cellseg3d_supervised_dataset_gen:
+    """
+    Generate supervised datasets for annotations
+    """
+    input:
+        model_config=f'{config["output_dir"]}/{cellseg3d_dataset_name}_model_config'
+    params:
+        zarr=zarr_path_expanded,
+        cellsegment=config["cellsegment"]["init_dataset"] | config["cellsegment"]["train"] | config["cellsegment"][
+            "predict"],
+    output:
+        dataset_dir=directory(f'{config["output_dir"]}/supervised_datasets')
+    script:
+        "../../../../spimquant_CellSeg3D/supervised_dataset_gen.py"

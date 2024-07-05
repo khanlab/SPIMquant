@@ -28,11 +28,11 @@ scipy = "^1.12.0"
 scikit-image = "^0.22.0"
 dask-image = "^2023.8.1"
 ome-zarr = "^0.9.0"
-pybids = "^0.16.5"
 sparse = "^0.15.1"
 bokeh = "^3.4.1"
 zarrnii = "0.1.3a1"
 cvpl-tools = "^0.1.3"
+pybids = {git = "git@github.com:Karl5766/pybids.git"}
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:main"

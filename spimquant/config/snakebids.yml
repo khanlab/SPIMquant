@@ -1,4 +1,4 @@
-bids_dir: './test_bids'
+bids_dir: 'gs://khanlab-lightsheet/data/onuska_lifecanvas/bids'
 output_dir: '../../../data/lightsheet'
 
 
@@ -22,10 +22,10 @@ targets_by_analysis_level:
 pybids_inputs:
   spim:
     filters:
-      suffix: 'spim'
+      suffix: 'SPIM'
       #      acquisition: 4x #this will need to be blaze4x
-      subject: '001'
-      extension: 'ome.zarr.zip'
+      subject: 'o21'
+      extension: 'ome.zarr'
     wildcards:
       - subject
       - sample
@@ -109,7 +109,6 @@ blobdetect:
 cellsegment:
   # CesllSeg3D parameters
   init_dataset:
-    zarr: 'gs://khanlab-lightsheet/data/onuska_lifecanvas/bids/sub-o21/micr/sub-o21_sample-brain_acq-prestitched_SPIM.ome.zarr'
     num_train_chunk: 64  # number of train chunks used for training. recommended: 16384
     num_chunk_per_ld: 2048  # number of train chunk sampled from each ld; will keep sampling until reaches num_train_chunk
     creation_info: >  # '>' breaks string in yaml to multiple lines, disgarding all '\n', see https://stackoverflow.com/questions/3790454/how-do-i-break-a-string-in-yaml-over-multiple-lines
@@ -133,7 +132,7 @@ cellsegment:
     scratch_dir: "../../../data/scratch"  # will be deleted after a rule is invoked
 
   predict:
-    predict_range: !!python/tuple [[[1344,1386], [512,2560], [2048,4096]], [[1632,1760], [4096,8192], [3328,3840]], [[1920,1952], [1251,5347], [1289,5385]], [[1216,1248], [7168,9216], [1024,2048]]]
+    predict_range: !!python/tuple [[[1344,1386], [512,2560], [2048,4096]], [[1632,1760], [4096,8192], [3328,3840]], [[1920,1952], [1251,3299], [1289,3337]], [[1216,1248], [7168,9216], [1024,2048]]]
 
 
 
