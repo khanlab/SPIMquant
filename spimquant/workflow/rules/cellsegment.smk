@@ -94,7 +94,7 @@ rule cellseg3d_supervised_dataset_gen:
     Generate supervised datasets for annotations
     """
     input:
-        model_config=f'{config["output_dir"]}/{cellseg3d_dataset_name}_model_config'
+        model_config=f'D:/progtools/RobartsResearch/data/lightsheet/mousebrain_chan0_20240627_1_model_config'
     params:
         zarr=zarr_path_expanded,
         cellsegment=config["cellsegment"]["init_dataset"] | config["cellsegment"]["train"] | config["cellsegment"][
