@@ -6,12 +6,51 @@ import numpy as np
 from abc import ABC, abstractmethod
 import skimage.draw as draw
 import matplotlib.pyplot as plt
+from PIL import Image, ImageDraw, ImageFont
+
+
+ZOOM_FACTOR = 4
+
+
+def draw_ncells_text_on_im_cube(im_cube: np.array, pos_list: np.array, ncell_list: np.array) -> np.array:
+    sz = (im_cube.shape[0], im_cube.shape[1] * ZOOM_FACTOR, im_cube.shape[2] * ZOOM_FACTOR) + (4,)
+    out_cube = np.zeros(sz, dtype=np.uint8)
+    out_cube[:, :, :, 3] = 255
+    out_cube[:, :, :, 2] = np.array(ndimage.zoom(im_cube, (1, ZOOM_FACTOR, ZOOM_FACTOR), order=0) * 255, dtype=np.uint8)
+
+    pos_map = {i: [] for i in range(im_cube.shape[0])}
+    for i in range(len(pos_list)):
+        pos_z = pos_list[i, 0].item()
+        pos_map[pos_z].append(i)
+    for i in range(im_cube.shape[0]):
+        im = Image.fromarray(out_cube[i])
+        # out_im = Image.new("RGBA", sz[1:], (255, 255, 255, 0))
+
+        fnt = ImageFont.truetype("C:/Windows/Fonts/ariblk.ttf", 10)
+        for j in pos_map[i]:
+            pos = pos_list[j]
+            context = ImageDraw.Draw(im)
+            context.text((pos[2] * ZOOM_FACTOR, pos[1] * ZOOM_FACTOR),
+                         f'{ncell_list[j].item():.1f}', font=fnt, fill=(255, 255, 255, 255))
+
+        # out = Image.alpha_composite(base, out_im)
+        # out.show()
+        out_cube[i] = np.array(im, dtype=np.uint8)
+    return out_cube
+
+
+def grey_to_rgba(im_grey: np.array) -> np.array:
+    out = np.stack((im_grey * 255,) * 4, axis=-1)
+    out[..., :2] = 0  # blue
+
+    return out
 
 
 """-------------------------Part 0: The interfaces----------------------------------------"""
 
 
 class CountingMethod(enum.Enum):
+    SUM_INTENSITY = 0
     THRES_COUNT = 1
     THRES_BYSIZE = 2
     THRES_VOLUME = 3
@@ -24,45 +63,64 @@ class CountingMethod(enum.Enum):
     CELLSEG3D_WATERSHED_COUNT = 10
     CELLSEG3D_WATERSHED_BYSIZE = 11
     CELLSEG3D_WATERSHED_VOLUME = 12
-    SUM_INTENSITY = 13
-    BLOBDOG = 14
+    BLOBDOG = 13
 
 
+counting_method_dict = {item.name: item.value for item in CountingMethod}
 counting_method_inverse_dict = {item.value: item.name for item in CountingMethod}
 
 
 def get_counter(ty: int, seg):
-    if ty <= 12:
+    if ty == 0:
+        counter = Count_SumIntensity(130., .4)
+    elif ty <= 12:
         if ty <= 6:
-            s1 = Mask_Thres(.5)
+            cellseg3d = False
+            s1 = Mask_Thres(.45)
         else:
+            cellseg3d = True
             s1 = Mask_CellSeg3D(seg)
-        VOXEL_PER_CELL = 60
-        if ty % 3 == 0:
-            ncell_from_inst = NCellFromInst_BySize(0., VOXEL_PER_CELL)
-        elif ty % 3 == 1:
-            ncell_from_inst = NCellFromInst_BySize(50., VOXEL_PER_CELL)
-        else:
-            ncell_from_inst = NCellFromInst_BySize(1e10, VOXEL_PER_CELL)
 
-        use_watershed = ty % 6 >= 3
+        use_watershed = (ty - 1) % 6 >= 3
+        if (ty - 1) % 3 == 2:
+            # VOLUME ONLY
+            if cellseg3d:
+                if use_watershed:
+                    ncell_from_inst = NCellFromInst_BySize(0., 212.)
+                else:
+                    ncell_from_inst = NCellFromInst_BySize(0., 220.)
+            else:
+                if use_watershed:
+                    ncell_from_inst = NCellFromInst_BySize(0., 286.)
+                else:
+                    ncell_from_inst = NCellFromInst_BySize(0., 222.)
+        elif (ty - 1) % 3 == 1:
+            # BYSIZE
+            if cellseg3d:
+                if use_watershed:
+                    ncell_from_inst = NCellFromInst_BySize(25., 152.)
+                else:
+                    ncell_from_inst = NCellFromInst_BySize(26., 140.)
+            else:
+                ncell_from_inst = NCellFromInst_BySize(40., 240.)
+        else:
+            # COUNT ONLY
+            ncell_from_inst = NCellFromInst_BySize(1e10, 1e10)
+
         if use_watershed:
-            # s2 = CountFromMask_Watershed(ncell_from_inst,
-            #                              size_thres,
-            #                              dist_thres,
-            #                              rst,
-            #                              size_thres2,
-            #                              dist_thres2,
-            #                              rst2)
-            s2 = None
+            s2 = CountFromMask_Watershed(ncell_from_inst,
+                                         size_thres=60.,
+                                         dist_thres=1.,
+                                         rst=None,
+                                         size_thres2=100.,
+                                         dist_thres2=1.5,
+                                         rst2=60.)
         else:
             s2 = CountFromMask_Direct(ncell_from_inst)
 
         counter = Count_TwoStage(s1, s2)
-    elif ty == 13:
-        counter = Count_SumIntensity(50.)
     else:
-        counter = Count_BlobDog(min_sigma=1., max_sigma=50., threshold=.5, exclude_border=False)
+        counter = Count_BlobDog(min_sigma=1., max_sigma=50., threshold=.4, exclude_border=False)
     return counter
 
 
@@ -83,7 +141,7 @@ class CountFromIntensityImage(ABC):
     @abstractmethod
     def interpretable(self, im_cube: np.array) -> np.array:
         """
-        This method should return an overlay of the same size of the original image, intended for
+        This method should return an RGBA-channel overlay of the same size of the original image, intended for
         interpretation of the prediction result.
         """
         raise NotImplementedError()
@@ -104,20 +162,24 @@ class Count_SumIntensity(CountFromIntensityImage):
         ncells = (im_cube * mask).sum() / self.intensity_per_cell
         return ncells
 
+    def interpretable(self, im_cube: np.array) -> np.array:
+        out = im_cube * (im_cube > self.thres)
+        return grey_to_rgba(out)
+
 
 class Count_BlobDog(CountFromIntensityImage):
     def __init__(self, **args):
         self.args = args
 
     def count(self, im_cube: np.array) -> float:
-        blobs_dog = skimage.feature.blob_dog(np.array(im_cube, dtype=np.float32), **self.args)
+        blobs_dog = skimage.feature.blob_dog(np.array(im_cube * 255, dtype=np.float32), **self.args)
         return blobs_dog.shape[0]
 
-    def detect_blobs_draw(self, im_cube: np.array) -> np.array:
-        blobs_dog = skimage.feature.blob_dog(np.array(im_cube, dtype=np.float32), **self.args)
+    def interpretable(self, im_cube: np.array) -> np.array:
+        blobs_dog = skimage.feature.blob_dog(np.array(im_cube * 255, dtype=np.float32), **self.args)
         blobs_dog[:, 3:] = blobs_dog[:, 3:] * np.sqrt(3)  # adjust each sigma to get radius (this is still in pixels)
 
-        blobs_img = np.zeros(im_cube.shape, dtype=np.float32)
+        blobs_img = np.zeros(im_cube.shape + (4, ), dtype=np.float32)
         for i in range(blobs_dog.shape[0]):
             o = blobs_dog[i]
             iz, iy, ix, ir = int(o[0]), int(o[1]), int(o[2]), o[3]
@@ -125,7 +187,7 @@ class Count_BlobDog(CountFromIntensityImage):
             ylim, xlim = blobs_img.shape[1:3]
             inds = (rr >= ylim) + (cc >= xlim) + (rr < 0) + (cc < 0) == 0
             rr, cc = rr[inds], cc[inds]
-            blobs_img[iz, rr, cc] = 1
+            blobs_img[iz, rr, cc] = (0, 0, 255, 255)
 
         return blobs_img
 
@@ -135,6 +197,7 @@ class Count_TwoStage(CountFromIntensityImage):
     First create a binary mask from input image, then use the input image and binary mask to
     get a cell num estimate
     """
+
     def __init__(self, s1: "MaskFromIntensityImage", s2: "CountFromMask"):
         self.s1 = s1
         self.s2 = s2
@@ -143,6 +206,12 @@ class Count_TwoStage(CountFromIntensityImage):
         mask = self.s1.mask(im_cube)
         ncells = self.s2.count(mask)
         return ncells
+
+    def interpretable(self, im_cube: np.array) -> np.array:
+        mask = self.s1.mask(im_cube)
+        pos_list, ncells_list = self.s2.count_annotate(mask)
+        out_im = draw_ncells_text_on_im_cube(mask, pos_list, ncells_list)
+        return out_im
 
 
 """-------------------------Part 1: Mask from input image---------------------------------"""
@@ -162,7 +231,8 @@ class Mask_Thres(MaskFromIntensityImage):
         self.thres = thres
 
     def mask(self, im: np.array):
-        return im > self.thres
+        mask = im > self.thres
+        return mask
 
 
 class Mask_CellSeg3D(MaskFromIntensityImage):
@@ -184,8 +254,13 @@ class CountFromMask(ABC):
         lbl_im = self.inst(mask)
         return self.ncell_from_inst.count(lbl_im)
 
+    @abstractmethod
     def inst(self, mask: np.array) -> np.array:
         raise NotImplementedError()
+
+    def count_annotate(self, mask: np.array) -> tuple[np.array, np.array]:
+        lbl_im = self.inst(mask)
+        return self.ncell_from_inst.count_annotate(lbl_im)
 
 
 class CountFromMask_Direct(CountFromMask):
@@ -209,6 +284,20 @@ class CountFromMask_Watershed(CountFromMask):
 
 class NCellFromInst(ABC):
     def count(self, inst: np.array) -> float:
+        return self.count_annotate(inst)[1].sum().item()
+
+    @abstractmethod
+    def count_annotate(self, inst: np.array) -> tuple[np.array, np.array]:
+        """
+        For each contour in the mask, compute the location of its centroid, and
+        assign a number to it indicating how many cells it is worth
+        Params
+            inst - The mask to count on
+        Returns
+            A tuple of two items, in the order below:
+            - A int32 array of size N * 3, locations of the centroids, where N is the #contours in the image
+            - An array of size N, how many cells each contour worth
+        """
         raise NotImplementedError()
 
 
@@ -223,22 +312,32 @@ class NCellFromInst_BySize(NCellFromInst):
         self.size_thres = size_thres
         self.voxel_per_cell = voxel_per_cell
 
-    def count(self, inst: np.array) -> float:
+    def count_annotate(self, inst: np.array) -> tuple[np.array, np.array]:
+        assert len(inst.shape) == 3, f'ERROR: Input segmentation mask must be 3d, got shape {inst.shape}'
         D, H, W = inst.shape
         nlbl = inst.max().item()
         mins = np.array([0, 0, 0], dtype=np.float32)
         maxs = np.array([D - 1, H - 1, W - 1], dtype=np.float32)
-        ncells = 0.
+
+        pos_list = []
+        ncells_list = []
         for i in range(1, nlbl + 1):
             inds = np.argwhere(inst == i)
+            if inds.shape[0] < 5:
+                # contour is too small, ignore it
+                continue
+
             # get a 3-vector of number of bordering pixels in z, y, x dimensions
             nborders = np.sum((inds == mins[None, :]) + (inds == maxs[None, :]), axis=0)
             nborders = np.clip(nborders, 0, 1)
             nadd = 1 / (nborders.sum() + 1)
             if inds.shape[0] > self.size_thres:
                 nadd += (inds.shape[0] - self.size_thres) / self.voxel_per_cell
-            ncells += nadd
-        return ncells
+            pos_list.append(inds.mean(axis=0))
+            ncells_list.append(nadd)
+        pos_list = np.array(pos_list, dtype=np.int32)
+        ncells_list = np.array(ncells_list, dtype=np.float32)
+        return pos_list, ncells_list
 
 
 """-------------------------Part 4: Implementations----------------------------------------"""
@@ -276,7 +375,7 @@ def watershed(seg_bin, dist_thres=1., remove_smaller_than=None):
     # reference: https://docs.opencv.org/4.x/d3/db4/tutorial_py_watershed.html
     fp_width = 2
     fp = [(np.ones((fp_width, 1, 1)), 1), (np.ones((1, fp_width, 1)), 1), (np.ones((1, 1, fp_width)), 1)]
-    # `sure_bg = morph.binary_dilation(seg_bin, fp)`
+    # sure_bg = morph.binary_dilation(seg_bin, fp)
     sure_bg = seg_bin
     # sure_fg = morph.binary_erosion(seg_bin, fp)
     dist_transform = ndimage.distance_transform_edt(seg_bin)
@@ -350,21 +449,6 @@ def round_object_detection(seg, size_thres, dist_thres, rst, size_thres2, dist_t
 """-------------------------Part 5: Statistical Analysis----------------------------------"""
 
 
-def Stats_PredictImages(counter: CountFromIntensityImage, im_list) -> list[float]:
-    """
-    Params
-        counter (CountFromIntensityImage) - the counting algorithm used to count cells in images
-        im_list (Iterable[float]) - a list of input images to be counted by counter algorithm
-    Returns
-        a list of float of estimated number of cells in each image
-    """
-    counted = []
-    for im in im_list:
-        counted_item = counter.count(im)
-        counted.append(counted_item)
-    return counted
-
-
 def Stats_MAE(counted, gt):
     """
     Params
@@ -382,7 +466,7 @@ def Stats_ShowScatterPairComparisons(counted: np.array, gt) -> None:
     gt (Iterable[float]) - the ground truth number of cells in each image
     """
     gt_arr = np.array(gt, dtype=np.float32)
-    fig, axes = plt.subplots(3, 6, figsize=(12, 6), sharex=True, sharey=True)
+    fig, axes = plt.subplots(3, 6, figsize=(24, 12), sharex=True, sharey=True)
     for i in range(counted.shape[0]):
         X, Y = gt_arr, counted[i]
 
@@ -392,3 +476,4 @@ def Stats_ShowScatterPairComparisons(counted: np.array, gt) -> None:
         ax.set_title(counting_method_inverse_dict[i])
         ax.scatter(X, Y)
 
+    plt.show()
