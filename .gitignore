@@ -3,3 +3,5 @@ main.py
 *__pycache__/
 .snakemake
 spimquant/logs
+spimquant/workflow/rules/experiment.smk
+spimquant/workflow/scripts/experiment/
