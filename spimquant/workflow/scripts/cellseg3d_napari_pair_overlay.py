@@ -4,7 +4,7 @@ from magicgui import magicgui
 from magicgui.experimental import guiclass, button
 from magicgui import widgets
 from skimage.morphology import binary_erosion, binary_dilation
-from np_algs import watershed, instance_to_binary, round_object_detection
+from cvpl_tools.np_algs import watershed, instance_to_binary, round_object_detection
 import glob
 import os
 
