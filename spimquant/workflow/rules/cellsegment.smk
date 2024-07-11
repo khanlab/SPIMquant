@@ -39,7 +39,7 @@ rule cellseg3d_preprocess:
     output:
         dataset_dir=directory(f'{config["output_dir"]}/{cellseg3d_dataset_name}')
     script:
-        "../../../../spimquant_CellSeg3D/spimquant.py"
+        "../scripts/experiment/spimquant_CellSeg3D/spimquant.py"
 
 rule cellseg3d_train:
     """
@@ -57,7 +57,7 @@ rule cellseg3d_train:
     container:
         None  # TODO: put this in container
     script:
-        "../../../../spimquant_CellSeg3D/spimquant.py"
+        "../scripts/experiment/spimquant_CellSeg3D/spimquant.py"
 
 rule cellseg3d_predict:
     """
@@ -77,7 +77,7 @@ rule cellseg3d_predict:
     container:
         None  # TODO: put this in container
     script:
-        "../../../../spimquant_CellSeg3D/spimquant.py"
+        "../scripts/experiment/spimquant_CellSeg3D/spimquant.py"
 
 rule cellseg3d_view:
     """
@@ -102,4 +102,4 @@ rule cellseg3d_supervised_dataset_gen:
     output:
         dataset_dir=directory(f'{config["output_dir"]}/supervised_datasets')
     script:
-        "../../../../spimquant_CellSeg3D/supervised_dataset_gen.py"
+        "../scripts/experiment/spimquant_CellSeg3D/supervised_dataset_gen.py"
