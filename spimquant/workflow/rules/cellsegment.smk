@@ -78,7 +78,8 @@ rule cellseg3d_predict:
         CELLSEG3D_CONFIG_PATH='C:/ProgrammingTools/ComputerVision/RobartsResearch/data/lightsheet/mousebrain_chan0_20240708_1_model_config',
         OUT_ZARR_PATH='C:/ProgrammingTools/ComputerVision/RobartsResearch/data/lightsheet/cell3d_predict_test.ome.zarr',
         COPY_INPUT=False,
-        CLASSIFY_CHANNEL=0
+        CLASSIFY_CHANNEL=0,
+        TMP_PATH='C:/ProgrammingTools/ComputerVision/RobartsResearch/data/lightsheet/tmp'
     script: '../scripts/cellsegment/cellseg3d_predict.py'
 
 rule cellseg3d_predict_chunk:
