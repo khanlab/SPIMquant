@@ -1,5 +1,4 @@
 .idea/
-main.py
 *__pycache__/
 .snakemake
 spimquant/logs

@@ -1,11 +1,14 @@
+"""
+This file creates an overlay comparison between the image and its mask using Napari.
+A set of pairs of image/mask files are assumed to exist when this program is executed, and their paths
+will be passed in as snakemake parameters to this program. Then this program will
+run Napari to display the overlay of each pair of image files
+"""
+
+
 import napari
 import numpy as np
 from magicgui import magicgui
-from magicgui.experimental import guiclass, button
-from magicgui import widgets
-from skimage.morphology import binary_erosion, binary_dilation
-from cvpl_tools.np_algs import watershed, instance_to_binary, round_object_detection
-import glob
 import os
 
 
@@ -59,19 +62,6 @@ while True:
             key = f'slider_float{i + 1}'
             sf[i] = widget_dict[key]
         return sf
-
-
-    # @widget_seg_reweight.save_button.changed.connect
-    # def save_button_callback():
-    #     with open('./model_config/thres_conf.ini', 'w') as outfile:
-    #         outfile.write(widget_seg_reweight.expr.value)
-    #
-    #
-    # @widget_seg_reweight.load_button.changed.connect
-    # def load_button_callback():
-    #     with open('./model_config/thres_conf.ini', 'r') as infile:
-    #         expr = infile.read().strip()
-    #         widget_seg_reweight.expr.value = expr
 
 
     viewer.window.add_dock_widget(widget_seg_reweight)
