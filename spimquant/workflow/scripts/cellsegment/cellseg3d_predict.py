@@ -43,6 +43,8 @@ if __name__ == '__main__':
                            type=str)
     argparser.add_argument('--CLASSIFY_CHANNEL', help='The channel to predict on',
                            type=int)
+    argparser.add_argument('--TMP_PATH', help='where temporary files can be stored for program',
+                           type=str)
     default_args = dict(snakemake.params.items())
     argparser.set_defaults(**default_args)
     args = argparser.parse_args()
@@ -217,18 +219,19 @@ def classify_block(block, cmd_args, block_info=None):
 
 
 def main():
+    import dask
+    with dask.config.set({'temporary_directory': args.TMP_PATH}):
+        if args.NWORKER > 1:
+            import socket
+            client = Client(f'{socket.gethostname()}:8786')
+        else:
+            client = Client(threads_per_worker=args.NTHREAD, n_workers=1)
+        da_arr = get_ome_zarr()[args.CLASSIFY_CHANNEL:args.CLASSIFY_CHANNEL + 1]
+        da_arr = da_arr.rechunk(chunks=args.CHUNK_SIZE)
+        lbl_arr = da_arr.map_blocks(classify_block, dtype=np.bool_, cmd_args=args)
 
-    if args.NWORKER > 1:
-        import socket
-        client = Client(f'{socket.gethostname()}:8786')
-    else:
-        client = Client(threads_per_worker=args.NTHREAD, n_workers=1)
-    da_arr = get_ome_zarr()[args.CLASSIFY_CHANNEL:args.CLASSIFY_CHANNEL + 1]
-    da_arr = da_arr.rechunk(chunks=args.CHUNK_SIZE)
-    lbl_arr = da_arr.map_blocks(classify_block, dtype=np.bool_, cmd_args=args)
-
-    copy_arr = da_arr if args.COPY_INPUT else None
-    write_da_as_ome_zarr(args.OUT_ZARR_PATH, da_arr=copy_arr, lbl_arr=lbl_arr)  # if OUT_ZARR_PATH is different from input path, then only write a label
+        copy_arr = da_arr if args.COPY_INPUT else None
+        write_da_as_ome_zarr(args.OUT_ZARR_PATH, da_arr=copy_arr, lbl_arr=lbl_arr)  # if OUT_ZARR_PATH is different from input path, then only write a label
 
 
 if __name__ == '__main__':
