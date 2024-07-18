@@ -69,17 +69,17 @@ rule cellseg3d_predict:
     The inputs are uint8 OME_ZARR array, and outputs are binary OME_ZARR label array.
     """
     params:
-        ZARR_PATH='C:/ProgrammingTools/ComputerVision/RobartsResearch/data/lightsheet/cell3d_predict_test.ome.zarr',
-        NTHREAD=10,
+        ZARR_PATH='D:/progtools/RobartsResearch/data/lightsheet/cell3d_predict_test.ome.zarr',
+        NTHREAD=2,
         NWORKER=1,
-        GPU=False,
+        GPU=True,
         USE_SYNTHETIC_DATASET=True,
-        CELLSEG3D_REPO_PATH='C:/ProgrammingTools/ComputerVision/RobartsResearch/codebases/SPIMquant/spimquant/workflow/scripts/experiment/spimquant_CellSeg3D',
-        CELLSEG3D_CONFIG_PATH='C:/ProgrammingTools/ComputerVision/RobartsResearch/data/lightsheet/mousebrain_chan0_20240708_1_model_config',
-        OUT_ZARR_PATH='C:/ProgrammingTools/ComputerVision/RobartsResearch/data/lightsheet/cell3d_predict_test.ome.zarr',
+        CELLSEG3D_REPO_PATH='D:/progtools/RobartsResearch/SPIMquant/spimquant/workflow/scripts/experiment/spimquant_CellSeg3D',
+        CELLSEG3D_CONFIG_PATH='D:/progtools/RobartsResearch/data/lightsheet/mousebrain_chan0_20240708_1_model_config',
+        OUT_ZARR_PATH='D:/progtools/RobartsResearch/data/lightsheet/cell3d_predict_test.ome.zarr',
         COPY_INPUT=False,
         CLASSIFY_CHANNEL=0,
-        TMP_PATH='C:/ProgrammingTools/ComputerVision/RobartsResearch/data/lightsheet/tmp'
+        TMP_PATH='D:/progtools/RobartsResearch/data/scratch/tmp'
     script: '../scripts/cellsegment/cellseg3d_predict.py'
 
 rule cellseg3d_predict_chunk:
