@@ -35,7 +35,7 @@ cvpl-tools = "^0.1.3"
 pybids = {git = "git@github.com:Karl5766/pybids.git"}
 
 [tool.poetry.scripts]
-spimquant = "spimquant.run:main"
+spimquant = "spimquant.run:app.run"
 
 
 [tool.poetry.group.dev.dependencies]
