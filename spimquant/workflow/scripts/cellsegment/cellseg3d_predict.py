@@ -1,3 +1,5 @@
+import os.path
+
 import numpy as np
 import cvpl_tools.persistence as persistence
 import cvpl_tools.np_algs as np_algs
@@ -11,6 +13,7 @@ from dask.diagnostics import ProgressBar
 from ome_zarr.scale import Scaler
 from ome_zarr.io import parse_url
 import argparse
+import shutil
 
 
 if __name__ == '__main__':
@@ -59,22 +62,16 @@ if __name__ == '__main__':
     args.DEVICE = 'cuda' if args.GPU else 'cpu'
 
     args.CLASSIFY_CHANNEL = 0  # only predict on the first channel
-    if args.USE_SYNTHETIC_DATASET:
-        args.CHUNK_SIZE = (1, args.COMPUTE_WIDTH, 100, 100)
-    else:
-        args.CHUNK_SIZE = (1, args.COMPUTE_WIDTH, 1024, 1024)
+    args.CHUNK_SIZE = (1, args.COMPUTE_WIDTH, 1024, 1024)
 
 
-def write_da_as_ome_zarr(ome_zarr_path, da_arr=None, lbl_arr=None):
-    store = parse_url(ome_zarr_path, mode='w').store
-    g = zarr.group(store)
+def write_da_as_ome_zarr_direct(zarr_group: zarr.Group, da_arr=None, lbl_arr=None, MAX_LAYER=3):
     if da_arr is not None:
         # assert the group is empty, since we are writing a new group
-        for mem in g:
+        for mem in zarr_group:
             raise ValueError('ZARR group is Non-empty, please remove the original ZARR before running the program to '
-                             f'create synthetic data. ZARR location: {ome_zarr_path}')
+                             f'create synthetic data. ZARR group: {zarr_group}')
 
-    MAX_LAYER = 3
     scaler = Scaler(max_layer=MAX_LAYER, method='nearest')
     coordinate_transformations = []
     for layer in range(MAX_LAYER + 1):
@@ -84,7 +81,7 @@ def write_da_as_ome_zarr(ome_zarr_path, da_arr=None, lbl_arr=None):
     with ProgressBar():
         if da_arr is not None:
             write_image(image=da_arr,
-                        group=g,
+                        group=zarr_group,
                         scaler=scaler,
                         coordinate_transformations=coordinate_transformations,
                         storage_options={'dimension_separator': '/'},
@@ -98,7 +95,7 @@ def write_da_as_ome_zarr(ome_zarr_path, da_arr=None, lbl_arr=None):
             import numcodecs
             compressor = numcodecs.Blosc(cname='lz4', clevel=9, shuffle=numcodecs.Blosc.BITSHUFFLE)
             write_labels(labels=lbl_arr,
-                         group=g,
+                         group=zarr_group,
                          scaler=scaler,
                          name=lbl_name,
                          coordinate_transformations=coordinate_transformations,
@@ -109,10 +106,36 @@ def write_da_as_ome_zarr(ome_zarr_path, da_arr=None, lbl_arr=None):
             #                      properties=properties)
 
 
+def cache_image(arr: da.Array, location: str):
+    store = parse_url(location, mode='w').store
+    g = zarr.group(store)
+    write_da_as_ome_zarr_direct(g, arr, None, 0)
+    zarr_group = zarr.open(location, mode='r')
+    zarr_subgroup = zarr_group['0']
+    arr_read = da.from_zarr(zarr_subgroup)
+    return arr_read
+
+
+def write_da_as_ome_zarr(ome_zarr_path, da_arr=None, lbl_arr=None):
+    store = parse_url(ome_zarr_path, mode='w').store
+    g = zarr.group(store)
+    if da_arr is not None:
+        path1 = f'{args.TMP_PATH}/im1'
+        if os.path.exists(path1):
+            shutil.rmtree(path1)
+        da_arr = cache_image(da_arr, path1)
+    if lbl_arr is not None:
+        path2 = f'{args.TMP_PATH}/im2'
+        if os.path.exists(path2):
+            shutil.rmtree(path2)
+        lbl_arr = cache_image(lbl_arr, path2)
+    write_da_as_ome_zarr_direct(g, da_arr, lbl_arr, 3)
+
+
 def get_ome_zarr() -> da.Array:
     if args.USE_SYNTHETIC_DATASET:
-        arr: da.Array = da.zeros((2, 63, 400, 512), dtype=np.uint16,
-                                 chunks=(1, 1, 512, 512))
+        arr: da.Array = da.zeros((2, 255, 600, 600), dtype=np.uint16,
+                                 chunks=(1, 1, 256, 256))
 
         def process_block(block, block_info=None):
             if block_info is not None:
@@ -126,6 +149,8 @@ def get_ome_zarr() -> da.Array:
                 return np.zeros(block.shape, dtype=np.uint16)
             # now, create balls in the block
             sq = np.zeros(block.shape)  # distance squared
+            for dim in range(1, indices.shape[0]):  # every dim except channel dim which does not have distance
+                sq += np.power(indices[dim], 2.) * .0002
             for dim in range(1, indices.shape[0]):  # every dim except channel dim which does not have distance
                 indices[dim] %= 32
                 sq += np.power(indices[dim] - 15.5, 2.)
@@ -144,29 +169,32 @@ def get_ome_zarr() -> da.Array:
 def classify_block(block, cmd_args, block_info=None):
     args = cmd_args
 
-    # if block_info is not None:
-    #     # calculate (global) indices array for each pixel
-    #     block_slice = block_info[0]['array-location']
-    #     print(block_slice)
-
     import sys
     sys.path.append(args.CELLSEG3D_REPO_PATH)
     import napari_cellseg3d.create_model as create_model
     import napari_cellseg3d.predict as predict
     import torch
     import threading
+    from dask.distributed import get_worker
 
     TID = threading.get_ident()
-    print(TID, 'start', time.time())
-    if 'worker_tup' not in globals():
+    if block_info is not None:
+        # calculate (global) indices array for each pixel
+        block_slice = block_info[0]['array-location']
+        print(TID, 'start', time.time(), block_slice)
+    else:
+        return np.zeros(block.shape, dtype=np.bool_)
+    worker = get_worker()
+    if not hasattr(worker, 'worker_tup'):
         print(TID, 'creating tuple')
         config: dict = persistence.read_dict(args.CELLSEG3D_CONFIG_PATH)
         config['device'] = args.DEVICE
         cellseg3d_model = create_model.create_model(config)
-        globals()['worker_tup'] = (config, cellseg3d_model)
+        worker.worker_tup = (config, cellseg3d_model)
     else:
         print(TID, 'getting tuple')
-    config, cellseg3d_model = globals()['worker_tup']
+    worker_tup = worker.worker_tup
+    config, cellseg3d_model = worker_tup
 
     def get_mask(im):
         """
@@ -183,16 +211,26 @@ def classify_block(block, cmd_args, block_info=None):
             padded_im[:im.shape[0], :im.shape[1], :im.shape[2]] = im
             im = padded_im
 
+        im_slice_torch = torch.from_numpy(np.array(im * 1000., dtype=np.float32)[None, None])
         if args.GPU:
-            im_slice_torch = torch.from_numpy(np.array(im * 1000., dtype=np.float32)[None, None]).pin_memory()
-            im_slice_torch = im_slice_torch.cuda()  # otherwise "operation not implemented on cuda backend" error
-        else:
-            im_slice_torch = torch.from_numpy(np.array(im * 1000., dtype=np.float32)[None, None])
+            CSIZE = (args.COMPUTE_WIDTH, im.shape[1], im.shape[2])
+            seg = np.zeros((config['num_classes'], ) + im.shape, dtype=np.float32)
+            for z in range(0, im_slice_torch.shape[2], CSIZE[0]):
+                for y in range(0, im_slice_torch.shape[3], CSIZE[1]):
+                    for x in range(0, im_slice_torch.shape[4], CSIZE[2]):
+                        print(CSIZE, z, y, x, im_slice_torch.shape)
+                        im_cc = im_slice_torch[:, :, z:z + CSIZE[0], y:y + CSIZE[1], x:x + CSIZE[2]].cuda()
 
-        seg = predict.inference_on_torch_batch(config, im_slice_torch,
-                                               [args.COMPUTE_WIDTH, args.COMPUTE_WIDTH, args.COMPUTE_WIDTH],
-                                               cellseg3d_model)
-        seg = seg.detach().cpu().numpy()[0]
+                        seg_cc = predict.inference_on_torch_batch(config, im_cc,
+                                                               [args.COMPUTE_WIDTH, args.COMPUTE_WIDTH, args.COMPUTE_WIDTH],
+                                                               cellseg3d_model)
+                        seg_cc = seg_cc.detach().cpu().numpy()[0]
+                        seg[:, z:z + CSIZE[0], y:y + CSIZE[1], x:x + CSIZE[2]] = seg_cc
+        else:
+            seg = predict.inference_on_torch_batch(config, im_slice_torch,
+                                                   [args.COMPUTE_WIDTH, args.COMPUTE_WIDTH, args.COMPUTE_WIDTH],
+                                                   cellseg3d_model)
+            seg = seg.numpy()[0]
         seg = seg[3]
         # seg = scipy.ndimage.gaussian_filter(seg, sigma=.62, mode='nearest')
 

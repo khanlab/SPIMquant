@@ -1,5 +1,5 @@
 bids_dir: 'gs://khanlab-lightsheet/data/onuska_lifecanvas/bids'
-output_dir: '../../../data/lightsheet'
+output_dir: '../../data/lightsheet'
 
 
 #list of analysis levels in the bids app
@@ -109,7 +109,7 @@ blobdetect:
 cellsegment:
   # CesllSeg3D parameters
   init_dataset:
-    num_train_chunk: 64  # number of train chunks used for training. recommended: 16384
+    num_train_chunk: 8192  # number of train chunks used for training. recommended: 16384
     num_chunk_per_ld: 2048  # number of train chunk sampled from each ld; will keep sampling until reaches num_train_chunk
     creation_info: >  # '>' breaks string in yaml to multiple lines, disgarding all '\n', see https://stackoverflow.com/questions/3790454/how-do-i-break-a-string-in-yaml-over-multiple-lines
       This dataset is created from horizontally sampling random slices and take 32*32*32 chunks until
@@ -118,18 +118,18 @@ cellsegment:
       gs://khanlab-lightsheet/data/onuska_lifecanvas/bids/sub-o21/micr/sub-o21_sample-brain_acq-prestitched_SPIM.ome.zarr
     ld_size: !!python/tuple [32, 4096, 4096]
     train_chunk_size: !!python/tuple [32, 32, 32]
-    dataset_name: "mousebrain_chan0_20240620_1"  # this will be used to name subfolders so changing this alone allows preserving results of previous runs while starting a new run
-    im_channel: 1  # the channel to train on; also used for prediction; need this for init_dataset because of variance filtering
+    dataset_name: "mousebrain_chan0_20240708_1"  # this will be used to name subfolders so changing this alone allows preserving results of previous runs while starting a new run
+    im_channel: 0  # the channel to train on; also used for prediction; need this for init_dataset because of variance filtering
 
   train:
     min_brightness: 0.
     max_brightness: 1000.
     n_cuts_weight: 0.5
     rec_loss_weight: 0.005
-    nepochs: 1  # recommended: 20-50
+    nepochs: 30  # recommended: 20-50
     num_classes: 5
-    device: "cpu"  # the device for training/prediction
-    scratch_dir: "../../../data/scratch"  # will be deleted after a rule is invoked
+    device: "cuda"  # the device for training/prediction
+    scratch_dir: "../../data/scratch"  # will be deleted after a rule is invoked
 
   predict:
     predict_range: !!python/tuple [[[1344,1386], [512,2560], [2048,4096]], [[1632,1760], [4096,8192], [3328,3840]], [[1920,1952], [1251,3299], [1289,3337]], [[1216,1248], [7168,9216], [1024,2048]]]
