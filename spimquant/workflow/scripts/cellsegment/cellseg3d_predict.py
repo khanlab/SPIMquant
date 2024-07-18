@@ -48,6 +48,10 @@ if __name__ == '__main__':
                            type=int)
     argparser.add_argument('--TMP_PATH', help='where temporary files can be stored for program',
                            type=str)
+    argparser.add_argument('--LBL_NAME', help='Name for identifying the label OME ZARR output array',
+                           type=str, default='lbl_arr')
+    argparser.add_argument('--MAX_DOWNSAMPLING_LEVEL', help='0=no downsample, each level downsample by a '
+                           'factor of 2', type=int)
     default_args = dict(snakemake.params.items())
     argparser.set_defaults(**default_args)
     args = argparser.parse_args()
@@ -62,7 +66,7 @@ if __name__ == '__main__':
     args.DEVICE = 'cuda' if args.GPU else 'cpu'
 
     args.CLASSIFY_CHANNEL = 0  # only predict on the first channel
-    args.CHUNK_SIZE = (1, args.COMPUTE_WIDTH, 1024, 1024)
+    args.CHUNK_SIZE = (1, args.COMPUTE_WIDTH, 512, 512)
 
 
 def write_da_as_ome_zarr_direct(zarr_group: zarr.Group, da_arr=None, lbl_arr=None, MAX_LAYER=3):
@@ -91,7 +95,7 @@ def write_da_as_ome_zarr_direct(zarr_group: zarr.Group, da_arr=None, lbl_arr=Non
         # type axes. So we need to fall back to manual definition, avoid 'c' which defaults to a channel type
         lbl_axes = [{'name': ch, 'type': 'space'} for ch in ['c', 'z', 'y', 'x']]
         if lbl_arr is not None:
-            lbl_name = 'arrlbl'
+            lbl_name = args.LBL_NAME
             import numcodecs
             compressor = numcodecs.Blosc(cname='lz4', clevel=9, shuffle=numcodecs.Blosc.BITSHUFFLE)
             write_labels(labels=lbl_arr,
@@ -129,13 +133,13 @@ def write_da_as_ome_zarr(ome_zarr_path, da_arr=None, lbl_arr=None):
         if os.path.exists(path2):
             shutil.rmtree(path2)
         lbl_arr = cache_image(lbl_arr, path2)
-    write_da_as_ome_zarr_direct(g, da_arr, lbl_arr, 3)
+    write_da_as_ome_zarr_direct(g, da_arr, lbl_arr, args.MAX_DOWNSAMPLING_LEVEL)
 
 
 def get_ome_zarr() -> da.Array:
     if args.USE_SYNTHETIC_DATASET:
-        arr: da.Array = da.zeros((2, 255, 600, 600), dtype=np.uint16,
-                                 chunks=(1, 1, 256, 256))
+        arr: da.Array = da.zeros((2, 224, 1600, 2048), dtype=np.uint16,
+                                 chunks=(1, 1, 1024, 1024))
 
         def process_block(block, block_info=None):
             if block_info is not None:

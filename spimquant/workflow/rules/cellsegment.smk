@@ -79,7 +79,9 @@ rule cellseg3d_predict:
         OUT_ZARR_PATH='D:/progtools/RobartsResearch/data/lightsheet/cell3d_predict_test.ome.zarr',
         COPY_INPUT=False,
         CLASSIFY_CHANNEL=0,
-        TMP_PATH='D:/progtools/RobartsResearch/data/scratch/tmp'
+        TMP_PATH='D:/progtools/RobartsResearch/data/scratch/tmp',
+        LBL_NAME='lbl_arr',
+        MAX_DOWNSAMPLING_LEVEL=5
     script: '../scripts/cellsegment/cellseg3d_predict.py'
 
 rule cellseg3d_predict_chunk:
