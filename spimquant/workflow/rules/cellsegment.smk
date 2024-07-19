@@ -76,7 +76,7 @@ rule cellseg3d_predict:
         USE_SYNTHETIC_DATASET=True,
         CELLSEG3D_REPO_PATH='D:/progtools/RobartsResearch/SPIMquant/spimquant/workflow/scripts/experiment/spimquant_CellSeg3D',
         CELLSEG3D_CONFIG_PATH='D:/progtools/RobartsResearch/data/lightsheet/mousebrain_chan0_20240708_1_model_config',
-        OUT_ZARR_PATH='D:/progtools/RobartsResearch/data/lightsheet/cell3d_predict_test.ome.zarr',
+        OUT_ZARR_PATH='D:/progtools/RobartsResearch/data/lightsheet/cell3d_predict_test.ome.zarr.zip',
         COPY_INPUT=False,
         CLASSIFY_CHANNEL=0,
         TMP_PATH='D:/progtools/RobartsResearch/data/scratch/tmp',
