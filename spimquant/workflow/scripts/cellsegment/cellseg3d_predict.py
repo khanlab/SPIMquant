@@ -130,6 +130,7 @@ def write_da_as_ome_zarr(ome_zarr_path, da_arr=None, lbl_arr=None, lbl_name=None
     Args
         ome_zarr_path - The path to target ome zarr folder, or ome zarr zip folder if make_zip is True
     """
+    print('Writing Folder.')
     if make_zip:
         folder_ome_zarr_path = f'{args.TMP_PATH}/{lbl_name}_tmp0'
         if os.path.exists(folder_ome_zarr_path):
@@ -149,14 +150,17 @@ def write_da_as_ome_zarr(ome_zarr_path, da_arr=None, lbl_arr=None, lbl_name=None
             shutil.rmtree(path2)
         lbl_arr = cache_image(lbl_arr, path2)
     write_da_as_ome_zarr_direct(g, da_arr, lbl_arr, lbl_name, MAX_LAYER=args.MAX_DOWNSAMPLING_LEVEL)
+    print('Folder is written.')
     store.close()
     if make_zip:
+        print('Writing zip.')
         store = parse_url(folder_ome_zarr_path, mode='r').store  # same folder but this time we open it in read mode
         g = zarr.group(store)
         target_store = zarr.ZipStore(ome_zarr_path, mode='w')
         target_g = zarr.group(target_store)
         zarr.copy_all(g, target_g)
         store.close()
+        print('Zip is written.')
 
 
 def get_ome_zarr() -> da.Array:
@@ -301,7 +305,8 @@ def main():
         copy_arr = da_arr if args.COPY_INPUT else None
 
         # write labels, and copy image if COPY_INPUT is True
-        write_da_as_ome_zarr(args.OUT_ZARR_PATH, da_arr=copy_arr, lbl_arr=lbl_arr, lbl_name=args.lbl_name, make_zip=True)
+        write_da_as_ome_zarr(args.OUT_ZARR_PATH, da_arr=copy_arr, lbl_arr=lbl_arr, lbl_name=args.LBL_NAME,
+                             make_zip=True)
 
 
 
