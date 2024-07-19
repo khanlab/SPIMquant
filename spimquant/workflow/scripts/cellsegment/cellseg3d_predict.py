@@ -132,6 +132,8 @@ def write_da_as_ome_zarr(ome_zarr_path, da_arr=None, lbl_arr=None, lbl_name=None
     """
     if make_zip:
         folder_ome_zarr_path = f'{args.TMP_PATH}/{lbl_name}_tmp0'
+        if os.path.exists(folder_ome_zarr_path):
+            shutil.rmtree(folder_ome_zarr_path)
     else:
         folder_ome_zarr_path = ome_zarr_path
     store = parse_url(folder_ome_zarr_path, mode='w').store
@@ -146,13 +148,15 @@ def write_da_as_ome_zarr(ome_zarr_path, da_arr=None, lbl_arr=None, lbl_name=None
         if os.path.exists(path2):
             shutil.rmtree(path2)
         lbl_arr = cache_image(lbl_arr, path2)
-    write_da_as_ome_zarr_direct(g, da_arr, lbl_arr, lbl_name, MAX_LEVEL=args.MAX_DOWNSAMPLING_LEVEL)
+    write_da_as_ome_zarr_direct(g, da_arr, lbl_arr, lbl_name, MAX_LAYER=args.MAX_DOWNSAMPLING_LEVEL)
+    store.close()
     if make_zip:
         store = parse_url(folder_ome_zarr_path, mode='r').store  # same folder but this time we open it in read mode
         g = zarr.group(store)
         target_store = zarr.ZipStore(ome_zarr_path, mode='w')
         target_g = zarr.group(target_store)
         zarr.copy_all(g, target_g)
+        store.close()
 
 
 def get_ome_zarr() -> da.Array:
