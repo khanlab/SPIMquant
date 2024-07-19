@@ -14,6 +14,7 @@ from ome_zarr.scale import Scaler
 from ome_zarr.io import parse_url
 import argparse
 import shutil
+import zipfile
 
 
 if __name__ == '__main__':
@@ -69,7 +70,9 @@ if __name__ == '__main__':
     args.CHUNK_SIZE = (1, args.COMPUTE_WIDTH, 512, 512)
 
 
-def write_da_as_ome_zarr_direct(zarr_group: zarr.Group, da_arr=None, lbl_arr=None, MAX_LAYER=3):
+def write_da_as_ome_zarr_direct(zarr_group: zarr.Group, da_arr=None, lbl_arr=None, lbl_name=None, MAX_LAYER=3):
+    """Direct write of dask array to target ome zarr group.
+    """
     if da_arr is not None:
         # assert the group is empty, since we are writing a new group
         for mem in zarr_group:
@@ -95,7 +98,8 @@ def write_da_as_ome_zarr_direct(zarr_group: zarr.Group, da_arr=None, lbl_arr=Non
         # type axes. So we need to fall back to manual definition, avoid 'c' which defaults to a channel type
         lbl_axes = [{'name': ch, 'type': 'space'} for ch in ['c', 'z', 'y', 'x']]
         if lbl_arr is not None:
-            lbl_name = args.LBL_NAME
+            assert lbl_name is not None, ('ERROR: Please provide lbl_name along when writing labels '
+                                          '(lbl_arr is not None)')
             import numcodecs
             compressor = numcodecs.Blosc(cname='lz4', clevel=9, shuffle=numcodecs.Blosc.BITSHUFFLE)
             write_labels(labels=lbl_arr,
@@ -113,27 +117,42 @@ def write_da_as_ome_zarr_direct(zarr_group: zarr.Group, da_arr=None, lbl_arr=Non
 def cache_image(arr: da.Array, location: str):
     store = parse_url(location, mode='w').store
     g = zarr.group(store)
-    write_da_as_ome_zarr_direct(g, arr, None, 0)
+    write_da_as_ome_zarr_direct(g, arr, MAX_LAYER=0)
     zarr_group = zarr.open(location, mode='r')
     zarr_subgroup = zarr_group['0']
     arr_read = da.from_zarr(zarr_subgroup)
     return arr_read
 
 
-def write_da_as_ome_zarr(ome_zarr_path, da_arr=None, lbl_arr=None):
-    store = parse_url(ome_zarr_path, mode='w').store
+def write_da_as_ome_zarr(ome_zarr_path, da_arr=None, lbl_arr=None, lbl_name=None, make_zip=False):
+    """Write dask array as an ome zarr
+
+    Args
+        ome_zarr_path - The path to target ome zarr folder, or ome zarr zip folder if make_zip is True
+    """
+    if make_zip:
+        folder_ome_zarr_path = f'{args.TMP_PATH}/{lbl_name}_tmp0'
+    else:
+        folder_ome_zarr_path = ome_zarr_path
+    store = parse_url(folder_ome_zarr_path, mode='w').store
     g = zarr.group(store)
     if da_arr is not None:
-        path1 = f'{args.TMP_PATH}/im1'
+        path1 = f'{args.TMP_PATH}/{lbl_name}_tmp1'
         if os.path.exists(path1):
             shutil.rmtree(path1)
         da_arr = cache_image(da_arr, path1)
     if lbl_arr is not None:
-        path2 = f'{args.TMP_PATH}/im2'
+        path2 = f'{args.TMP_PATH}/{lbl_name}_tmp2'
         if os.path.exists(path2):
             shutil.rmtree(path2)
         lbl_arr = cache_image(lbl_arr, path2)
-    write_da_as_ome_zarr_direct(g, da_arr, lbl_arr, args.MAX_DOWNSAMPLING_LEVEL)
+    write_da_as_ome_zarr_direct(g, da_arr, lbl_arr, lbl_name, MAX_LEVEL=args.MAX_DOWNSAMPLING_LEVEL)
+    if make_zip:
+        store = parse_url(folder_ome_zarr_path, mode='r').store  # same folder but this time we open it in read mode
+        g = zarr.group(store)
+        target_store = zarr.ZipStore(ome_zarr_path, mode='w')
+        target_g = zarr.group(target_store)
+        zarr.copy_all(g, target_g)
 
 
 def get_ome_zarr() -> da.Array:
@@ -162,7 +181,7 @@ def get_ome_zarr() -> da.Array:
             return im
 
         arr = arr.map_blocks(process_block, dtype=np.uint16)
-        write_da_as_ome_zarr(args.ZARR_PATH, da_arr=arr)
+        write_da_as_ome_zarr(args.ZARR_PATH, da_arr=arr, make_zip=False)
 
     zarr_group = zarr.open(args.ZARR_PATH, mode='r')
     zarr_subgroup = zarr_group['0']
@@ -261,6 +280,9 @@ def classify_block(block, cmd_args, block_info=None):
 
 
 def main():
+    assert args.OUT_ZARR_PATH.endswith('.zip'), ('Prediction currently supports only zip outputs, '
+                                                 'Please make sure your zarr zip output file ends with .zip suffix')
+
     import dask
     with dask.config.set({'temporary_directory': args.TMP_PATH}):
         if args.NWORKER > 1:
@@ -273,7 +295,10 @@ def main():
         lbl_arr = da_arr.map_blocks(classify_block, dtype=np.bool_, cmd_args=args)
 
         copy_arr = da_arr if args.COPY_INPUT else None
-        write_da_as_ome_zarr(args.OUT_ZARR_PATH, da_arr=copy_arr, lbl_arr=lbl_arr)  # if OUT_ZARR_PATH is different from input path, then only write a label
+
+        # write labels, and copy image if COPY_INPUT is True
+        write_da_as_ome_zarr(args.OUT_ZARR_PATH, da_arr=copy_arr, lbl_arr=lbl_arr, lbl_name=args.lbl_name, make_zip=True)
+
 
 
 if __name__ == '__main__':

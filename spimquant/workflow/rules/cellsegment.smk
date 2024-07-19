@@ -80,7 +80,7 @@ rule cellseg3d_predict:
         COPY_INPUT=False,
         CLASSIFY_CHANNEL=0,
         TMP_PATH='D:/progtools/RobartsResearch/data/scratch/tmp',
-        LBL_NAME='lbl_arr',
+        LBL_NAME='cellseg3d_pred',
         MAX_DOWNSAMPLING_LEVEL=5
     script: '../scripts/cellsegment/cellseg3d_predict.py'
 
