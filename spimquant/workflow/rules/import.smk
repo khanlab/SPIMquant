@@ -4,6 +4,17 @@ wildcard_constraints:
 
 
 rule get_downsampled_nii:
+    """Downsample the (ch, z, y, x) SPIM OME zarr file, and save the result to a nifti file.
+     
+    Downsampling is done over x, y axis by taking the image under 'image.ome.zarr/level', and the along z 
+    further to get a downsampled .nii image.
+    
+    input:
+        zarr: The input brain scan OME zarr image (float32)
+    
+    output:
+        nii: The down-sampled brain scan image in .nii format (float64)
+    """
     input:
         zarr=cconfig.inputs["spim"].path,
     output:
@@ -21,6 +32,17 @@ rule get_downsampled_nii:
 
 
 rule import_anat:
+    """Copy the anat .nii file into the `root` directory
+    
+    Usually, this is the image available (uploaded to github) in spimquant/resources/ABAv3/P56_Atlas.nii.gz,
+    (which you can view using the napari-nifti plugin) 
+    
+    input:
+        dseg: A uint8 nifti file providing segmentation of the regions
+
+    output:
+        dseg: Same mask copied to root directory
+    """
     input:
         anat=lambda wildcards: format(config["templates"][wildcards.template]["anat"]),
     output:
@@ -37,6 +59,17 @@ rule import_anat:
 
 
 rule import_dseg:
+    """Copy the dseg .nii file into the `root` directory
+    
+    Usually, this is the image available (uploaded to github) in spimquant/resources/ABAv3/P56_Annotation.nii.gz 
+    (which you can view using the napari-nifti plugin)
+    
+    input:
+        dseg: An int32 nifti file providing segmentation of the regions
+
+    output:
+        dseg: Same mask copied to root directory
+    """
     input:
         dseg=lambda wildcards: format(config["templates"][wildcards.template]["dseg"]),
     output:
@@ -50,6 +83,7 @@ rule import_dseg:
         ),
     shell:
         "cp {input} {output}"
+
 
 
 rule import_labelmapper_lut:
@@ -91,7 +125,20 @@ rule ome_zarr_to_zipstore:
 
 
 rule lateralize_atlas_labels:
-    """splits atlas label nii into left and right, adding an offset to right hemi"""
+    """splits atlas label nii into left and right, adding an offset to right hemi
+    
+    The output is a (z, y, x) instance segmentation mask of the same size as input, 
+    but whose right (x positive) side objects are assigned numbers offset_rh higher number 
+    than those on the left. e.g. An object labeled 800 on the left would be labeled 10800 
+    on the right if offset_rh is 10000.
+    
+    input:
+        dseg: Input mask is an int32 nifti file providing segmentation of the regions.
+
+    output:
+        dseg: A mask is of int32 type. The labels are the same as input but those on the right 
+            have been incremented by 10000.
+    """
     input:
         dseg=bids_tpl(root=root, template="{template}", suffix="dseg.nii.gz"),
     params:

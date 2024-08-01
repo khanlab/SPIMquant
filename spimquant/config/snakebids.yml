@@ -96,7 +96,7 @@ masking:
   stain: PI #set this to PI for lifecanvas data 
   level: 5
   priors_template: ABAv3
-  gmm_k: 9gi
+  gmm_k: 9
   gmm_bg_class: 1
   pre_atropos_downsampling: '50%'
 

@@ -1,5 +1,16 @@
 
 rule n4:
+    """Generate biasfield corrected image
+    
+    input:
+        nii: down-sampled brain scan image in .nii format (float32)
+        mask: down-sampled 0-1 binary mask (float32), created by create_mask_from_gmm_and_prior
+    
+    output:
+        corrected: corrected image (float32)
+        biasfield: down-sampled biasfield used to correct the image (float32)
+    """
+
     input:
         nii=bids(
             root=root,
@@ -47,6 +58,15 @@ rule n4:
 
 
 rule apply_mask_to_corrected:
+    """Mask off portions of the corrected image that are outside the region of the mask
+    
+    input:
+        corrected: corrected image (float32)
+        mask: down-sampled 0-1 binary mask (float32), created by create_mask_from_gmm_and_prior
+    
+    output:
+        masked: corrected and masked image (
+    """
     input:
         corrected=bids(
             root=root,

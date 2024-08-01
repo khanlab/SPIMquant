@@ -13,7 +13,6 @@ cconfig = CachedConfig(config)
 # use expandvars so we can use e.g. '$SLURM_TMPDIR'
 root = os.path.expandvars(config["root"])
 work = os.path.expandvars(config["work"])
-root = "results"
 
 
 container: config["containers"]["spimprep"]

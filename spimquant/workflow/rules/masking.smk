@@ -1,4 +1,17 @@
 rule pre_atropos:
+    """Obtain down-sampled scanning image and a mask of ones of the same size
+    
+    This rule takes the down-sampled brain scan image as input, further down-sample it and also output a mask of 
+    the same size
+    
+    input:
+        nii: down-sampled brain scan image in .nii format (float32)
+    
+    output:
+        downsampled: The further down-sampled brain scan image in .nii format (float32)
+        mask: An image of ones of the same size as `downsampled` (float32)
+    """
+
     input:
         nii=bids(
             root=root,
@@ -116,7 +129,21 @@ rule post_atropos:
 
 
 rule init_affine_reg:
-    """initial affine registration used to obtain priors for brainmasking"""
+    """initial affine registration used to obtain priors for brainmasking
+    
+    This step take the observed brain scan data, and the template image and tries to find an affine transformation that 
+    maps between the two (since they are of different size and scale).
+    
+    The affine transform obtained in this step is used to back transform templates onto observed subject brain scan.
+    
+    input:
+        template: anat.nii image (uint8)
+        subject: Down-sampled brain image (float64)
+    
+    output:
+        xfm_ras: The affine transformation as .txt file
+        warped: (float64) The warped (and downsampled) .nii brain scan onto the size of template image provided
+    """
     input:
         template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
         subject=bids(
@@ -166,6 +193,10 @@ rule init_affine_reg:
 
 
 rule affine_transform_template_dseg_to_subject:
+    """
+    The result of this rule is a downsampled .nii.gz image that is roughly matched against the OME zarr array. This 
+    array is (as with dseg image) an instance segmentation mask of brain regions.
+    """
     input:
         ref=bids(
             root=root,
@@ -197,6 +228,15 @@ rule affine_transform_template_dseg_to_subject:
 
 
 rule create_mask_from_gmm_and_prior:
+    """Create a down-sampled mask of brain scan
+    
+    input:
+        tissue_dseg: 
+        atlas_dseg: warped template image from affine_transform_template_dseg_to_subject (float32)
+    output:
+        mask: A down-sampled 0-1 binary .nii mask (float32), where 0 are background and 1 are brain region
+    """
+
     input:
         tissue_dseg=bids(
             root=root,

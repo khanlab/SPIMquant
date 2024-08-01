@@ -13,7 +13,7 @@ dask.config.set(scheduler='threads',num_workers=snakemake.threads)
 
 in_zarr = snakemake.input.zarr
 
-zi = zarr.open(in_zarr)
+zi = zarr.open(in_zarr, mode='r')
 attrs=zi['/'].attrs.asdict()
 
 #get channel index from omero metadata

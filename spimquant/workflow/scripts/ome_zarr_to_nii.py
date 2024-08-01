@@ -11,7 +11,7 @@ from zarrnii import ZarrNii
 
 in_zarr = snakemake.input.zarr
 
-zi = zarr.open(in_zarr)
+zi = zarr.open(in_zarr, mode='r')
 
 attrs=zi['/'].attrs.asdict()
 
