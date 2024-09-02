@@ -88,7 +88,7 @@ rule affine_reg:
         subject=bids(
             root=root,
             datatype="micr",
-            stain=config["templatereg"]["stain"],
+            stain=stain_for_reg,
             level=config["templatereg"]["level"],
             desc=config["templatereg"]["desc"],
             suffix="SPIM.nii",
@@ -109,7 +109,7 @@ rule affine_reg:
             root=root,
             datatype="warps",
             space="{template}",
-            stain=config["templatereg"]["stain"],
+            stain=stain_for_reg,
             desc="affinewarped",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
@@ -168,7 +168,7 @@ rule deform_reg:
         subject=bids(
             root=root,
             datatype="micr",
-            stain=config["templatereg"]["stain"],
+            stain=stain_for_reg,
             level=config["templatereg"]["level"],
             desc=config["templatereg"]["desc"],
             suffix="SPIM.nii",
@@ -201,7 +201,7 @@ rule deform_reg:
             root=root,
             datatype="warps",
             space="{template}",
-            stain=config["templatereg"]["stain"],
+            stain=stain_for_reg,
             desc="deformwarped",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
@@ -431,7 +431,7 @@ rule deform_template_dseg_to_subject_nii:
         ref=bids(
             root=root,
             datatype="micr",
-            stain=config["templatereg"]["stain"],
+            stain=stain_for_reg,
             level="{level}",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
@@ -494,7 +494,7 @@ rule transform_labels_to_zoomed_template:
             datatype="micr",
             desc="deform",
             space="{template}",
-            stain=config["templatereg"]["stain"],
+            stain=stain_for_reg,
             res="{res}um",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards

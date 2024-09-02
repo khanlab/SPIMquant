@@ -24,6 +24,21 @@ inputs = generate_inputs(
     validate=not config.get("plugins.validator.skip", False),
 )
 
+from lib.ome_zarr import get_channel_names
+
+#get stains from first subject (lazy - should use the correct stain for each subject, when defining target rules)
+stains = get_channel_names(inputs['spim'].expand()[0])
+
+stain_for_reg=None
+for stain in config['stains_for_reg']:
+    if stain in stains:
+        stain_for_reg = stain
+        break
+
+if stain_for_reg==None:
+    print('ERROR: a stain for registration was not found in the first OME zarr file')
+    
+
 root = "results"
 
 
@@ -49,7 +64,7 @@ rule all_templatereg_deform_zooms:
                 **inputs["spim"].wildcards
             ),
             template=config["template"],
-            stain=config["stains"],
+            stain=stains,
             res=config["templatereg"]["zooms"],
         ),
 
@@ -80,7 +95,7 @@ rule all_blobs:
                 suffix="blobs.npy",
                 **inputs["spim"].wildcards
             ),
-            stain=config["stains"],
+            stain=stains,
         ),
 
 
@@ -97,7 +112,7 @@ rule all_templatereg_deform:
                 **inputs["spim"].wildcards
             ),
             template=config["template"],
-            stain=config["stains"],
+            stain=stains,
         ),
 
 

@@ -102,7 +102,7 @@ rule filter_blobs_betaamyloid:
         penalty=bids(
             root=root,
             datatype="micr",
-            stain=config["masking"]["stain"],
+            stain=stain_for_reg,
             level=config["masking"]["level"],
             desc="brain",
             suffix="penalty.nii",
