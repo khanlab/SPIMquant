@@ -11,7 +11,7 @@ import sparse
 #set threads
 dask.config.set(scheduler='threads',num_workers=snakemake.threads)
 
-in_zarr = snakemake.params.in_zarr
+in_zarr = snakemake.input.in_zarr
 
 zi = zarr.open(in_zarr)
 attrs=zi['/'].attrs.asdict()

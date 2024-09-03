@@ -344,13 +344,13 @@ rule deform_zarr_to_template_nii:
 
 rule deform_to_template_nii_zoomed:
     input:
-        ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        flo_opts={"level": 1}, #downsampling level to use (TODO: set this automatically based on ref resolution?)
-        do_downsample=False, #whether to perform further downsampling before transforming
+        ome_zarr=inputs["spim"].path,
+        flo_opts={}, #any additional flo znimg options
+        do_downsample=True, #whether to perform further downsampling before transforming
         downsample_opts={'along_z': 4}, #could also be determined automatically 
         ref_opts=lambda wildcards: {
             "chunks": (1, 50, 50, 50),

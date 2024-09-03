@@ -44,13 +44,7 @@ rule brainmask_penalty:
 
 rule blob_detection_betaamyloid:
     input:
-        in_zarr = bids(
-            root=root,
-            datatype="micr",
-            desc='tiny',
-            suffix="SPIM.ome.zarr",
-            **inputs["spim"].wildcards
-        ),
+        in_zarr=inputs["spim"].path,
     params:
         #in_zarr=rules.resave_tiny.output.ome_zarr if config['use_tiny'] else inputs["spim"].path,
         level=lambda wildcards: int(wildcards.level),  #downsample-level to perform blob detection on
@@ -87,7 +81,8 @@ rule blob_detection_betaamyloid:
     shadow:
         "minimal"
     script: #could use one script eventually (with conditionals to select cluster..)
-        "../scripts/blob_detection_coiled.py" #if config['use_coiled'] else "../scripts/blob_detection.py"
+        #"../scripts/blob_detection_coiled.py" #if config['use_coiled'] else "../scripts/blob_detection.py"
+        "../scripts/blob_detection.py" #if config['use_coiled'] else "../scripts/blob_detection.py"
 
 rule filter_blobs_betaamyloid:
     input:
