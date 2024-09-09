@@ -22,6 +22,7 @@ inputs = generate_inputs(
     participant_label=config.get("participant_label", None),
     exclude_participant_label=config.get("exclude_participant_label", None),
     validate=not config.get("plugins.validator.skip", False),
+    ignore=['sourcedata']
 )
 
 from lib.ome_zarr import get_channel_names
@@ -39,10 +40,11 @@ if stain_for_reg==None:
     print('ERROR: a stain for registration was not found in the first OME zarr file')
     
 
+stains_for_blobdetect=list(set(config['stains_for_blobdetect']).intersection(set(stains)))
 root = "results"
 
 
-container: config["containers"]["spimprep"]
+#container: config["containers"]["spimprep"]
 
 
 # wildcard_constraints: **get_wildcard_constraints(config["pybids_inputs"])
@@ -80,7 +82,7 @@ rule all_blobdensity:
                 suffix="blobdensity.nii",
                 **inputs["spim"].wildcards
             ),
-            stain=config["blobdetect"]["stain"],
+            stain=stains_for_blobdetect,
             template=config["template"],
         ),
 
@@ -95,7 +97,7 @@ rule all_blobs:
                 suffix="blobs.npy",
                 **inputs["spim"].wildcards
             ),
-            stain=stains,
+            stain=stains_for_blobdetect,
         ),
 
 
@@ -134,7 +136,8 @@ rule all_templatereg_lbl:
 rule all:
     default_target: True
     input:
-        rules.all_templatereg_deform.input,
+        rules.all_templatereg_deform_zooms.input,
+        rules.all_blobdensity.input
 
 
 include: "rules/common.smk"

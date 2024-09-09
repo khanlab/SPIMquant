@@ -42,7 +42,7 @@ rule brainmask_penalty:
         " -o {output.penalty}"
 
 
-rule blob_detection_betaamyloid:
+rule blob_detection:
     input:
         in_zarr=inputs["spim"].path,
     params:
@@ -63,7 +63,7 @@ rule blob_detection_betaamyloid:
             root=root,
             datatype="micr",
             level="{level}",
-            stain="{stain,BetaAmyloid}",
+            stain="{stain}",
             suffix="sparseblobs.npz",
             **inputs["spim"].wildcards
         ),
@@ -71,7 +71,7 @@ rule blob_detection_betaamyloid:
             root=root,
             datatype="micr",
             level="{level}",
-            stain="{stain,BetaAmyloid}",
+            stain="{stain}",
             suffix="points.npy",
             **inputs["spim"].wildcards
         ),
@@ -84,7 +84,7 @@ rule blob_detection_betaamyloid:
         #"../scripts/blob_detection_coiled.py" #if config['use_coiled'] else "../scripts/blob_detection.py"
         "../scripts/blob_detection.py" #if config['use_coiled'] else "../scripts/blob_detection.py"
 
-rule filter_blobs_betaamyloid:
+rule filter_blobs:
     input:
         points_npy=bids(
             root=root,
@@ -114,7 +114,7 @@ rule filter_blobs_betaamyloid:
             datatype="micr",
             level="{level}",
             desc="filtered",
-            stain="{stain,BetaAmyloid}",
+            stain="{stain}",
             suffix="points.npy",
             **inputs["spim"].wildcards
         ),

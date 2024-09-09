@@ -1,6 +1,7 @@
 #bids_dir: 'gcs://western-lightsheet/data/Inoue/bids'
 #bids_dir: 'gcs://khanlab-lightsheet/data/marmoset_pilot/bids'
-bids_dir: /cifs/trident/projects/lightsheet_lifecanvas/bids/
+bids_dir: /cifs/trident/projects/synuclein_mouse_project/lightsheet/bids_smartspim/code/bids
+#bids_dir: /cifs/trident/projects/lightsheet_lifecanvas/bids/
 #bids_dir: /home/ROBARTS/alik/graham/cfmm-bids/Prado/LightsheetMicroscopy/bids_Onuska_LifeCanvas/bids
 output_dir: '.'
 
@@ -27,7 +28,7 @@ pybids_inputs:
     filters:
       suffix: 'SPIM'
       #      acquisition: 4x #this will need to be blaze4x
-      #  subject: 'cletus240708'
+      subject: 'PFF1'
       extension: 'ome.zarr'
     wildcards:
       - subject
@@ -90,8 +91,15 @@ templates:
 stains_for_reg: #ordered by priority
   - PI
   - autof
+  - AutoF
 
+stains_for_blobdetect:
+  - abeta
+  - Abeta
+  - BetaAmyloid
+  - AlphaSynuclein
 
+  
 templatereg:
   level: 5
   desc: N4brain
@@ -107,7 +115,7 @@ masking:
   pre_atropos_downsampling: '50%'
 
 blobdetect:
-  level: 1 #downsampling level to use for blob detection
+  level: 4 #downsampling level to use for blob detection
   dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
   dseg_template: ABAv3
   stain: BetaAmyloid
