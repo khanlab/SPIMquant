@@ -3,7 +3,6 @@ wildcard_constraints:
     template="[a-zA-Z0-9]+",
 
 
-
 rule get_downsampled_nii:
     params:
         in_zarr=inputs["spim"].path,
@@ -17,7 +16,8 @@ rule get_downsampled_nii:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container: None
+    container:
+        None
     script:
         "../scripts/ome_zarr_to_nii.py"
 
@@ -121,22 +121,65 @@ rule lateralize_atlas_tsv:
         "../scripts/lateralize_atlas_tsv.py"
 
 
+rule import_reslice_dseg:
+    input:
+        ref=lambda wildcards: format(config["templates"][wildcards.template]["dseg"]),
+        dseg=lambda wildcards: format(
+            config["templates"][wildcards.template]["segs"][wildcards.seg]["dseg"]
+        ),
+    output:
+        dseg=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
+        ),
+    shell:
+        "c3d {input.ref} {input.dseg} -interpolation NearestNeighbor -reslice-identity -o {output}"
+
+
+ruleorder: import_eed_tsv > import_eed_csv_as_tsv
+
+
+rule import_eed_tsv:
+    input:
+        tsv=lambda wildcards: format(
+            config["templates"][wildcards.template]["segs"][wildcards.seg]["tsv"]
+        ),
+    output:
+        tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
+    shell:
+        "cp {input} {output}"
+
+
+rule import_eed_csv_as_tsv:
+    input:
+        csv=lambda wildcards: format(
+            config["templates"][wildcards.template]["segs"][wildcards.seg]["csv"]
+        ),
+    output:
+        tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
+    script:
+        "../scripts/import_eed_csv_as_tsv.py"
+
+
 rule resave_tiny:
     params:
         in_zarr=inputs["spim"].path,
-        coiled_cluster_opts={'software': 'blobdetect',
-                                'n_workers': [5,20],
-                                'spot_policy':'spot',
-                                },
-        fov={'z':[1000,1200],'y':[5000,6000],'x':[4000,5000]},
+        coiled_cluster_opts={
+            "software": "blobdetect",
+            "n_workers": [5, 20],
+            "spot_policy": "spot",
+        },
+        fov={"z": [1000, 1200], "y": [5000, 6000], "x": [4000, 5000]},
     output:
-        ome_zarr = directory(bids(
-            root=root,
-            datatype="micr",
-            desc='tiny',
-            suffix="SPIM.ome.zarr",
-            **inputs["spim"].wildcards
-        )),
-    container: None
+        ome_zarr=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="tiny",
+                suffix="SPIM.ome.zarr",
+                **inputs["spim"].wildcards
+            )
+        ),
+    container:
+        None
     script:
-        '../scripts/resave_tiny.py'
+        "../scripts/resave_tiny.py"

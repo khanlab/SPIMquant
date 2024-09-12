@@ -74,11 +74,25 @@ ome_zarr:
 
 template: ABAv3 #template to use
 
+
+
 templates:
   ABAv3:
     anat: '{workflow.basedir}/../resources/ABAv3/P56_Atlas.nii.gz'
     dseg: '{workflow.basedir}/../resources/ABAv3/P56_Annotation.nii.gz'
     lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
+    segs:
+      all: 
+        dseg: 'results/tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.nii.gz'
+        tsv: 'results/tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.tsv'
+      roi22: 
+        dseg: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_22_R_L.nii.gz'
+        csv: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_22_R_L.csv'
+      roi82:
+        dseg: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_82_R_L.nii.gz'
+        csv: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_82_R_L.csv'
+
+        
   gubra:
     anat: '{workflow.basedir}/../resources/gubra/gubra_template_olf_affine_padABAv3.nii.gz'
     dseg: '{workflow.basedir}/../resources/gubra/gubra_ano_olf_affine_padABAv3_remap.nii.gz'
