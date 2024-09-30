@@ -18,7 +18,10 @@ dseg_grid = (np.arange(dseg_vol.shape[0]),
 # load the coordinates of points (Nx3)
 points = np.load(snakemake.input.points_npy)
 
-print(f'points, shape: {points.shape}, mean: {points.mean(axis=0)}, max: {points.max(axis=0)}, min: {points.min(axis=0)}')
+if points.shape[0] == 0:
+    print('No points found, skip points statistics')
+else:
+    print(f'points, shape: {points.shape}, mean: {points.mean(axis=0)}, max: {points.max(axis=0)}, min: {points.min(axis=0)}')
 
 # points are in RAS (physical) space -- we want to transform them to voxel 
 # space (relative to the dseg_vol), so we can use the dseg_ras2vox for this
@@ -34,7 +37,8 @@ points_ras = -np.flip(points,axis=1)
 
 points_vox = dseg_ras2vox @ np.hstack((points_ras,np.ones((points_ras.shape[0],1)))).T
 
-print(f'points_vox, mean: {points_vox.mean(axis=1)}, max: {points_vox.max(axis=1)}, min: {points_vox.min(axis=1)}')
+if points.shape[0] != 0:
+    print(f'points_vox, mean: {points_vox.mean(axis=1)}, max: {points_vox.max(axis=1)}, min: {points_vox.min(axis=1)}')
 
 # now that we have points in voxel space, we can use interpn to interpolate
 label_at_points = interpn(dseg_grid,
@@ -44,7 +48,8 @@ label_at_points = interpn(dseg_grid,
                                 bounds_error=False,
                                 fill_value=0)
 
-print(f'label_at_points, shape: {label_at_points.shape}, mean: {label_at_points.mean()}, max: {label_at_points.max()}, min: {label_at_points.min()}')
+if points.shape[0] != 0:
+    print(f'label_at_points, shape: {label_at_points.shape}, mean: {label_at_points.mean()}, max: {label_at_points.max()}, min: {label_at_points.min()}')
 
 #now I have the Nx3 points, and a Nx1 label_at_points
 

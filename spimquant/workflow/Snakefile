@@ -1,5 +1,8 @@
 from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
 from snakemake.utils import format
+import pathlib
+import os
+import shutil
 
 set_bids_spec("v0_11_0")
 

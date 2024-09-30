@@ -24,6 +24,12 @@ penalty_grid = (np.arange(penalty_vol.shape[0]),
 # load the coordinates of points (Nx3)
 points = np.load(snakemake.input.points_npy)
 
+if points.shape[0] == 0:
+    print('No points found, copy the input over and exiting...')
+    np.save(snakemake.output.points_npy, points)
+
+    exit(0)
+
 print(f'points, mean: {points.mean(axis=0)}, max: {points.max(axis=0)}, min: {points.min(axis=0)}')
 
 # points are in RAS (physical) space -- we want to transform them to voxel 
