@@ -303,3 +303,20 @@ rule map_volume_tsv_dseg_to_template_nii:
         ),
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
+
+# ---------------------------- Part 2: Negatively Masked Counting -------------------------------
+
+rule negatively_masked_counting:
+    """
+    Work in progress
+    """
+    input:
+        neg_mask='C:/ProgrammingTools/ComputerVision/RobartsResearch/data/lightsheet/spimquant_ubuntu/resources/onuska21_patched.tiff',
+    params:
+        zarr='C:/ProgrammingTools/ComputerVision/RobartsResearch/data/lightsheet/spimquant_ubuntu/bids/sub-onuska21/micr/sub-onuska21_sample_brain_acq-prestitched_SPIM.ome.zarr?slices=[1]',
+        tmp_path=f'{config["output_dir"]}/tmp'
+    output:
+        found_lc=directory(f'{config["output_dir"]}/found_lc')
+    threads: 32
+    script:
+        "../scripts/contour_counting/negatively_masked_counting.py"

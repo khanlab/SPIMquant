@@ -1,9 +1,11 @@
 ## SPIMquant
 
-SPIMquant is a BIDS App for processing SPIM (lightsheet) microscopy datasets, performing registration to a template, and quantifying microscopic features from the SPIM data.
+SPIMquant is a parallel processing library that is designed to process scan 
+and quantify the number of cells within.
 
 Hardware requirements: If run locally, make sure you have sufficient memory 
-(at least quite a bit more than 16G of memory in total), as the `greedy` diffeormorphic registration we rely on can consume a significant amount of memory during the template registration process.
+(at least quite a bit more than 16G of memory in total), as the `greedy` command 
+line tool we rely on consumes memory heavily during the template registration process.
 
 Software requirements: A linux machine with Singularity or Apptainer installed is 
 recommended. Other-wise with a Windows machine, you want to have the following libraries 
@@ -27,13 +29,6 @@ pip install -e git+https://github.com/khanlab/spimquant#egg=spimquant
 ```
 
 Note: you can re-run this command to re-install with the latest version
-
-Before running the app, you need to specify a config file to use. "SPIMquant/examples/snakebids_template.yml" 
-provides a starting point for specifying a config. If you are using the example dataset provided in the 
-above section, then a config file is also included in the zip file.
-
-To specify the config, copy the config file into SPIMquant/spimquant/config/snakebids.yml, and change the 
-properties in the config file to ensure paths to the directory are properly set.
 
 ## Running the app
 
