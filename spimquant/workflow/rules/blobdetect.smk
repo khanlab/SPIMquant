@@ -311,10 +311,9 @@ rule negatively_masked_counting:
     Work in progress
     """
     input:
-        zarr='/path_to_bids_root/bids/sub-onuska21/micr/sub-onuska21_sample_brain_acq-prestitched_SPIM.ome.zarr?slices=[1]',
-        neg_mask='/path_to_bids_root/resources/onuska21_patched.tiff',
+        neg_mask='C:/ProgrammingTools/ComputerVision/RobartsResearch/data/lightsheet/spimquant_ubuntu/resources/onuska21_patched.tiff',
     params:
-        neg_mask_scale=(1, 1, 1),
+        zarr='C:/ProgrammingTools/ComputerVision/RobartsResearch/data/lightsheet/spimquant_ubuntu/bids/sub-onuska21/micr/sub-onuska21_sample_brain_acq-prestitched_SPIM.ome.zarr?slices=[1]',
         tmp_path=f'{config["output_dir"]}/tmp'
     output:
         found_lc=directory(f'{config["output_dir"]}/found_lc')

@@ -19,6 +19,7 @@ if __name__ == '__main__':
     import cvpl_tools.im.process.bs_to_os as sp_bs_to_os
     import cvpl_tools.im.process.os_to_cc as sp_os_to_cc
     import cvpl_tools.im.process.any_to_any as sp_any_to_any
+    import cvpl_tools.im.algs.dask_resize as im_resize
     import cvpl_tools.ome_zarr.io as ome_io
     import cvpl_tools.im.ndblock as ndblock
     import dask.array as da
@@ -52,10 +53,11 @@ if __name__ == '__main__':
                              client_args=dict(threads_per_worker=12, n_workers=1),
                              viewer_args=dict(use_viewer=False)) as plc:
         # DO DASK COMPUTATION, AND SHOW RESULTS IN plc.viewer
-        src_im = ome_io.load_dask_array_from_path(snakemake.input.zarr, mode='r', level=0)
+        src_im = ome_io.load_dask_array_from_path(snakemake.params.zarr, mode='r', level=0)
         pipeline = Pipeline()
         src_im = da.clip(src_im / 1000, 0., 1.)
         assert src_im.ndim == 3
+        print(f'Saving results in {plc.cache_root.abs_path}')
         print(f'Computing centroids size and location. Masking the image, imshape={src_im.shape}.')
         src_im = src_im.rechunk(chunks=(128, 256, 256))
         storage_options = dict(
@@ -72,12 +74,14 @@ if __name__ == '__main__':
             storage_options=storage_options
         )
 
-        up_sampler = sp_any_to_any.UpsamplingByIntFactor(factor=snakemake.params.neg_mask_scale, order=0)
-
         def compute_masking():
             neg_mask = da.from_array(tifffile.imread(snakemake.input.neg_mask), chunks=(64, 64, 64))
-            neg_mask = up_sampler.forward(neg_mask, cptr=plc.cache_root.cache('neg_mask_upsampling'),
-                                          viewer_args=viewer_args | dict(is_label=True))
+            neg_mask = im_resize.upsample_pad_crop_fit(
+                src_arr=neg_mask,
+                tgt_arr=src_im,
+                cptr=plc.cache_root.cache('neg_mask_upsampling'),
+                viewer_args=viewer_args | dict(is_label=True),
+            )
             return src_im * (1 - neg_mask)
         plc.cache_root.cache_im(compute_masking, cid='masked_src_im', viewer_args=viewer_args)
         cc = pipeline.forward(src_im, plc.cache_root.cache(cid='global_label'), viewer_args=viewer_args)

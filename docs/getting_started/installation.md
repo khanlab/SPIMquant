@@ -30,13 +30,6 @@ pip install -e git+https://github.com/khanlab/spimquant#egg=spimquant
 
 Note: you can re-run this command to re-install with the latest version
 
-Before running the app, you need to specify a config file to use. "SPIMquant/examples/snakebids_template.yml" 
-provides a starting point for specifying a config. If you are using the example dataset provided in the 
-above section, then a config file is also included in the zip file.
-
-To specify the config, copy the config file into SPIMquant/spimquant/config/snakebids.yml, and change the 
-properties in the config file to ensure paths to the directory are properly set.
-
 ## Running the app
 
 Do a dry-run first (`-n`) and simply print (`-p`) what would be run:
