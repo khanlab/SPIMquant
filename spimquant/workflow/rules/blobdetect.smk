@@ -42,14 +42,14 @@ rule brainmask_penalty:
         " -o {output.penalty}"
 
 
-rule blob_detection_betaamyloid:
+rule blob_detection:
     input:
         zarr=inputs["spim"].path,
         penalty=bids(
             root=root,
             datatype="micr",
-            stain=config["masking"]["stain"],
-            level=config["masking"]["level"],
+            stain='{stain}',
+            level='{level}',
             desc="brain",
             suffix="penalty.nii",
             **inputs["spim"].wildcards
@@ -65,7 +65,7 @@ rule blob_detection_betaamyloid:
             root=root,
             datatype="micr",
             level="{level}",
-            stain="{stain,BetaAmyloid}",
+            stain="{stain}",
             suffix="sparseblobs.npz",
             **inputs["spim"].wildcards
         ),
@@ -73,7 +73,7 @@ rule blob_detection_betaamyloid:
             root=root,
             datatype="micr",
             level="{level}",
-            stain="{stain,BetaAmyloid}",
+            stain="{stain}",
             suffix="points.npy",
             **inputs["spim"].wildcards
         ),
@@ -82,11 +82,11 @@ rule blob_detection_betaamyloid:
         None  # since sparse is not in spimprep container yet
     shadow:
         "minimal"
-    script:
+    script:  
         "../scripts/blob_detection.py"
 
 
-rule filter_blobs_betaamyloid:
+rule filter_blobs:
     input:
         points_npy=bids(
             root=root,
@@ -99,7 +99,7 @@ rule filter_blobs_betaamyloid:
         penalty=bids(
             root=root,
             datatype="micr",
-            stain=config["masking"]["stain"],
+            stain=stain_for_reg,
             level=config["masking"]["level"],
             desc="brain",
             suffix="penalty.nii",
@@ -116,7 +116,7 @@ rule filter_blobs_betaamyloid:
             datatype="micr",
             level="{level}",
             desc="filtered",
-            stain="{stain,BetaAmyloid}",
+            stain="{stain}",
             suffix="points.npy",
             **inputs["spim"].wildcards
         ),
@@ -138,6 +138,7 @@ rule map_labels_to_blobs:
         dseg=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             desc="deform",
             level=config["blobdetect"]["dseg_level"],
             from_=config["blobdetect"]["dseg_template"],
@@ -148,6 +149,7 @@ rule map_labels_to_blobs:
         blobs_tsv=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             stain="{stain}",
             suffix="blobs.tsv",
             **inputs["spim"].wildcards
@@ -162,6 +164,7 @@ rule generate_subject_volumes_tsv:
         dseg=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             desc="deform",
             level=config["blobdetect"]["dseg_level"],
             from_="{template}",
@@ -169,12 +172,13 @@ rule generate_subject_volumes_tsv:
             **inputs["spim"].wildcards
         ),
         label_tsv=bids_tpl(
-            root=root, template="{template}", desc="LR", suffix="dseg.tsv"
+            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
         ),
     output:
         volumes_tsv=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             from_="{template}",
             suffix="volumes.tsv",
             **inputs["spim"].wildcards
@@ -189,6 +193,7 @@ rule generate_subject_density_tsv:
         volumes_tsv=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             from_="{template}",
             suffix="volumes.tsv",
             **inputs["spim"].wildcards
@@ -196,6 +201,7 @@ rule generate_subject_density_tsv:
         blobs_tsv=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             stain="{stain}",
             suffix="blobs.tsv",
             **inputs["spim"].wildcards
@@ -204,6 +210,7 @@ rule generate_subject_density_tsv:
         density_tsv=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             from_="{template}",
             stain="{stain}",
             suffix="blobdensity.tsv",
@@ -219,6 +226,7 @@ rule map_density_tsv_dseg_to_nii:
         tsv=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             from_="{template}",
             stain="{stain}",
             suffix="blobdensity.tsv",
@@ -227,6 +235,7 @@ rule map_density_tsv_dseg_to_nii:
         dseg=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             desc="deform",
             level=config["blobdetect"]["dseg_level"],
             from_="{template}",
@@ -240,6 +249,7 @@ rule map_density_tsv_dseg_to_nii:
         nii=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             from_="{template}",
             stain="{stain}",
             suffix="blobdensity.nii",
@@ -255,12 +265,15 @@ rule map_density_tsv_dseg_to_template_nii:
         tsv=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             from_="{template}",
             stain="{stain}",
             suffix="blobdensity.tsv",
             **inputs["spim"].wildcards
         ),
-        dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        dseg=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
+        ),
     params:
         label_column="index",
         feature_column="density",
@@ -268,6 +281,7 @@ rule map_density_tsv_dseg_to_template_nii:
         nii=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             space="{template}",
             stain="{stain}",
             suffix="blobdensity.nii",
@@ -283,12 +297,15 @@ rule map_volume_tsv_dseg_to_template_nii:
         tsv=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             from_="{template}",
             stain="{stain}",
             suffix="blobdensity.tsv",
             **inputs["spim"].wildcards
         ),
-        dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        dseg=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
+        ),
     params:
         label_column="index",
         feature_column="volume",
@@ -296,6 +313,7 @@ rule map_volume_tsv_dseg_to_template_nii:
         nii=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             space="{template}",
             stain="{stain}",
             suffix="volume.nii",
