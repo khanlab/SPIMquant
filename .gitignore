@@ -1,0 +1,5 @@
+.idea/*
+*.snakemake/
+*__pycache__/
+spimquant/results/
+spimquant/workflow/scripts/experiment/

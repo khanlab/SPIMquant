@@ -2,6 +2,9 @@
 from pathlib import Path
 
 from snakebids import bidsapp, plugins
+import os
+import shutil
+
 
 app = bidsapp.app(
     [
