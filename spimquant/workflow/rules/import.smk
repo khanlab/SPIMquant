@@ -117,3 +117,42 @@ rule lateralize_atlas_tsv:
         tsv=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.tsv"),
     script:
         "../scripts/lateralize_atlas_tsv.py"
+
+
+rule import_reslice_dseg:
+    input:
+        ref=lambda wildcards: format(config["templates"][wildcards.template]["dseg"]),
+        dseg=lambda wildcards: format(
+            config["templates"][wildcards.template]["segs"][wildcards.seg]["dseg"]
+        ),
+    output:
+        dseg=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
+        ),
+    shell:
+        "c3d {input.ref} {input.dseg} -interpolation NearestNeighbor -reslice-identity -o {output}"
+
+
+ruleorder: import_eed_tsv > import_eed_csv_as_tsv
+
+
+rule import_eed_tsv:
+    input:
+        tsv=lambda wildcards: format(
+            config["templates"][wildcards.template]["segs"][wildcards.seg]["tsv"]
+        ),
+    output:
+        tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
+    shell:
+        "cp {input} {output}"
+
+
+rule import_eed_csv_as_tsv:
+    input:
+        csv=lambda wildcards: format(
+            config["templates"][wildcards.template]["segs"][wildcards.seg]["csv"]
+        ),
+    output:
+        tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
+    script:
+        "../scripts/import_eed_csv_as_tsv.py"

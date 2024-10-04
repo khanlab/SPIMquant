@@ -1,8 +1,5 @@
 from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
 from snakemake.utils import format
-import pathlib
-import os
-import shutil
 
 set_bids_spec("v0_11_0")
 
@@ -25,8 +22,28 @@ inputs = generate_inputs(
     participant_label=config.get("participant_label", None),
     exclude_participant_label=config.get("exclude_participant_label", None),
     validate=not config.get("plugins.validator.skip", False),
+#    ignore=["sourcedata"],  #this is needed to correct a bug when parsing pybids datasets with fsspec, but requires updated snakebids (in akhanf fork)
 )
 
+from lib.ome_zarr import get_channel_names
+
+# get stains from first subject (lazy - should use the correct stain for each subject, when defining target rules)
+stains = get_channel_names(inputs["spim"].expand()[0])
+print('stains in first subject:')
+print(stains)
+stain_for_reg = None
+for stain in config["stains_for_reg"]:
+    if stain in stains:
+        stain_for_reg = stain
+        break
+
+if stain_for_reg == None:
+    print("ERROR: a stain for registration was not found in the first OME zarr file")
+
+
+stains_for_blobdetect = list(
+    set(config["stains_for_blobdetect"]).intersection(set(stains))
+)
 root = "results"
 
 
@@ -52,23 +69,25 @@ rule all_templatereg_deform_zooms:
                 **inputs["spim"].wildcards
             ),
             template=config["template"],
-            stain=config["stains"],
+            stain=stains,
             res=config["templatereg"]["zooms"],
         ),
 
 
 rule all_blobdensity:
     input:
-        blob_density=inputs["spim"].expand(
+        inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="micr",
+                seg="{seg}",
                 space="{template}",
                 stain="{stain}",
                 suffix="blobdensity.nii",
                 **inputs["spim"].wildcards
             ),
-            stain=config["blobdetect"]["stain"],
+            stain=stains_for_blobdetect,
+            seg=config["templates"][config["template"]]["segs"].keys(),
             template=config["template"],
         ),
 
@@ -83,7 +102,7 @@ rule all_blobs:
                 suffix="blobs.npy",
                 **inputs["spim"].wildcards
             ),
-            stain=config["stains"],
+            stain=stains_for_blobdetect,
         ),
 
 
@@ -100,7 +119,7 @@ rule all_templatereg_deform:
                 **inputs["spim"].wildcards
             ),
             template=config["template"],
-            stain=config["stains"],
+            stain=stains,
         ),
 
 
@@ -122,7 +141,8 @@ rule all_templatereg_lbl:
 rule all:
     default_target: True
     input:
-        rules.all_templatereg_deform.input,
+        rules.all_templatereg_deform_zooms.input,
+        rules.all_blobdensity.input,
 
 
 include: "rules/common.smk"

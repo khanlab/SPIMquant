@@ -88,7 +88,7 @@ rule affine_reg:
         subject=bids(
             root=root,
             datatype="micr",
-            stain=config["templatereg"]["stain"],
+            stain=stain_for_reg,
             level=config["templatereg"]["level"],
             desc=config["templatereg"]["desc"],
             suffix="SPIM.nii",
@@ -109,7 +109,7 @@ rule affine_reg:
             root=root,
             datatype="warps",
             space="{template}",
-            stain=config["templatereg"]["stain"],
+            stain=stain_for_reg,
             desc="affinewarped",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
@@ -168,7 +168,7 @@ rule deform_reg:
         subject=bids(
             root=root,
             datatype="micr",
-            stain=config["templatereg"]["stain"],
+            stain=stain_for_reg,
             level=config["templatereg"]["level"],
             desc=config["templatereg"]["desc"],
             suffix="SPIM.nii",
@@ -201,7 +201,7 @@ rule deform_reg:
             root=root,
             datatype="warps",
             space="{template}",
-            stain=config["templatereg"]["stain"],
+            stain=stain_for_reg,
             desc="deformwarped",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
@@ -317,14 +317,14 @@ rule affine_zarr_to_template_ome_zarr:
 
 rule deform_zarr_to_template_nii:
     input:
-        ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        flo_opts={"level": 2}, #downsampling level to use (TODO: set this automatically based on ref resolution?)
-        do_downsample=True, #whether to perform further downsampling before transforming
-        downsample_opts={'along_z': 4}, #could also be determined automatically 
+        ome_zarr=inputs["spim"].path,
+        flo_opts={"level": 2},  #downsampling level to use (TODO: set this automatically based on ref resolution?)
+        do_downsample=True,  #whether to perform further downsampling before transforming
+        downsample_opts={"along_z": 4},  #could also be determined automatically 
         ref_opts={"chunks": (1, 100, 100, 100)},
     output:
         nii=bids(
@@ -337,21 +337,22 @@ rule deform_zarr_to_template_nii:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container: None
+    container:
+        None
     script:
         "../scripts/deform_to_template_nii.py"
 
 
 rule deform_to_template_nii_zoomed:
     input:
-        ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     params:
-        flo_opts={"level": 1}, #downsampling level to use (TODO: set this automatically based on ref resolution?)
-        do_downsample=False, #whether to perform further downsampling before transforming
-        downsample_opts={'along_z': 4}, #could also be determined automatically 
+        ome_zarr=inputs["spim"].path,
+        flo_opts={},  #any additional flo znimg options
+        do_downsample=True,  #whether to perform further downsampling before transforming
+        downsample_opts={"along_z": 4},  #could also be determined automatically 
         ref_opts=lambda wildcards: {
             "chunks": (1, 50, 50, 50),
             "zooms": (
@@ -431,18 +432,21 @@ rule deform_template_dseg_to_subject_nii:
         ref=bids(
             root=root,
             datatype="micr",
-            stain=config["templatereg"]["stain"],
+            stain=stain_for_reg,
             level="{level}",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
-        dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        dseg=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
+        ),
         xfm_ras=rules.init_affine_reg.output.xfm_ras,
         invwarp=rules.deform_reg.output.invwarp,
     output:
         dseg=bids(
             root=root,
             datatype="micr",
+            seg="{seg}",
             desc="deform",
             level="{level}",
             from_="{template}",
@@ -494,7 +498,7 @@ rule transform_labels_to_zoomed_template:
             datatype="micr",
             desc="deform",
             space="{template}",
-            stain=config["templatereg"]["stain"],
+            stain=stain_for_reg,
             res="{res}um",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards

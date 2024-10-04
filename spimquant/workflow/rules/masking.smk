@@ -122,7 +122,7 @@ rule init_affine_reg:
         subject=bids(
             root=root,
             datatype="micr",
-            stain=config["masking"]["stain"],
+            stain=stain_for_reg,
             level=config["masking"]["level"],
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
@@ -170,7 +170,7 @@ rule affine_transform_template_dseg_to_subject:
         ref=bids(
             root=root,
             datatype="micr",
-            stain=config["masking"]["stain"],
+            stain=stain_for_reg,
             level=config["masking"]["level"],
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
