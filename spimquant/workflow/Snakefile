@@ -41,7 +41,6 @@ if stain_for_reg == None:
 stains_for_blobdetect = list(
     set(config["stains_for_blobdetect"]).intersection(set(stains))
 )
-root = "results"
 
 
 container: config["containers"]["spimprep"]

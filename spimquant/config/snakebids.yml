@@ -1,6 +1,11 @@
 bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids'
 output_dir: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.0-alpha'
 
+root: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.0-alpha' 
+#root: 'results'
+work: 'work'
+
+
 
 #list of analysis levels in the bids app
 analysis_levels: &analysis_levels
@@ -52,9 +57,6 @@ containers:
   ants: 'docker://kaczmarj/ants:2.3.4'
   itksnap: 'docker://khanlab/itksnap:latest' 
 
-root: 'results'
-work: 'work'
-
 remote_creds: '~/.config/gcloud/application_default_credentials.json' #this is needed so we can pass creds to container
 
 ome_zarr:
@@ -77,8 +79,8 @@ templates:
     lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
     segs:
       all: 
-        dseg: 'results/tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.nii.gz'
-        tsv: 'results/tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.tsv'
+        dseg: '{root}/tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.nii.gz'
+        tsv: '{root}/tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.tsv'
       roi22: 
         dseg: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_22_R_L.nii.gz'
         csv: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_22_R_L.csv'
