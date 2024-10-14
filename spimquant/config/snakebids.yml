@@ -1,4 +1,4 @@
-bids_dir: '/cifs/prado/Kate/AK_Pipeline_LSM/spimprep/bids/'
+bids_dir: '../tests/data'
 output_dir: '.'
 
 
@@ -23,8 +23,6 @@ pybids_inputs:
   spim:
     filters:
       suffix: 'SPIM'
-      #      acquisition: 4x #this will need to be blaze4x
-      subject: o28
       extension: 'ome.zarr'
     wildcards:
       - subject
@@ -44,7 +42,6 @@ parse_args:
     dest: "plugins.validator.skip"
     action: "store_true"
     default: False
-
 
 
 #--- workflow specific configuration -- 
@@ -70,22 +67,44 @@ ome_zarr:
 
 template: ABAv3 #template to use
 
+
+
 templates:
   ABAv3:
     anat: '{workflow.basedir}/../resources/ABAv3/P56_Atlas.nii.gz'
     dseg: '{workflow.basedir}/../resources/ABAv3/P56_Annotation.nii.gz'
     lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
+    segs:
+      all: 
+        dseg: 'results/tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.nii.gz'
+        tsv: 'results/tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.tsv'
+      roi22: 
+        dseg: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_22_R_L.nii.gz'
+        csv: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_22_R_L.csv'
+      roi82:
+        dseg: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_82_R_L.nii.gz'
+        csv: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_82_R_L.csv'
+
+        
   gubra:
     anat: '{workflow.basedir}/../resources/gubra/gubra_template_olf_affine_padABAv3.nii.gz'
     dseg: '{workflow.basedir}/../resources/gubra/gubra_ano_olf_affine_padABAv3_remap.nii.gz'
     lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
 
-stains:
-  - PI
-  - BetaAmyloid
 
+stains_for_reg: #ordered by priority
+  - PI
+  - autof
+  - AutoF
+
+stains_for_blobdetect:
+  - abeta
+  - Abeta
+  - BetaAmyloid
+  - AlphaSynuclein
+
+  
 templatereg:
-  stain: PI #set this to PI for lifecanvas data 
   level: 5
   desc: N4brain
   zooms:
@@ -93,7 +112,6 @@ templatereg:
     - 40
 
 masking:
-  stain: PI #set this to PI for lifecanvas data 
   level: 5
   priors_template: ABAv3
   gmm_k: 9
@@ -101,7 +119,7 @@ masking:
   pre_atropos_downsampling: '50%'
 
 blobdetect:
-  level: 2 #downsampling level to use for blob detection
+  level: 4 #downsampling level to use for blob detection
   dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
   dseg_template: ABAv3
-  stain: BetaAmyloid
+

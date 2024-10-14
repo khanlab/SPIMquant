@@ -1,0 +1,22 @@
+L_OLF,L_Olfactory areas,1
+R_OLF,R_Olfactory areas,2
+L_Iso,L_Isocortex,3
+R_ISO,R_Isocortex,4
+L_HYP,L_Hippocampal formation,5
+R_HYP,R_Hippocampal formation,6
+L_AMY,L_Amygdala,7
+R_AMY,R_Amygdala,8
+L_STR,L_Striatum,9
+R_STR,R_Striatum,10
+L_PAL,L_Pallidum,11
+R_PAL,R_Pallidum,12
+L_THA,L_Thalamus,13
+R_THA,R_Thalamus,14
+L_HY,L_Hypothalamus,15
+R_HY,R_Hypothalamus,16
+L_MB,L_Midbrain,17
+R_MB,R_Midbrain,18
+L_HB,L_Hindbrain,19
+R_HB,R_Hindbrain,20
+L_CEB,L_Cerebellum,21
+R_CEB,R_Cerebellum,22
