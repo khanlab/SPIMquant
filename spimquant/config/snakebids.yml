@@ -1,5 +1,5 @@
-bids_dir: '../tests/data'
-output_dir: '.'
+bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids'
+output_dir: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.0-alpha'
 
 
 #list of analysis levels in the bids app
@@ -55,6 +55,7 @@ containers:
 root: 'results'
 work: 'work'
 
+remote_creds: '~/.config/gcloud/application_default_credentials.json' #this is needed so we can pass creds to container
 
 ome_zarr:
   max_downsampling_layers: 4 # e.g. 4 levels: { 0: orig, 1: ds2, 2: ds4, 3: ds8, 4: ds16}

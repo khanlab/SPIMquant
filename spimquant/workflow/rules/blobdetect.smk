@@ -44,7 +44,6 @@ rule brainmask_penalty:
 
 rule blob_detection:
     input:
-        zarr=inputs["spim"].path,
         penalty=bids(
             root=root,
             datatype="micr",
@@ -55,6 +54,7 @@ rule blob_detection:
             **inputs["spim"].wildcards
         ),
     params:
+        zarr=inputs["spim"].path,
         level=lambda wildcards: int(wildcards.level),  #downsample-level to perform blob detection on
         min_sigma_um=1,
         max_sigma_um=100,  # also serves as size of chunk borders

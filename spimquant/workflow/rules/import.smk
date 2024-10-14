@@ -5,7 +5,10 @@ wildcard_constraints:
 
 rule get_downsampled_nii:
     input:
-        zarr=inputs["spim"].path,
+        **get_storage_creds(inputs["spim"].path),
+    params:
+        in_zarr=inputs["spim"].path,
+        storage_provider_settings=workflow.storage_provider_settings,
     output:
         nii=bids(
             root=root,
@@ -16,6 +19,7 @@ rule get_downsampled_nii:
             **inputs["spim"].wildcards
         ),
     threads: 32
+    container: None
     script:
         "../scripts/ome_zarr_to_nii.py"
 

@@ -15,7 +15,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
 snakemake = ">=8.0.0"
-snakebids = ">=0.12.0"
+snakebids = {git = "https://github.com/akhanf/snakebids", rev = "7bfe3d8" }
 pulp = "<2.8.0"
 pandas = [
     { version = "<=2.0.3", python = "<3.9" },
@@ -28,11 +28,12 @@ scipy = "^1.12.0"
 scikit-image = "^0.22.0"
 dask-image = "^2023.8.1"
 ome-zarr = "^0.9.0"
-pybids = "^0.16.5"
+pybids = {git = "https://github.com/akhanf/pybids", rev = "a9b32a1" }
 sparse = "^0.15.1"
 bokeh = "^3.4.1"
 zarrnii = "0.1.3a1"
 cvpl_tools = "^0.6.3"
+gcsfs = "^2024.9.0.post1"
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:app.run"
