@@ -77,7 +77,7 @@ rule atropos_seg:
         "minimal"
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=8000,
     shell:
         "mkdir -p {output.posteriors_dir} && "
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "

@@ -8,7 +8,7 @@ rule get_downsampled_nii:
         **get_storage_creds(inputs["spim"].path),
     params:
         in_zarr=inputs["spim"].path,
-        storage_provider_settings=workflow.storage_provider_settings,
+        storage_provider_settings=workflow.storage_provider_settings, #this  may not be needed anymore ? test with new zarrnii in container..
     output:
         nii=bids(
             root=root,

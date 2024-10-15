@@ -122,7 +122,7 @@ masking:
   pre_atropos_downsampling: '50%'
 
 blobdetect:
-  level: 4 #downsampling level to use for blob detection
+  level: 5 #downsampling level to use for blob detection
   dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
   dseg_template: ABAv3
 
