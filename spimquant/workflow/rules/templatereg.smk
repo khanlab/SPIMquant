@@ -375,8 +375,8 @@ rule deform_to_template_nii_zoomed:
             **inputs["spim"].wildcards
         ),
     resources: 
-        mem_mb=20000
-    threads: 8
+        mem_mb=15000
+    threads: 4
     script:
         "../scripts/deform_to_template_nii.py"
 

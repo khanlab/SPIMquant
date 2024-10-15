@@ -7344,24 +7344,28 @@ jupyter = ["ipytree (>=0.2.2)", "ipywidgets (>=8.0.0)", "notebook"]
 
 [[package]]
 name = "zarrnii"
-version = "0.1.3a1"
+version = "0.1.3-alpha.1"
 description = "Package for working with OME-Zarr and NIFTI images in a unified manner, with a focus on spatial transformations"
 category = "main"
 optional = false
-python-versions = "<4.0,>=3.9"
-files = [
-    {file = "zarrnii-0.1.3a1-py3-none-any.whl", hash = "sha256:487aeebf45e16b6cd721d8d9ed05a7fdc2196c66f01ebaf5e3e4f27a3747954f"},
-    {file = "zarrnii-0.1.3a1.tar.gz", hash = "sha256:51b46c8b52d4842fe8daf66cbd8498d4287207d90006326ca1f82a3a4454507d"},
-]
+python-versions = ">=3.9,<4.0"
+files = []
+develop = false
 
 [package.dependencies]
-dask = ">=2024.2.0,<2025.0.0"
-nibabel = ">=5.2.0,<6.0.0"
-numpy = ">=1.26.4,<2.0.0"
-ome-zarr = ">=0.9.0,<0.10.0"
-pandas = ">=2.2.0,<3.0.0"
-scipy = ">=1.12.0,<2.0.0"
-zarr = ">=2.17.0,<3.0.0"
+dask = "^2024.2.0"
+nibabel = "^5.2.0"
+numpy = "^1.26.4"
+ome-zarr = "^0.9.0"
+pandas = "^2.2.0"
+scipy = "^1.12.0"
+zarr = "^2.17.0"
+
+[package.source]
+type = "git"
+url = "https://github.com/khanlab/zarrnii"
+reference = "fafae58"
+resolved_reference = "fafae58b12181bfc814060eb7832e7d321735541"
 
 [[package]]
 name = "zict"
@@ -7398,4 +7402,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "84aa164ad54048c2700664d5fba7ffe2dec52329cf1e1d0c74f4c455e3930cc0"
+content-hash = "a96264560bb8d88bc91b6c2da54ecb840dc02693004354cb83db0bcf1904a623"
