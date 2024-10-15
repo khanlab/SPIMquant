@@ -1065,14 +1065,14 @@ questionary = ">=1.8.1"
 
 [[package]]
 name = "cvpl-tools"
-version = "0.6.14"
+version = "0.7.4"
 description = "A Python package for utilities and classes related to the file I/O, dataset record keeping and visualization for image processing and computer vision."
 category = "main"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "cvpl_tools-0.6.14-py3-none-any.whl", hash = "sha256:913a3c6bc260e1fd8dc0f51245f8f68dae38214016e8d2ff86989e70665fae69"},
-    {file = "cvpl_tools-0.6.14.tar.gz", hash = "sha256:3931f82b3d0fe726feaa885b30b20ae3a357eda907b89e5abee5492ce65042dd"},
+    {file = "cvpl_tools-0.7.4-py3-none-any.whl", hash = "sha256:408458ce10a5dd9ace4f6a200c1f06642a4af821978ffeebd0376005c600e42c"},
+    {file = "cvpl_tools-0.7.4.tar.gz", hash = "sha256:5af82fc8c3ec2ad8ae3f97ec7e195b66f12be12795e2b32f3fd68ffc7cc5765d"},
 ]
 
 [package.dependencies]
@@ -7398,4 +7398,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "01896bd0f4b0b4410d5cb850e08a7f0e8b16b1fcd9afa2b1197a041da7e57cb1"
+content-hash = "84aa164ad54048c2700664d5fba7ffe2dec52329cf1e1d0c74f4c455e3930cc0"

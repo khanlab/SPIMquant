@@ -32,7 +32,7 @@ pybids = {git = "https://github.com/akhanf/pybids", rev = "a9b32a1" }
 sparse = "^0.15.1"
 bokeh = "^3.4.1"
 zarrnii = "0.1.3a1"
-cvpl_tools = "^0.6.3"
+cvpl_tools = "^0.7.0"
 gcsfs = "^2024.9.0.post1"
 
 [tool.poetry.scripts]
