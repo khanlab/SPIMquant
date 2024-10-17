@@ -47,7 +47,7 @@ rule blob_detection:
         penalty=bids(
             root=root,
             datatype="micr",
-            stain='{stain}',
+            stain=stain_for_reg,
             level='{level}',
             desc="brain",
             suffix="penalty.nii",
