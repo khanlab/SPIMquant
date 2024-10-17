@@ -8,7 +8,6 @@ def bids_tpl(root, template, **entities):
 def get_storage_creds(uri):
     """for rules that deal with remote storage directly"""
     protocol = UPath(uri).protocol
-    print(f'protocol is {protocol}')
     if protocol == "gcs":
         # currently only works with gcs
         creds = os.path.expanduser(config["remote_creds"])
