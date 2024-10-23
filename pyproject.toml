@@ -34,6 +34,7 @@ bokeh = "^3.4.1"
 zarrnii = {git = "https://github.com/khanlab/zarrnii", rev = "fafae58"}
 cvpl_tools = "^0.7.0"
 gcsfs = "^2024.9.0.post1"
+coiled = "^1.56.1"
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:app.run"
