@@ -137,7 +137,7 @@ rule all_templatereg_lbl:
 rule all:
     default_target: True
     input:
-        rules.all_templatereg_deform_zooms.input,
+#        rules.all_templatereg_deform_zooms.input, #leaving this out as is not yet optimized for cloud
         rules.all_blobdensity.input,
 
 
