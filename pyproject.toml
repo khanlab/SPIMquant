@@ -31,10 +31,12 @@ ome-zarr = "^0.9.0"
 pybids = {git = "https://github.com/akhanf/pybids", rev = "a9b32a1" }
 sparse = "^0.15.1"
 bokeh = "^3.4.1"
-zarrnii = {git = "https://github.com/khanlab/zarrnii", rev = "fafae58"}
+#zarrnii = {git = "https://github.com/khanlab/zarrnii", rev = "fafae58"}
+zarrnii = {path = "/local/scratch/zarrnii", develop = true }
 cvpl_tools = "^0.7.0"
 gcsfs = "^2024.9.0.post1"
 coiled = "^1.56.1"
+antspyx = "^0.5.4"
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:app.run"
