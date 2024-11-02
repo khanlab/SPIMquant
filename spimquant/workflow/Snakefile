@@ -10,6 +10,9 @@ configfile: "config/snakebids.yml"
 # use expandvars so we can use e.g. '$SLURM_TMPDIR'
 root = os.path.expandvars(config["root"])
 work = os.path.expandvars(config["work"])
+root_coiled = config['root_coiled']
+work_coiled = config['work_coiled']
+
 
 
 # Get input wildcards
@@ -38,8 +41,8 @@ if stain_for_reg == None:
     print("ERROR: a stain for registration was not found in the first OME zarr file")
 
 
-stains_for_blobdetect = list(
-    set(config["stains_for_blobdetect"]).intersection(set(stains))
+stains_for_segment = list(
+    set(config["stains_for_segment"]).intersection(set(stains))
 )
 
 
@@ -82,7 +85,7 @@ rule all_blobdensity:
                 suffix="blobdensity.nii",
                 **inputs["spim"].wildcards
             ),
-            stain=stains_for_blobdetect,
+            stain=stains_for_segment,
             seg=config["templates"][config["template"]]["segs"].keys(),
             template=config["template"],
         ),
@@ -98,7 +101,7 @@ rule all_blobs:
                 suffix="blobs.npy",
                 **inputs["spim"].wildcards
             ),
-            stain=stains_for_blobdetect,
+            stain=stains_for_segment,
         ),
 
 
@@ -133,6 +136,24 @@ rule all_templatereg_lbl:
             template=config["template"],
         ),
 
+rule all_n4_otsu:
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                level="{level}",
+                desc="n4otsu",
+                suffix="mask.DONE",
+                **inputs["spim"].wildcards
+            ),
+            stain=stains_for_segment,
+            level=config['n4otsu']['level'],
+            dslevel=config['n4otsu']['ds_level']
+        )
+
 
 rule all:
     default_target: True
@@ -140,9 +161,9 @@ rule all:
         rules.all_templatereg_deform_zooms.input,
         rules.all_blobdensity.input,
 
-
 include: "rules/common.smk"
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/blobdetect.smk"
+include: "rules/segmentation.smk"

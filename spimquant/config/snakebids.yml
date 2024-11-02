@@ -1,11 +1,13 @@
 bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids'
-output_dir: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.0-alpha'
+#output_dir: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.0-alpha'
+output_dir: '.'
 
-root: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.0-alpha' 
-#root: 'results'
+#root: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.0-alpha' 
+root: 'results'
 work: 'work'
 
-
+root_coiled: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids/derivatives/SPIMquant_v0.1.1-alpha'
+work_coiled: 'gcs://khanlab-scratch/spimquant_work'
 
 #list of analysis levels in the bids app
 analysis_levels: &analysis_levels
@@ -100,11 +102,12 @@ stains_for_reg: #ordered by priority
   - autof
   - AutoF
 
-stains_for_blobdetect:
+stains_for_segment:
   - abeta
   - Abeta
   - BetaAmyloid
   - AlphaSynuclein
+
 
   
 templatereg:
@@ -125,4 +128,9 @@ blobdetect:
   level: 5 #downsampling level to use for blob detection
   dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
   dseg_template: ABAv3
+
+n4otsu:
+  level: 0
+  ds_level: 4
+
 
