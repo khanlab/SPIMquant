@@ -28,7 +28,7 @@ scipy = "^1.12.0"
 scikit-image = "^0.22.0"
 dask-image = "^2023.8.1"
 ome-zarr = "^0.9.0"
-pybids = {git = "https://github.com/akhanf/pybids", rev = "a9b32a1" }
+pybids = {git = "https://github.com/akhanf/pybids", rev = "d96b7b4" }
 sparse = "^0.15.1"
 bokeh = "^3.4.1"
 #zarrnii = {git = "https://github.com/khanlab/zarrnii", rev = "fafae58"}

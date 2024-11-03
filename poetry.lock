@@ -5286,8 +5286,8 @@ tutorial = ["ipykernel", "jinja2", "jupyter_client", "markupsafe", "nbconvert"]
 [package.source]
 type = "git"
 url = "https://github.com/akhanf/pybids"
-reference = "a9b32a1"
-resolved_reference = "a9b32a1f61819ee9927d0640b0a97a75005a94cf"
+reference = "d96b7b4"
+resolved_reference = "d96b7b4090e7a8d6cb38f33ad30e258ebf497e8d"
 
 [[package]]
 name = "pyconify"
@@ -8013,4 +8013,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "1bdd3ce7069015fa56847d5a1e3de551b5243440c160c251449b767e4975077c"
+content-hash = "d5f8eacc8bb8e0c7123a69472c740022220a931c2d86ff02abf9937f2451c3b2"

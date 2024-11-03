@@ -2,7 +2,7 @@ import ants
 from zarrnii import ZarrNii
 
 
-level=snakemake.wildcards.level
+level=int(snakemake.wildcards.level)
 level_z=level-1 #z downsampling one less (since already lower-res
 
 ZarrNii.from_path(snakemake.params.spim_uri,level=level).downsample(along_z=level_z).to_nifti(snakemake.output.spim_ds)

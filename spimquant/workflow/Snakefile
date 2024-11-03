@@ -136,7 +136,7 @@ rule all_templatereg_lbl:
             template=config["template"],
         ),
 
-rule all_n4_otsu:
+rule all_segment:
     input:
         inputs["spim"].expand(
             bids(
@@ -144,14 +144,11 @@ rule all_n4_otsu:
                 datatype="micr",
                 stain="{stain}",
                 dslevel="{dslevel}",
-                level="{level}",
-                desc="n4otsu",
-                suffix="mask.DONE",
-                **inputs["spim"].wildcards
-            ),
+                desc="otsu",
+                suffix="fieldfrac.nii",
+                **inputs["spim"].wildcards),
             stain=stains_for_segment,
-            level=config['n4otsu']['level'],
-            dslevel=config['n4otsu']['ds_level']
+            dslevel=config['segment']['fieldfrac_ds_level']
         )
 
 

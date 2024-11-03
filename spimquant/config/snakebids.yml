@@ -129,8 +129,9 @@ blobdetect:
   dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
   dseg_template: ABAv3
 
-n4otsu:
-  level: 0
-  ds_level: 4
+segment:
+  otsu_level: 0
+  n4_ds_level: 4
+  fieldfrac_ds_level: 5
 
 
