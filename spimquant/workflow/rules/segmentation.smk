@@ -81,6 +81,104 @@ rule coiled_n4:
     container: None
     script: '../scripts/coiled_n4.py'
 
+
+rule get_downsampled_n4:
+    input:
+        coiled_n4=bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel=config["segment"]["n4_ds_level"],
+                level=0,
+                desc="n4corr",
+                suffix="SPIM.DONE",
+                **inputs["spim"].wildcards),
+
+    params:
+        spim_n4_uri=bids(
+                root=root_coiled,
+                datatype="micr",
+                stain="{stain}",
+                dslevel=config["segment"]["n4_ds_level"],
+                level=0,
+                desc="n4corr",
+                suffix="SPIM.ome.zarr",
+                **inputs["spim"].wildcards
+            ),
+    output:
+        nii=bids(
+                root=work,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="n4corr",
+                suffix="SPIM.nii",
+                **inputs["spim"].wildcards
+            ),
+
+rule mask_downsampled_n4:
+    input:
+        corrected=bids(
+                root=work,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="n4corr",
+                suffix="SPIM.nii",
+                **inputs["spim"].wildcards
+            ),
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="brain",
+            suffix="mask.nii",
+            **inputs["spim"].wildcards
+        ),
+    output:
+        masked=bids(
+                root=work,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="n4corrmasked",
+                suffix="SPIM.nii",
+                **inputs["spim"].wildcards
+            ),
+
+    container:
+        config["containers"]["itksnap"]
+    shell:
+        "c3d {input.corrected} {input.mask} -multiply -o {output.masked}"
+
+#calc thresholds using downsampled, masked image
+rule calc_otsu_thresholds:
+    input:
+        masked=bids(
+                root=work,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="n4corrmasked",
+                suffix="SPIM.nii",
+                **inputs["spim"].wildcards
+            ),
+    output:
+        otsu_thresholds=bids(
+                root=work,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="n4corrmasked",
+                suffix="thresholds.npy",
+                **inputs["spim"].wildcards
+            ),
+
+
+
+
+
 #TODO: try with fixed threshold, as some images pre-processing seems to have caused issues (ie fieldfrac correction failed)
 rule coiled_otsu:
     input:

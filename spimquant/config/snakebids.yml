@@ -1,18 +1,13 @@
 bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids'
 #bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids_oldBlaze'
-#output_dir: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.0-alpha'
 output_dir: '.'
 
-#root: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.0-alpha' 
+#root: 'results'
 root: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha' 
-root: 'results'
-work: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/work' 
-work: 'work'
+work: '/cifs/trident/.work'
 
 root_coiled: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids/derivatives/SPIMquant_v0.1.1-alpha'
 work_coiled: 'gcs://khanlab-scratch/spimquant_work'
-
-coiled_env: spimquant-20241103
 
 #list of analysis levels in the bids app
 analysis_levels: &analysis_levels
