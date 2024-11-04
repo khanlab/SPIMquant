@@ -3,12 +3,11 @@ from zarrnii import ZarrNii
 import dask.array as da
 import numpy as np
 
-cluster = Cluster(n_workers=[4,20],spot_policy='spot_with_fallback')
+cluster = Cluster(package_sync_ignore=['spimquant'],n_workers=[4,20],spot_policy='spot_with_fallback')
 client = cluster.get_client()
 
 
 ds_level=int(snakemake.wildcards.dslevel)
-ds_level_z=ds_level-1 #z downsampling one less (since already lower-res
 
 def get_downsampled_density(znimg,along_x=1,along_y=1,along_z=1):
     """ downsamples by local mean"""
@@ -38,8 +37,10 @@ def get_downsampled_density(znimg,along_x=1,along_y=1,along_z=1):
 
     return ZarrNii.from_darr(darr_scaled,vox2ras=new_vox2ras,axes_nifti=znimg.axes_nifti)
 
-znimg_mask = ZarrNii.from_path(snakemake.params.mask_uri,level='0')
-znimg_density_ds = get_downsampled_density(znimg_mask,along_x=2**ds_level,along_y=2**ds_level,along_z=2**ds_level_z)
+level,do_downsample,downsampling_kwargs = ZarrNii.get_level_and_downsampling_kwargs(snakemake.params.mask_uri,ds_level)
+
+znimg_mask = ZarrNii.from_path(snakemake.params.mask_uri,level=level)
+znimg_density_ds = get_downsampled_density(znimg_mask,**downsampling_kwargs)
 
 
 znimg_density_ds.to_nifti(snakemake.output.fieldfrac_nii)

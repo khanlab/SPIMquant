@@ -77,11 +77,11 @@ rule coiled_n4:
                 desc="n4corr",
                 suffix="SPIM.DONE",
                 **inputs["spim"].wildcards))
-    threads: 1
+    threads: 32
     container: None
     script: '../scripts/coiled_n4.py'
 
-
+#TODO: try with fixed threshold, as some images pre-processing seems to have caused issues (ie fieldfrac correction failed)
 rule coiled_otsu:
     input:
         rules.coiled_n4.output
@@ -119,7 +119,7 @@ rule coiled_otsu:
                 desc="otsu",
                 suffix="mask.DONE",
                 **inputs["spim"].wildcards))
-    threads: 1
+    threads: 32
     container: None
     script: '../scripts/coiled_otsu.py'
 
@@ -156,5 +156,117 @@ rule coiled_fieldfrac:
                 suffix="fieldfrac.nii",
                 **inputs["spim"].wildcards)
     container: None
+    threads: 32
     script:
         "../scripts/coiled_fieldfrac.py"
+
+
+rule apply_boundary_penalty:
+    input:
+        fieldfrac=bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                desc="otsu",
+                suffix="fieldfrac.nii",
+                **inputs["spim"].wildcards),
+        penalty=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level="{dslevel}",
+            desc="brain",
+            suffix="penalty.nii",
+            **inputs["spim"].wildcards
+        ),
+    output:
+        fieldfrac_mod=bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                desc="otsupenalty",
+                suffix="fieldfrac.nii",
+                **inputs["spim"].wildcards)
+    container:
+        config["containers"]["itksnap"]
+    shell:
+        "c3d {input.fieldfrac} -as FIELDFRAC {input.penalty} -reslice-identity -push FIELDFRAC -multiply -o {output.fieldfrac_mod}"
+
+#now we have fieldfrac modulated by brainmask boundary penalty
+#just need to calc avg fieldfrac in each ROI 
+# if we then want total volume of plaques in each ROI, it is avg_fieldfrac * volume of voxel * number of voxels
+
+
+rule map_fieldfrac_to_atlas_rois:
+    input:
+        img=bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                desc="otsupenalty",
+                suffix="fieldfrac.nii",
+                **inputs["spim"].wildcards),
+        dseg=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            desc="deform",
+            level='{dslevel}',
+            from_="{template}",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards
+        ),
+        label_tsv=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
+        ),
+    output:
+        tsv=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            desc="otsupenalty",
+            suffix="segstats.tsv",
+            **inputs["spim"].wildcards
+        ),
+    script:
+        "../scripts/map_img_to_roi_tsv.py"
+
+rule map_segstats_tsv_dseg_to_template_nii:
+    """ uses generic script that paints regions with column data (e.g. use this to make density heat-maps)"""
+    input:
+        tsv=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            dslevel=config["segment"]["fieldfrac_ds_level"],
+            desc="otsupenalty",
+            suffix="segstats.tsv",
+            **inputs["spim"].wildcards
+        ),
+        dseg=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
+        ),
+    params:
+        label_column="index",
+        feature_column="avg_fieldfrac",
+    output:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            space="{template}",
+            stain="{stain}",
+            suffix="fieldfrac.nii",
+            **inputs["spim"].wildcards
+        ),
+    script:
+        "../scripts/map_tsv_dseg_to_nii.py"
+

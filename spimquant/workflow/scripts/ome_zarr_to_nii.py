@@ -39,20 +39,9 @@ channel_index = channel_labels.index(snakemake.wildcards.stain)
 level=int(snakemake.wildcards.level)
 
 
-#read coordinate transform from ome-zarr
-transforms = attrs['multiscales'][0]['datasets'][level]['coordinateTransformations']
-
-x_scaling=transforms[0]['scale'][-1] #x
-z_scaling=transforms[0]['scale'][-3] #z
-
-#calculate scaling between x and z -- if scaling is higher in z, then leave as is.. 
-#if z is smaller, then we downsample by power of 2, one less than what would make it greater than x
-z_ratio = x_scaling / z_scaling  # x / z scaling (if >1, z needs to be downsampled)
-zdownsampling = 2**(floor(log2(z_ratio)))
-
-
 with ProgressBar():
-    ZarrNii.from_path(store,level=level,channels=[channel_index]).downsample(along_z=zdownsampling).to_nifti(snakemake.output.nii)
+    # ZarrNii now implicitly downsamples xy and z if warranted by chosen level
+    ZarrNii.from_path(store,level=level,channels=[channel_index]).to_nifti(snakemake.output.nii)
 
     
 

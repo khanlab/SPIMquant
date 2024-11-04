@@ -149,7 +149,20 @@ rule all_segment:
                 **inputs["spim"].wildcards),
             stain=stains_for_segment,
             dslevel=config['segment']['fieldfrac_ds_level']
-        )
+        ),
+        inputs["spim"].expand(
+            bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            space="{template}",
+            stain="{stain}",
+            suffix="fieldfrac.nii",
+            **inputs["spim"].wildcards
+        ),
+            stain=stains_for_segment,
+            seg=config["templates"][config["template"]]["segs"].keys(),
+            template=config["template"])
 
 
 rule all:
