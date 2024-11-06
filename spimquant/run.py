@@ -9,7 +9,9 @@ import shutil
 app = bidsapp.app(
     [
         plugins.SnakemakeBidsApp(Path(__file__).resolve().parent),
-        plugins.BidsValidator(),
+        plugins.CliConfig(),
+        plugins.BidsArgs(bids_dir=False),
+#        plugins.BidsValidator(),
         plugins.Version(distribution="spimquant"),
     ]
 )

@@ -2,9 +2,10 @@ bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids'
 #bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids_oldBlaze'
 output_dir: '.'
 
-#root: 'results'
 root: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha' 
 work: '/cifs/trident/.work'
+#root: 'results'
+#work: 'work'
 
 root_coiled: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids/derivatives/SPIMquant_v0.1.1-alpha'
 work_coiled: 'gcs://khanlab-scratch/spimquant_work'
@@ -31,6 +32,7 @@ pybids_inputs:
     filters:
       suffix: 'SPIM'
       extension: 'ome.zarr'
+      sample: brain
     wildcards:
       - subject
       - sample
@@ -41,6 +43,11 @@ pybids_inputs:
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
 parse_args:
+  bids_dir_or_uri:
+    help: |
+      Path or cloud uri (e.g. gcs:// ) for BIDS dataset
+    type: str
+
   --skip-bids-validation:
     help: |
       Skip validation of BIDS dataset. BIDS validation is performed by
@@ -131,7 +138,7 @@ blobdetect:
 
 segment:
   otsu_level: 0
-  n4_ds_level: 6
+  n4_ds_level: 4
   fieldfrac_ds_level: 5
 
 

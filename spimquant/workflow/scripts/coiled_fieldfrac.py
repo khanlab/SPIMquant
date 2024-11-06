@@ -7,7 +7,7 @@ cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_wo
 client = cluster.get_client()
 
 
-ds_level=int(snakemake.wildcards.dslevel)
+ds_level=int(snakemake.wildcards.dslevel)-int(snakemake.config["segment"]["otsu_level"])
 
 znimg_mask = ZarrNii.from_path(snakemake.params.mask_uri)
 znimg_density_ds = znimg_mask.downsample(level=ds_level,do_normalized_sum=True)

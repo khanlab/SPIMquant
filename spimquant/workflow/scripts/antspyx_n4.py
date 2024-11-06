@@ -12,7 +12,7 @@ znimg.to_nifti(snakemake.output.spim_ds)
 #now perform ants
 antsimg = ants.image_read(snakemake.output.spim_ds)
 
-antsimg_bias = ants.n4_bias_field_correction(antsimg,spline_param=(8,8,8),shrink_factor=2,return_bias_field=True)
+antsimg_bias = ants.n4_bias_field_correction(antsimg,spline_param=(16,16,16),shrink_factor=8,return_bias_field=True)
 
 #write out nifti
 ants.image_write(antsimg_bias,snakemake.output.n4_bf_ds)

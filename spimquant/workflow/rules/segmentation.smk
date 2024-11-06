@@ -38,7 +38,6 @@ rule coiled_n4:
                 **inputs["spim"].wildcards
             ),
     params:
-        cluster_name='n4-{subject}',
         spim_uri=inputs["spim"].path,
         bf_ds_uri=bids(
                 root=work_coiled,
@@ -77,7 +76,9 @@ rule coiled_n4:
                 desc="n4corr",
                 suffix="SPIM.DONE",
                 **inputs["spim"].wildcards))
-    threads: 32
+    threads: 1
+    resources: 
+        coiled=1 
     container: None
     script: '../scripts/coiled_n4.py'
 
@@ -177,14 +178,11 @@ rule calc_otsu_thresholds:
 
 
 
-
-
 #TODO: try with fixed threshold, as some images pre-processing seems to have caused issues (ie fieldfrac correction failed)
 rule coiled_otsu:
     input:
         rules.coiled_n4.output
     params:
-        cluster_name='otsu-{subject}',
         otsu_n_classes=3,
         otsu_threshold_index=-1, #-1 selects the highest intensity threshold from all the classes
         spim_n4_uri=bids(
@@ -217,7 +215,9 @@ rule coiled_otsu:
                 desc="otsu",
                 suffix="mask.DONE",
                 **inputs["spim"].wildcards))
-    threads: 32
+    threads: 1
+    resources: 
+        coiled=1 
     container: None
     script: '../scripts/coiled_otsu.py'
 
@@ -254,7 +254,9 @@ rule coiled_fieldfrac:
                 suffix="fieldfrac.nii",
                 **inputs["spim"].wildcards)
     container: None
-    threads: 32
+    threads: 1
+    resources: 
+        coiled=1 
     script:
         "../scripts/coiled_fieldfrac.py"
 
