@@ -5,7 +5,7 @@ import numpy as np
 from skimage.filters import threshold_multiotsu
 from zarrnii import ZarrNii
 
-cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=[4,30],idle_timeout='1 hour')
+cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=30,idle_timeout='1 hour')
 client = cluster.get_client()
 
 

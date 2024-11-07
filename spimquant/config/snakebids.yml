@@ -1,5 +1,5 @@
-#bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids'
-bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids_oldBlaze'
+bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids'
+#bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids_oldBlaze'
 output_dir: '.'
 
 root: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha' 
@@ -33,13 +33,6 @@ pybids_inputs:
       suffix: 'SPIM'
       extension: 'ome.zarr'
       sample: brain
-      subject:
-        - o22
-        - o23
-        - o24
-        - o25
-        - o27
-        - o28
     wildcards:
       - subject
       - sample

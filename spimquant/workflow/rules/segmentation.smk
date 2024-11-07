@@ -413,3 +413,53 @@ rule map_segstats_tsv_dseg_to_subject_nii:
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
+
+rule deform_fieldfrac_nii_to_template_nii:
+    input:
+        flo=bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                desc="{desc}",
+                suffix="fieldfrac.nii",
+                **inputs["spim"].wildcards),
+        ref=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        xfm_itk=bids(
+            root=root,
+            datatype="warps",
+            from_="subject",
+            to="{template}",
+            type_="itk",
+            desc="affine",
+            suffix="xfm.txt",
+            **inputs["spim"].wildcards
+        ),
+        warp=bids(
+            root=root,
+            datatype="warps",
+            from_="subject",
+            to="{template}",
+            suffix="warp.nii",
+            **inputs["spim"].wildcards
+        ),
+    output:
+        nii=bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                desc="{desc}",
+                space="{template}",
+                suffix="fieldfrac.nii",
+                **inputs["spim"].wildcards),
+    threads: 32
+    container:
+        config["containers"]["ants"]
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -v -n Linear "
+        " -i {input.flo} -o {output.nii} "
+        " -r {input.ref} -t {input.warp} {input.xfm_itk}"
+
+

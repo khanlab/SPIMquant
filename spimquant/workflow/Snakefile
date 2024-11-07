@@ -162,7 +162,35 @@ rule all_segment:
         ),
             stain=stains_for_segment,
             seg=config["templates"][config["template"]]["segs"].keys(),
-            template=config["template"])
+            template=config["template"]),
+        inputs["spim"].expand(
+            bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            space="{template}",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards
+        ),
+            stain=stains_for_segment,
+            level=config['segment']['fieldfrac_ds_level'],
+            template=config["template"]),
+        inputs["spim"].expand(
+            bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            dslevel="{level}",
+            desc="{desc}",
+            space="{template}",
+            suffix="fieldfrac.nii",
+            **inputs["spim"].wildcards
+        ),
+            stain=stains_for_segment,
+            level=config['segment']['fieldfrac_ds_level'],
+            desc=['otsu','otsupenalty'],
+            template=config["template"]),
 
 
 rule all:
