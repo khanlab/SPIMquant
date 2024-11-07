@@ -5,7 +5,7 @@ import numpy as np
 from skimage.filters import threshold_multiotsu
 from zarrnii import ZarrNii
 
-cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=[4,20])
+cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=[4,30],idle_timeout='1 hour')
 client = cluster.get_client()
 
 
@@ -14,7 +14,7 @@ ds_level=int(snakemake.wildcards.dslevel)
 
 
 # use downsampled level to get globally optimum threshold
-znimg_ds = ZarrNii.from_path(snakemake.params.spim_n4_ri,level=ds_level)
+znimg_ds = ZarrNii.from_path(snakemake.params.spim_n4_uri,level=ds_level)
 znimg_hires = ZarrNii.from_path(snakemake.params.spim_n4_uri,level=hires_level)
 
 print(znimg_hires.darr.shape)

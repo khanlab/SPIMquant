@@ -3,7 +3,7 @@ from zarrnii import ZarrNii
 import dask.array as da
 import numpy as np
 
-cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=[4,20])
+cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=[4,30],idle_timeout='1 hour')
 client = cluster.get_client()
 
 
