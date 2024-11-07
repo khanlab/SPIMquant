@@ -370,3 +370,46 @@ rule map_segstats_tsv_dseg_to_template_nii:
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
+
+
+rule map_segstats_tsv_dseg_to_subject_nii:
+    """ uses generic script that paints regions with column data (e.g. use this to make density heat-maps)"""
+    input:
+        tsv=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            desc="otsupenalty",
+            suffix="segstats.tsv",
+            **inputs["spim"].wildcards
+        ),
+        dseg=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            desc="deform",
+            level="{dslevel}",
+            from_="{template}",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards
+        ),
+    params:
+        label_column="index",
+        feature_column="avg_fieldfrac",
+    output:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            dslevel="{dslevel}",
+            from_="{template}",
+            stain="{stain}",
+            suffix="fieldfrac.nii",
+            **inputs["spim"].wildcards
+        ),
+    script:
+        "../scripts/map_tsv_dseg_to_nii.py"
+
