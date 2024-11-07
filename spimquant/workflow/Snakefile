@@ -173,7 +173,7 @@ rule all_segment:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
-            stain=stains_for_segment,
+            stain=stains_for_segment+[stain_for_reg], 
             level=config['segment']['fieldfrac_ds_level'],
             template=config["template"]),
         inputs["spim"].expand(
@@ -205,3 +205,4 @@ include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/blobdetect.smk"
 include: "rules/segmentation.smk"
+include: "rules/group_negative_mask.smk"
