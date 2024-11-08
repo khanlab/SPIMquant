@@ -147,3 +147,25 @@ rule deform_negative_mask_to_subject_nii:
         #note: LABEL interpolation not possible with >1000 labels
 
 
+rule avg_roi_fieldfrac_bygroup:
+    input:
+         lambda wildcards: spim_by_group[wildcards.group].expand(
+        bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            space="{template}",
+            stain="{stain}",
+            suffix="fieldfrac.nii",
+            **inputs["spim"].wildcards
+        ),
+            stain="Abeta",
+            template=config["template"],
+            seg=wildcards.seg,
+        ),
+    output:
+        avg="avg_seg-{seg}_group-{group}_fieldfrac.nii",
+    shell:
+        "c3d {input} -mean -o {output}"
+
+
