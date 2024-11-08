@@ -7,12 +7,10 @@ low_abeta_subjects = (
     )
     .participant_label.to_list()
 )
-print(1)
 subjects_by_group = dict()
 spim_by_group=dict()
 
-for group in [1, 2, 3, 4]:
-    print(2)
+for group in ['1', '2', '3', '4']:
     subjects_by_group[group] = (
         pd.read_csv("participants.tsv", sep="\t")
         .query(f"group_label == {group}")
@@ -21,18 +19,19 @@ for group in [1, 2, 3, 4]:
     spim_by_group[group] = inputs["spim"].filter(subject=subjects_by_group[group])
     
 
-
-print('Suspected Low Abeta Load subjects (used for generating neg mask)')
+print('first group')
+print(spim_by_group['1'])
+#print('Suspected Low Abeta Load subjects (used for generating neg mask)')
 low_abeta_spim = inputs["spim"].filter(subject=low_abeta_subjects)
-print(low_abeta_spim)
+#print(low_abeta_spim)
 
-print(bids(root=root, stain="Abeta", group="lowload", suffix="avgfieldfrac.nii"))
-
-
-print(subjects_by_group)
+#print(bids(root=root, stain="Abeta", group="lowload", suffix="avgfieldfrac.nii"))
 
 
+#print(subjects_by_group)
 
+
+#print(spim_by_group)
 
 rule avg_fieldfrac_low_abeta:
     input:
@@ -57,10 +56,9 @@ rule avg_fieldfrac_low_abeta:
     shell:
         "c3d {input} -mean -o {output}"
 
-
 rule avg_fieldfrac_bygroup:
     input:
-        lambda wildcards: spim_by_group[group].expand(
+         lambda wildcards: spim_by_group[wildcards.group].expand(
             bids(
                 root=root,
                 datatype="micr",
@@ -77,6 +75,51 @@ rule avg_fieldfrac_bygroup:
             template=config["template"],
         ),
     output:
-        avg_low_abeta_fieldfraction="avg_group-{group}_fieldfrac.nii",
+        avg="avg_group-{group}_fieldfrac.nii",
     shell:
         "c3d {input} -mean -o {output}"
+
+
+rule create_negative_mask:
+    input:
+        avg_low_abeta_fieldfraction="avg_lowload_Abeta_fieldfrac.nii",
+    output:
+        negative_mask="negative_mask.nii"
+    shell:
+        'c3d {input} -smooth 3x3x3vox  -threshold 2 inf 0 1 -o {output}'
+     
+
+rule deform_negative_mask_to_subject_nii:
+    input:
+        ref=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level="{level}",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards
+        ),
+        mask="negative_mask.nii",
+        xfm_ras=rules.init_affine_reg.output.xfm_ras,
+        invwarp=rules.deform_reg.output.invwarp,
+    output:
+        mask=bids(
+            root=root,
+            datatype="micr",
+            desc="negative",
+            level="{level}",
+            from_="{template}",
+            suffix="mask.nii.gz",
+            **inputs["spim"].wildcards
+        ),
+    threads: 32
+    container:
+        config["containers"]["itksnap"]
+    shell:
+        " greedy -threads {threads} -d 3 -rf {input.ref} "
+        " -ri NN "
+        "  -rm {input.mask} {output.mask} "
+        "  -r {input.xfm_ras},-1 {input.invwarp}"
+        #note: LABEL interpolation not possible with >1000 labels
+
+
