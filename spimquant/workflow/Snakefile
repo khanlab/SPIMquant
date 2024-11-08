@@ -196,8 +196,8 @@ rule all_segment:
 rule all:
     default_target: True
     input:
-        rules.all_templatereg_deform_zooms.input,
-        rules.all_blobdensity.input,
+        rules.all_segment.input
+
 
 include: "rules/common.smk"
 include: "rules/import.smk"

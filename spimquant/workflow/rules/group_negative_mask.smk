@@ -79,6 +79,30 @@ rule avg_fieldfrac_bygroup:
     shell:
         "c3d {input} -mean -o {output}"
 
+rule avg_masked_fieldfrac_bygroup:
+    input:
+         lambda wildcards: spim_by_group[wildcards.group].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{level}",
+                desc="{desc}",
+                space="{template}",
+                suffix="fieldfrac.nii",
+                **inputs["spim"].wildcards
+            ),
+            stain="Abeta",
+            level=config["segment"]["fieldfrac_ds_level"],
+            desc="otsupenalty",
+            template=config["template"],
+        ),
+    output:
+        avg="avg_group-{group}_maskedfieldfrac.nii",
+    shell:
+        "c3d {input} -mean -o {output}"
+
+
 
 rule create_negative_mask:
     input:
