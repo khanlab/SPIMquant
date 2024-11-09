@@ -43,9 +43,9 @@ pybids_inputs:
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
 parse_args:
-  bids_dir_or_uri:
+  bids_dir_or_path:
     help: |
-      Path or cloud uri (e.g. gcs:// ) for BIDS dataset
+      Local path or a remote cloud uri (e.g. gcs:// ) for BIDS dataset
     type: str
 
   --skip-bids-validation:
@@ -77,7 +77,7 @@ ome_zarr:
   scaling_method: 'local_mean' #can be nearest, gaussian, local_mean, zoom (zoom uses spline interp)
 
 
-template: ABAv3 #template to use
+template: gubra #  ABAv3 #template to use
 
 
 
@@ -99,9 +99,13 @@ templates:
 
         
   gubra:
-    anat: '{workflow.basedir}/../resources/gubra/gubra_template_olf_affine_padABAv3.nii.gz'
-    dseg: '{workflow.basedir}/../resources/gubra/gubra_ano_olf_affine_padABAv3_remap.nii.gz'
+    anat: '{workflow.basedir}/../resources/gubra/gubra_template_olf_spacing_reslice.nii.gz'
+    dseg: '{workflow.basedir}/../resources/gubra/gubra_ano_olf_spacing_remap_reslice.nii.gz'
     lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
+    segs:
+      all: 
+        dseg: '{root}/tpl-gubra/tpl-gubra_desc-LR_dseg.nii.gz'
+        tsv: '{root}/tpl-gubra/tpl-gubra_desc-LR_dseg.tsv'
 
 
 stains_for_reg: #ordered by priority
