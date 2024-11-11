@@ -271,13 +271,22 @@ rule apply_boundary_penalty:
                 desc="otsu",
                 suffix="fieldfrac.nii",
                 **inputs["spim"].wildcards),
-        mask=bids(
+        mask1=bids(
             root=root,
             datatype="micr",
             desc="negative",
             level="{dslevel}",
             from_=config["template"],
             suffix="mask.nii.gz",
+            **inputs["spim"].wildcards
+        ),
+        mask2=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            desc="brain",
+            level="{dslevel}",
+            suffix="penalty.nii",
             **inputs["spim"].wildcards
         ),
     output:
@@ -292,7 +301,7 @@ rule apply_boundary_penalty:
     container:
         config["containers"]["itksnap"]
     shell:
-        "c3d {input.fieldfrac} {input.mask} -multiply -o {output.fieldfrac_mod}"
+        "c3d {input.fieldfrac} {input.mask1} -multiply {input.mask2} -multiply -o {output.fieldfrac_mod}"
 
 #now we have fieldfrac modulated by brainmask boundary penalty
 #just need to calc avg fieldfrac in each ROI 
