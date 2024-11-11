@@ -1,7 +1,7 @@
 import pandas as pd
 
 low_abeta_subjects = (
-    pd.read_csv("participants.tsv", sep="\t")
+    pd.read_csv("wip_mouse/participants.tsv", sep="\t")
     .query(
         "group_label == 2 or group_label == 1 or (group_label ==3 and sex == 'Male')"
     )
@@ -12,7 +12,7 @@ spim_by_group=dict()
 
 for group in ['1', '2', '3', '4']:
     subjects_by_group[group] = (
-        pd.read_csv("participants.tsv", sep="\t")
+        pd.read_csv("wip_mouse/participants.tsv", sep="\t")
         .query(f"group_label == {group}")
         .participant_label.to_list()
     )
