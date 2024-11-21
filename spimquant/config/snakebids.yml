@@ -67,6 +67,7 @@ parse_args:
     choices: 
      - ABAv3
      - gubra
+     - MBMv301
 
 
   --template_negative_mask:
@@ -109,10 +110,9 @@ ome_zarr:
   scaling_method: 'local_mean' #can be nearest, gaussian, local_mean, zoom (zoom uses spline interp)
 
 
-template: gubra #  ABAv3 #template to use
+#template:  ABAv3 #template to use
 
-template_negative_mask: 
-  /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
+#template_negative_mask: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
 
 
 templates:
@@ -140,6 +140,14 @@ templates:
       all: 
         dseg: 'tpl-gubra/tpl-gubra_desc-LR_dseg.nii.gz'
         tsv: 'tpl-gubra/tpl-gubra_desc-LR_dseg.tsv'
+
+  MBMv301:
+    anat: '{workflow.basedir}/../resources/MBMv301/template_T2w_brain.nii.gz'
+    dseg: '{workflow.basedir}/../resources/MBMv301/atlas_MBM_cortex_vPaxinos.nii.gz'
+    segs:
+      paxinos: 
+        dseg: '{workflow.basedir}/../resources/MBMv301/atlas_MBM_cortex_vPaxinos.nii.gz'
+        tsv: '{workflow.basedir}/../resources/MBMv301/atlas_MBM_cortex_vPaxinos.txt'
 
 
 stains_for_reg: #ordered by priority
