@@ -2,7 +2,6 @@ from coiled import Cluster
 import zarr
 import dask.array as da
 import numpy as np
-from skimage.filters import threshold_multiotsu
 from zarrnii import ZarrNii
 
 cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=30,idle_timeout='1 hour')
@@ -10,11 +9,9 @@ client = cluster.get_client()
 
 
 hires_level=int(snakemake.wildcards.level)
-ds_level=int(snakemake.wildcards.dslevel)
 
 
 # use downsampled level to get globally optimum threshold
-znimg_ds = ZarrNii.from_path(snakemake.params.spim_n4_uri,level=ds_level)
 znimg_hires = ZarrNii.from_path(snakemake.params.spim_n4_uri,level=hires_level)
 
 print(znimg_hires.darr.shape)
@@ -22,8 +19,8 @@ print(znimg_hires.darr.chunks)
 print(znimg_hires.darr.blocks.shape)
 
 
+multi_thresholds = np.load(snakemake.input.otsu_thresholds)
 
-multi_thresholds = threshold_multiotsu(znimg_ds.darr.compute(),classes=snakemake.params.otsu_n_classes)
 
 def threshold_block(x):
     """ our thresholding function, returns 100 if above, 0 if not"""
