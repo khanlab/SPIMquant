@@ -212,7 +212,7 @@ rule create_mask_from_gmm_and_prior:
             root=root,
             datatype="micr",
             desc="initaffine",
-            from_=config["masking"]["priors_template"],
+            from_=config["template"],
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards
         ),
