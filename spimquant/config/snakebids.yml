@@ -67,7 +67,7 @@ parse_args:
     choices: 
      - ABAv3
      - gubra
-     - MBMv301
+     - MBMv3
 
 
   --template_negative_mask:
@@ -141,13 +141,13 @@ templates:
         dseg: 'tpl-gubra/tpl-gubra_desc-LR_dseg.nii.gz'
         tsv: 'tpl-gubra/tpl-gubra_desc-LR_dseg.tsv'
 
-  MBMv301:
-    anat: '{workflow.basedir}/../resources/MBMv301/template_T2w_brain.nii.gz'
-    dseg: '{workflow.basedir}/../resources/MBMv301/atlas_MBM_cortex_vPaxinos.nii.gz'
+  MBMv3:
+    anat: '{workflow.basedir}/../resources/MBMv3/template_T2w_brain.nii.gz'
+    dseg: '{workflow.basedir}/../resources/MBMv3/segmentation_three_types_seg.nii.gz' #this is used for brainmasking
     segs:
       paxinos: 
-        dseg: '{workflow.basedir}/../resources/MBMv301/atlas_MBM_cortex_vPaxinos.nii.gz'
-        tsv: '{workflow.basedir}/../resources/MBMv301/atlas_MBM_cortex_vPaxinos.txt'
+        dseg: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.nii.gz'
+        tsv: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.txt'
 
 
 stains_for_reg: #ordered by priority
