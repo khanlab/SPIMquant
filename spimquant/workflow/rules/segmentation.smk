@@ -83,56 +83,29 @@ rule coiled_n4:
     script: '../scripts/coiled_n4.py'
 
 
-rule get_downsampled_n4:
+rule downsampled_apply_n4_mask:
     input:
-        coiled_n4=bids(
-                root=root,
-                datatype="micr",
-                stain="{stain}",
-                dslevel=config["segment"]["n4_ds_level"],
-                level=0,
-                desc="n4corr",
-                suffix="SPIM.DONE",
-                **inputs["spim"].wildcards),
-
-    params:
-        spim_n4_uri=bids(
-                root=root_coiled,
-                datatype="micr",
-                stain="{stain}",
-                dslevel=config["segment"]["n4_ds_level"],
-                level=0,
-                desc="n4corr",
-                suffix="SPIM.ome.zarr",
-                **inputs["spim"].wildcards
-            ),
-    output:
-        nii=bids(
+        spim_ds=bids(
                 root=work,
                 datatype="micr",
                 stain="{stain}",
                 level="{level}",
-                desc="n4corr",
                 suffix="SPIM.nii",
                 **inputs["spim"].wildcards
             ),
-
-rule mask_downsampled_n4:
-    input:
-        corrected=bids(
+        n4_bf_ds=bids(
                 root=work,
                 datatype="micr",
                 stain="{stain}",
                 level="{level}",
-                desc="n4corr",
-                suffix="SPIM.nii",
+                suffix="n4biasfield.nii",
                 **inputs["spim"].wildcards
             ),
         mask=bids(
             root=root,
             datatype="micr",
-            stain="{stain}",
-            level="{level}",
+            stain=stain_for_reg,
+            level=config['masking']['level'],
             desc="brain",
             suffix="mask.nii",
             **inputs["spim"].wildcards
@@ -151,7 +124,7 @@ rule mask_downsampled_n4:
     container:
         config["containers"]["itksnap"]
     shell:
-        "c3d {input.corrected} {input.mask} -multiply -o {output.masked}"
+        "c3d {input.n4_bf_ds} {input.spim_ds} -divide -as N4 -replace inf 10000  {input.mask} -reslice-identity -push N4 -multiply -o {output.masked}"
 
 #calc thresholds using downsampled, masked image
 rule calc_otsu_thresholds:
@@ -165,6 +138,8 @@ rule calc_otsu_thresholds:
                 suffix="SPIM.nii",
                 **inputs["spim"].wildcards
             ),
+    params:
+        otsu_n_classes=3,
     output:
         otsu_thresholds=bids(
                 root=work,
@@ -175,15 +150,23 @@ rule calc_otsu_thresholds:
                 suffix="thresholds.npy",
                 **inputs["spim"].wildcards
             ),
+    script:
+        '../scripts/calc_otsu_thresholds.py'
 
 
-
-#TODO: try with fixed threshold, as some images pre-processing seems to have caused issues (ie fieldfrac correction failed)
 rule coiled_otsu:
     input:
-        rules.coiled_n4.output
+        n4=rules.coiled_n4.output,
+        otsu_thresholds=bids(
+                root=work,
+                datatype="micr",
+                stain="{stain}",
+                level="{dslevel}",
+                desc="n4corrmasked",
+                suffix="thresholds.npy",
+                **inputs["spim"].wildcards
+            ),
     params:
-        otsu_n_classes=3,
         otsu_threshold_index=-1, #-1 selects the highest intensity threshold from all the classes
         spim_n4_uri=bids(
                 root=root_coiled,
@@ -259,6 +242,40 @@ rule coiled_fieldfrac:
         coiled=1 
     script:
         "../scripts/coiled_fieldfrac.py"
+
+
+rule deform_negative_mask_to_subject_nii:
+    input:
+        ref=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level="{level}",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards
+        ),
+        mask=config['template_negative_mask'],
+        xfm_ras=rules.init_affine_reg.output.xfm_ras,
+        invwarp=rules.deform_reg.output.invwarp,
+    output:
+        mask=bids(
+            root=root,
+            datatype="micr",
+            desc="negative",
+            level="{level}",
+            from_="{template}",
+            suffix="mask.nii.gz",
+            **inputs["spim"].wildcards
+        ),
+    threads: 32
+    container:
+        config["containers"]["itksnap"]
+    shell:
+        " greedy -threads {threads} -d 3 -rf {input.ref} "
+        " -ri NN "
+        "  -rm {input.mask} {output.mask} "
+        "  -r {input.xfm_ras},-1 {input.invwarp}"
+        #note: LABEL interpolation not possible with >1000 labels
 
 
 rule apply_boundary_penalty:

@@ -1,3 +1,5 @@
+# THESE ARE DATASET-SPECIFIC RULES, TO BE REMOVED LATER..
+
 import pandas as pd
 
 low_abeta_subjects = (
@@ -112,40 +114,6 @@ rule create_negative_mask:
     shell:
         'c3d {input} -smooth 3x3x3vox  -threshold 2 inf 0 1 -o {output}'
      
-
-rule deform_negative_mask_to_subject_nii:
-    input:
-        ref=bids(
-            root=root,
-            datatype="micr",
-            stain=stain_for_reg,
-            level="{level}",
-            suffix="SPIM.nii",
-            **inputs["spim"].wildcards
-        ),
-        mask="negative_mask.nii",
-        xfm_ras=rules.init_affine_reg.output.xfm_ras,
-        invwarp=rules.deform_reg.output.invwarp,
-    output:
-        mask=bids(
-            root=root,
-            datatype="micr",
-            desc="negative",
-            level="{level}",
-            from_="{template}",
-            suffix="mask.nii.gz",
-            **inputs["spim"].wildcards
-        ),
-    threads: 32
-    container:
-        config["containers"]["itksnap"]
-    shell:
-        " greedy -threads {threads} -d 3 -rf {input.ref} "
-        " -ri NN "
-        "  -rm {input.mask} {output.mask} "
-        "  -r {input.xfm_ras},-1 {input.invwarp}"
-        #note: LABEL interpolation not possible with >1000 labels
-
 
 rule avg_roi_fieldfrac_bygroup:
     input:

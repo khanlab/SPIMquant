@@ -17,7 +17,7 @@ work_coiled = config['work_coiled']
 
 # Get input wildcards
 inputs = generate_inputs(
-    bids_dir=config["bids_dir"],
+    bids_dir=config["bids_dir_or_uri"],
     pybids_inputs=config["pybids_inputs"],
     pybidsdb_dir=config.get("pybidsdb_dir"),
     pybidsdb_reset=config.get("pybidsdb_reset"),
@@ -205,4 +205,3 @@ include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/blobdetect.smk"
 include: "rules/segmentation.smk"
-include: "rules/group_negative_mask.smk"
