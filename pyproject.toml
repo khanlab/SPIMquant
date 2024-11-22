@@ -30,8 +30,7 @@ dask-image = "^2023.8.1"
 ome-zarr = "^0.9.0"
 sparse = "^0.15.1"
 bokeh = "^3.4.1"
-#zarrnii = {git = "https://github.com/khanlab/zarrnii", rev = "fafae58"}
-zarrnii = {path = "/local/scratch/zarrnii", develop = true }
+zarrnii = "^0.1.4a1"
 cvpl_tools = "^0.7.0"
 gcsfs = "^2024.9.0.post1"
 coiled = "^1.56.1"
