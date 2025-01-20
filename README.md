@@ -1,41 +1,42 @@
 # SPIMquant
 
-[![Documentation Status](https://readthedocs.org/projects/spimquant/badge/?version=latest)](https://spimquant.readthedocs.io/en/latest/?badge=latest)
-
 SPIMquant is a Snakebids app for quantitative analysis of SPIM (lightsheet) brain data. It performs automated nonlinear template registration and quantification of pathology from SPIM microscopy datasets.
 
-# Table of Contents
- - [Introduction](#introduction)
- - [Installation](#installation)
- - [Usage](#usage)
- - [Contributing](#contributing)
- - [License](#license)
+Features include:
+ - Deformable registration to a template 
+ - Atlas-based quantification of pathology 
+ - Coarse-grained and fine-grained parallelization using Snakemake and Dask
+ - Support for reading BIDS datasets directly from cloud-based object storage
+ - Support for simple and scalable cloud-based processing with Coiled
 
-# Introduction
- SPIMquant is designed to process and analyze lightsheet microscopy data. It provides automated tools for nonlinear template registration and quantification of various pathologies.
 
 # Installation
 
 ## Hardware Requirements
- - Sufficient memory (at least 16G of memory) for `greedy` diffeomorphic registration.
+ - Processing lightsheet microscopy data is computationally-demanding, and you will need sufficient (and ideally fast and local) 
+ disk space. The more cores you have access to, the faster the code will run, but you will also need sufficient memory (e.g. 2-4 GB per core) as well.
 
 ## Software Requirements
- - A Linux machine with Singularity or Apptainer installed. Alternatively, the following libraries should be available on the command line for a Windows machine:
-   - `itk-snap` (includes `c3d`)
-   - `greedy` command line tool
-   - `python3` with the environment set up according to `pyproject.toml`
+ - A Linux machine with Singularity or Apptainer installed, and a recent version of Python (>= 3.10). The workflow will download
+ any containers it requires to run non-python dependencies (c3d, greedy, ANTS).
 
 ## Steps
- 1. Clone the repository:
-    ```bash
-    git clone https://github.com/khanlab/SPIMquant.git
-    ```
- 2. Install the package:
+ 1. Install the package directly from github:
     ```bash
     pip install -e git+https://github.com/khanlab/spimquant#egg=spimquant
     ```
 
+ 2. Or if you are going to make changes to the code, you should clone the repository then install it:
+    ```bash
+    git clone https://github.com/khanlab/SPIMquant.git
+    pip install ./SPIMquant
+    ```   
+
 # Usage
+
+SPIMquant is a BIDS App, so you need a BIDS dataset containing SPIM (or lightsheet microscopy) data to use it. The [SPIMprep](https://github.com/khanlab/SPIMprep)
+workflow is the recommended tool to produce a BIDS dataset from your raw or minimally-preprocessed microscopy data.
+
  1. Perform a dry run:
     ```bash
     spimquant /path/to/bids/dir /path/to/output/dir participant -np --use-apptainer
