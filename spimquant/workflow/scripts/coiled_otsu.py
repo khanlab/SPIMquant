@@ -12,7 +12,7 @@ hires_level=int(snakemake.wildcards.level)
 
 
 # use downsampled level to get globally optimum threshold
-znimg_hires = ZarrNii.from_path(snakemake.params.spim_n4_uri,level=hires_level)
+znimg_hires = ZarrNii.from_ome_zarr(snakemake.params.spim_n4_uri,level=hires_level)
 
 print(znimg_hires.darr.shape)
 print(znimg_hires.darr.chunks)

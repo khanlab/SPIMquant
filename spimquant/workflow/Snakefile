@@ -30,6 +30,7 @@ inputs = generate_inputs(
 from lib.ome_zarr import get_channel_names
 
 # get stains from first subject (lazy - should use the correct stain for each subject, when defining target rules)
+print(config['stains_for_reg'])
 stains = get_channel_names(inputs["spim"].expand()[0])
 stain_for_reg = None
 for stain in config["stains_for_reg"]:
@@ -38,7 +39,8 @@ for stain in config["stains_for_reg"]:
         break
 
 if stain_for_reg == None:
-    print("ERROR: a stain for registration was not found in the first OME zarr file")
+    raise ValueError("a stain for registration was not found in the first OME zarr file")
+
 
 
 stains_for_segment = list(

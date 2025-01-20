@@ -41,7 +41,7 @@ level=int(snakemake.wildcards.level)
 
 with ProgressBar():
     # ZarrNii now implicitly downsamples xy and z if warranted by chosen level
-    ZarrNii.from_path(store,level=level,channels=[channel_index]).to_nifti(snakemake.output.nii)
+    ZarrNii.from_ome_zarr(store,level=level,channels=[channel_index]).to_nifti(snakemake.output.nii)
 
     
 

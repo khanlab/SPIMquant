@@ -31,7 +31,7 @@ pybids_inputs:
   spim:
     filters:
       suffix: 'SPIM'
-      extension: 'ome.zarr'
+      extension: 'ome.zarr.zip'
       sample: brain
     wildcards:
       - subject
@@ -74,6 +74,17 @@ parse_args:
     help: "Negative mask, in the template space, to highlight regions to avoid\n"
     type: Path
     default: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
+
+
+  --stains_for_reg:
+    help: "Possible stains to use for registration (will choose first available, in order)\n (default: %(default)s)"
+    default: 
+      - PI
+      - YOPRO
+      - AutoF
+      - autof
+    action: store
+    nargs: '+'
 
 
   --remote_creds:
@@ -152,6 +163,7 @@ templates:
 
 stains_for_reg: #ordered by priority
   - PI
+  - YOPRO
   - autof
   - AutoF
 

@@ -5,7 +5,7 @@ from zarrnii import ZarrNii
 level=int(snakemake.wildcards.level)
 
 
-znimg = ZarrNii.from_path(snakemake.params.spim_uri,level=level)
+znimg = ZarrNii.from_ome_zarr(snakemake.params.spim_uri,level=level)
 print(znimg.darr)
 znimg.to_nifti(snakemake.output.spim_ds)
 
