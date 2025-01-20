@@ -5,7 +5,10 @@ wildcard_constraints:
 
 rule get_downsampled_nii:
     input:
-        zarr=inputs["spim"].path,
+        **get_storage_creds(inputs["spim"].path),
+    params:
+        in_zarr=inputs["spim"].path,
+        storage_provider_settings=workflow.storage_provider_settings,  #this  may not be needed anymore ? test with new zarrnii in container..
     output:
         nii=bids(
             root=root,
@@ -16,13 +19,17 @@ rule get_downsampled_nii:
             **inputs["spim"].wildcards
         ),
     threads: 32
+    container:
+        None
     script:
         "../scripts/ome_zarr_to_nii.py"
 
 
 rule import_anat:
     input:
-        anat=lambda wildcards: format(config["templates"][wildcards.template]["anat"]),
+        anat=lambda wildcards: ancient(
+            format(config["templates"][wildcards.template]["anat"])
+        ),
     output:
         anat=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     log:
@@ -38,7 +45,9 @@ rule import_anat:
 
 rule import_dseg:
     input:
-        dseg=lambda wildcards: format(config["templates"][wildcards.template]["dseg"]),
+        dseg=lambda wildcards: ancient(
+            format(config["templates"][wildcards.template]["dseg"])
+        ),
     output:
         dseg=bids_tpl(root=root, template="{template}", suffix="dseg.nii.gz"),
     log:
@@ -54,7 +63,9 @@ rule import_dseg:
 
 rule import_labelmapper_lut:
     input:
-        json=lambda wildcards: format(config["templates"][wildcards.template]["lut"]),
+        json=lambda wildcards: ancient(
+            format(config["templates"][wildcards.template]["lut"])
+        ),
     output:
         tsv=bids_tpl(root=root, template="{template}", suffix="dseg.tsv"),
     log:
@@ -121,9 +132,13 @@ rule lateralize_atlas_tsv:
 
 rule import_reslice_dseg:
     input:
-        ref=lambda wildcards: format(config["templates"][wildcards.template]["dseg"]),
-        dseg=lambda wildcards: format(
-            config["templates"][wildcards.template]["segs"][wildcards.seg]["dseg"]
+        ref=lambda wildcards: ancient(
+            format(config["templates"][wildcards.template]["dseg"])
+        ),
+        dseg=lambda wildcards: ancient(
+            format(
+                config["templates"][wildcards.template]["segs"][wildcards.seg]["dseg"]
+            )
         ),
     output:
         dseg=bids_tpl(
@@ -138,8 +153,10 @@ ruleorder: import_eed_tsv > import_eed_csv_as_tsv
 
 rule import_eed_tsv:
     input:
-        tsv=lambda wildcards: format(
-            config["templates"][wildcards.template]["segs"][wildcards.seg]["tsv"]
+        tsv=lambda wildcards: ancient(
+            format(
+                config["templates"][wildcards.template]["segs"][wildcards.seg]["tsv"]
+            )
         ),
     output:
         tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
@@ -149,8 +166,10 @@ rule import_eed_tsv:
 
 rule import_eed_csv_as_tsv:
     input:
-        csv=lambda wildcards: format(
-            config["templates"][wildcards.template]["segs"][wildcards.seg]["csv"]
+        csv=lambda wildcards: ancient(
+            format(
+                config["templates"][wildcards.template]["segs"][wildcards.seg]["csv"]
+            )
         ),
     output:
         tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),

@@ -77,7 +77,7 @@ rule atropos_seg:
         "minimal"
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=8000,
     shell:
         "mkdir -p {output.posteriors_dir} && "
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
@@ -212,7 +212,7 @@ rule create_mask_from_gmm_and_prior:
             root=root,
             datatype="micr",
             desc="initaffine",
-            from_=config["masking"]["priors_template"],
+            from_=config["template"],
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards
         ),

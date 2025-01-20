@@ -1,5 +1,5 @@
 import nibabel as nib
-from  zarrnii import ZarrNii, Transform
+from  zarrnii import ZarrNii, AffineTransform
 from dask.diagnostics import ProgressBar
 
 #get channel index from omero metadata
@@ -10,10 +10,10 @@ channel_index = channel_labels.index(snakemake.wildcards.stain)
 
 
 #member function of floating image
-flo_znimg = ZarrNii.from_path(snakemake.input.ome_zarr, channels=[channel_index])
-ref_znimg = ZarrNii.from_path_as_ref(snakemake.input.ref_nii, channels=[channel_index],**snakemake.params.ref_opts)
+flo_znimg = ZarrNii.from_ome_zarr(snakemake.input.ome_zarr, channels=[channel_index])
+ref_znimg = ZarrNii.from_nifti(snakemake.input.ref_nii, channels=[channel_index],**snakemake.params.ref_opts,as_ref=True)
 
-out_znimg = flo_znimg.apply_transform(Transform.affine_ras_from_txt(snakemake.input.xfm_ras),ref_znimg=ref_znimg)
+out_znimg = flo_znimg.apply_transform(AffineTransform.from_txt(snakemake.input.xfm_ras),ref_znimg=ref_znimg)
 
 with ProgressBar():
 

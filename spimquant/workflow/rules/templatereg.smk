@@ -348,6 +348,7 @@ rule deform_to_template_nii_zoomed:
         xfm_ras=rules.affine_reg.output.xfm_ras,
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        **get_storage_creds(inputs["spim"].path),
     params:
         ome_zarr=inputs["spim"].path,
         flo_opts={},  #any additional flo znimg options
@@ -361,6 +362,7 @@ rule deform_to_template_nii_zoomed:
                 float(wildcards.res) / 1000,
             ),
         },
+    container: None
     output:
         nii=bids(
             root=root,
@@ -372,7 +374,9 @@ rule deform_to_template_nii_zoomed:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
-    threads: 32
+    resources: 
+        mem_mb=15000
+    threads: 4
     script:
         "../scripts/deform_to_template_nii.py"
 

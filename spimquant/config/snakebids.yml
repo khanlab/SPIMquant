@@ -1,6 +1,14 @@
-bids_dir: '../tests/data'
-output_dir: '.'
+#bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids'
+#bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids_oldBlaze'
+#output_dir: '.'
 
+#root: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha' 
+#work: '/cifs/trident/.work'
+#root: 'results'
+#work: 'work'
+
+#root_coiled: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids/derivatives/SPIMquant_v0.1.1-alpha'
+#work_coiled: 'gcs://khanlab-scratch/spimquant_work'
 
 #list of analysis levels in the bids app
 analysis_levels: &analysis_levels
@@ -23,7 +31,8 @@ pybids_inputs:
   spim:
     filters:
       suffix: 'SPIM'
-      extension: 'ome.zarr'
+      extension: 'ome.zarr.zip'
+      sample: brain
     wildcards:
       - subject
       - sample
@@ -34,6 +43,55 @@ pybids_inputs:
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
 parse_args:
+  bids_dir_or_uri:
+    help: |
+      Local path or a remote cloud uri (e.g. gcs:// ) for BIDS dataset
+    type: str
+  --work:
+    help: "Local path to use for temporary files\n"
+    type: Path
+    default: /cifs/trident/.work
+  --root_coiled:
+    help: "Remote uri to use for finalized cloud outputs from coiled rules\n"
+    type: str
+    default: 
+      gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids/derivatives/SPIMquant_v0.1.1-alpha
+  --work_coiled:
+    help: "Remote uri to use for temporary cloud outputs from coiled rules\n"
+    type: str
+    default: gcs://khanlab-scratch/spimquant_work
+
+  --template:
+    help: "Template to use for registration\n"
+    default: ABAv3
+    choices: 
+     - ABAv3
+     - gubra
+     - MBMv3
+
+
+  --template_negative_mask:
+    help: "Negative mask, in the template space, to highlight regions to avoid\n"
+    type: Path
+    default: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
+
+
+  --stains_for_reg:
+    help: "Possible stains to use for registration (will choose first available, in order)\n (default: %(default)s)"
+    default: 
+      - PI
+      - YOPRO
+      - AutoF
+      - autof
+    action: store
+    nargs: '+'
+
+
+  --remote_creds:
+    help: "Google cloud default credentials to use for coiled"
+    default: ~/.config/gcloud/application_default_credentials.json
+
+
   --skip-bids-validation:
     help: |
       Skip validation of BIDS dataset. BIDS validation is performed by
@@ -52,9 +110,7 @@ containers:
   ants: 'docker://kaczmarj/ants:2.3.4'
   itksnap: 'docker://khanlab/itksnap:latest' 
 
-root: 'results'
-work: 'work'
-
+remote_creds: '~/.config/gcloud/application_default_credentials.json' #this is needed so we can pass creds to container
 
 ome_zarr:
   max_downsampling_layers: 4 # e.g. 4 levels: { 0: orig, 1: ds2, 2: ds4, 3: ds8, 4: ds16}
@@ -65,8 +121,9 @@ ome_zarr:
   scaling_method: 'local_mean' #can be nearest, gaussian, local_mean, zoom (zoom uses spline interp)
 
 
-template: ABAv3 #template to use
+#template:  ABAv3 #template to use
 
+#template_negative_mask: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
 
 
 templates:
@@ -76,8 +133,8 @@ templates:
     lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
     segs:
       all: 
-        dseg: 'results/tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.nii.gz'
-        tsv: 'results/tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.tsv'
+        dseg: 'tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.nii.gz'
+        tsv: 'tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.tsv'
       roi22: 
         dseg: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_22_R_L.nii.gz'
         csv: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_22_R_L.csv'
@@ -87,21 +144,35 @@ templates:
 
         
   gubra:
-    anat: '{workflow.basedir}/../resources/gubra/gubra_template_olf_affine_padABAv3.nii.gz'
-    dseg: '{workflow.basedir}/../resources/gubra/gubra_ano_olf_affine_padABAv3_remap.nii.gz'
+    anat: '{workflow.basedir}/../resources/gubra/gubra_template_olf_spacing_reslice.nii.gz'
+    dseg: '{workflow.basedir}/../resources/gubra/gubra_ano_olf_spacing_remap_reslice.nii.gz'
     lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
+    segs:
+      all: 
+        dseg: 'tpl-gubra/tpl-gubra_desc-LR_dseg.nii.gz'
+        tsv: 'tpl-gubra/tpl-gubra_desc-LR_dseg.tsv'
+
+  MBMv3:
+    anat: '{workflow.basedir}/../resources/MBMv3/template_T2w_brain.nii.gz'
+    dseg: '{workflow.basedir}/../resources/MBMv3/segmentation_three_types_seg.nii.gz' #this is used for brainmasking
+    segs:
+      paxinos: 
+        dseg: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.nii.gz'
+        tsv: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.txt'
 
 
 stains_for_reg: #ordered by priority
   - PI
+  - YOPRO
   - autof
   - AutoF
 
-stains_for_blobdetect:
+stains_for_segment:
   - abeta
   - Abeta
   - BetaAmyloid
   - AlphaSynuclein
+
 
   
 templatereg:
@@ -113,13 +184,18 @@ templatereg:
 
 masking:
   level: 5
-  priors_template: ABAv3
   gmm_k: 9
   gmm_bg_class: 1
   pre_atropos_downsampling: '50%'
 
 blobdetect:
-  level: 4 #downsampling level to use for blob detection
+  level: 5 #downsampling level to use for blob detection
   dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
   dseg_template: ABAv3
+
+segment:
+  otsu_level: 0
+  n4_ds_level: 4
+  fieldfrac_ds_level: 5
+
 
