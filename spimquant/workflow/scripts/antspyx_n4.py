@@ -4,8 +4,12 @@ from zarrnii import ZarrNii
 
 level=int(snakemake.wildcards.level)
 
+in_orient = snakemake.config['in_orientation']
+orient_opt = {} if in_orient == None else {'orientation': in_orient}
 
-znimg = ZarrNii.from_ome_zarr(snakemake.params.spim_uri,level=level)
+
+
+znimg = ZarrNii.from_ome_zarr(snakemake.params.spim_uri,level=level,**orient_opt)
 print(znimg.darr)
 znimg.to_nifti(snakemake.output.spim_ds)
 

@@ -16,11 +16,13 @@ attrs=zi['/'].attrs.asdict()
 channel_labels = [channel_dict['label'] for channel_dict in attrs['omero']['channels']]
 channel_index = channel_labels.index(stain)
 
+in_orient = snakemake.config['in_orientation']
+orient_opt = {} if in_orient == None else {'orientation': in_orient}
 
 
 # # apply N4 bias field to full-res (level 0) image
 
-hires_shape = ZarrNii.from_ome_zarr(snakemake.params.spim_uri,channels=[channel_index],level=hires_level).darr.shape
+hires_shape = ZarrNii.from_ome_zarr(snakemake.params.spim_uri,channels=[channel_index],level=hires_level,**orient_opt).darr.shape
 
 #ok, now we have the bias field.. let's resample it to the level
 # where we perform thresholding
@@ -28,14 +30,14 @@ hires_shape = ZarrNii.from_ome_zarr(snakemake.params.spim_uri,channels=[channel_
 #first, we write the nifti n4 bias field to ome zarr
 ZarrNii.from_nifti(snakemake.input.n4_bf_ds,chunks=(1,25,25,25),rechunk=True).to_ome_zarr(snakemake.params.bf_ds_uri)
 
-
-cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=[4,20])
-client = cluster.get_client()
+if snakemake.config['use_coiled']:
+    cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=[4,20])
+    client = cluster.get_client()
 
 
 
 #then we upsample the bias field
-znimg_biasfield_upsampled = ZarrNii.from_ome_zarr(snakemake.params.bf_ds_uri).upsample(to_shape=hires_shape)
+znimg_biasfield_upsampled = ZarrNii.from_ome_zarr(snakemake.params.bf_ds_uri,**orient_opt).upsample(to_shape=hires_shape)
 
 print('biasfield_upsampled')
 print(znimg_biasfield_upsampled.darr.shape)
@@ -44,7 +46,7 @@ print(znimg_biasfield_upsampled.darr.blocks.shape)
 
 
 print('biasfield_downsampled')
-znimg_biasfield_downsampled =  ZarrNii.from_ome_zarr(snakemake.params.bf_ds_uri)
+znimg_biasfield_downsampled =  ZarrNii.from_ome_zarr(snakemake.params.bf_ds_uri,**orient_opt)
 print(znimg_biasfield_downsampled.darr.shape)
 print(znimg_biasfield_downsampled.darr.chunks)
 print(znimg_biasfield_downsampled.darr.blocks.shape)
@@ -54,7 +56,7 @@ print(znimg_biasfield_downsampled.darr.blocks.shape)
 
 znimg_biasfield_upsampled.to_ome_zarr(snakemake.params.bf_us_uri,max_layers=0)
 print('biasfield_upsampled_input')
-znimg_biasfield_upsampled = ZarrNii.from_ome_zarr(snakemake.params.bf_us_uri)
+znimg_biasfield_upsampled = ZarrNii.from_ome_zarr(snakemake.params.bf_us_uri,**orient_opt)
 print(znimg_biasfield_upsampled.darr.shape)
 print(znimg_biasfield_upsampled.darr.chunks)
 print(znimg_biasfield_upsampled.darr.blocks.shape)
@@ -64,7 +66,7 @@ print(znimg_biasfield_upsampled.darr.blocks.shape)
 
 #now multiply biasfield and hires image together,
 
-znimg_hires = ZarrNii.from_ome_zarr(snakemake.params.spim_uri,channels=[channel_index],level=hires_level,chunks=znimg_biasfield_upsampled.darr.chunks,rechunk=True) #chunk size comes from upsampled array
+znimg_hires = ZarrNii.from_ome_zarr(snakemake.params.spim_uri,channels=[channel_index],level=hires_level,chunks=znimg_biasfield_upsampled.darr.chunks,rechunk=True,**orient_opt) #chunk size comes from upsampled array
 
 print('hires_input')
 print(znimg_hires.darr.shape)

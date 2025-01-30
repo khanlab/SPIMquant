@@ -1,5 +1,7 @@
 
 rule antspyx_n4:
+    input:
+        **get_storage_creds(inputs["spim"].path),
     params:
         spim_uri=inputs["spim"].path,
     output:
@@ -27,7 +29,7 @@ rule antspyx_n4:
 
 
 
-rule coiled_n4:
+rule dask_n4:
     input:
         n4_bf_ds=bids(
                 root=work,
@@ -80,7 +82,7 @@ rule coiled_n4:
     resources: 
         coiled=1 
     container: None
-    script: '../scripts/coiled_n4.py'
+    script: '../scripts/dask_n4.py'
 
 
 rule downsampled_apply_n4_mask:
@@ -154,9 +156,9 @@ rule calc_otsu_thresholds:
         '../scripts/calc_otsu_thresholds.py'
 
 
-rule coiled_otsu:
+rule dask_otsu:
     input:
-        n4=rules.coiled_n4.output,
+        n4=rules.dask_n4.output,
         otsu_thresholds=bids(
                 root=work,
                 datatype="micr",
@@ -202,11 +204,11 @@ rule coiled_otsu:
     resources: 
         coiled=1 
     container: None
-    script: '../scripts/coiled_otsu.py'
+    script: '../scripts/dask_otsu.py'
 
 
 
-rule coiled_fieldfrac:
+rule dask_fieldfrac:
     input:
         bids(root=root,
                 datatype="micr",
@@ -241,7 +243,7 @@ rule coiled_fieldfrac:
     resources: 
         coiled=1 
     script:
-        "../scripts/coiled_fieldfrac.py"
+        "../scripts/dask_fieldfrac.py"
 
 
 rule deform_negative_mask_to_subject_nii:

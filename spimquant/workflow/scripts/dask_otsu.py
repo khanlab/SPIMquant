@@ -4,15 +4,19 @@ import dask.array as da
 import numpy as np
 from zarrnii import ZarrNii
 
-cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=30,idle_timeout='1 hour')
-client = cluster.get_client()
+if snakemake.config['use_coiled']:
+    cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=30,idle_timeout='1 hour')
+    client = cluster.get_client()
 
 
 hires_level=int(snakemake.wildcards.level)
 
+in_orient = snakemake.config['in_orientation']
+orient_opt = {} if in_orient == None else {'orientation': in_orient}
+
 
 # use downsampled level to get globally optimum threshold
-znimg_hires = ZarrNii.from_ome_zarr(snakemake.params.spim_n4_uri,level=hires_level)
+znimg_hires = ZarrNii.from_ome_zarr(snakemake.params.spim_n4_uri,level=hires_level,**orient_opt)
 
 print(znimg_hires.darr.shape)
 print(znimg_hires.darr.chunks)
