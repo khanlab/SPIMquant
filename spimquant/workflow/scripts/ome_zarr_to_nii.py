@@ -38,10 +38,12 @@ channel_index = channel_labels.index(snakemake.wildcards.stain)
 
 level=int(snakemake.wildcards.level)
 
+in_orient = snakemake.config['in_orientation']
+orient_opt = {} if in_orient == None else {'orientation': in_orient}
 
 with ProgressBar():
     # ZarrNii now implicitly downsamples xy and z if warranted by chosen level
-    ZarrNii.from_ome_zarr(store,level=level,channels=[channel_index]).to_nifti(snakemake.output.nii)
+    ZarrNii.from_ome_zarr(store,level=level,channels=[channel_index],**orient_opt).to_nifti(snakemake.output.nii)
 
     
 

@@ -123,7 +123,7 @@ rule init_affine_reg:
             root=root,
             datatype="micr",
             stain=stain_for_reg,
-            level=config["masking"]["level"],
+            level=config["downsampling_level"],
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
@@ -171,7 +171,7 @@ rule affine_transform_template_dseg_to_subject:
             root=root,
             datatype="micr",
             stain=stain_for_reg,
-            level=config["masking"]["level"],
+            level=config["downsampling_level"],
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),

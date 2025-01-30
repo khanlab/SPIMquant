@@ -31,7 +31,7 @@ pybids_inputs:
   spim:
     filters:
       suffix: 'SPIM'
-      extension: 'ome.zarr.zip'
+      extension: 'ome.zarr'
       sample: brain
     wildcards:
       - subject
@@ -86,6 +86,20 @@ parse_args:
     action: store
     nargs: '+'
 
+  --stains_for_seg:
+    help: "List of stains to use for segmentation and quantification\n (default: %(default)s)"
+    default: 
+      - abeta
+      - Abeta
+      - BetaAmyloid
+      - AlphaSynuclein
+    action: store
+    nargs: '+'
+
+
+  --downsampling_level:
+    help: "Downsampling level to use for registration (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
+    default: 5
 
   --remote_creds:
     help: "Google cloud default credentials to use for coiled"
@@ -167,23 +181,21 @@ stains_for_reg: #ordered by priority
   - autof
   - AutoF
 
-stains_for_segment:
+stains_for_seg:
   - abeta
   - Abeta
   - BetaAmyloid
   - AlphaSynuclein
 
-
+in_orientation: IAL #set to 3-letter orientation string, e.g. RPI. 
   
 templatereg:
-  level: 5
   desc: N4brain
   zooms:
     #    - 20
     - 40
 
 masking:
-  level: 5
   gmm_k: 9
   gmm_bg_class: 1
   pre_atropos_downsampling: '50%'
@@ -195,7 +207,5 @@ blobdetect:
 
 segment:
   otsu_level: 0
-  n4_ds_level: 4
-  fieldfrac_ds_level: 5
 
-
+downsampling_level: 5

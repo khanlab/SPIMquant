@@ -6,7 +6,6 @@ set_bids_spec("v0_11_0")
 
 configfile: "config/snakebids.yml"
 
-
 # use expandvars so we can use e.g. '$SLURM_TMPDIR'
 root = os.path.expandvars(config["root"])
 work = os.path.expandvars(config["work"])
@@ -30,7 +29,8 @@ inputs = generate_inputs(
 from lib.ome_zarr import get_channel_names
 
 # get stains from first subject (lazy - should use the correct stain for each subject, when defining target rules)
-print(config['stains_for_reg'])
+#  to do this, would need to get the channel names in the function that gets the target rules
+
 stains = get_channel_names(inputs["spim"].expand()[0])
 stain_for_reg = None
 for stain in config["stains_for_reg"]:
@@ -43,8 +43,8 @@ if stain_for_reg == None:
 
 
 
-stains_for_segment = list(
-    set(config["stains_for_segment"]).intersection(set(stains))
+stains_for_seg = list(
+    set(config["stains_for_seg"]).intersection(set(stains))
 )
 
 
@@ -87,7 +87,7 @@ rule all_blobdensity:
                 suffix="blobdensity.nii",
                 **inputs["spim"].wildcards
             ),
-            stain=stains_for_segment,
+            stain=stains_for_seg,
             seg=config["templates"][config["template"]]["segs"].keys(),
             template=config["template"],
         ),
@@ -103,7 +103,7 @@ rule all_blobs:
                 suffix="blobs.npy",
                 **inputs["spim"].wildcards
             ),
-            stain=stains_for_segment,
+            stain=stains_for_seg,
         ),
 
 
@@ -149,8 +149,8 @@ rule all_segment:
                 desc="otsu",
                 suffix="fieldfrac.nii",
                 **inputs["spim"].wildcards),
-            stain=stains_for_segment,
-            dslevel=config['segment']['fieldfrac_ds_level']
+            stain=stains_for_seg,
+            dslevel=config['downsampling_level']
         ),
         inputs["spim"].expand(
             bids(
@@ -162,7 +162,7 @@ rule all_segment:
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards
         ),
-            stain=stains_for_segment,
+            stain=stains_for_seg,
             seg=config["templates"][config["template"]]["segs"].keys(),
             template=config["template"]),
         inputs["spim"].expand(
@@ -175,8 +175,8 @@ rule all_segment:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
-            stain=stains_for_segment+[stain_for_reg], 
-            level=config['segment']['fieldfrac_ds_level'],
+            stain=stains_for_seg+[stain_for_reg], 
+            level=config['downsampling_level'],
             template=config["template"]),
         inputs["spim"].expand(
             bids(
@@ -189,8 +189,8 @@ rule all_segment:
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards
         ),
-            stain=stains_for_segment,
-            level=config['segment']['fieldfrac_ds_level'],
+            stain=stains_for_seg,
+            level=config['downsampling_level'],
             desc=['otsu','otsupenalty'],
             template=config["template"]),
 
