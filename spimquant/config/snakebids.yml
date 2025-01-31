@@ -224,7 +224,7 @@ blobdetect:
   dseg_template: ABAv3
 
 segmentation_level: 0
-downsampling_level: 5
+registration_level: 5
 
 
 #-- for local dryrun testing with snakemake -np
