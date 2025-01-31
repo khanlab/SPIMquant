@@ -30,7 +30,7 @@ dask-image = "^2023.8.1"
 ome-zarr = "^0.9.0"
 sparse = "^0.15.1"
 bokeh = "^3.4.1"
-zarrnii = "^0.2.2-alpha.1"
+zarrnii = "^0.2.3-alpha.1"
 #zarrnii = { path = "/localscratch/zarrnii", develop = true }
 cvpl_tools = "^0.7.0"
 gcsfs = "^2024.9.0.post1"
