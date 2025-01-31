@@ -31,7 +31,7 @@ pybids_inputs:
   spim:
     filters:
       suffix: 'SPIM'
-      extension: 'ome.zarr.zip'
+      extension: 'ome.zarr'
       sample: brain
     wildcards:
       - subject
@@ -51,16 +51,24 @@ parse_args:
     help: "Local path to use for temporary files\n"
     type: Path
     default: /cifs/trident/.work
+
+  --use_coiled:
+    help: "Use coiled for remote cloud execution (use this only if your input data is already on cloud) (default: %(default)s)"
+    action: "store_true"
+    default: False
+
+
   --root_coiled:
-    help: "Remote uri to use for finalized cloud outputs from coiled rules\n"
+    help: "Remote uri to use for finalized cloud outputs from coiled rules, only applicable with --use-coiled\n"
     type: str
     default: 
       gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids/derivatives/SPIMquant_v0.1.1-alpha
+
   --work_coiled:
-    help: "Remote uri to use for temporary cloud outputs from coiled rules\n"
+    help: "Remote uri to use for temporary cloud outputs from coiled rules, only applicable with --use-coiled\n"
     type: str
     default: gcs://khanlab-scratch/spimquant_work
-
+  
   --template:
     help: "Template to use for registration\n"
     default: ABAv3
@@ -86,6 +94,30 @@ parse_args:
     action: store
     nargs: '+'
 
+  --stains_for_seg:
+    help: "List of stains to use for segmentation and quantification\n (default: %(default)s)"
+    default: 
+      - abeta
+      - Abeta
+      - BetaAmyloid
+      - AlphaSynuclein
+    action: store
+    nargs: '+'
+
+
+  --registration_level:
+    help: "Downsampling level to use for registration (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
+    default: 5
+
+  --segmentation_level:
+    help: "Downsampling level to use for segmentation (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
+    default: 0
+
+
+  --use_negative_mask:
+    help: "Use the template-based negative mask to reduce boundary artifact when quantifying"
+    action: store_true
+    default: False    
 
   --remote_creds:
     help: "Google cloud default credentials to use for coiled"
@@ -167,23 +199,21 @@ stains_for_reg: #ordered by priority
   - autof
   - AutoF
 
-stains_for_segment:
+stains_for_seg:
   - abeta
   - Abeta
   - BetaAmyloid
   - AlphaSynuclein
 
-
+in_orientation: IAL #set to 3-letter orientation string, e.g. RPI. 
   
 templatereg:
-  level: 5
   desc: N4brain
   zooms:
     #    - 20
     - 40
 
 masking:
-  level: 5
   gmm_k: 9
   gmm_bg_class: 1
   pre_atropos_downsampling: '50%'
@@ -193,9 +223,17 @@ blobdetect:
   dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
   dseg_template: ABAv3
 
-segment:
-  otsu_level: 0
-  n4_ds_level: 4
-  fieldfrac_ds_level: 5
+segmentation_level: 0
+registration_level: 5
 
 
+#-- for local dryrun testing with snakemake -np
+root: '.'
+work: 'work'
+root_coiled: 'gcs://test'
+work_coiled: 'gcs://temp'
+bids_dir_or_uri: '../tests/data'
+template: ABAv3
+template_negative_mask: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
+use_negative_mask: false
+use_coiled: false

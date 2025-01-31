@@ -1,5 +1,7 @@
 
 rule antspyx_n4:
+    input:
+        **get_storage_creds(inputs["spim"].path),
     params:
         spim_uri=inputs["spim"].path,
     output:
@@ -27,7 +29,7 @@ rule antspyx_n4:
 
 
 
-rule coiled_n4:
+rule dask_n4:
     input:
         n4_bf_ds=bids(
                 root=work,
@@ -76,11 +78,11 @@ rule coiled_n4:
                 desc="n4corr",
                 suffix="SPIM.DONE",
                 **inputs["spim"].wildcards))
-    threads: 1
+    threads: 1 if config['use_coiled'] else 32
     resources: 
         coiled=1 
     container: None
-    script: '../scripts/coiled_n4.py'
+    script: '../scripts/dask_n4.py'
 
 
 rule downsampled_apply_n4_mask:
@@ -105,7 +107,7 @@ rule downsampled_apply_n4_mask:
             root=root,
             datatype="micr",
             stain=stain_for_reg,
-            level=config['masking']['level'],
+            level=config['registration_level'],
             desc="brain",
             suffix="mask.nii",
             **inputs["spim"].wildcards
@@ -154,9 +156,9 @@ rule calc_otsu_thresholds:
         '../scripts/calc_otsu_thresholds.py'
 
 
-rule coiled_otsu:
+rule dask_otsu:
     input:
-        n4=rules.coiled_n4.output,
+        n4=rules.dask_n4.output,
         otsu_thresholds=bids(
                 root=work,
                 datatype="micr",
@@ -198,21 +200,21 @@ rule coiled_otsu:
                 desc="otsu",
                 suffix="mask.DONE",
                 **inputs["spim"].wildcards))
-    threads: 1
+    threads: 1 if config['use_coiled'] else 32
     resources: 
         coiled=1 
     container: None
-    script: '../scripts/coiled_otsu.py'
+    script: '../scripts/dask_otsu.py'
 
 
 
-rule coiled_fieldfrac:
+rule dask_fieldfrac:
     input:
         bids(root=root,
                 datatype="micr",
                 stain="{stain}",
-                dslevel=config['segment']['n4_ds_level'],
-                level=config['segment']['otsu_level'],
+                dslevel=config['registration_level'],
+                level=config['segmentation_level'],
                 desc="otsu",
                 suffix="mask.DONE",
                 **inputs["spim"].wildcards)
@@ -221,8 +223,8 @@ rule coiled_fieldfrac:
                 root=root_coiled,
                 datatype="micr",
                 stain="{stain}",
-                dslevel=config['segment']['n4_ds_level'],
-                level=config['segment']['otsu_level'],
+                dslevel=config['registration_level'],
+                level=config['segmentation_level'],
                 desc="otsu",
                 suffix="mask.ome.zarr",
                 **inputs["spim"].wildcards
@@ -241,7 +243,7 @@ rule coiled_fieldfrac:
     resources: 
         coiled=1 
     script:
-        "../scripts/coiled_fieldfrac.py"
+        "../scripts/dask_fieldfrac.py"
 
 
 rule deform_negative_mask_to_subject_nii:
@@ -332,7 +334,7 @@ rule map_fieldfrac_to_atlas_rois:
                 datatype="micr",
                 stain="{stain}",
                 dslevel="{dslevel}",
-                desc="otsupenalty",
+                desc="otsupenalty" if config['use_negative_mask'] else 'otsu',
                 suffix="fieldfrac.nii",
                 **inputs["spim"].wildcards),
         dseg=bids(
@@ -356,7 +358,7 @@ rule map_fieldfrac_to_atlas_rois:
             from_="{template}",
             stain="{stain}",
             dslevel="{dslevel}",
-            desc="otsupenalty",
+            desc="otsupenalty" if config['use_negative_mask'] else 'otsu',
             suffix="segstats.tsv",
             **inputs["spim"].wildcards
         ),
@@ -372,8 +374,8 @@ rule map_segstats_tsv_dseg_to_template_nii:
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
-            dslevel=config["segment"]["fieldfrac_ds_level"],
-            desc="otsupenalty",
+            dslevel=config["registration_level"],
+            desc="otsupenalty" if config['use_negative_mask'] else 'otsu',
             suffix="segstats.tsv",
             **inputs["spim"].wildcards
         ),
@@ -408,7 +410,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             from_="{template}",
             stain="{stain}",
             dslevel="{dslevel}",
-            desc="otsupenalty",
+            desc="otsupenalty" if config['use_negative_mask'] else 'otsu',
             suffix="segstats.tsv",
             **inputs["spim"].wildcards
         ),

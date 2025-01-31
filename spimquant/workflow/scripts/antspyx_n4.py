@@ -1,11 +1,16 @@
 import ants
 from zarrnii import ZarrNii
+from lib.utils import get_zarr_store, get_channel_index
 
+store = get_zarr_store(snakemake.params.spim_uri)
 
 level=int(snakemake.wildcards.level)
+channel_index = get_channel_index(store, snakemake.wildcards.stain)
+in_orient = snakemake.config['in_orientation'] #TODO: this is a bit ugly - update the ZarrNii to recognize None  as an orientation, so we can just pass in_orientation
+orient_opt = {} if in_orient == None else {'orientation': in_orient}
 
+znimg = ZarrNii.from_ome_zarr(store,level=level,**orient_opt)
 
-znimg = ZarrNii.from_ome_zarr(snakemake.params.spim_uri,level=level)
 print(znimg.darr)
 znimg.to_nifti(snakemake.output.spim_ds)
 

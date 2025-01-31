@@ -1,3 +1,5 @@
+from lib.utils import get_storage_creds
+
 wildcard_constraints:
     level="[0-9]+",
     template="[a-zA-Z0-9]+",

@@ -32,9 +32,13 @@ attrs = zi['/'].attrs.asdict()
 channel_labels = [channel_dict['label'] for channel_dict in attrs['omero']['channels']]
 channel_index = channel_labels.index(snakemake.wildcards.stain)
 
+in_orient = snakemake.config['in_orientation']
+orient_opt = {} if in_orient == None else {'orientation': in_orient}
+
+
 
 #member function of floting image
-flo_znimg = ZarrNii.from_ome_zarr(store, channels=[channel_index], **snakemake.params.flo_opts)
+flo_znimg = ZarrNii.from_ome_zarr(store, channels=[channel_index], **snakemake.params.flo_opts,**orient_opt)
 ref_znimg = ZarrNii.from_nifti(snakemake.input.ref_nii, channels=[channel_index],**snakemake.params.ref_opts,as_ref=True)
 
 if snakemake.params.do_downsample:
