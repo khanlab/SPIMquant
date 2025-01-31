@@ -100,7 +100,7 @@ rule filter_blobs:
             root=root,
             datatype="micr",
             stain=stain_for_reg,
-            level=config["downsampling_level"],
+            level=config["registration_level"],
             desc="brain",
             suffix="penalty.nii",
             **inputs["spim"].wildcards

@@ -107,7 +107,7 @@ rule downsampled_apply_n4_mask:
             root=root,
             datatype="micr",
             stain=stain_for_reg,
-            level=config['downsampling_level'],
+            level=config['registration_level'],
             desc="brain",
             suffix="mask.nii",
             **inputs["spim"].wildcards
@@ -213,8 +213,8 @@ rule dask_fieldfrac:
         bids(root=root,
                 datatype="micr",
                 stain="{stain}",
-                dslevel=config['downsampling_level'],
-                level=config['segment']['otsu_level'],
+                dslevel=config['registration_level'],
+                level=config['segmentation_level'],
                 desc="otsu",
                 suffix="mask.DONE",
                 **inputs["spim"].wildcards)
@@ -223,8 +223,8 @@ rule dask_fieldfrac:
                 root=root_coiled,
                 datatype="micr",
                 stain="{stain}",
-                dslevel=config['downsampling_level'],
-                level=config['segment']['otsu_level'],
+                dslevel=config['registration_level'],
+                level=config['segmentation_level'],
                 desc="otsu",
                 suffix="mask.ome.zarr",
                 **inputs["spim"].wildcards
@@ -374,7 +374,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
-            dslevel=config["downsampling_level"],
+            dslevel=config["registration_level"],
             desc="otsupenalty" if config['use_negative_mask'] else 'otsu',
             suffix="segstats.tsv",
             **inputs["spim"].wildcards

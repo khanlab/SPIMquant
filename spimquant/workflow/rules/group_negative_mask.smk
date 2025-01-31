@@ -49,7 +49,7 @@ rule avg_fieldfrac_low_abeta:
                 **inputs["spim"].wildcards
             ),
             stain="Abeta",
-            level=config["downsampling_level"],
+            level=config["registration_level"],
             desc="otsu",
             template=config["template"],
         ),
@@ -72,7 +72,7 @@ rule avg_fieldfrac_bygroup:
                 **inputs["spim"].wildcards
             ),
             stain="Abeta",
-            level=config["downsampling_level"],
+            level=config["registration_level"],
             desc="otsu",
             template=config["template"],
         ),
@@ -95,7 +95,7 @@ rule avg_masked_fieldfrac_bygroup:
                 **inputs["spim"].wildcards
             ),
             stain="Abeta",
-            level=config["downsampling_level"],
+            level=config["registration_level"],
             desc="otsupenalty",
             template=config["template"],
         ),

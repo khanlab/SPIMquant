@@ -8,7 +8,7 @@ if snakemake.config['use_coiled']:
 in_orient = snakemake.config['in_orientation']
 orient_opt = {} if in_orient == None else {'orientation': in_orient}
 
-ds_level=int(snakemake.wildcards.dslevel)-int(snakemake.config["segment"]["otsu_level"])
+ds_level=int(snakemake.wildcards.dslevel)-int(snakemake.config["segmentation_level"])
 
 znimg_mask = ZarrNii.from_ome_zarr(snakemake.params.mask_uri,**orient_opt)
 znimg_density_ds = znimg_mask.downsample(level=ds_level,z_level_offset=0)

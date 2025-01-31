@@ -89,7 +89,7 @@ rule affine_reg:
             root=root,
             datatype="micr",
             stain=stain_for_reg,
-            level=config["downsampling_level"],
+            level=config["registration_level"],
             desc=config["templatereg"]["desc"],
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
@@ -169,7 +169,7 @@ rule deform_reg:
             root=root,
             datatype="micr",
             stain=stain_for_reg,
-            level=config["downsampling_level"],
+            level=config["registration_level"],
             desc=config["templatereg"]["desc"],
             suffix="SPIM.nii",
             **inputs["spim"].wildcards

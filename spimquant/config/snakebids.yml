@@ -105,9 +105,14 @@ parse_args:
     nargs: '+'
 
 
-  --downsampling_level:
+  --registration_level:
     help: "Downsampling level to use for registration (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
     default: 5
+
+  --segmentation_level:
+    help: "Downsampling level to use for segmentation (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
+    default: 0
+
 
   --use_negative_mask:
     help: "Use the template-based negative mask to reduce boundary artifact when quantifying"
@@ -218,9 +223,7 @@ blobdetect:
   dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
   dseg_template: ABAv3
 
-segment:
-  otsu_level: 0 #this should be 0 by default, for full-res processing
-
+segmentation_level: 0
 downsampling_level: 5
 
 
@@ -233,3 +236,4 @@ bids_dir_or_uri: '../tests/data'
 template: ABAv3
 template_negative_mask: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
 use_negative_mask: false
+use_coiled: false
