@@ -78,7 +78,7 @@ rule dask_n4:
                 desc="n4corr",
                 suffix="SPIM.DONE",
                 **inputs["spim"].wildcards))
-    threads: 1
+    threads: 1 if config['use_coiled'] else 32
     resources: 
         coiled=1 
     container: None
@@ -200,7 +200,7 @@ rule dask_otsu:
                 desc="otsu",
                 suffix="mask.DONE",
                 **inputs["spim"].wildcards))
-    threads: 1
+    threads: 1 if config['use_coiled'] else 32
     resources: 
         coiled=1 
     container: None
@@ -334,7 +334,7 @@ rule map_fieldfrac_to_atlas_rois:
                 datatype="micr",
                 stain="{stain}",
                 dslevel="{dslevel}",
-                desc="otsupenalty",
+                desc="otsupenalty" if config['use_negative_mask'] else 'otsu',
                 suffix="fieldfrac.nii",
                 **inputs["spim"].wildcards),
         dseg=bids(
@@ -358,7 +358,7 @@ rule map_fieldfrac_to_atlas_rois:
             from_="{template}",
             stain="{stain}",
             dslevel="{dslevel}",
-            desc="otsupenalty",
+            desc="otsupenalty" if config['use_negative_mask'] else 'otsu',
             suffix="segstats.tsv",
             **inputs["spim"].wildcards
         ),
@@ -375,7 +375,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
             from_="{template}",
             stain="{stain}",
             dslevel=config["downsampling_level"],
-            desc="otsupenalty",
+            desc="otsupenalty" if config['use_negative_mask'] else 'otsu',
             suffix="segstats.tsv",
             **inputs["spim"].wildcards
         ),
@@ -410,7 +410,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             from_="{template}",
             stain="{stain}",
             dslevel="{dslevel}",
-            desc="otsupenalty",
+            desc="otsupenalty" if config['use_negative_mask'] else 'otsu',
             suffix="segstats.tsv",
             **inputs["spim"].wildcards
         ),

@@ -51,16 +51,24 @@ parse_args:
     help: "Local path to use for temporary files\n"
     type: Path
     default: /cifs/trident/.work
+
+  --use_coiled:
+    help: "Use coiled for remote cloud execution (use this only if your input data is already on cloud) (default: %(default)s)"
+    action: "store_true"
+    default: False
+
+
   --root_coiled:
-    help: "Remote uri to use for finalized cloud outputs from coiled rules\n"
+    help: "Remote uri to use for finalized cloud outputs from coiled rules, only applicable with --use-coiled\n"
     type: str
     default: 
       gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids/derivatives/SPIMquant_v0.1.1-alpha
+
   --work_coiled:
-    help: "Remote uri to use for temporary cloud outputs from coiled rules\n"
+    help: "Remote uri to use for temporary cloud outputs from coiled rules, only applicable with --use-coiled\n"
     type: str
     default: gcs://khanlab-scratch/spimquant_work
-
+  
   --template:
     help: "Template to use for registration\n"
     default: ABAv3
@@ -100,6 +108,11 @@ parse_args:
   --downsampling_level:
     help: "Downsampling level to use for registration (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
     default: 5
+
+  --use_negative_mask:
+    help: "Use the template-based negative mask to reduce boundary artifact when quantifying"
+    action: store_true
+    default: False    
 
   --remote_creds:
     help: "Google cloud default credentials to use for coiled"
@@ -206,6 +219,17 @@ blobdetect:
   dseg_template: ABAv3
 
 segment:
-  otsu_level: 0
+  otsu_level: 0 #this should be 0 by default, for full-res processing
 
 downsampling_level: 5
+
+
+#-- for local dryrun testing with snakemake -np
+root: '.'
+work: 'work'
+root_coiled: 'gcs://test'
+work_coiled: 'gcs://temp'
+bids_dir_or_uri: '../tests/data'
+template: ABAv3
+template_negative_mask: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
+use_negative_mask: false
