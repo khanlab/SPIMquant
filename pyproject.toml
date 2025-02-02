@@ -36,6 +36,7 @@ cvpl_tools = "^0.7.0"
 gcsfs = "^2024.9.0.post1"
 coiled = "^1.56.1"
 antspyx = "^0.5.4"
+snakemake-storage-plugin-http = "^0.2.3"
 
 [tool.poetry.scripts]
 spimquant = "spimquant.run:app.run"
