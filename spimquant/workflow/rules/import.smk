@@ -26,6 +26,14 @@ rule get_downsampled_nii:
     script:
         "../scripts/ome_zarr_to_nii.py"
 
+rule download_gubra:
+    input:
+        storage('https://zenodo.org/records/14080380/files/gubra_20241111.tar')
+    output:
+        anat=f'{workflow.basedir}/../resources/gubra/gubra_template_olf_spacing_reslice.nii.gz',
+        dseg=f'{workflow.basedir}/../resources/gubra/gubra_ano_olf_spacing_remap_reslice.nii.gz'
+    shell:
+        "tar -C resources -xvf {input}"
 
 rule import_anat:
     input:
@@ -78,7 +86,7 @@ rule import_labelmapper_lut:
         "../scripts/import_labelmapper_lut.py"
 
 
-rule make_itksnap_lut:
+rule lut_bids_to_itksnap:
     input:
         tsv=bids_tpl(root=root, template="{template}", desc="{desc}", suffix="dseg.tsv"),
     output:
@@ -88,22 +96,7 @@ rule make_itksnap_lut:
     script:
         "../scripts/lut_bids_to_itksnap.py"
 
-
-rule ome_zarr_to_zipstore:
-    """ generic rule to process any ome.zarr from work """
-    input:
-        zarr=f"{work}/{{prefix}}.ome.zarr",
-    output:
-        zarr_zip=f"{root}/{{prefix}}.ome.zarr.zip",
-    log:
-        "logs/ome_zarr_to_zipstore/{prefix}.log",
-    group:
-        "preproc"
-    shell:
-        "7z a -mx0 -tzip {output.zarr_zip} {input.zarr}/. &> {log}"
-
-
-rule lateralize_atlas_labels:
+rule lateralize_atlas_dseg:
     """splits atlas label nii into left and right, adding an offset to right hemi"""
     input:
         dseg=bids_tpl(root=root, template="{template}", suffix="dseg.nii.gz"),
@@ -150,10 +143,10 @@ rule import_reslice_dseg:
         "c3d {input.ref} {input.dseg} -interpolation NearestNeighbor -reslice-identity -o {output}"
 
 
-ruleorder: import_eed_tsv > import_eed_csv_as_tsv
+ruleorder: import_lut_tsv > import_lut_csv_as_tsv
 
 
-rule import_eed_tsv:
+rule import_lut_tsv:
     input:
         tsv=lambda wildcards: ancient(
             format(
@@ -166,7 +159,7 @@ rule import_eed_tsv:
         "cp {input} {output}"
 
 
-rule import_eed_csv_as_tsv:
+rule import_lut_csv_as_tsv:
     input:
         csv=lambda wildcards: ancient(
             format(
@@ -176,4 +169,4 @@ rule import_eed_csv_as_tsv:
     output:
         tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     script:
-        "../scripts/import_eed_csv_as_tsv.py"
+        "../scripts/import_lut_csv_as_tsv.py"

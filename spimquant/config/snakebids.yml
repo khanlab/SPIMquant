@@ -228,7 +228,7 @@ registration_level: 5
 
 
 #-- for local dryrun testing with snakemake -np
-root: '.'
+root: ''
 work: 'work'
 root_coiled: 'gcs://test'
 work_coiled: 'gcs://temp'
