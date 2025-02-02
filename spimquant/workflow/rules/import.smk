@@ -170,3 +170,17 @@ rule import_lut_csv_as_tsv:
         tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     script:
         "../scripts/import_lut_csv_as_tsv.py"
+
+
+
+rule import_lut_itksnap_as_tsv:
+    input:
+        lut=lambda wildcards: ancient(
+            format(
+                config["templates"][wildcards.template]["segs"][wildcards.seg]["itksnap"]
+            )
+        ),
+    output:
+        tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
+    script:
+        "../scripts/import_lut_itksnap_as_tsv.py"
