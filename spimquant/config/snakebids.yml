@@ -115,6 +115,10 @@ parse_args:
     default: 0
 
 
+  --in_orientation:
+    help: "Override input SPIM image orientation, using 3-letter orientation code representing ZYX directions, with R/L, A/P, S/I (default: %(default)s)"
+    default: IPL
+    
   --use_negative_mask:
     help: "Use the template-based negative mask to reduce boundary artifact when quantifying"
     action: store_true
@@ -215,7 +219,7 @@ stains_for_seg:
   - BetaAmyloid
   - AlphaSynuclein
 
-in_orientation: IAL #set to 3-letter orientation string, e.g. RPI. 
+in_orientation: IPL #set to 3-letter orientation string, e.g. RPI. 
   
 templatereg:
   desc: N4brain
