@@ -76,6 +76,7 @@ parse_args:
      - ABAv3
      - gubra
      - MBMv3
+     - turone
 
 
   --template_negative_mask:
@@ -114,6 +115,10 @@ parse_args:
     default: 0
 
 
+  --in_orientation:
+    help: "Override input SPIM image orientation, using 3-letter orientation code representing ZYX directions, with R/L, A/P, S/I (default: %(default)s)"
+    default: IPL
+    
   --use_negative_mask:
     help: "Use the template-based negative mask to reduce boundary artifact when quantifying"
     action: store_true
@@ -192,6 +197,15 @@ templates:
         dseg: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.nii.gz'
         tsv: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.txt'
 
+  turone:
+    anat: '{workflow.basedir}/../resources/Turone_Mouse_Brain_Template/Turone_Mouse_Brain_Template/TMBTA_Brain_Template.nii.gz'
+    dseg: '{workflow.basedir}/../resources/Turone_Mouse_Brain_Template/Turone_Mouse_Brain_Template/TMBTA_tissue_dseg.nii.gz'
+    segs:
+      all:
+        dseg: '{workflow.basedir}/../resources/Turone_Mouse_Brain_Template/Turone_Mouse_Brain_Atlas/TMBTA_Brain_Atlas.nii.gz'
+        itksnap: '{workflow.basedir}/../resources/Turone_Mouse_Brain_Template/Turone_Mouse_Brain_Atlas/TMBTA_ItK_Label_File.txt'
+
+
 
 stains_for_reg: #ordered by priority
   - PI
@@ -205,7 +219,7 @@ stains_for_seg:
   - BetaAmyloid
   - AlphaSynuclein
 
-in_orientation: IAL #set to 3-letter orientation string, e.g. RPI. 
+in_orientation: IPL #set to 3-letter orientation string, e.g. RPI. 
   
 templatereg:
   desc: N4brain
