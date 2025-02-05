@@ -49,8 +49,8 @@ parse_args:
     type: str
   --work:
     help: "Local path to use for temporary files\n"
-    type: Path
-    default: /cifs/trident/.work
+    type: str
+    default: work
 
   --use_coiled:
     help: "Use coiled for remote cloud execution (use this only if your input data is already on cloud) (default: %(default)s)"
