@@ -31,7 +31,7 @@ pybids_inputs:
   spim:
     filters:
       suffix: 'SPIM'
-      extension: 'ome.zarr.zip'
+      extension: 'ome.zarr'
       sample: brain
     wildcards:
       - subject
@@ -47,10 +47,12 @@ parse_args:
     help: |
       Local path or a remote cloud uri (e.g. gcs:// ) for BIDS dataset
     type: str
+
   --work:
     help: "Local path to use for temporary files\n"
     type: Path
     default: /cifs/trident/.work
+
   --root_coiled:
     help: "Remote uri to use for finalized cloud outputs from coiled rules\n"
     type: str
@@ -68,7 +70,6 @@ parse_args:
      - ABAv3
      - gubra
      - MBMv3
-
 
   --template_negative_mask:
     help: "Negative mask, in the template space, to highlight regions to avoid\n"
@@ -91,7 +92,6 @@ parse_args:
     help: "Google cloud default credentials to use for coiled"
     default: ~/.config/gcloud/application_default_credentials.json
 
-
   --skip-bids-validation:
     help: |
       Skip validation of BIDS dataset. BIDS validation is performed by
@@ -101,9 +101,7 @@ parse_args:
     action: "store_true"
     default: False
 
-
 #--- workflow specific configuration -- 
-
 
 containers:
   spimprep: 'docker://khanlab/spimprep-deps:main'
@@ -141,6 +139,9 @@ templates:
       roi82:
         dseg: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_82_R_L.nii.gz'
         csv: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_82_R_L.csv'
+      roi198:
+        dseg: '{workflow.basedir}/../resources/ABAv3/ngo_labels/atlas.nii.gz'
+        csv: '{workflow.basedir}/../resources/ABAv3/ngo_labels/atlas_with_names.csv'
 
         
   gubra:

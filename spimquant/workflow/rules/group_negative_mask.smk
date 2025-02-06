@@ -1,9 +1,11 @@
 # THESE ARE DATASET-SPECIFIC RULES, TO BE REMOVED LATER..
 
+participants_tsv='analysis_appmaptapoe_20241111/participants.tsv'
+
 import pandas as pd
 
 low_abeta_subjects = (
-    pd.read_csv("wip_mouse/participants.tsv", sep="\t")
+    pd.read_csv(participants_tsv, sep="\t")
     .query(
         "group_label == 2 or group_label == 1 or (group_label ==3 and sex == 'Male')"
     )
@@ -14,7 +16,7 @@ spim_by_group=dict()
 
 for group in ['1', '2', '3', '4']:
     subjects_by_group[group] = (
-        pd.read_csv("wip_mouse/participants.tsv", sep="\t")
+        pd.read_csv(participants_tsv, sep="\t")
         .query(f"group_label == {group}")
         .participant_label.to_list()
     )
@@ -54,7 +56,7 @@ rule avg_fieldfrac_low_abeta:
             template=config["template"],
         ),
     output:
-        avg_low_abeta_fieldfraction="avg_lowload_Abeta_fieldfrac.nii",
+        avg_low_abeta_fieldfraction="analysis_appmaptapoe_20241111/groupavg_fieldfrac_nii/groupavg_lowload_Abeta_fieldfrac.nii",
     shell:
         "c3d {input} -mean -o {output}"
 
@@ -77,7 +79,7 @@ rule avg_fieldfrac_bygroup:
             template=config["template"],
         ),
     output:
-        avg="avg_group-{group}_fieldfrac.nii",
+        avg="analysis_appmaptapoe_20241111/groupavg_fieldfrac_nii/avg_group-{group}_fieldfrac.nii",
     shell:
         "c3d {input} -mean -o {output}"
 
@@ -100,7 +102,7 @@ rule avg_masked_fieldfrac_bygroup:
             template=config["template"],
         ),
     output:
-        avg="avg_group-{group}_maskedfieldfrac.nii",
+        avg="analysis_appmaptapoe_20241111/groupavg_fieldfrac_nii/avg_group-{group}_maskedfieldfrac.nii",
     shell:
         "c3d {input} -mean -o {output}"
 
@@ -132,7 +134,7 @@ rule avg_roi_fieldfrac_bygroup:
             seg=wildcards.seg,
         ),
     output:
-        avg="avg_seg-{seg}_group-{group}_fieldfrac.nii",
+        avg="analysis_appmaptapoe_20241111/groupavg_roi_avgfieldfrac_nii/avg_seg-{seg}_group-{group}_fieldfrac.nii",
     shell:
         "c3d {input} -mean -o {output}"
 

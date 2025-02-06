@@ -254,7 +254,7 @@ rule deform_negative_mask_to_subject_nii:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
-        mask=config['template_negative_mask'],
+        mask=ancient(config['template_negative_mask']),
         xfm_ras=rules.init_affine_reg.output.xfm_ras,
         invwarp=rules.deform_reg.output.invwarp,
     output:
