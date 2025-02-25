@@ -2,7 +2,10 @@ import ants
 from zarrnii import ZarrNii
 from lib.utils import get_zarr_store, get_channel_index
 
-store = get_zarr_store(snakemake.params.spim_uri)
+if 'creds' in snakemake.input.keys():
+    store = get_zarr_store(snakemake.params.spim_uri,snakemake.input.creds)
+else:
+    store = get_zarr_store(snakemake.params.spim_uri)
 
 level=int(snakemake.wildcards.level)
 channel_index = get_channel_index(store, snakemake.wildcards.stain)
@@ -17,7 +20,7 @@ znimg.to_nifti(snakemake.output.spim_ds)
 #now perform ants
 antsimg = ants.image_read(snakemake.output.spim_ds)
 
-antsimg_bias = ants.n4_bias_field_correction(antsimg,spline_param=(16,16,16),shrink_factor=8,return_bias_field=True)
+antsimg_bias = ants.n4_bias_field_correction(antsimg,spline_param=(16,16,16),shrink_factor=1,return_bias_field=True)
 
 #write out nifti
 ants.image_write(antsimg_bias,snakemake.output.n4_bf_ds)

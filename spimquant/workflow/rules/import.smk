@@ -7,7 +7,7 @@ wildcard_constraints:
 
 rule get_downsampled_nii:
     input:
-        **get_storage_creds(inputs["spim"].path),
+        **get_storage_creds(inputs["spim"].path,config['remote_creds']),
     params:
         in_zarr=inputs["spim"].path,
         storage_provider_settings=workflow.storage_provider_settings,  #this  may not be needed anymore ? test with new zarrnii in container..

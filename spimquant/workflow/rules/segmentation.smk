@@ -1,7 +1,7 @@
 
 rule antspyx_n4:
     input:
-        **get_storage_creds(inputs["spim"].path),
+        **get_storage_creds(inputs["spim"].path,config['remote_creds']),
     params:
         spim_uri=inputs["spim"].path,
     output:

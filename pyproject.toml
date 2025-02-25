@@ -15,7 +15,8 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
 snakemake = ">=8.0.0"
-snakebids = "^0.14.0"
+snakebids = { git = "http://github.com/akhanf/snakebids", rev = "main" }
+#snakebids = "^0.14.0"
 pulp = "<2.8.0"
 pandas = [
     { version = "<=2.0.3", python = "<3.9" },
