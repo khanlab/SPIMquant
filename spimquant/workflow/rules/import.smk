@@ -184,3 +184,19 @@ rule import_lut_itksnap_as_tsv:
         tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     script:
         "../scripts/import_lut_itksnap_as_tsv.py"
+
+"""
+rule import_subj_anat:
+    input:
+        nii=inputs["anat"].path,
+    output:
+        nii=bids(
+            root=root,
+            datatype="anat",
+            suffix="{anat_suffix}.nii",
+            **inputs["spim"].wildcards
+        ),
+    shell:
+        'cp {input} {output}'
+
+"""

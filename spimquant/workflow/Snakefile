@@ -143,7 +143,9 @@ rule all_templatereg_lbl:
             template=config["template"],
         ),
 
-rule all_segment:
+
+
+rule all_fieldfrac_tune:
     input:
         inputs["spim"].expand(
             bids(
@@ -152,6 +154,23 @@ rule all_segment:
                 stain="{stain}",
                 dslevel="{dslevel}",
                 desc="otsu",
+                otsu="k{k}i{i}",
+                suffix="fieldfrac.nii",
+                **inputs["spim"].wildcards
+        ),
+            stain=stains_for_seg,
+            dslevel=config['registration_level'],
+            k=4,i=range(4))
+
+rule all_segment:
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                desc="threshold", #"otsu",
                 suffix="fieldfrac.nii",
                 **inputs["spim"].wildcards),
             stain=stains_for_seg,
@@ -196,7 +215,7 @@ rule all_segment:
         ),
             stain=stains_for_seg,
             level=config['registration_level'],
-            desc=['otsu'],#,'otsupenalty'],
+            desc=['threshold'], #'otsu'],#,'otsupenalty'],
             template=config["template"]),
 
 

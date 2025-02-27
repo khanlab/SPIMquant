@@ -1,0 +1,25 @@
+
+# FLASH MRI had to be changed to orientation RSP (TODO: verify L/R flip)
+ 
+# rigid registraiton was performed in itksnap
+#   - center images
+#   - NMI rigid
+
+
+# perform greed registration, SPIM as fixed image, rigidly registered MRI as moving
+greedy -d 3 -i test_olig/sub-pilotA/micr/sub-pilotA_sample-brain_acq-blaze_stain-undefined0_level-5_SPIM.nii sub-pilotA_space-SPIM_desc-rigid_FLASH.nii.gz -m NMI -threads 12 -o sub-pilotA_from-rigidFLASH_to-SPIM_type-ras_xfm.nii.gz -n 50x25x10 -s 2.5vox 0.9vox -oinv sub-pilotA_from-rigidFLASH_to-SPIM_type-ras_invxfm.nii.gz
+
+
+#warp MRI to SPIM
+greedy -d 3 -threads 12 -r sub-pilotA_from-rigidFLASH_to-SPIM_type-ras_xfm.nii.gz  -rf test_olig/sub-pilotA/micr/sub-pilotA_sample-brain_acq-blaze_stain-undefined0_level-5_SPIM.nii -rm sub-pilotA_space-SPIM_desc-rigid_FLASH.nii.gz sub-pilotA_space-SPIM_desc-rigid+greedy_FLASH.nii.gz -ri LINEAR  -rj sub-pilotA_from-rigidFLASH_to-SPIM_type-ras_jacobian.nii.gz 
+
+
+#warp mask from SPIM to MRI (to calculate volume change)
+greedy -d 3 -threads 12 -r sub-pilotA_from-rigidFLASH_to-SPIM_type-ras_invxfm.nii.gz -rf sub-pilotA_space-SPIM_desc-rigid_FLASH.nii.gz -rm test_olig/sub-pilotA/micr/sub-pilotA_sample-brain_acq-blaze_stain-undefined0_level-5_desc-brain_mask.nii sub-pilotA_space-rigidFLASH_desc-brainSPIM_mask.nii.gz -ri NN 
+
+
+antsApplyTransforms -i pilotA_FLASH_reorientRSP.nii.gz -o sub-pilotA_space-ABAv3_FLASH.nii.gz -r test_olig/tpl-ABAv3/tpl-ABAv3_anat.nii.gz -n Linear -t test_olig/sub-pilotA/warps/sub-pilotA_sample-brain_acq-blaze_from-subject_to-ABAv3_warp.nii  test_olig/sub-pilotA/warps/sub-pilotA_sample-brain_acq-blaze_from-subject_to-ABAv3_type-itk_desc-affine_xfm.txt sub-pilotA_from-rigidFLASH_to-SPIM_type-ras_xfm.nii.gz sub-pilotA_from-FLASH_to-SPIM_type-itk_xfm.txt  -v
+
+itksnap -g test_olig/sub-pilotA/micr/sub-pilotA_sample-brain_acq-blaze_stain-undefined0_level-5_SPIM.nii -s test_olig/sub-pilotA/micr/sub-pilotA_sample-brain_acq-blaze_seg-all_from-ABAv3_level-5_desc-deform_dseg.nii.gz  -o sub-pilotA_space-SPIM_desc-rigid+greedy_FLASH.nii.gz sub-pilotA_space-SPIM_desc-rigid_FLASH.nii.gz sub-pilotA_from-rigidFLASH_to-SPIM_type-ras_jacobian.nii.gz test_olig/sub-pilotA/micr/sub-pilotA_sample-brain_acq-blaze_stain-undefined0_dslevel-5_desc-threshold_fieldfrac.nii  &
+itksnap -g test_olig/tpl-ABAv3/tpl-ABAv3_anat.nii.gz -o sub-pilotA_space-ABAv3_FLASH.nii.gz  test_olig/sub-pilotA/micr/sub-pilotA_sample-brain_acq-blaze_stain-undefined0_space-ABAv3_seg-all_fieldfrac.nii test_olig/sub-pilotA/micr/sub-pilotA_sample-brain_acq-blaze_stain-undefined0_space-ABAv3_dslevel-5_desc-threshold_fieldfrac.nii -s test_olig/tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.nii.gz 
+

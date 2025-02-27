@@ -38,6 +38,14 @@ pybids_inputs:
       - sample
       - acquisition
       - staining
+  anat:
+    filters:
+      suffix: 
+      datatype: 'anat'
+    wildcards:
+      - subject
+      - session
+      - acquisition
 
 
 #configuration for the command-line parameters to make available
