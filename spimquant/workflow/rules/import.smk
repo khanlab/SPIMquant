@@ -70,6 +70,23 @@ rule import_dseg:
     shell:
         "cp {input} {output}"
 
+rule import_mask:
+    input:
+        mask=lambda wildcards: ancient(
+            format(config["templates"][wildcards.template]["mask"])
+        ),
+    output:
+        mask=bids_tpl(root=root, template="{template}", desc='brain', suffix="mask.nii.gz"),
+    log:
+        bids_tpl(
+            root="logs",
+            datatype="import_mask",
+            template="{template}",
+            suffix="log.txt",
+        ),
+    shell:
+        "cp {input} {output}"
+
 
 rule import_labelmapper_lut:
     input:
@@ -185,18 +202,21 @@ rule import_lut_itksnap_as_tsv:
     script:
         "../scripts/import_lut_itksnap_as_tsv.py"
 
-"""
-rule import_subj_anat:
+rule import_subj_T2w:
+    #    """ TODO: this sets orientation too, testing out L-R flip.."""
     input:
-        nii=inputs["anat"].path,
+        nii=inputs["T2w"].path,
     output:
         nii=bids(
             root=root,
             datatype="anat",
-            suffix="{anat_suffix}.nii",
-            **inputs["spim"].wildcards
+            suffix="T2w.nii.gz",
+            **inputs["T2w"].wildcards
         ),
+    container: 
+        config["containers"]["itksnap"]
     shell:
-        'cp {input} {output}'
+        #        'c3d {input} -orient RSP -o {output}' 
+        "cp {input} {output}"
 
-"""
+

@@ -1,18 +1,18 @@
 
 rule antspyx_n4:
     input:
-        **get_storage_creds(inputs["spim"].path, config["remote_creds"]),
-    params:
-        spim_uri=inputs["spim"].path,
-    output:
-        spim_ds=bids(
-            root=work,
+        spim=bids(
+            root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
+    params:
+        n4_opts={'spline_param': (2,2,2),
+                 'shrink_factor': 1},
+    output:
         n4_bf_ds=bids(
             root=work,
             datatype="micr",
@@ -21,6 +21,7 @@ rule antspyx_n4:
             suffix="n4biasfield.nii",
             **inputs["spim"].wildcards
         ),
+    shadow: 'minimal'
     threads: 8
     resources:
         mem_mb=16000,

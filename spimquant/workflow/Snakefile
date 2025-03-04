@@ -162,6 +162,8 @@ rule all_fieldfrac_tune:
             dslevel=config['registration_level'],
             k=4,i=range(4))
 
+
+
 rule all_segment:
     input:
         inputs["spim"].expand(
@@ -218,6 +220,19 @@ rule all_segment:
             desc=['threshold'], #'otsu'],#,'otsupenalty'],
             template=config["template"]),
 
+rule all_mri_reg:
+    input:
+        inputs["spim"].expand(
+            bids(
+            root=root,
+            datatype="anat",
+            space="{template}",
+            desc="N4",
+            suffix="T2w.nii.gz",
+            **inputs["spim"].wildcards
+        ),
+            level=config['registration_level'],
+            template=config["template"]),
 
 rule all:
     default_target: True
@@ -231,3 +246,4 @@ include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/blobdetect.smk"
 include: "rules/segmentation.smk"
+include: "rules/preproc_mri.smk"
