@@ -202,21 +202,4 @@ rule import_lut_itksnap_as_tsv:
     script:
         "../scripts/import_lut_itksnap_as_tsv.py"
 
-rule import_subj_T2w:
-    #    """ TODO: this sets orientation too, testing out L-R flip.."""
-    input:
-        nii=inputs["T2w"].path,
-    output:
-        nii=bids(
-            root=root,
-            datatype="anat",
-            suffix="T2w.nii.gz",
-            **inputs["T2w"].wildcards
-        ),
-    container: 
-        config["containers"]["itksnap"]
-    shell:
-        #        'c3d {input} -orient RSP -o {output}' 
-        "cp {input} {output}"
-
 

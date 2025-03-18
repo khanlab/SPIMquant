@@ -126,6 +126,7 @@ parse_args:
     help: "Downsampling level to use for segmentation (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
     default: 0
 
+
   --in_orientation:
     help: "Override input SPIM image orientation, using 3-letter orientation code representing ZYX directions, with R/L, A/P, S/I (default: %(default)s)"
     default: IPL
@@ -134,6 +135,11 @@ parse_args:
     help: "Use the template-based negative mask to reduce boundary artifact when quantifying"
     action: store_true
     default: False    
+
+  --register_to_mri:
+    help: "Register the lightsheet data directly to a corresponding MRI (from the BIDS dataset)"
+    action: store_true
+    default: False
 
   --remote_creds:
     help: "Google cloud default credentials to use for coiled"

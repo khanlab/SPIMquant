@@ -19,6 +19,8 @@ else:
     root_coiled = root
     work_coiled = work
 
+if not config['register_to_mri']:
+    del config['pybids_inputs']['T2w']
 
 # Get input wildcards
 inputs = generate_inputs(
@@ -246,4 +248,6 @@ include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/blobdetect.smk"
 include: "rules/segmentation.smk"
-include: "rules/preproc_mri.smk"
+
+if config['register_to_mri']:
+    include: "rules/preproc_mri.smk"
