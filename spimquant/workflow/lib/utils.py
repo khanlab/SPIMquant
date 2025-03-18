@@ -1,4 +1,5 @@
 import zarr
+import os
 from upath import UPath as Path
 
 def is_remote(uri_string):
@@ -34,19 +35,20 @@ def get_fsspec(uri_string,storage_provider_settings=None,creds=None):
         fs = LocalFileSystem()
     else:
         print(f'unsupported protocol for remote data')
+    
+    return fs
 
 
-def get_storage_creds(uri):
+def get_storage_creds(uri,remote_creds):
     """for rules that deal with remote storage directly"""
     protocol = Path(uri).protocol
     if protocol == "gcs":
         # currently only works with gcs
-        creds = os.path.expanduser(config["remote_creds"])  #TODO: fix this, maybe use an env var instead
+        creds = os.path.expanduser(remote_creds) 
         return {"creds": creds}
     else:
         return {}
 
-    return fs
 
 
 
@@ -64,11 +66,11 @@ def get_channel_index(store, stain):
     channel_names = get_channel_names(store)
     return channel_names.index(stain)
     
-def get_zarr_store(uri):
+def get_zarr_store(uri,creds=None):
 
     if is_remote(uri):
         #fs_args={'storage_provider_settings':snakemake.params.storage_provider_settings,'creds':snakemake.input.creds}
-        fs_args={'creds':get_storage_creds(uri)}
+        fs_args={'creds':creds}
     else:
         fs_args={}
 
