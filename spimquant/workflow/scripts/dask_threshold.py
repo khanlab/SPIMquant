@@ -14,9 +14,12 @@ store = get_zarr_store(snakemake.params.spim_n4_uri)
 in_orient = snakemake.config['in_orientation']
 orient_opt = {} if in_orient == None else {'orientation': in_orient}
 
-#we use the default level=0, since we are reading in the n4 output, which is already downsampled if level was >0
-znimg_hires = ZarrNii.from_ome_zarr(store,**orient_opt)
 
+#we use the default level=0, since we are reading in the n4 output, which is already downsampled if level was >0
+# but we need to adjust the z_level_offset if the level is not zero -- TODO: deprecate z_level_offset in zarrnii by automatically calculating it based on the xy to z ratio.. 
+z_level_offset=min(0,-2+int(snakemake.wildcards.level))
+
+znimg_hires = ZarrNii.from_ome_zarr(store,z_level_offset=z_level_offset,**orient_opt)
 
 def threshold_block(x):
     return np.where(x > snakemake.params.threshold,100,0) 
