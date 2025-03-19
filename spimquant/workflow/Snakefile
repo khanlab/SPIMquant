@@ -218,7 +218,8 @@ rule all_mri_reg:
 rule all:
     default_target: True
     input:
-        rules.all_segment.input
+        rules.all_segment.input,
+        rules.all_mri_reg.input if config['register_to_mri'] else []
 
 
 include: "rules/common.smk"
