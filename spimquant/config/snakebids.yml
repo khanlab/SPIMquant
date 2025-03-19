@@ -1,19 +1,6 @@
-#bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids'
-#bids_dir: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids_oldBlaze'
-#output_dir: '.'
-
-#root: '/cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha' 
-#work: '/cifs/trident/.work'
-#root: 'results'
-#work: 'work'
-
-#root_coiled: 'gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids/derivatives/SPIMquant_v0.1.1-alpha'
-#work_coiled: 'gcs://khanlab-scratch/spimquant_work'
-
 #list of analysis levels in the bids app
 analysis_levels: &analysis_levels
  - participant
-
 
 #mapping from analysis_level to set of target rules or files
 targets_by_analysis_level:
@@ -136,6 +123,20 @@ parse_args:
     help: "Use the template-based negative mask to reduce boundary artifact when quantifying"
     action: store_true
     default: False    
+
+  --seg_method:
+    help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions"
+    choices: 
+      - threshold
+   #   - multiotsu
+    default: 
+      - threshold
+    nargs: '+'
+
+  --seg_threshold:
+    help: "Threshold to use, only applicable when seg_method is 'threshold'."
+    default: 75
+
 
   --register_to_mri:
     help: "Register the lightsheet data directly to a corresponding MRI (from the BIDS dataset)"
@@ -261,17 +262,4 @@ blobdetect:
   dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
   dseg_template: ABAv3
 
-segmentation_level: 0
-registration_level: 5
 
-#-- for local dryrun testing with snakemake -np
-root: ''
-work: 'work'
-root_coiled: 'gcs://test'
-work_coiled: 'gcs://temp'
-bids_dir_or_uri: '../tests/data'
-template: ABAv3
-template_negative_mask: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
-template_mri: MouseIn
-use_negative_mask: false
-use_coiled: false

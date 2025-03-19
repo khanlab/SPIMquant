@@ -21,11 +21,11 @@ hires_shape = ZarrNii.from_ome_zarr(store,channels=[channel_index],level=hires_l
 # where we perform thresholding
 
 # Compute step 1: first, we write the nifti n4 bias field to ome zarr (this is so we can use distributed computing)
-ZarrNii.from_nifti(snakemake.input.n4_bf_ds,chunks=(1,25,25,25)).to_ome_zarr(snakemake.params.bf_ds_uri)
+ZarrNii.from_nifti(snakemake.input.n4_bf_ds,chunks=(1,10,10,10)).to_ome_zarr(snakemake.params.bf_ds_uri)
 
 if snakemake.config['use_coiled']:
     from coiled import Cluster
-    cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=[4,20])
+    cluster = Cluster(name='coiled-snakemake',package_sync_ignore=['spimquant'],n_workers=10)
     client = cluster.get_client()
 
 
