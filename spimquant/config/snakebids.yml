@@ -38,6 +38,15 @@ pybids_inputs:
       - sample
       - acquisition
       - staining
+  T2w:
+    filters:
+      suffix: 'T2w'
+      extension: 'nii.gz'
+      datatype: 'anat'
+    wildcards:
+      - subject
+      - session
+      - acquisition
 
 
 #configuration for the command-line parameters to make available
@@ -47,6 +56,7 @@ parse_args:
     help: |
       Local path or a remote cloud uri (e.g. gcs:// ) for BIDS dataset
     type: str
+
   --work:
     help: "Local path to use for temporary files\n"
     type: str
@@ -56,7 +66,6 @@ parse_args:
     help: "Use coiled for remote cloud execution (use this only if your input data is already on cloud) (default: %(default)s)"
     action: "store_true"
     default: False
-
 
   --root_coiled:
     help: "Remote uri to use for finalized cloud outputs from coiled rules, only applicable with --use-coiled\n"
@@ -70,7 +79,7 @@ parse_args:
     default: gcs://khanlab-scratch/spimquant_work
   
   --template:
-    help: "Template to use for registration\n"
+    help: "Template to use for SPIM registration\n"
     default: ABAv3
     choices: 
      - ABAv3
@@ -78,6 +87,11 @@ parse_args:
      - MBMv3
      - turone
 
+  --template_mri:
+    help: "Template to use for MRI registration to obtain brain mask\n"
+    default: MouseIn
+    choices:
+      - MouseIn
 
   --template_negative_mask:
     help: "Negative mask, in the template space, to highlight regions to avoid\n"
@@ -105,7 +119,6 @@ parse_args:
     action: store
     nargs: '+'
 
-
   --registration_level:
     help: "Downsampling level to use for registration (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
     default: 5
@@ -124,10 +137,14 @@ parse_args:
     action: store_true
     default: False    
 
+  --register_to_mri:
+    help: "Register the lightsheet data directly to a corresponding MRI (from the BIDS dataset)"
+    action: store_true
+    default: False
+
   --remote_creds:
     help: "Google cloud default credentials to use for coiled"
     default: ~/.config/gcloud/application_default_credentials.json
-
 
   --skip-bids-validation:
     help: |
@@ -138,9 +155,7 @@ parse_args:
     action: "store_true"
     default: False
 
-
 #--- workflow specific configuration -- 
-
 
 containers:
   spimprep: 'docker://khanlab/spimprep-deps:main'
@@ -164,6 +179,12 @@ ome_zarr:
 
 
 templates:
+  MouseIn:
+    # MP2RAGE inv1 chosen since its most similar to the MT GRE I had on hand.. better to create a 
+    # new template later..
+    anat: '{workflow.basedir}/../resources/tpl-MouseIn/tpl-MouseIn_res-1_inv-1_MP2RAGE.nii.gz'
+    mask: '{workflow.basedir}/../resources/tpl-MouseIn/tpl-MouseIn_res-1_desc-brain_mask.nii.gz'
+
   ABAv3:
     anat: '{workflow.basedir}/../resources/ABAv3/P56_Atlas.nii.gz'
     dseg: '{workflow.basedir}/../resources/ABAv3/P56_Annotation.nii.gz'
@@ -240,7 +261,6 @@ blobdetect:
 segmentation_level: 0
 registration_level: 5
 
-
 #-- for local dryrun testing with snakemake -np
 root: ''
 work: 'work'
@@ -249,5 +269,6 @@ work_coiled: 'gcs://temp'
 bids_dir_or_uri: '../tests/data'
 template: ABAv3
 template_negative_mask: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
+template_mri: MouseIn
 use_negative_mask: false
 use_coiled: false

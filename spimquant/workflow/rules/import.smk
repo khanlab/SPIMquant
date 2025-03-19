@@ -70,6 +70,23 @@ rule import_dseg:
     shell:
         "cp {input} {output}"
 
+rule import_mask:
+    input:
+        mask=lambda wildcards: ancient(
+            format(config["templates"][wildcards.template]["mask"])
+        ),
+    output:
+        mask=bids_tpl(root=root, template="{template}", desc='brain', suffix="mask.nii.gz"),
+    log:
+        bids_tpl(
+            root="logs",
+            datatype="import_mask",
+            template="{template}",
+            suffix="log.txt",
+        ),
+    shell:
+        "cp {input} {output}"
+
 
 rule import_labelmapper_lut:
     input:
@@ -184,3 +201,5 @@ rule import_lut_itksnap_as_tsv:
         tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     script:
         "../scripts/import_lut_itksnap_as_tsv.py"
+
+

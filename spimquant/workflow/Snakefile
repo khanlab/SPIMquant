@@ -19,6 +19,8 @@ else:
     root_coiled = root
     work_coiled = work
 
+if not config['register_to_mri']:
+    del config['pybids_inputs']['T2w']
 
 # Get input wildcards
 inputs = generate_inputs(
@@ -199,6 +201,19 @@ rule all_segment:
             desc=['otsu'],#,'otsupenalty'],
             template=config["template"]),
 
+rule all_mri_reg:
+    input:
+        inputs["spim"].expand(
+            bids(
+            root=root,
+            datatype="anat",
+            space="{template}",
+            desc="N4",
+            suffix="T2w.nii.gz",
+            **inputs["spim"].wildcards
+        ),
+            level=config['registration_level'],
+            template=config["template"]),
 
 rule all:
     default_target: True
@@ -212,3 +227,6 @@ include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/blobdetect.smk"
 include: "rules/segmentation.smk"
+
+if config['register_to_mri']:
+    include: "rules/preproc_mri.smk"
