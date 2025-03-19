@@ -199,6 +199,9 @@ templates:
       roi82:
         dseg: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_82_R_L.nii.gz'
         csv: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_82_R_L.csv'
+      roi198:
+        dseg: '{workflow.basedir}/../resources/ABAv3/ngo_labels/atlas.nii.gz'
+        csv: '{workflow.basedir}/../resources/ABAv3/ngo_labels/atlas_with_names.csv'
 
         
   gubra:
