@@ -41,6 +41,7 @@ pybids_inputs:
   T2w:
     filters:
       suffix: 'T2w'
+      extension: 'nii.gz'
       datatype: 'anat'
     wildcards:
       - subject

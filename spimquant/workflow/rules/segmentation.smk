@@ -9,6 +9,7 @@ rule antspyx_n4:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
+        **get_storage_creds(inputs["spim"].path,config['remote_creds']),
     params:
         n4_opts={'spline_param': (2,2,2),
                  'shrink_factor': 1},
