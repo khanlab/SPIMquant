@@ -91,6 +91,7 @@ parse_args:
     default: 
       - PI
       - YOPRO
+      - YoPro
       - AutoF
       - autof
     action: store
@@ -117,7 +118,6 @@ parse_args:
 
   --in_orientation:
     help: "Override input SPIM image orientation, using 3-letter orientation code representing ZYX directions, with R/L, A/P, S/I (default: %(default)s)"
-    default: IPL
     
   --use_negative_mask:
     help: "Use the template-based negative mask to reduce boundary artifact when quantifying"
@@ -232,19 +232,6 @@ templates:
 
 
 
-stains_for_reg: #ordered by priority
-  - PI
-  - YOPRO
-  - autof
-  - AutoF
-
-stains_for_seg:
-  - abeta
-  - Abeta
-  - BetaAmyloid
-  - AlphaSynuclein
-
-in_orientation: IPL #set to 3-letter orientation string, e.g. RPI. 
   
 templatereg:
   desc: N4brain

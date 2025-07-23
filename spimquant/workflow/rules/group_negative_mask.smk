@@ -55,6 +55,8 @@ rule avg_fieldfrac_low_abeta:
         ),
     output:
         avg_low_abeta_fieldfraction="avg_lowload_Abeta_fieldfrac.nii",
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input} -mean -o {output}"
 
@@ -78,6 +80,8 @@ rule avg_fieldfrac_bygroup:
         ),
     output:
         avg="avg_group-{group}_fieldfrac.nii",
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input} -mean -o {output}"
 
@@ -101,6 +105,8 @@ rule avg_masked_fieldfrac_bygroup:
         ),
     output:
         avg="avg_group-{group}_maskedfieldfrac.nii",
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input} -mean -o {output}"
 
@@ -111,6 +117,8 @@ rule create_negative_mask:
         avg_low_abeta_fieldfraction="avg_lowload_Abeta_fieldfrac.nii",
     output:
         negative_mask="negative_mask.nii"
+    conda:
+        "../envs/c3d.yaml"
     shell:
         'c3d {input} -smooth 3x3x3vox  -threshold 2 inf 0 1 -o {output}'
      
@@ -133,6 +141,8 @@ rule avg_roi_fieldfrac_bygroup:
         ),
     output:
         avg="avg_seg-{seg}_group-{group}_fieldfrac.nii",
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input} -mean -o {output}"
 

@@ -1,56 +1,42 @@
-[tool.poetry]
+[project]
+authors = [{name = "Ali R. Khan", email = "alik@robarts.ca"}]
+dependencies = []
 name = "SPIMquant"
+requires-python = ">= 3.11"
 version = "0.1.0"
-description = "Snakebids app for quantitative analysis of SPIM (lightsheet) brains"
-readme = "README.md"
-license = "MIT"
-authors = [
-    "Ali Khan <alik@robarts.ca>"
-]
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent",
-]
 
-[tool.poetry.dependencies]
-python = ">=3.11,<3.12"
-snakemake = ">=8.0.0"
-snakebids = { git = "http://github.com/akhanf/snakebids", rev = "main" }
-#snakebids = "^0.14.0"
-pulp = "<2.8.0"
-pandas = [
-    { version = "<=2.0.3", python = "<3.9" },
-    { version = ">=2.1.1", python = ">=3.12" },
-]
-numpy = "^1.26.4"
-dask = "^2024.2.0"
-zarr = "^2.17.0"
-scipy = "^1.12.0"
-scikit-image = "^0.22.0"
-dask-image = "^2023.8.1"
-ome-zarr = "^0.9.0"
-sparse = "^0.15.1"
-bokeh = "^3.4.1"
-zarrnii = "^0.2.3-alpha.1"
-#zarrnii = { path = "/localscratch/zarrnii", develop = true }
-cvpl_tools = "^0.7.0"
-gcsfs = "^2024.9.0.post1"
-coiled = "^1.56.1"
-antspyx = "^0.5.4"
-snakemake-storage-plugin-http = "^0.2.3"
-universal-pathlib = "^0.2.6"
-
-[tool.poetry.scripts]
+[project.scripts]
 spimquant = "spimquant.run:app.run"
 
-
-[tool.poetry.group.dev.dependencies]
-jupyterlab = "^4.2.1"
-matplotlib = "^3.9.0"
-seaborn = "^0.13.2"
-napari = {extras = ["all"], version = "^0.4.19.post1"}
-napari-ome-zarr = "^0.5.2"
-
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge", "bioconda"]
+platforms = ["linux-64"]
+
+[tool.pixi.dependencies]
+snakemake = ">=9.5.1,<10"
+snakebids = ">=0.14.0,<0.15"
+snakemake-storage-plugin-s3 = ">=0.3.3,<0.4"
+snakemake-storage-plugin-gcs = ">=1.1.4,<2"
+gcsfs = ">=2025.5.1,<2026"
+s3fs = ">=2025.5.1,<2026"
+universal-pathlib = ">=0.2.6,<0.3"
+zarr = ">=3.0.8,<4"
+dask = ">=2025.5.1,<2026"
+conda = ">=25.5.0,<26"
+snakemake-executor-plugin-slurm = ">=1.4.0,<2"
+snakemake-storage-plugin-fs = ">=1.1.2,<2"
+snakemake-storage-plugin-http = ">=0.3.0,<0.4.0"
+greedyreg = "==0.0.20250712"
+antspyx = "==0.6.1"
+
+
+[tool.pixi.pypi-dependencies]
+spimquant = { path = ".", editable = true }
+ngff-zarr = { version = ">=0.13.2, <0.14", extras = ["all"] }
+zarrnii = { git = "https://github.com/khanlab/zarrnii/", branch = "ngffzarr3" }
+
+[tool.pixi.tasks]

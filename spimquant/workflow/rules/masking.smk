@@ -35,6 +35,8 @@ rule pre_atropos:
         ),
     container:
         config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input.nii} -resample {params.downsampling} -o {output.downsampled} -scale 0 -shift 1 -o {output.mask}"
 
@@ -73,6 +75,8 @@ rule atropos_seg:
         ),
     container:
         config["containers"]["ants"]
+    conda:
+        "../envs/ants.yaml"
     shadow:
         "minimal"
     threads: 1
@@ -111,6 +115,8 @@ rule post_atropos:
         ),
     container:
         config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d -interpolation NearestNeighbor {input.ref} {input.dseg} -reslice-identity -o {output.dseg}"
 
@@ -258,5 +264,7 @@ rule create_mask_from_gmm:
         ),
     container:
         config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input} -threshold {params.bg_label} {params.bg_label} 0 1 -o {output}"

@@ -32,6 +32,8 @@ rule n4_mri:
         ),
     container:
         config["containers"]["ants"]
+    conda:
+        "../envs/ants.yaml"
     shell:
         "N4BiasFieldCorrection -i {input.nii}"
         " -o {output.nii}"
@@ -208,6 +210,8 @@ rule transform_template_mask_to_mri:
     threads: 32
     container:
         config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         " c3d_affine_tool {input.xfm_ras} -inv -o inv_rigid.txt && "
         " greedy -threads {threads} -d 3 -ri NN -rf {input.ref} "

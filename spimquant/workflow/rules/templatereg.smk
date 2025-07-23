@@ -39,6 +39,8 @@ rule n4:
         ),
     container:
         config["containers"]["ants"]
+    conda:
+        "../envs/ants.yaml"
     shell:
         "N4BiasFieldCorrection -i {input.nii}"
         " -o [{output.corrected},{output.biasfield}]"
@@ -78,6 +80,8 @@ rule apply_mask_to_corrected:
         ),
     container:
         config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input.corrected} {input.mask} -multiply -o {output.masked}"
 
@@ -158,6 +162,8 @@ rule convert_ras_to_itk:
         ),
     container:
         config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d_affine_tool {input.xfm_ras} -oitk {output.xfm_itk}"
 
@@ -423,6 +429,8 @@ rule deform_spim_nii_to_template_nii:
     threads: 32
     container:
         config["containers"]["ants"]
+    conda:
+        "../envs/ants.yaml"
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n Linear "
@@ -519,6 +527,8 @@ rule transform_labels_to_zoomed_template:
     threads: 32
     container:
         config["containers"]["ants"]
+    conda:
+        "../envs/ants.yaml"
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n NearestNeighbor "

@@ -31,7 +31,7 @@ if snakemake.config['use_coiled']:
 
 # Compute step 2: then we upsample the bias field, and save to file
 znimg_biasfield_upsampled = ZarrNii.from_ome_zarr(snakemake.params.bf_ds_uri,**orient_opt).upsample(to_shape=hires_shape)
-znimg_biasfield_upsampled.to_ome_zarr(snakemake.params.bf_us_uri,max_layers=0)
+znimg_biasfield_upsampled.to_ome_zarr(snakemake.params.bf_us_uri,max_layer=0)
 
 
 # Compute step 3: now multiply biasfield and hires image together.  we read the biasfield 
@@ -40,6 +40,6 @@ znimg_biasfield_upsampled.to_ome_zarr(snakemake.params.bf_us_uri,max_layers=0)
 znimg_biasfield_upsampled = ZarrNii.from_ome_zarr(snakemake.params.bf_us_uri,**orient_opt)
 znimg_hires = ZarrNii.from_ome_zarr(store,channels=[channel_index],level=hires_level,chunks=znimg_biasfield_upsampled.darr.chunks,rechunk=True,**orient_opt) #chunk size comes from upsampled array
 znimg_hires.darr = znimg_hires.darr / znimg_biasfield_upsampled.darr
-znimg_hires.to_ome_zarr(snakemake.params.spim_n4_uri,max_layers=5)
+znimg_hires.to_ome_zarr(snakemake.params.spim_n4_uri,max_layer=5)
 
 

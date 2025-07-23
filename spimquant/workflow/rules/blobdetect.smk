@@ -37,6 +37,8 @@ rule brainmask_penalty:
         ),
     container:
         config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input.mask} -sdt -scale -1 -o {output.sdt} -shift -{params.x0} -scale -{params.k} -exp -shift 1 -reciprocal "
         " -o {output.penalty}"

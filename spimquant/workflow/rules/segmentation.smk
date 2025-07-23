@@ -132,6 +132,8 @@ rule downsampled_apply_n4_mask:
         ),
     container:
         config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input.n4_bf_ds} {input.spim_ds} -divide -as N4 -replace inf 10000  {input.mask} -reslice-identity -push N4 -multiply -o {output.masked}"
 
@@ -442,6 +444,8 @@ rule apply_boundary_penalty:
         ),
     container:
         config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input.fieldfrac} {input.mask1} -multiply {input.mask2} -multiply -o {output.fieldfrac_mod}"
 
@@ -613,6 +617,8 @@ rule deform_fieldfrac_nii_to_template_nii:
     threads: 32
     container:
         config["containers"]["ants"]
+    conda:
+        "../envs/ants.yaml"
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n Linear "
