@@ -55,7 +55,10 @@ stains_for_seg = list(
 )
 
 
-container: config["containers"]["spimprep"]
+if config['use_negative_mask']:
+    config['seg_method'].extend([ f'{method}penalty' for method in config['seg_method']])
+
+
 
 
 # wildcard_constraints: **get_wildcard_constraints(config["pybids_inputs"])
@@ -145,7 +148,9 @@ rule all_templatereg_lbl:
             template=config["template"],
         ),
 
-rule all_segment:
+
+
+rule all_fieldfrac_tune:
     input:
         inputs["spim"].expand(
             bids(
@@ -154,11 +159,18 @@ rule all_segment:
                 stain="{stain}",
                 dslevel="{dslevel}",
                 desc="otsu",
+                otsu="k{k}i{i}",
                 suffix="fieldfrac.nii",
-                **inputs["spim"].wildcards),
-            stain=stains_for_seg,
-            dslevel=config['registration_level']
+                **inputs["spim"].wildcards
         ),
+            stain=stains_for_seg,
+            dslevel=config['registration_level'],
+            k=4,i=range(4))
+
+
+
+rule all_segment:
+    input:
         inputs["spim"].expand(
             bids(
             root=root,
@@ -166,11 +178,13 @@ rule all_segment:
             seg="{seg}",
             space="{template}",
             stain="{stain}",
+            desc="{desc}",
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards
         ),
             stain=stains_for_seg,
             seg=config["templates"][config["template"]]["segs"].keys(),
+            desc=config['seg_method'],
             template=config["template"]),
         inputs["spim"].expand(
             bids(
@@ -198,7 +212,7 @@ rule all_segment:
         ),
             stain=stains_for_seg,
             level=config['registration_level'],
-            desc=['otsu'],#,'otsupenalty'],
+            desc=config['seg_method'],
             template=config["template"]),
 
 rule all_mri_reg:

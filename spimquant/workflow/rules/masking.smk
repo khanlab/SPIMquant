@@ -33,8 +33,8 @@ rule pre_atropos:
                 **inputs["spim"].wildcards
             )
         ),
-    container:
-        config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input.nii} -resample {params.downsampling} -o {output.downsampled} -scale 0 -shift 1 -o {output.mask}"
 
@@ -71,8 +71,8 @@ rule atropos_seg:
                 **inputs["spim"].wildcards
             )
         ),
-    container:
-        config["containers"]["ants"]
+    conda:
+        "../envs/ants.yaml"
     shadow:
         "minimal"
     threads: 1
@@ -109,8 +109,8 @@ rule post_atropos:
             suffix="dseg.nii",
             **inputs["spim"].wildcards
         ),
-    container:
-        config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d -interpolation NearestNeighbor {input.ref} {input.dseg} -reslice-identity -o {output.dseg}"
 
@@ -155,8 +155,6 @@ rule init_affine_reg:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container:
-        config["containers"]["itksnap"]
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} && "
@@ -187,8 +185,6 @@ rule affine_transform_template_dseg_to_subject:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container:
-        config["containers"]["itksnap"]
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         " -ri NN"
@@ -256,7 +252,7 @@ rule create_mask_from_gmm:
             suffix="mask.nii",
             **inputs["spim"].wildcards
         ),
-    container:
-        config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input} -threshold {params.bg_label} {params.bg_label} 0 1 -o {output}"

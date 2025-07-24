@@ -14,17 +14,11 @@ store = get_zarr_store(snakemake.params.spim_n4_uri)
 in_orient = snakemake.config['in_orientation']
 orient_opt = {} if in_orient == None else {'orientation': in_orient}
 
-#we use the default level=0, since we are reading in the n4 output, which is already downsampled if level was >0
+
 znimg_hires = ZarrNii.from_ome_zarr(store,**orient_opt)
 
-with open(snakemake.input.otsu_thresholds, "r") as f:
-    multi_thresholds = json.load(f)
-
 def threshold_block(x):
-    """ use the thresholds to discretize, which np.digitize does nicely, then we set the chosen
-    label index to 100 and others to 0"""
-    thresholds = multi_thresholds[str(snakemake.params.otsu_k)]
-    return np.where(np.digitize(x, thresholds) == snakemake.params.otsu_threshold_index,100,0) 
+    return np.where(x > snakemake.params.threshold,100,0) 
 
 
 #now, we perform thresholding on hires, and save the result in a new ome-zarr 

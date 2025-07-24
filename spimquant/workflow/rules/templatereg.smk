@@ -37,8 +37,8 @@ rule n4:
             suffix="biasfield.nii",
             **inputs["spim"].wildcards
         ),
-    container:
-        config["containers"]["ants"]
+    conda:
+        "../envs/ants.yaml"
     shell:
         "N4BiasFieldCorrection -i {input.nii}"
         " -o [{output.corrected},{output.biasfield}]"
@@ -76,8 +76,8 @@ rule apply_mask_to_corrected:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
-    container:
-        config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input.corrected} {input.mask} -multiply -o {output.masked}"
 
@@ -123,8 +123,6 @@ rule affine_reg:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container:
-        config["containers"]["itksnap"]
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} && "
@@ -156,8 +154,8 @@ rule convert_ras_to_itk:
             suffix="xfm.txt",
             **inputs["spim"].wildcards
         ),
-    container:
-        config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d_affine_tool {input.xfm_ras} -oitk {output.xfm_itk}"
 
@@ -217,8 +215,6 @@ rule deform_reg:
     threads: 32
     resources:
         mem_mb=16000,
-    container:
-        config["containers"]["itksnap"]
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -it {input.xfm_ras} -m {params.metric} "
@@ -337,8 +333,6 @@ rule deform_zarr_to_template_nii:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container:
-        None
     script:
         "../scripts/deform_to_template_nii.py"
 
@@ -362,7 +356,6 @@ rule deform_to_template_nii_zoomed:
                 float(wildcards.res) / 1000,
             ),
         },
-    container: None
     output:
         nii=bids(
             root=root,
@@ -421,8 +414,8 @@ rule deform_spim_nii_to_template_nii:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container:
-        config["containers"]["ants"]
+    conda:
+        "../envs/ants.yaml"
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n Linear "
@@ -458,8 +451,6 @@ rule deform_template_dseg_to_subject_nii:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container:
-        config["containers"]["itksnap"]
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         " -ri NN "
@@ -487,8 +478,6 @@ rule deform_transform_labels_to_subj:
                 **inputs["spim"].wildcards
             )
         ),
-    container:
-        None
     threads: 32
     script:  #TODO this script doesn't exist??
         "../scripts/deform_transform_channel_to_template_nii.py"
@@ -517,8 +506,8 @@ rule transform_labels_to_zoomed_template:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container:
-        config["containers"]["ants"]
+    conda:
+        "../envs/ants.yaml"
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n NearestNeighbor "

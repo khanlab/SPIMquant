@@ -1,6 +1,7 @@
 import zarr
 import os
 from upath import UPath as Path
+import fsspec
 
 def is_remote(uri_string):
     uri = Path(uri_string)
@@ -68,18 +69,28 @@ def get_channel_index(store, stain):
     
 def get_zarr_store(uri,creds=None):
 
+    uri_path = Path(uri)
+    suffix = uri_path.suffix
+
     if is_remote(uri):
-        #fs_args={'storage_provider_settings':snakemake.params.storage_provider_settings,'creds':snakemake.input.creds}
-        fs_args={'creds':creds}
-    else:
-        fs_args={}
+        fs_args = {'creds': creds}
+        fs = get_fsspec(uri, **fs_args)
+        store = zarr.storage.FsspecStore(path=uri_path.path, fs=fs, read_only=True)
 
-    fs = get_fsspec(uri,**fs_args)
+    elif suffix == '.zip':
+        store = zarr.storage.ZipStore(path=uri_path, read_only=True)
 
-    if Path(uri).suffix == '.zip':
-        store = zarr.storage.ZipStore(Path(uri).path,dimension_separator='/',mode='r')
+    elif uri_path.is_dir():
+        store = zarr.storage.LocalStore(root=str(uri_path), read_only=True)  # local folder-based Zarr
+
     else:
-        store = zarr.storage.FSStore(Path(uri).path,fs=fs,dimension_separator='/',mode='r')
+        # Fall back to FsspecStore even for local non-.zip paths
+        fs = fsspec.filesystem('file')
+        store = zarr.storage.FsspecStore(path=str(uri_path), fs=fs, read_only=True)
+
+    return store
+
+
 
     return store
 

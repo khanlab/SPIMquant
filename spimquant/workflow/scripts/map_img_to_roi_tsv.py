@@ -22,7 +22,8 @@ def calc_avg_fieldfrac(x,img,dseg):
 
 
 #calc volume and avg fieldfrac for each label
-dseg_df['volume'] = dseg_df['index'].apply(calc_label_volume,args=(img,voxel_mm3))
+dseg_df['volume'] = dseg_df['index'].apply(calc_label_volume,args=(dseg,voxel_mm3))
+
 dseg_df['avg_fieldfrac'] = dseg_df['index'].apply(calc_avg_fieldfrac,args=(img,dseg))
 
 

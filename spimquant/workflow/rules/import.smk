@@ -21,8 +21,6 @@ rule get_downsampled_nii:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container:
-        None
     script:
         "../scripts/ome_zarr_to_nii.py"
 
@@ -121,8 +119,8 @@ rule lateralize_atlas_dseg:
         offset_rh=10000,
     output:
         dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
-    container:
-        config["containers"]["itksnap"]
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input.dseg} -as SEG -cmv -pop -pop -threshold 50% inf 1 0 -as MASK_RH "
         " -push SEG -times -as SEG_RH "
@@ -156,6 +154,8 @@ rule import_reslice_dseg:
         dseg=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
         ),
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input.ref} {input.dseg} -interpolation NearestNeighbor -reslice-identity -o {output}"
 
