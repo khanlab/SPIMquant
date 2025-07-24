@@ -7524,7 +7524,7 @@ packages:
 - pypi: ./
   name: spimquant
   version: 0.1.0
-  sha256: 959b4a11260a15255869215a82d7af539e74ec6337e7aa1229d117abc64db29c
+  sha256: b6737fa014e953e456cc367c1adb9c186a51eb39e40b61620106c59a6eaa9756
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/sqlalchemy-2.0.41-py312h66e93f0_0.conda

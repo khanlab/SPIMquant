@@ -4,9 +4,7 @@ dependencies = []
 name = "SPIMquant"
 requires-python = ">= 3.11"
 version = "0.1.0"
-
-[project.scripts]
-spimquant = "spimquant.run:app.run"
+scripts = { spimquant = "spimquant.run:app.run" }
 
 [build-system]
 build-backend = "hatchling.build"
