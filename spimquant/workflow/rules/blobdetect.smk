@@ -35,8 +35,6 @@ rule brainmask_penalty:
             suffix="penalty.nii",
             **inputs["spim"].wildcards
         ),
-    container:
-        config["containers"]["itksnap"]
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -80,8 +78,6 @@ rule blob_detection:
             **inputs["spim"].wildcards
         ),
     threads: 6
-    container:
-        None  # since sparse is not in spimprep container yet
     shadow:
         "minimal"
     script:  

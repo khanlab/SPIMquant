@@ -158,10 +158,6 @@ parse_args:
 
 #--- workflow specific configuration -- 
 
-containers:
-  spimprep: 'docker://khanlab/spimprep-deps:main'
-  ants: 'docker://kaczmarj/ants:2.3.4'
-  itksnap: 'docker://khanlab/itksnap:latest' 
 
 remote_creds: '~/.config/gcloud/application_default_credentials.json' #this is needed so we can pass creds to container
 

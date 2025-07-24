@@ -17,8 +17,6 @@ rule cellpose:
                 **inputs["spim"].wildcards
             )
         ),
-    container:
-        None  #since cellpose not in container yet
     threads: 6
     script:
         "../scripts/cellpose.py"

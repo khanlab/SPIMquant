@@ -9,8 +9,6 @@ rule import_subj_T2w:
             suffix="T2w.nii.gz",
             **inputs["T2w"].wildcards
         ),
-    container: 
-        config["containers"]["itksnap"]
     shell:
         #        'c3d {input} -orient RSP -o {output}' 
         "cp {input} {output}"
@@ -30,8 +28,6 @@ rule n4_mri:
             suffix="T2w.nii.gz",
             **inputs["T2w"].wildcards
         ),
-    container:
-        config["containers"]["ants"]
     conda:
         "../envs/ants.yaml"
     shell:
@@ -117,8 +113,6 @@ rule rigid_greedy_reg_mri_to_template:
 #            **inputs["T2w"].wildcards
 #        ),
     threads: 32
-    container:
-        config["containers"]["itksnap"]
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 6 -ia-image-centers -m {params.metric} -o {output.xfm_ras} && "
@@ -208,8 +202,6 @@ rule transform_template_mask_to_mri:
     shadow:
         "minimal"
     threads: 32
-    container:
-        config["containers"]["itksnap"]
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -247,8 +239,6 @@ rule apply_mri_brain_mask:
             suffix="T2w.nii.gz",
             **inputs["T2w"].wildcards
         ),
-    container:
-        config["containers"]["itksnap"]
     shell:
         "c3d {input.nii} {input.mask} -multiply -resample 300% -o {output.nii}"
 
@@ -361,8 +351,6 @@ rule rigid_greedy_reg_mri_to_spim:
 #            **inputs["spim"].wildcards
 #        ),
     threads: 32
-    container:
-        config["containers"]["itksnap"]
     shell:
         "greedy -threads {threads} -d 3 -i {input.spim} {input.mri} "
         " -a -dof {params.dof} -ia-image-centers -m {params.metric_rigid} -o {output.xfm_ras} && "
@@ -470,8 +458,6 @@ rule warp_mri_to_template_via_spim:
         ),
 
     threads: 32
-    container:
-        config["containers"]["itksnap"]
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         "  -rm {input.mri} {output.warped} "
@@ -550,8 +536,6 @@ rule warp_mri_brainmask_to_spim:
         ),
 
     threads: 32
-    container:
-        config["containers"]["itksnap"]
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} -ri NN"
         "  -rm {input.mask} {output.mask} "

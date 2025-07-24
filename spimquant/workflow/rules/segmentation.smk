@@ -26,8 +26,6 @@ rule antspyx_n4:
     threads: 8
     resources:
         mem_mb=16000,
-    container:
-        None
     script:
         "../scripts/antspyx_n4.py"
 
@@ -87,8 +85,6 @@ rule dask_n4:
     threads: 1 if config["use_coiled"] else 32
     resources:
         coiled=1,
-    container:
-        None
     script:
         "../scripts/dask_n4.py"
 
@@ -130,8 +126,6 @@ rule downsampled_apply_n4_mask:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards
         ),
-    container:
-        config["containers"]["itksnap"]
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -180,8 +174,6 @@ rule dask_histogram:
     threads: 1 if config["use_coiled"] else 32
     resources:
         coiled=1,
-    container:
-        None
     script:
         "../scripts/dask_histogram.py"
 
@@ -214,8 +206,6 @@ rule calc_otsu_thresholds:
             suffix="thresholds.json",
             **inputs["spim"].wildcards
         ),
-    container:
-        None
     script:
         "../scripts/calc_otsu_thresholds.py"
 
@@ -274,8 +264,6 @@ rule dask_otsu:
     threads: 1 if config["use_coiled"] else 32
     resources:
         coiled=1,
-    container:
-        None
     script:
         "../scripts/dask_otsu.py"
 
@@ -320,8 +308,6 @@ rule dask_threshold:
     threads: 1 if config["use_coiled"] else 32
     resources:
         coiled=1,
-    container:
-        None
     script:
         "../scripts/dask_threshold.py"
 
@@ -360,9 +346,7 @@ rule dask_fieldfrac:
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards
         ),
-    container:
-        None
-    threads: 1
+    threads: 1 if config["use_coiled"] else 32
     resources:
         coiled=1,
     script:
@@ -393,8 +377,6 @@ rule deform_negative_mask_to_subject_nii:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container:
-        config["containers"]["itksnap"]
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         " -ri NN "
@@ -442,8 +424,6 @@ rule apply_boundary_penalty:
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards
         ),
-    container:
-        config["containers"]["itksnap"]
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -615,8 +595,6 @@ rule deform_fieldfrac_nii_to_template_nii:
             **inputs["spim"].wildcards
         ),
     threads: 32
-    container:
-        config["containers"]["ants"]
     conda:
         "../envs/ants.yaml"
     shell:

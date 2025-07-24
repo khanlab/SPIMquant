@@ -59,7 +59,6 @@ if config['use_negative_mask']:
     config['seg_method'].extend([ f'{method}penalty' for method in config['seg_method']])
 
 
-container: config["containers"]["spimprep"]
 
 
 # wildcard_constraints: **get_wildcard_constraints(config["pybids_inputs"])
