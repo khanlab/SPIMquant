@@ -530,7 +530,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zlib-1.3.1-hb9d3cd8_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstandard-0.23.0-py312h66e93f0_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb8e6e7a_2.conda
-      - pypi: git+https://github.com/khanlab/zarrnii/?branch=ngffzarr3#fd623986382a08053bc7c0251651dcf3f1cc258c
       - pypi: https://files.pythonhosted.org/packages/32/34/d4e1c02d3bee589efb5dfa17f88ea08bdb3e3eac12bc475462aec52ed223/alabaster-0.7.16-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a1/ee/48ca1a7c89ffec8b6a0c5d02b89c305671d5ffd8d3c94acf8b8c408575bb/anyio-4.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/af/0f/3b8fdc946b4d9cc8cc1e8af42c4e409468c84441b933d037e101b3d72d86/astroid-3.3.11-py3-none-any.whl
@@ -584,6 +583,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b9/68/a069da6a126e5369656a4170dfb9ab55ed543237205831718a0389da2e43/wasmtime-35.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8c/77/e3362fe308358dc9f8588102481e599c83e1b91c2ae843780a7ded939a35/watchfiles-1.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/8f/aa61f528fba38578ec553c145857a181384c72b98156f858ca5c8e82d9d3/websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/8a/98/6806760baf20ab206f56a7af25ef4e76a333dabca8473de6641a4afe4b60/zarrnii-0.3.0a1-py3-none-any.whl
       - pypi: ./
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
@@ -7524,7 +7524,7 @@ packages:
 - pypi: ./
   name: spimquant
   version: 0.1.0
-  sha256: b6737fa014e953e456cc367c1adb9c186a51eb39e40b61620106c59a6eaa9756
+  sha256: 3499f45eccd1b9bff6d8f96691bb820d379524cfda63e5613648e3ed1d21df86
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/sqlalchemy-2.0.41-py312h66e93f0_0.conda
@@ -8617,9 +8617,10 @@ packages:
   - pkg:pypi/zarr?source=hash-mapping
   size: 266429
   timestamp: 1752666335143
-- pypi: git+https://github.com/khanlab/zarrnii/?branch=ngffzarr3#fd623986382a08053bc7c0251651dcf3f1cc258c
+- pypi: https://files.pythonhosted.org/packages/8a/98/6806760baf20ab206f56a7af25ef4e76a333dabca8473de6641a4afe4b60/zarrnii-0.3.0a1-py3-none-any.whl
   name: zarrnii
-  version: 0.2.3a1
+  version: 0.3.0a1
+  sha256: d8647cfc62b7cccf0d323cf2f9e6b1ca37a58e1708e1d130b21259fd4f7fc673
   requires_dist:
   - dask>=2025.5.1
   - ngff-zarr[all]>=0.13.1
