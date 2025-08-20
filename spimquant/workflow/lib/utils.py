@@ -61,8 +61,8 @@ def get_channel_names(store):
     metadata = dict(group.attrs)
 
     # Retrieve channel names
-    return [chan['label'] for chan in metadata['multiscales'][0]['metadata']['omero']['channels']]
-
+    return [chan['label'] for chan in metadata['omero']['channels']]
+ 
 def get_channel_index(store, stain):
     channel_names = get_channel_names(store)
     return channel_names.index(stain)
