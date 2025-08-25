@@ -22,13 +22,13 @@ jobs:
           activate-environment: dev-only
 
       - name: isort
-        run: isort workflow/scripts/*.py -c --profile black
+        run: isort spimquant/*.py -c --profile black
 
       - name: Black
-        run: black . --check
+        run: black spimquant --check
 
       - name: snakefmt
-        run: snakefmt . --check
+        run: snakefmt spimquant --check
 
   test:
     runs-on: ubuntu-latest
@@ -41,7 +41,7 @@ jobs:
         uses: prefix-dev/setup-pixi@v0.8.14
         with:
           activate-environment: true
-
-      - name: Test lighsheet-example
+      
+      - name: Test
         run: |
-          ./run.py --input-path $(pwd)/testing/dryrun_tests/lightsheet-example/ --subject M4A1Te3 --stains Abeta PI Lectin --output-bids-dir test_out/mouse_appmaptapoe --use-conda -np
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/data test_out participant -np
