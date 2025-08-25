@@ -14,7 +14,7 @@ rule cellpose:
                 level="{level}",
                 desc="cellpose",
                 suffix="dseg.zarr",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             )
         ),
     threads: 6

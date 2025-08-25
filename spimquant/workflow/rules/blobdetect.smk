@@ -11,7 +11,7 @@ rule brainmask_penalty:
             level="{level}",
             desc="brain",
             suffix="mask.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     params:
         k=50,  #steepness of logistic function (how fast it drops off) (penalty_weight)
@@ -24,7 +24,7 @@ rule brainmask_penalty:
             level="{level}",
             desc="brain",
             suffix="sdt.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         penalty=bids(
             root=root,
@@ -33,7 +33,7 @@ rule brainmask_penalty:
             level="{level}",
             desc="brain",
             suffix="penalty.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     conda:
         "../envs/c3d.yaml"
@@ -48,10 +48,10 @@ rule blob_detection:
             root=root,
             datatype="micr",
             stain=stain_for_reg,
-            level='{level}',
+            level="{level}",
             desc="brain",
             suffix="penalty.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     params:
         zarr=inputs["spim"].path,
@@ -67,7 +67,7 @@ rule blob_detection:
             level="{level}",
             stain="{stain}",
             suffix="sparseblobs.npz",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         points_npy=bids(
             root=root,
@@ -75,12 +75,12 @@ rule blob_detection:
             level="{level}",
             stain="{stain}",
             suffix="points.npy",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 6
     shadow:
         "minimal"
-    script:  
+    script:
         "../scripts/blob_detection.py"
 
 
@@ -92,7 +92,7 @@ rule filter_blobs:
             level="{level}",
             stain="{stain}",
             suffix="points.npy",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         penalty=bids(
             root=root,
@@ -101,7 +101,7 @@ rule filter_blobs:
             level=config["registration_level"],
             desc="brain",
             suffix="penalty.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     params:
         #penalty is from 0 to 1 (0.5 at the penalty_distance)
@@ -116,7 +116,7 @@ rule filter_blobs:
             desc="filtered",
             stain="{stain}",
             suffix="points.npy",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/filter_blobs.py"
@@ -131,7 +131,7 @@ rule map_labels_to_blobs:
             desc="filtered",
             stain="{stain}",
             suffix="points.npy",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         dseg=bids(
             root=root,
@@ -141,7 +141,7 @@ rule map_labels_to_blobs:
             level=config["blobdetect"]["dseg_level"],
             from_=config["blobdetect"]["dseg_template"],
             suffix="dseg.nii.gz",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         blobs_tsv=bids(
@@ -150,7 +150,7 @@ rule map_labels_to_blobs:
             seg="{seg}",
             stain="{stain}",
             suffix="blobs.tsv",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/map_labels_to_blobs.py"
@@ -167,7 +167,7 @@ rule generate_subject_volumes_tsv:
             level=config["blobdetect"]["dseg_level"],
             from_="{template}",
             suffix="dseg.nii.gz",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         label_tsv=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
@@ -179,7 +179,7 @@ rule generate_subject_volumes_tsv:
             seg="{seg}",
             from_="{template}",
             suffix="volumes.tsv",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/generate_subject_volumes_tsv.py"
@@ -194,7 +194,7 @@ rule generate_subject_density_tsv:
             seg="{seg}",
             from_="{template}",
             suffix="volumes.tsv",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         blobs_tsv=bids(
             root=root,
@@ -202,7 +202,7 @@ rule generate_subject_density_tsv:
             seg="{seg}",
             stain="{stain}",
             suffix="blobs.tsv",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         density_tsv=bids(
@@ -212,7 +212,7 @@ rule generate_subject_density_tsv:
             from_="{template}",
             stain="{stain}",
             suffix="blobdensity.tsv",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/generate_subject_density_tsv.py"
@@ -228,7 +228,7 @@ rule map_density_tsv_dseg_to_nii:
             from_="{template}",
             stain="{stain}",
             suffix="blobdensity.tsv",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         dseg=bids(
             root=root,
@@ -238,7 +238,7 @@ rule map_density_tsv_dseg_to_nii:
             level=config["blobdetect"]["dseg_level"],
             from_="{template}",
             suffix="dseg.nii.gz",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     params:
         label_column="index",
@@ -251,7 +251,7 @@ rule map_density_tsv_dseg_to_nii:
             from_="{template}",
             stain="{stain}",
             suffix="blobdensity.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
@@ -267,7 +267,7 @@ rule map_density_tsv_dseg_to_template_nii:
             from_="{template}",
             stain="{stain}",
             suffix="blobdensity.tsv",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         dseg=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
@@ -283,7 +283,7 @@ rule map_density_tsv_dseg_to_template_nii:
             space="{template}",
             stain="{stain}",
             suffix="blobdensity.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
@@ -299,7 +299,7 @@ rule map_volume_tsv_dseg_to_template_nii:
             from_="{template}",
             stain="{stain}",
             suffix="blobdensity.tsv",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         dseg=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
@@ -315,7 +315,7 @@ rule map_volume_tsv_dseg_to_template_nii:
             space="{template}",
             stain="{stain}",
             suffix="volume.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/map_tsv_dseg_to_nii.py"

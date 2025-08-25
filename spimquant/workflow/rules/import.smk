@@ -1,5 +1,6 @@
 from lib.utils import get_storage_creds
 
+
 wildcard_constraints:
     level="[0-9]+",
     template="[a-zA-Z0-9]+",
@@ -7,7 +8,7 @@ wildcard_constraints:
 
 rule get_downsampled_nii:
     input:
-        **get_storage_creds(inputs["spim"].path,config['remote_creds']),
+        **get_storage_creds(inputs["spim"].path, config["remote_creds"]),
     params:
         in_zarr=inputs["spim"].path,
         storage_provider_settings=workflow.storage_provider_settings,  #this  may not be needed anymore ? test with new zarrnii in container..
@@ -18,20 +19,22 @@ rule get_downsampled_nii:
             stain="{stain}",
             level="{level}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     script:
         "../scripts/ome_zarr_to_nii.py"
 
+
 rule download_gubra:
     input:
-        storage('https://zenodo.org/records/14080380/files/gubra_20241111.tar')
+        storage("https://zenodo.org/records/14080380/files/gubra_20241111.tar"),
     output:
-        anat=f'{workflow.basedir}/../resources/gubra/gubra_template_olf_spacing_reslice.nii.gz',
-        dseg=f'{workflow.basedir}/../resources/gubra/gubra_ano_olf_spacing_remap_reslice.nii.gz'
+        anat=f"{workflow.basedir}/../resources/gubra/gubra_template_olf_spacing_reslice.nii.gz",
+        dseg=f"{workflow.basedir}/../resources/gubra/gubra_ano_olf_spacing_remap_reslice.nii.gz",
     shell:
         "tar -C resources -xvf {input}"
+
 
 rule import_anat:
     input:
@@ -68,13 +71,16 @@ rule import_dseg:
     shell:
         "cp {input} {output}"
 
+
 rule import_mask:
     input:
         mask=lambda wildcards: ancient(
             format(config["templates"][wildcards.template]["mask"])
         ),
     output:
-        mask=bids_tpl(root=root, template="{template}", desc='brain', suffix="mask.nii.gz"),
+        mask=bids_tpl(
+            root=root, template="{template}", desc="brain", suffix="mask.nii.gz"
+        ),
     log:
         bids_tpl(
             root="logs",
@@ -110,6 +116,7 @@ rule lut_bids_to_itksnap:
         ),
     script:
         "../scripts/lut_bids_to_itksnap.py"
+
 
 rule lateralize_atlas_dseg:
     """splits atlas label nii into left and right, adding an offset to right hemi"""
@@ -189,17 +196,16 @@ rule import_lut_csv_as_tsv:
         "../scripts/import_lut_csv_as_tsv.py"
 
 
-
 rule import_lut_itksnap_as_tsv:
     input:
         lut=lambda wildcards: ancient(
             format(
-                config["templates"][wildcards.template]["segs"][wildcards.seg]["itksnap"]
+                config["templates"][wildcards.template]["segs"][wildcards.seg][
+                    "itksnap"
+                ]
             )
         ),
     output:
         tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     script:
         "../scripts/import_lut_itksnap_as_tsv.py"
-
-

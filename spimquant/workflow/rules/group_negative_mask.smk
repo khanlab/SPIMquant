@@ -10,30 +10,31 @@ low_abeta_subjects = (
     .participant_label.to_list()
 )
 subjects_by_group = dict()
-spim_by_group=dict()
+spim_by_group = dict()
 
-for group in ['1', '2', '3', '4']:
+for group in ["1", "2", "3", "4"]:
     subjects_by_group[group] = (
         pd.read_csv("wip_mouse/participants.tsv", sep="\t")
         .query(f"group_label == {group}")
         .participant_label.to_list()
     )
     spim_by_group[group] = inputs["spim"].filter(subject=subjects_by_group[group])
-    
 
-print('first group')
-print(spim_by_group['1'])
-#print('Suspected Low Abeta Load subjects (used for generating neg mask)')
+
+print("first group")
+print(spim_by_group["1"])
+# print('Suspected Low Abeta Load subjects (used for generating neg mask)')
 low_abeta_spim = inputs["spim"].filter(subject=low_abeta_subjects)
-#print(low_abeta_spim)
+# print(low_abeta_spim)
 
-#print(bids(root=root, stain="Abeta", group="lowload", suffix="avgfieldfrac.nii"))
-
-
-#print(subjects_by_group)
+# print(bids(root=root, stain="Abeta", group="lowload", suffix="avgfieldfrac.nii"))
 
 
-#print(spim_by_group)
+# print(subjects_by_group)
+
+
+# print(spim_by_group)
+
 
 rule avg_fieldfrac_low_abeta:
     input:
@@ -46,7 +47,7 @@ rule avg_fieldfrac_low_abeta:
                 desc="{desc}",
                 space="{template}",
                 suffix="fieldfrac.nii",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             ),
             stain="Abeta",
             level=config["registration_level"],
@@ -60,9 +61,10 @@ rule avg_fieldfrac_low_abeta:
     shell:
         "c3d {input} -mean -o {output}"
 
+
 rule avg_fieldfrac_bygroup:
     input:
-         lambda wildcards: spim_by_group[wildcards.group].expand(
+        lambda wildcards: spim_by_group[wildcards.group].expand(
             bids(
                 root=root,
                 datatype="micr",
@@ -71,7 +73,7 @@ rule avg_fieldfrac_bygroup:
                 desc="{desc}",
                 space="{template}",
                 suffix="fieldfrac.nii",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             ),
             stain="Abeta",
             level=config["registration_level"],
@@ -85,9 +87,10 @@ rule avg_fieldfrac_bygroup:
     shell:
         "c3d {input} -mean -o {output}"
 
+
 rule avg_masked_fieldfrac_bygroup:
     input:
-         lambda wildcards: spim_by_group[wildcards.group].expand(
+        lambda wildcards: spim_by_group[wildcards.group].expand(
             bids(
                 root=root,
                 datatype="micr",
@@ -96,7 +99,7 @@ rule avg_masked_fieldfrac_bygroup:
                 desc="{desc}",
                 space="{template}",
                 suffix="fieldfrac.nii",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             ),
             stain="Abeta",
             level=config["registration_level"],
@@ -111,30 +114,29 @@ rule avg_masked_fieldfrac_bygroup:
         "c3d {input} -mean -o {output}"
 
 
-
 rule create_negative_mask:
     input:
         avg_low_abeta_fieldfraction="avg_lowload_Abeta_fieldfrac.nii",
     output:
-        negative_mask="negative_mask.nii"
+        negative_mask="negative_mask.nii",
     conda:
         "../envs/c3d.yaml"
     shell:
-        'c3d {input} -smooth 3x3x3vox  -threshold 2 inf 0 1 -o {output}'
-     
+        "c3d {input} -smooth 3x3x3vox  -threshold 2 inf 0 1 -o {output}"
+
 
 rule avg_roi_fieldfrac_bygroup:
     input:
-         lambda wildcards: spim_by_group[wildcards.group].expand(
-        bids(
-            root=root,
-            datatype="micr",
-            seg="{seg}",
-            space="{template}",
-            stain="{stain}",
-            suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards
-        ),
+        lambda wildcards: spim_by_group[wildcards.group].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                seg="{seg}",
+                space="{template}",
+                stain="{stain}",
+                suffix="fieldfrac.nii",
+                **inputs["spim"].wildcards,
+            ),
             stain="Abeta",
             template=config["template"],
             seg=wildcards.seg,
@@ -145,5 +147,3 @@ rule avg_roi_fieldfrac_bygroup:
         "../envs/c3d.yaml"
     shell:
         "c3d {input} -mean -o {output}"
-
-
