@@ -7,20 +7,21 @@ set_bids_spec("v0_11_0")
 
 configfile: "config/snakebids.yml"
 
+
 # use expandvars so we can use e.g. '$SLURM_TMPDIR'
 root = os.path.expandvars(config["root"])
 work = os.path.expandvars(config["work"])
 
-#set coiled remote paths if applicable, else use local
+# set coiled remote paths if applicable, else use local
 if config["use_coiled"]:
-    root_coiled = config['root_coiled']
-    work_coiled = config['work_coiled']
+    root_coiled = config["root_coiled"]
+    work_coiled = config["work_coiled"]
 else:
     root_coiled = root
     work_coiled = work
 
-if not config['register_to_mri']:
-    del config['pybids_inputs']['T2w']
+if not config["register_to_mri"]:
+    del config["pybids_inputs"]["T2w"]
 
 # Get input wildcards
 inputs = generate_inputs(
@@ -46,19 +47,16 @@ for stain in config["stains_for_reg"]:
         break
 
 if stain_for_reg == None:
-    raise ValueError("a stain for registration was not found in the first OME zarr file")
+    raise ValueError(
+        "a stain for registration was not found in the first OME zarr file"
+    )
 
 
-
-stains_for_seg = list(
-    set(config["stains_for_seg"]).intersection(set(stains))
-)
+stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
 
 
-if config['use_negative_mask']:
-    config['seg_method'].extend([ f'{method}penalty' for method in config['seg_method']])
-
-
+if config["use_negative_mask"]:
+    config["seg_method"].extend([f"{method}penalty" for method in config["seg_method"]])
 
 
 # wildcard_constraints: **get_wildcard_constraints(config["pybids_inputs"])
@@ -77,7 +75,7 @@ rule all_templatereg_deform_zooms:
                 stain="{stain}",
                 res="{res}um",
                 suffix="SPIM.nii",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             ),
             template=config["template"],
             stain=stains,
@@ -95,7 +93,7 @@ rule all_blobdensity:
                 space="{template}",
                 stain="{stain}",
                 suffix="blobdensity.nii",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
             seg=config["templates"][config["template"]]["segs"].keys(),
@@ -111,7 +109,7 @@ rule all_blobs:
                 datatype="micr",
                 stain="{stain}",
                 suffix="blobs.npy",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
         ),
@@ -127,7 +125,7 @@ rule all_templatereg_deform:
                 space="{template}",
                 stain="{stain}",
                 suffix="SPIM.nii",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             ),
             template=config["template"],
             stain=stains,
@@ -143,11 +141,10 @@ rule all_templatereg_lbl:
                 desc="resampled",
                 from_="{template}",
                 suffix="dseg.ome.zarr.zip",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             ),
             template=config["template"],
         ),
-
 
 
 rule all_fieldfrac_tune:
@@ -161,79 +158,86 @@ rule all_fieldfrac_tune:
                 desc="otsu",
                 otsu="k{k}i{i}",
                 suffix="fieldfrac.nii",
-                **inputs["spim"].wildcards
-        ),
+                **inputs["spim"].wildcards,
+            ),
             stain=stains_for_seg,
-            dslevel=config['registration_level'],
-            k=4,i=range(4))
-
+            dslevel=config["registration_level"],
+            k=4,
+            i=range(4),
+        ),
 
 
 rule all_segment:
     input:
         inputs["spim"].expand(
             bids(
-            root=root,
-            datatype="micr",
-            seg="{seg}",
-            space="{template}",
-            stain="{stain}",
-            desc="{desc}",
-            suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards
-        ),
+                root=root,
+                datatype="micr",
+                seg="{seg}",
+                space="{template}",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="fieldfrac.nii",
+                **inputs["spim"].wildcards,
+            ),
             stain=stains_for_seg,
             seg=config["templates"][config["template"]]["segs"].keys(),
-            desc=config['seg_method'],
-            template=config["template"]),
+            desc=config["seg_method"],
+            template=config["template"],
+        ),
         inputs["spim"].expand(
             bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            space="{template}",
-            suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                space="{template}",
+                suffix="SPIM.nii",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg + [stain_for_reg],
+            level=config["registration_level"],
+            template=config["template"],
         ),
-            stain=stains_for_seg+[stain_for_reg], 
-            level=config['registration_level'],
-            template=config["template"]),
         inputs["spim"].expand(
             bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            dslevel="{level}",
-            desc="{desc}",
-            space="{template}",
-            suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards
-        ),
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{level}",
+                desc="{desc}",
+                space="{template}",
+                suffix="fieldfrac.nii",
+                **inputs["spim"].wildcards,
+            ),
             stain=stains_for_seg,
-            level=config['registration_level'],
-            desc=config['seg_method'],
-            template=config["template"]),
+            level=config["registration_level"],
+            desc=config["seg_method"],
+            template=config["template"],
+        ),
+
 
 rule all_mri_reg:
     input:
         inputs["spim"].expand(
             bids(
-            root=root,
-            datatype="anat",
-            space="{template}",
-            desc="N4",
-            suffix="T2w.nii.gz",
-            **inputs["spim"].wildcards
+                root=root,
+                datatype="anat",
+                space="{template}",
+                desc="N4",
+                suffix="T2w.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["registration_level"],
+            template=config["template"],
         ),
-            level=config['registration_level'],
-            template=config["template"]),
+
 
 rule all:
     default_target: True
     input:
         rules.all_segment.input,
-        rules.all_mri_reg.input if config['register_to_mri'] else []
+        rules.all_mri_reg.input if config["register_to_mri"] else [],
 
 
 include: "rules/common.smk"
@@ -243,5 +247,7 @@ include: "rules/templatereg.smk"
 include: "rules/blobdetect.smk"
 include: "rules/segmentation.smk"
 
-if config['register_to_mri']:
+
+if config["register_to_mri"]:
+
     include: "rules/preproc_mri.smk"

@@ -1,18 +1,17 @@
 
 rule antspyx_n4:
     input:
+        **get_storage_creds(inputs["spim"].path, config["remote_creds"]),
         spim=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
-        **get_storage_creds(inputs["spim"].path,config['remote_creds']),
     params:
-        n4_opts={'spline_param': (2,2,2),
-                 'shrink_factor': 1},
+        n4_opts={"spline_param": (2, 2, 2), "shrink_factor": 1},
     output:
         n4_bf_ds=bids(
             root=work,
@@ -20,9 +19,10 @@ rule antspyx_n4:
             stain="{stain}",
             level="{level}",
             suffix="n4biasfield.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
-    shadow: 'minimal'
+    shadow:
+        "minimal"
     threads: 8
     resources:
         mem_mb=16000,
@@ -38,7 +38,7 @@ rule dask_n4:
             stain="{stain}",
             level="{dslevel}",
             suffix="n4biasfield.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     params:
         spim_uri=inputs["spim"].path,
@@ -48,7 +48,7 @@ rule dask_n4:
             stain="{stain}",
             level="{dslevel}",
             suffix="n4biasfield.ome.zarr",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         bf_us_uri=bids(
             root=work_coiled,
@@ -57,7 +57,7 @@ rule dask_n4:
             dslevel="{dslevel}",
             level="{level}",
             suffix="n4biasfield.ome.zarr",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         spim_n4_uri=bids(
             root=root_coiled,
@@ -67,7 +67,7 @@ rule dask_n4:
             level="{level}",
             desc="n4corr",
             suffix="SPIM.ome.zarr",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         touch(
@@ -79,7 +79,7 @@ rule dask_n4:
                 level="{level}",
                 desc="n4corr",
                 suffix="SPIM.DONE",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             )
         ),
     threads: 1 if config["use_coiled"] else 32
@@ -97,7 +97,7 @@ rule downsampled_apply_n4_mask:
             stain="{stain}",
             level="{level}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         n4_bf_ds=bids(
             root=work,
@@ -105,7 +105,7 @@ rule downsampled_apply_n4_mask:
             stain="{stain}",
             level="{level}",
             suffix="n4biasfield.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         mask=bids(
             root=root,
@@ -114,7 +114,7 @@ rule downsampled_apply_n4_mask:
             level=config["registration_level"],
             desc="brain",
             suffix="mask.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         masked=bids(
@@ -124,7 +124,7 @@ rule downsampled_apply_n4_mask:
             level="{level}",
             desc="n4corrmasked",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     conda:
         "../envs/c3d.yaml"
@@ -146,7 +146,7 @@ rule dask_histogram:
             level="{level}",
             desc="n4corr",
             suffix="SPIM.ome.zarr",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         histogram_uri=bids(
             root=root_coiled,
@@ -156,7 +156,7 @@ rule dask_histogram:
             dslevel="{dslevel}",
             desc="n4corr",
             suffix="histogram.zarr",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         histogram=touch(
@@ -168,7 +168,7 @@ rule dask_histogram:
                 dslevel="{dslevel}",
                 desc="n4corr",
                 suffix="histogram.DONE",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             )
         ),
     threads: 1 if config["use_coiled"] else 32
@@ -181,7 +181,7 @@ rule dask_histogram:
 # calc thresholds using downsampled, masked image
 rule calc_otsu_thresholds:
     input:
-        rules.dask_histogram.output
+        rules.dask_histogram.output,
     params:
         histogram_uri=bids(
             root=root_coiled,
@@ -191,10 +191,10 @@ rule calc_otsu_thresholds:
             dslevel="{dslevel}",
             desc="n4corr",
             suffix="histogram.zarr",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
-#        otsu_n_classes=3,
-        otsu_max_k=4
+        otsu_max_k=4,
+    #        otsu_n_classes=3,
     output:
         otsu_thresholds=bids(
             root=work,
@@ -204,7 +204,7 @@ rule calc_otsu_thresholds:
             dslevel="{dslevel}",
             desc="n4corrmasked",
             suffix="thresholds.json",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/calc_otsu_thresholds.py"
@@ -221,7 +221,7 @@ rule dask_otsu:
             dslevel="{dslevel}",
             desc="n4corrmasked",
             suffix="thresholds.json",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     params:
         otsu_k=lambda wildcards: int(wildcards.k),
@@ -234,7 +234,7 @@ rule dask_otsu:
             level="{level}",
             desc="n4corr",
             suffix="SPIM.ome.zarr",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         mask_uri=bids(
             root=root_coiled,
@@ -245,7 +245,7 @@ rule dask_otsu:
             desc="otsu",
             otsu="k{k}i{i}",
             suffix="mask.ome.zarr",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         touch(
@@ -258,7 +258,7 @@ rule dask_otsu:
                 desc="otsu",
                 otsu="k{k}i{i}",
                 suffix="mask.DONE",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             )
         ),
     threads: 1 if config["use_coiled"] else 32
@@ -267,11 +267,12 @@ rule dask_otsu:
     script:
         "../scripts/dask_otsu.py"
 
+
 rule dask_threshold:
     input:
         n4=rules.dask_n4.output,
     params:
-        threshold = config['seg_threshold'],
+        threshold=config["seg_threshold"],
         spim_n4_uri=bids(
             root=root_coiled,
             datatype="micr",
@@ -280,7 +281,7 @@ rule dask_threshold:
             level="{level}",
             desc="n4corr",
             suffix="SPIM.ome.zarr",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         mask_uri=bids(
             root=root_coiled,
@@ -290,7 +291,7 @@ rule dask_threshold:
             level="{level}",
             desc="threshold",
             suffix="mask.ome.zarr",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         touch(
@@ -302,7 +303,7 @@ rule dask_threshold:
                 level="{level}",
                 desc="threshold",
                 suffix="mask.DONE",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             )
         ),
     threads: 1 if config["use_coiled"] else 32
@@ -323,7 +324,7 @@ rule dask_fieldfrac:
             level=config["segmentation_level"],
             desc="{seg_method}",
             suffix="mask.DONE",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     params:
         mask_uri=bids(
@@ -334,7 +335,7 @@ rule dask_fieldfrac:
             level=config["segmentation_level"],
             desc="{seg_method}",
             suffix="mask.ome.zarr",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         fieldfrac_nii=bids(
@@ -344,7 +345,7 @@ rule dask_fieldfrac:
             dslevel="{dslevel}",
             desc="{seg_method}",
             suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 1 if config["use_coiled"] else 32
     resources:
@@ -361,7 +362,7 @@ rule deform_negative_mask_to_subject_nii:
             stain=stain_for_reg,
             level="{level}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         mask=config["template_negative_mask"],
         xfm_ras=rules.init_affine_reg.output.xfm_ras,
@@ -374,7 +375,7 @@ rule deform_negative_mask_to_subject_nii:
             level="{level}",
             from_="{template}",
             suffix="mask.nii.gz",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     shell:
@@ -394,7 +395,7 @@ rule apply_boundary_penalty:
             dslevel="{dslevel}",
             desc="{seg_method}",
             suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         mask1=bids(
             root=root,
@@ -403,7 +404,7 @@ rule apply_boundary_penalty:
             level="{dslevel}",
             from_=config["template"],
             suffix="mask.nii.gz",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         mask2=bids(
             root=root,
@@ -412,7 +413,7 @@ rule apply_boundary_penalty:
             desc="brain",
             level="{dslevel}",
             suffix="penalty.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         fieldfrac_mod=bids(
@@ -422,7 +423,7 @@ rule apply_boundary_penalty:
             dslevel="{dslevel}",
             desc="{seg_method}penalty",
             suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     conda:
         "../envs/c3d.yaml"
@@ -444,7 +445,7 @@ rule map_fieldfrac_to_atlas_rois:
             dslevel="{dslevel}",
             desc="{desc}",
             suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         dseg=bids(
             root=root,
@@ -454,7 +455,7 @@ rule map_fieldfrac_to_atlas_rois:
             level="{dslevel}",
             from_="{template}",
             suffix="dseg.nii.gz",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         label_tsv=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
@@ -469,7 +470,7 @@ rule map_fieldfrac_to_atlas_rois:
             dslevel="{dslevel}",
             desc="{desc}",
             suffix="segstats.tsv",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/map_img_to_roi_tsv.py"
@@ -487,7 +488,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
             dslevel=config["registration_level"],
             desc="{desc}",
             suffix="segstats.tsv",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         dseg=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
@@ -504,7 +505,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
             stain="{stain}",
             desc="{desc}",
             suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
@@ -522,7 +523,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             dslevel="{dslevel}",
             desc="{desc}",
             suffix="segstats.tsv",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         dseg=bids(
             root=root,
@@ -532,7 +533,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             level="{dslevel}",
             from_="{template}",
             suffix="dseg.nii.gz",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     params:
         label_column="index",
@@ -547,7 +548,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             stain="{stain}",
             desc="{desc}",
             suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
@@ -562,7 +563,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             dslevel="{dslevel}",
             desc="{desc}",
             suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         ref=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
         xfm_itk=bids(
@@ -573,7 +574,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             type_="itk",
             desc="affine",
             suffix="xfm.txt",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         warp=bids(
             root=root,
@@ -581,7 +582,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             from_="subject",
             to="{template}",
             suffix="warp.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         nii=bids(
@@ -592,7 +593,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             desc="{desc}",
             space="{template}",
             suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     conda:

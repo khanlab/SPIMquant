@@ -39,11 +39,11 @@ workflow is the recommended tool to produce a BIDS dataset from your raw or mini
 
  1. Perform a dry run:
     ```bash
-    spimquant /path/to/bids/dir /path/to/output/dir participant -np --use-apptainer
+    spimquant /path/to/bids/dir /path/to/output/dir participant -np --use-conda
     ```
  2. Run the app using all cores:
     ```bash
-    spimquant /path/to/bids/dir /path/to/output/dir participant --cores all --use-apptainer
+    spimquant /path/to/bids/dir /path/to/output/dir participant --cores all --use-conda
     ```
 
 If your input BIDS dataset stores data in zarr zipstores (e.g. SPIM files ending in `*_SPIM.ome.zarr.zip`), then you should use the following option:

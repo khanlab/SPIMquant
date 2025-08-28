@@ -6,7 +6,7 @@ rule pre_atropos:
             stain="{stain}",
             level="{level}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     params:
         downsampling=config["masking"]["pre_atropos_downsampling"],
@@ -19,7 +19,7 @@ rule pre_atropos:
                 level="{level}",
                 desc="preAtropos",
                 suffix="SPIM.nii",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             )
         ),
         mask=temp(
@@ -30,7 +30,7 @@ rule pre_atropos:
                 level="{level}",
                 desc="preAtropos",
                 suffix="mask.nii",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             )
         ),
     conda:
@@ -56,7 +56,7 @@ rule atropos_seg:
                 desc="dsAtropos",
                 k="{k}",
                 suffix="dseg.nii",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             )
         ),
         posteriors_dir=directory(
@@ -68,7 +68,7 @@ rule atropos_seg:
                 desc="Atropos",
                 k="{k}",
                 suffix="posteriors",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             )
         ),
     conda:
@@ -95,7 +95,7 @@ rule post_atropos:
             stain="{stain}",
             level="{level}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         dseg=rules.atropos_seg.output.dseg,
     output:
@@ -107,7 +107,7 @@ rule post_atropos:
             desc="Atropos",
             k="{k}",
             suffix="dseg.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     conda:
         "../envs/c3d.yaml"
@@ -125,7 +125,7 @@ rule init_affine_reg:
             stain=stain_for_reg,
             level=config["registration_level"],
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         xfm_ras=bids(
@@ -136,7 +136,7 @@ rule init_affine_reg:
             type_="ras",
             desc="initaffine",
             suffix="xfm.txt",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         warped=bids(
             root=root,
@@ -144,7 +144,7 @@ rule init_affine_reg:
             space="{template}",
             desc="initaffinewarped",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     log:
         bids(
@@ -152,7 +152,7 @@ rule init_affine_reg:
             datatype="init_affine_reg",
             space="{template}",
             suffix="log.txt",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     shell:
@@ -171,7 +171,7 @@ rule affine_transform_template_dseg_to_subject:
             stain=stain_for_reg,
             level=config["registration_level"],
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         dseg=rules.import_dseg.output.dseg,
         xfm_ras=rules.init_affine_reg.output.xfm_ras,
@@ -182,7 +182,7 @@ rule affine_transform_template_dseg_to_subject:
             desc="initaffine",
             from_="{template}",
             suffix="dseg.nii.gz",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     shell:
@@ -202,7 +202,7 @@ rule create_mask_from_gmm_and_prior:
             desc="Atropos",
             k=config["masking"]["gmm_k"],
             suffix="dseg.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         atlas_dseg=bids(
             root=root,
@@ -210,7 +210,7 @@ rule create_mask_from_gmm_and_prior:
             desc="initaffine",
             from_=config["template"],
             suffix="dseg.nii.gz",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     params:
         k=config["masking"]["gmm_k"],
@@ -222,7 +222,7 @@ rule create_mask_from_gmm_and_prior:
             level="{level}",
             desc="brain",
             suffix="mask.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/create_mask_from_gmm_and_prior.py"
@@ -238,7 +238,7 @@ rule create_mask_from_gmm:
             desc="Atropos",
             k=config["masking"]["gmm_k"],
             suffix="dseg.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     params:
         bg_label=config["masking"]["gmm_bg_class"],
@@ -250,7 +250,7 @@ rule create_mask_from_gmm:
             level="{level}",
             desc="brain1class",
             suffix="mask.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     conda:
         "../envs/c3d.yaml"

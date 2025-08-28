@@ -14,7 +14,7 @@ requires = ["hatchling"]
 channels = ["conda-forge", "bioconda"]
 platforms = ["linux-64"]
 
-[tool.pixi.dependencies]
+[tool.pixi.feature.runtime.dependencies]
 snakemake = ">=9.5.1,<10"
 snakebids = ">=0.14.0,<0.15"
 snakemake-storage-plugin-s3 = ">=0.3.3,<0.4"
@@ -30,11 +30,29 @@ snakemake-storage-plugin-fs = ">=1.1.2,<2"
 snakemake-storage-plugin-http = ">=0.3.0,<0.4.0"
 greedyreg = "==0.0.20250712"
 antspyx = "==0.6.1"
-
+markdown-it-py = "<4"
+docutils = "<0.22"
 
 [tool.pixi.pypi-dependencies]
 spimquant = { path = ".", editable = true }
 ngff-zarr = { version = ">=0.13.2, <0.14", extras = ["all"] }
 zarrnii = ">=0.3.0a1,<0.4.0" 
 
+[tool.pixi.feature.dev.dependencies]
+black   = ">=24.0.0, <25.0.0"
+isort   = ">=5.10.1, <6.0.0"
+snakefmt = ">=0.10.0, <0.11.0"
+pytest  = "*"
+
+[tool.pixi.environments.default]
+features = ["runtime"]
+
+[tool.pixi.environments.dev]
+features = ["runtime", "dev"]
+
+[tool.pixi.environments.dev-only]
+features = ["dev"]
+
 [tool.pixi.tasks]
+quality_check = "isort --profile black spimquant/*.py -c && black spimquant --check && snakefmt spimquant --check"
+quality_fix = "isort --profile black spimquant/*.py && black spimquant  && snakefmt spimquant"

@@ -1,0 +1,47 @@
+---
+name: Lint and test workflow
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.base_ref }}
+
+      - name: Setup Python environment
+        uses: prefix-dev/setup-pixi@v0.8.14
+        with:
+          environments: >-
+            dev-only
+          activate-environment: dev-only
+
+      - name: isort
+        run: isort spimquant/*.py -c --profile black
+
+      - name: Black
+        run: black spimquant --check
+
+      - name: snakefmt
+        run: snakefmt spimquant --check
+
+  test:
+    runs-on: ubuntu-latest
+    needs: ["quality"]
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Pixi environment
+        uses: prefix-dev/setup-pixi@v0.8.14
+        with:
+          activate-environment: true
+      
+      - name: Test
+        run: |
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/data test_out participant -np

@@ -12,17 +12,19 @@ from typing import List, Union, Callable
 from . import chunkops
 
 
-def segment_overlapped_input(img: da.Array, seg_fn: Callable,
-                             ndim: int = 2,
-                             returns_classes: bool = False,
-                             segmentation_fn_kwargs: Union[dict, None] = None,
-                             ) -> da.Array:
+def segment_overlapped_input(
+    img: da.Array,
+    seg_fn: Callable,
+    ndim: int = 2,
+    returns_classes: bool = False,
+    segmentation_fn_kwargs: Union[dict, None] = None,
+) -> da.Array:
 
     if segmentation_fn_kwargs is None:
         segmentation_fn_kwargs = {}
 
     if returns_classes:
-        labeled_chunks = [(2, )]
+        labeled_chunks = [(2,)]
     else:
         labeled_chunks = []
 
@@ -35,16 +37,18 @@ def segment_overlapped_input(img: da.Array, seg_fn: Callable,
         chunks=tuple(labeled_chunks),
         drop_axis=tuple(range(img.ndim - ndim)),
         dtype=np.int32,
-        meta=np.empty((0, 0), dtype=np.int32)
+        meta=np.empty((0, 0), dtype=np.int32),
     )
 
     return labeled
 
 
-def remove_overlapped_labels(labels: da.Array, overlaps: List[int],
-                             threshold: float = 0.5,
-                             ndim: int = 2,
-                             ) -> da.Array:
+def remove_overlapped_labels(
+    labels: da.Array,
+    overlaps: List[int],
+    threshold: float = 0.5,
+    ndim: int = 2,
+) -> da.Array:
     classes = None
     if labels.ndim > ndim:
         labels_chunks = labels.chunks
@@ -58,7 +62,7 @@ def remove_overlapped_labels(labels: da.Array, overlaps: List[int],
         threshold=threshold,
         ndim=ndim,
         dtype=np.int32,
-        meta=np.empty((0, ), dtype=np.int64)
+        meta=np.empty((0,), dtype=np.int64),
     )
 
     if classes is not None:
@@ -70,10 +74,12 @@ def remove_overlapped_labels(labels: da.Array, overlaps: List[int],
     return removed
 
 
-def merge_overlapped_tiles(labels: da.Array, overlaps: List[int],
-                           ndim: int = 2) -> da.Array:
-    merged_depth = tuple([0] * (labels.ndim - ndim)
-                         + [(overlap, overlap) for overlap in overlaps])
+def merge_overlapped_tiles(
+    labels: da.Array, overlaps: List[int], ndim: int = 2
+) -> da.Array:
+    merged_depth = tuple(
+        [0] * (labels.ndim - ndim) + [(overlap, overlap) for overlap in overlaps]
+    )
 
     # Merge the overlapped objects from adjacent chunks for all chunk tiles.
     merged = da.map_overlap(
@@ -85,7 +91,7 @@ def merge_overlapped_tiles(labels: da.Array, overlaps: List[int],
         boundary=None,
         trim=False,
         dtype=np.int64,
-        meta=np.empty((0, 0), dtype=np.int64)
+        meta=np.empty((0, 0), dtype=np.int64),
     )
 
     merged = da.overlap.trim_overlap(merged, merged_depth, boundary=None)
@@ -93,13 +99,14 @@ def merge_overlapped_tiles(labels: da.Array, overlaps: List[int],
     return merged
 
 
-def annotate_labeled_tiles(labels: da.Array, overlaps: List[int],
-                           object_classes: Union[dict, None] = None,
-                           ndim: int = 2) -> Union[da.Array, pathlib.Path]:
+def annotate_labeled_tiles(
+    labels: da.Array,
+    overlaps: List[int],
+    object_classes: Union[dict, None] = None,
+    ndim: int = 2,
+) -> Union[da.Array, pathlib.Path]:
     if object_classes is None:
-        object_classes = {
-            0: "cell"
-        }
+        object_classes = {0: "cell"}
 
     labels_annotations = da.map_blocks(
         chunkops.annotate_object_fetures,
@@ -110,15 +117,15 @@ def annotate_labeled_tiles(labels: da.Array, overlaps: List[int],
         drop_axis=tuple(range(labels.ndim - ndim)),
         chunks=(1, 1),
         dtype=object,
-        meta=np.empty((0, 0), dtype=object)
+        meta=np.empty((0, 0), dtype=object),
     )
 
     return labels_annotations
 
 
-def zip_annotated_labeled_tiles(labels: da.Array,
-                                out_dir: Union[str, pathlib.Path, None] = None
-                                ) -> pathlib.Path:
+def zip_annotated_labeled_tiles(
+    labels: da.Array, out_dir: Union[str, pathlib.Path, None] = None
+) -> pathlib.Path:
     if out_dir is None:
         out_dir = "./annotations_output-"
         out_dir += datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -137,18 +144,20 @@ def zip_annotated_labeled_tiles(labels: da.Array,
         out_dir=out_dir,
         chunks=(1, 1),
         dtype=object,
-        meta=np.empty((0, 0), dtype=object)
+        meta=np.empty((0, 0), dtype=object),
     )
 
     geojson_filenames = geojson_filenames.compute()
 
     out_zip_filename = pathlib.Path(str(out_dir) + ".zip")
-    with zipfile.ZipFile(out_zip_filename, "w", zipfile.ZIP_DEFLATED,
-                         compresslevel=9) as out_zip:
+    with zipfile.ZipFile(
+        out_zip_filename, "w", zipfile.ZIP_DEFLATED, compresslevel=9
+    ) as out_zip:
         for chunk_filename in geojson_filenames.flatten().tolist():
             if chunk_filename:
-                out_zip.write(chunk_filename,
-                              arcname=chunk_filename.relative_to(out_dir))
+                out_zip.write(
+                    chunk_filename, arcname=chunk_filename.relative_to(out_dir)
+                )
 
     if safe_to_remove and os.path.isdir(out_dir):
         shutil.rmtree(out_dir)
@@ -156,18 +165,16 @@ def zip_annotated_labeled_tiles(labels: da.Array,
     return out_zip_filename
 
 
-def prepare_input(img: da.Array, overlaps: List[int], ndim: int = 2
-                  ) -> da.Array:
+def prepare_input(img: da.Array, overlaps: List[int], ndim: int = 2) -> da.Array:
     # Prepare input for overlap.
     padding = [(0, 0)] * (img.ndim - ndim)
-    padding += [(0, (cs - dim) % cs)
-                for dim, cs in zip(img.shape[-ndim:], img.chunksize[-ndim:])]
+    padding += [
+        (0, (cs - dim) % cs)
+        for dim, cs in zip(img.shape[-ndim:], img.chunksize[-ndim:])
+    ]
 
     if any(map(any, padding)):
-        img_padded = da.pad(
-            img,
-            padding
-        )
+        img_padded = da.pad(img, padding)
 
         img_rechunked = da.rechunk(img_padded, img.chunksize)
 
@@ -176,20 +183,24 @@ def prepare_input(img: da.Array, overlaps: List[int], ndim: int = 2
 
     img_overlapped = da.overlap.overlap(
         img_rechunked,
-        depth=tuple([(0, 0)] * (img.ndim - ndim)
-                    + [(overlap, overlap) for overlap in overlaps]),
+        depth=tuple(
+            [(0, 0)] * (img.ndim - ndim) + [(overlap, overlap) for overlap in overlaps]
+        ),
         boundary=None,
     )
 
     return img_overlapped
 
 
-def image2labels(img: da.Array, seg_fn: Callable,
-                 overlaps: Union[int, List[int]] = 50,
-                 threshold: float = 0.05,
-                 ndim: int = 2,
-                 returns_classes: bool = False,
-                 segmentation_fn_kwargs: Union[dict, None] = None) -> da.Array:
+def image2labels(
+    img: da.Array,
+    seg_fn: Callable,
+    overlaps: Union[int, List[int]] = 50,
+    threshold: float = 0.05,
+    ndim: int = 2,
+    returns_classes: bool = False,
+    segmentation_fn_kwargs: Union[dict, None] = None,
+) -> da.Array:
     if isinstance(overlaps, int):
         overlaps = [overlaps] * ndim
 
@@ -200,30 +211,26 @@ def image2labels(img: da.Array, seg_fn: Callable,
         seg_fn=seg_fn,
         ndim=ndim,
         returns_classes=returns_classes,
-        segmentation_fn_kwargs=segmentation_fn_kwargs
+        segmentation_fn_kwargs=segmentation_fn_kwargs,
     )
 
     labels = remove_overlapped_labels(
-        labels,
-        overlaps=overlaps,
-        threshold=threshold,
-        ndim=ndim
+        labels, overlaps=overlaps, threshold=threshold, ndim=ndim
     )
 
-    labels = merge_overlapped_tiles(
-        labels,
-        overlaps=overlaps,
-        ndim=ndim
-    )
+    labels = merge_overlapped_tiles(labels, overlaps=overlaps, ndim=ndim)
 
     return labels
 
 
-def labels2geojson(labels: da.Array, overlaps: Union[int, List[int]] = 50,
-                   threshold: float = 0.5,
-                   ndim: int = 2,
-                   object_classes: Union[dict, None] = None,
-                   pre_overlapped: bool = False) -> None:
+def labels2geojson(
+    labels: da.Array,
+    overlaps: Union[int, List[int]] = 50,
+    threshold: float = 0.5,
+    ndim: int = 2,
+    object_classes: Union[dict, None] = None,
+    pre_overlapped: bool = False,
+) -> None:
 
     if isinstance(overlaps, int):
         overlaps = [overlaps] * ndim
@@ -232,34 +239,32 @@ def labels2geojson(labels: da.Array, overlaps: Union[int, List[int]] = 50,
         labels = prepare_input(labels, overlaps=overlaps, ndim=ndim)
 
     labels = remove_overlapped_labels(
-        labels,
-        overlaps=overlaps,
-        threshold=threshold,
-        ndim=ndim
+        labels, overlaps=overlaps, threshold=threshold, ndim=ndim
     )
 
     if object_classes is None:
-        classes_ids = range(labels.shape[:(labels.ndim - ndim)][0]
-                            if labels.ndim - ndim > 0 else 1)
+        classes_ids = range(
+            labels.shape[: (labels.ndim - ndim)][0] if labels.ndim - ndim > 0 else 1
+        )
         object_classes = {class_id: "cell" for class_id in classes_ids}
 
     labels = annotate_labeled_tiles(
-        labels,
-        overlaps=overlaps,
-        object_classes=object_classes,
-        ndim=ndim
+        labels, overlaps=overlaps, object_classes=object_classes, ndim=ndim
     )
 
     return labels
 
 
-def image2geojson(img: da.Array, seg_fn: Callable,
-                  overlaps: Union[int, List[int]] = 50,
-                  threshold: float = 0.5,
-                  ndim: int = 2,
-                  returns_classes: bool = False,
-                  object_classes: Union[dict, None] = None,
-                  segmentation_fn_kwargs: Union[dict, None] = None) -> None:
+def image2geojson(
+    img: da.Array,
+    seg_fn: Callable,
+    overlaps: Union[int, List[int]] = 50,
+    threshold: float = 0.5,
+    ndim: int = 2,
+    returns_classes: bool = False,
+    object_classes: Union[dict, None] = None,
+    segmentation_fn_kwargs: Union[dict, None] = None,
+) -> None:
 
     if isinstance(overlaps, int):
         overlaps = [overlaps] * ndim
@@ -271,7 +276,7 @@ def image2geojson(img: da.Array, seg_fn: Callable,
         seg_fn=seg_fn,
         ndim=ndim,
         returns_classes=returns_classes,
-        segmentation_fn_kwargs=segmentation_fn_kwargs
+        segmentation_fn_kwargs=segmentation_fn_kwargs,
     )
 
     labels = labels2geojson(
@@ -280,7 +285,7 @@ def image2geojson(img: da.Array, seg_fn: Callable,
         threshold=threshold,
         ndim=ndim,
         object_classes=object_classes,
-        pre_overlapped=True
+        pre_overlapped=True,
     )
 
     return labels
@@ -312,12 +317,11 @@ def sort_label_indices(labels: da.Array, ndim: int = 2) -> da.Array:
         labels,
         unique_labels=unique_labels,
         dtype=labels.dtype,
-        meta=np.empty((0, ), dtype=labels.dtype)
+        meta=np.empty((0,), dtype=labels.dtype),
     )
 
     if classes is not None:
-        sorted_labels = da.concatenate((sorted_labels[None, ...],
-                                        classes), axis=0)
+        sorted_labels = da.concatenate((sorted_labels[None, ...], classes), axis=0)
         sorted_labels = sorted_labels.rechunk(labels_chunks)
 
     return sorted_labels

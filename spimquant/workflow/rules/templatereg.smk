@@ -7,7 +7,7 @@ rule n4:
             stain="{stain}",
             level="{level}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         mask=bids(
             root=root,
@@ -16,7 +16,7 @@ rule n4:
             level="{level}",
             desc="brain",
             suffix="mask.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         corrected=bids(
@@ -26,7 +26,7 @@ rule n4:
             level="{level}",
             desc="N4",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         biasfield=bids(
             root=root,
@@ -35,7 +35,7 @@ rule n4:
             level="{level}",
             desc="N4",
             suffix="biasfield.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     conda:
         "../envs/ants.yaml"
@@ -55,7 +55,7 @@ rule apply_mask_to_corrected:
             level="{level}",
             desc="N4",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         mask=bids(
             root=root,
@@ -64,7 +64,7 @@ rule apply_mask_to_corrected:
             level="{level}",
             desc="brain",
             suffix="mask.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         masked=bids(
@@ -74,7 +74,7 @@ rule apply_mask_to_corrected:
             level="{level}",
             desc="N4brain",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     conda:
         "../envs/c3d.yaml"
@@ -92,7 +92,7 @@ rule affine_reg:
             level=config["registration_level"],
             desc=config["templatereg"]["desc"],
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         xfm_ras=bids(
@@ -103,7 +103,7 @@ rule affine_reg:
             type_="ras",
             desc="affine",
             suffix="xfm.txt",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         warped=bids(
             root=root,
@@ -112,7 +112,7 @@ rule affine_reg:
             stain=stain_for_reg,
             desc="affinewarped",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     log:
         bids(
@@ -120,7 +120,7 @@ rule affine_reg:
             datatype="affine_reg",
             space="{template}",
             suffix="log.txt",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     shell:
@@ -141,7 +141,7 @@ rule convert_ras_to_itk:
             type_="ras",
             desc="affine",
             suffix="xfm.txt",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         xfm_itk=bids(
@@ -152,7 +152,7 @@ rule convert_ras_to_itk:
             type_="itk",
             desc="affine",
             suffix="xfm.txt",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     conda:
         "../envs/c3d.yaml"
@@ -170,7 +170,7 @@ rule deform_reg:
             level=config["registration_level"],
             desc=config["templatereg"]["desc"],
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         xfm_ras=rules.affine_reg.output.xfm_ras,
     params:
@@ -185,7 +185,7 @@ rule deform_reg:
             from_="subject",
             to="{template}",
             suffix="warp.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         invwarp=bids(
             root=root,
@@ -193,7 +193,7 @@ rule deform_reg:
             from_="{template}",
             to="subject",
             suffix="warp.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         warped=bids(
             root=root,
@@ -202,7 +202,7 @@ rule deform_reg:
             stain=stain_for_reg,
             desc="deformwarped",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     log:
         bids(
@@ -210,7 +210,7 @@ rule deform_reg:
             datatype="deform_reg",
             space="{template}",
             suffix="log.txt",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     resources:
@@ -248,7 +248,7 @@ rule resample_labels_to_zarr:
                     desc="resampled",
                     from_="{template}",
                     suffix="dseg.ome.zarr",
-                    **inputs["spim"].wildcards
+                    **inputs["spim"].wildcards,
                 )
             )
         ),
@@ -259,7 +259,7 @@ rule resample_labels_to_zarr:
             datatype="resample_labels_to_zarr",
             space="{template}",
             suffix="log.txt",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/resample_labels_to_zarr.py"
@@ -280,7 +280,7 @@ rule affine_zarr_to_template_nii:
             space="{template}",
             stain="{stain}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     script:
@@ -303,7 +303,7 @@ rule affine_zarr_to_template_ome_zarr:
                 space="{template}",
                 stain="{stain}",
                 suffix="spim.ome.zarr",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             )
         ),
     threads: 32
@@ -330,7 +330,7 @@ rule deform_zarr_to_template_nii:
             space="{template}",
             stain="{stain}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     script:
@@ -339,10 +339,10 @@ rule deform_zarr_to_template_nii:
 
 rule deform_to_template_nii_zoomed:
     input:
+        **get_storage_creds(inputs["spim"].path, config["remote_creds"]),
         xfm_ras=rules.affine_reg.output.xfm_ras,
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
-        **get_storage_creds(inputs["spim"].path, config['remote_creds']),
     params:
         ome_zarr=inputs["spim"].path,
         flo_opts={},  #any additional flo znimg options
@@ -365,10 +365,10 @@ rule deform_to_template_nii_zoomed:
             stain="{stain}",
             res="{res}um",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
-    resources: 
-        mem_mb=15000
+    resources:
+        mem_mb=15000,
     threads: 4
     script:
         "../scripts/deform_to_template_nii.py"
@@ -382,7 +382,7 @@ rule deform_spim_nii_to_template_nii:
             stain="{stain}",
             level="{level}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         ref=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
         xfm_itk=bids(
@@ -393,7 +393,7 @@ rule deform_spim_nii_to_template_nii:
             type_="itk",
             desc="affine",
             suffix="xfm.txt",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         warp=bids(
             root=root,
@@ -401,7 +401,7 @@ rule deform_spim_nii_to_template_nii:
             from_="subject",
             to="{template}",
             suffix="warp.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         spim=bids(
@@ -411,7 +411,7 @@ rule deform_spim_nii_to_template_nii:
             level="{level}",
             space="{template}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     conda:
@@ -432,7 +432,7 @@ rule deform_template_dseg_to_subject_nii:
             stain=stain_for_reg,
             level="{level}",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
         dseg=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
@@ -448,7 +448,7 @@ rule deform_template_dseg_to_subject_nii:
             level="{level}",
             from_="{template}",
             suffix="dseg.nii.gz",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     shell:
@@ -475,7 +475,7 @@ rule deform_transform_labels_to_subj:
                 desc="deform",
                 space="subject",
                 suffix="dseg.zarr",
-                **inputs["spim"].wildcards
+                **inputs["spim"].wildcards,
             )
         ),
     threads: 32
@@ -494,7 +494,7 @@ rule transform_labels_to_zoomed_template:
             stain=stain_for_reg,
             res="{res}um",
             suffix="SPIM.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     output:
         dseg=bids(
@@ -503,7 +503,7 @@ rule transform_labels_to_zoomed_template:
             space="{template}",
             res="{res}um",
             suffix="dseg.nii",
-            **inputs["spim"].wildcards
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     conda:
