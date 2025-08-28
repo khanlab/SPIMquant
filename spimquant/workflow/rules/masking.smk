@@ -59,16 +59,18 @@ rule atropos_seg:
                 **inputs["spim"].wildcards,
             )
         ),
-        posteriors_dir=directory(
-            bids(
-                root=root,
-                datatype="micr",
-                stain="{stain}",
-                level="{level}",
-                desc="Atropos",
-                k="{k}",
-                suffix="posteriors",
-                **inputs["spim"].wildcards,
+        posteriors_dir=temp(
+            directory(
+                bids(
+                    root=root,
+                    datatype="micr",
+                    stain="{stain}",
+                    level="{level}",
+                    desc="Atropos",
+                    k="{k}",
+                    suffix="posteriors",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
     conda:
@@ -99,15 +101,17 @@ rule post_atropos:
         ),
         dseg=rules.atropos_seg.output.dseg,
     output:
-        dseg=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            desc="Atropos",
-            k="{k}",
-            suffix="dseg.nii",
-            **inputs["spim"].wildcards,
+        dseg=temp(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="Atropos",
+                k="{k}",
+                suffix="dseg.nii",
+                **inputs["spim"].wildcards,
+            )
         ),
     conda:
         "../envs/c3d.yaml"
@@ -128,23 +132,27 @@ rule init_affine_reg:
             **inputs["spim"].wildcards,
         ),
     output:
-        xfm_ras=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            type_="ras",
-            desc="initaffine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
+        xfm_ras=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                from_="subject",
+                to="{template}",
+                type_="ras",
+                desc="initaffine",
+                suffix="xfm.txt",
+                **inputs["spim"].wildcards,
+            )
         ),
-        warped=bids(
-            root=root,
-            datatype="warps",
-            space="{template}",
-            desc="initaffinewarped",
-            suffix="SPIM.nii",
-            **inputs["spim"].wildcards,
+        warped=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                space="{template}",
+                desc="initaffinewarped",
+                suffix="SPIM.nii",
+                **inputs["spim"].wildcards,
+            )
         ),
     log:
         bids(
@@ -176,13 +184,15 @@ rule affine_transform_template_dseg_to_subject:
         dseg=rules.import_dseg.output.dseg,
         xfm_ras=rules.init_affine_reg.output.xfm_ras,
     output:
-        dseg=bids(
-            root=root,
-            datatype="micr",
-            desc="initaffine",
-            from_="{template}",
-            suffix="dseg.nii.gz",
-            **inputs["spim"].wildcards,
+        dseg=temp(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="initaffine",
+                from_="{template}",
+                suffix="dseg.nii.gz",
+                **inputs["spim"].wildcards,
+            )
         ),
     threads: 32
     shell:

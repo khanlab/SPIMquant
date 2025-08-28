@@ -70,16 +70,18 @@ rule dask_n4:
             **inputs["spim"].wildcards,
         ),
     output:
-        touch(
-            bids(
-                root=root,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="n4corr",
-                suffix="SPIM.DONE",
-                **inputs["spim"].wildcards,
+        temp(
+            touch(
+                bids(
+                    root=root,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="n4corr",
+                    suffix="SPIM.DONE",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
     threads: 1 if config["use_coiled"] else 32
@@ -159,16 +161,18 @@ rule dask_histogram:
             **inputs["spim"].wildcards,
         ),
     output:
-        histogram=touch(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                level="{level}",
-                dslevel="{dslevel}",
-                desc="n4corr",
-                suffix="histogram.DONE",
-                **inputs["spim"].wildcards,
+        histogram=temp(
+            touch(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    level="{level}",
+                    dslevel="{dslevel}",
+                    desc="n4corr",
+                    suffix="histogram.DONE",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
     threads: 1 if config["use_coiled"] else 32
@@ -248,17 +252,19 @@ rule dask_otsu:
             **inputs["spim"].wildcards,
         ),
     output:
-        touch(
-            bids(
-                root=root,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="otsu",
-                otsu="k{k}i{i}",
-                suffix="mask.DONE",
-                **inputs["spim"].wildcards,
+        temp(
+            touch(
+                bids(
+                    root=root,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="otsu",
+                    otsu="k{k}i{i}",
+                    suffix="mask.DONE",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
     threads: 1 if config["use_coiled"] else 32
@@ -294,16 +300,18 @@ rule dask_threshold:
             **inputs["spim"].wildcards,
         ),
     output:
-        touch(
-            bids(
-                root=root,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="threshold",
-                suffix="mask.DONE",
-                **inputs["spim"].wildcards,
+        temp(
+            touch(
+                bids(
+                    root=root,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="threshold",
+                    suffix="mask.DONE",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
     threads: 1 if config["use_coiled"] else 32
