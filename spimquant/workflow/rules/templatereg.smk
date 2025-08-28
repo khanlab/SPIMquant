@@ -195,14 +195,16 @@ rule deform_reg:
             suffix="warp.nii",
             **inputs["spim"].wildcards,
         ),
-        warped=bids(
-            root=root,
-            datatype="warps",
-            space="{template}",
-            stain=stain_for_reg,
-            desc="deformwarped",
-            suffix="SPIM.nii",
-            **inputs["spim"].wildcards,
+        warped=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                space="{template}",
+                stain=stain_for_reg,
+                desc="deformwarped",
+                suffix="SPIM.nii",
+                **inputs["spim"].wildcards,
+            )
         ),
     log:
         bids(
