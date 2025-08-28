@@ -17,9 +17,40 @@ ds_level = int(snakemake.wildcards.dslevel)
 # this function optionally uses coiled
 
 
-hires_shape = ZarrNii.from_ome_zarr(
+znimg_hires = ZarrNii.from_ome_zarr(
     store, channels=[channel_index], level=hires_level, **orient_opt
-).darr.shape
+)
+
+# --------------
+# before updating zarrnii ngffzarr3 branch to accommodate anisotropically downsampled data, instead
+# we will calculate the z downsampling factor and downsample accordingly - TODO: move this to zarrnii
+
+import numpy as np
+
+# Get scale and axes order
+scale = znimg_hires.coordinate_transformations[0].scale
+
+axes = znimg_hires.axes  # list of Axis objects
+
+# Build a mapping from axis name to index
+axis_index = {axis.name.lower(): i for i, axis in enumerate(axes)}
+
+# Extract x and z scales
+x_scale = scale[axis_index["x"]]
+z_scale = scale[axis_index["z"]]
+
+# Compute ratio and power
+ratio = x_scale / z_scale
+level = int(np.log2(round(ratio)))
+
+# ----------
+
+
+if level > 0:
+    znimg_hires = znimg_hires.downsample(along_z=2**level)
+
+hires_shape = znimg_hires.darr.shape
+
 
 # ok, now we have the bias field.. let's resample it to the level
 # where we perform thresholding
@@ -51,13 +82,27 @@ znimg_biasfield_upsampled.to_ome_zarr(snakemake.params.bf_us_uri, max_layer=0)
 znimg_biasfield_upsampled = ZarrNii.from_ome_zarr(
     snakemake.params.bf_us_uri, **orient_opt
 )
-znimg_hires = ZarrNii.from_ome_zarr(
-    store,
-    channels=[channel_index],
-    level=hires_level,
-    chunks=znimg_biasfield_upsampled.darr.chunks,
-    rechunk=True,
-    **orient_opt,
-)  # chunk size comes from upsampled array
+
+if level == 0:
+
+    znimg_hires = ZarrNii.from_ome_zarr(
+        store,
+        channels=[channel_index],
+        level=hires_level,
+        chunks=znimg_biasfield_upsampled.darr.chunks,
+        rechunk=True,
+        **orient_opt,
+    )  # chunk size comes from upsampled array
+
+else:
+    znimg_hires = ZarrNii.from_ome_zarr(
+        store,
+        channels=[channel_index],
+        level=hires_level,
+        **orient_opt,
+    ).downsample(along_z=2**level)
+    znimg_hires.darr = znimg_hires.darr.rechunk(znimg_biasfield_upsampled.darr.chunks)
+
+
 znimg_hires.darr = znimg_hires.darr / znimg_biasfield_upsampled.darr
 znimg_hires.to_ome_zarr(snakemake.params.spim_n4_uri, max_layer=5)
