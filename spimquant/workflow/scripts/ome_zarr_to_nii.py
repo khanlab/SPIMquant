@@ -3,19 +3,38 @@ from dask.diagnostics import ProgressBar
 from lib.utils import get_zarr_store, get_channel_index
 
 
-store = get_zarr_store(snakemake.params.in_zarr)
-
+store = get_zarr_store(snakemake.params.uri)
 channel_index = get_channel_index(store, snakemake.wildcards.stain)
 
-level = int(snakemake.wildcards.level)
+znimg = ZarrNii.from_ome_zarr(
+    store, level=int(snakemake.wildcards.level), channels=[channel_index]
+)
 
-in_orient = snakemake.config[
-    "in_orientation"
-]  # TODO: this is a bit ugly - update the ZarrNii to recognize None  as an orientation, so we can just pass in_orientation
-orient_opt = {} if in_orient == None else {"orientation": in_orient}
+
+# before updating zarrnii ngffzarr3 branch to accommodate anisotropically downsampled data, instead
+# we will calculate the z downsampling factor and downsample accordingly - TODO: move this to zarrnii
+
+import numpy as np
+
+# Get scale and axes order
+scale = znimg.coordinate_transformations[0].scale
+
+axes = znimg.axes  # list of Axis objects
+
+# Build a mapping from axis name to index
+axis_index = {axis.name.lower(): i for i, axis in enumerate(axes)}
+
+# Extract x and z scales
+x_scale = scale[axis_index["x"]]
+z_scale = scale[axis_index["z"]]
+
+# Compute ratio and power
+ratio = x_scale / z_scale
+level = int(np.log2(round(ratio)))
+
 
 with ProgressBar():
-    # ZarrNii now implicitly downsamples xy and z if warranted by chosen level
-    ZarrNii.from_ome_zarr(
-        store, level=level, channels=[channel_index], **orient_opt
-    ).to_nifti(snakemake.output.nii)
+    if level == 0:
+        znimg.to_nifti(snakemake.output.nii)
+    else:
+        znimg.downsample(along_z=2**level).to_nifti(snakemake.output.nii)

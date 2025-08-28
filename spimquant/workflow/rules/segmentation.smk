@@ -272,7 +272,7 @@ rule dask_threshold:
     input:
         n4=rules.dask_n4.output,
     params:
-        threshold=config["seg_threshold"],
+        threshold=int(config["seg_threshold"]),
         spim_n4_uri=bids(
             root=root_coiled,
             datatype="micr",
