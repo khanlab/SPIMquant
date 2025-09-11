@@ -85,6 +85,12 @@ parse_args:
     type: Path
     default: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
 
+  --template_crop:
+    help: "Crop template along X-axis to retain specific hemisphere for registration (default: %(default)s)"
+    choices: 
+      - left
+      - right
+    default: null
 
   --stains_for_reg:
     help: "Possible stains to use for registration (will choose first available, in order)\n (default: %(default)s)"

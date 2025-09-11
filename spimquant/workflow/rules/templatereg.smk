@@ -82,9 +82,33 @@ rule apply_mask_to_corrected:
         "c3d {input.corrected} {input.mask} -multiply -o {output.masked}"
 
 
-rule affine_reg:
+rule crop_template:
     input:
         template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+    output:
+        cropped=bids_tpl(
+            root=root, 
+            template="{template}", 
+            desc="{hemisphere}crop", 
+            suffix="anat.nii.gz"
+        ),
+    params:
+        hemisphere="{hemisphere}"
+    script:
+        "../scripts/crop_template.py"
+
+
+def get_template_for_reg(wildcards):
+    """Get the appropriate template file for registration, cropped if specified"""
+    if config.get("template_crop") is not None:
+        return get_template_path(root, wildcards.template, config["template_crop"])
+    else:
+        return bids_tpl(root=root, template=wildcards.template, suffix="anat.nii.gz")
+
+
+rule affine_reg:
+    input:
+        template=get_template_for_reg,
         subject=bids(
             root=root,
             datatype="micr",
@@ -162,7 +186,7 @@ rule convert_ras_to_itk:
 
 rule deform_reg:
     input:
-        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        template=get_template_for_reg,
         subject=bids(
             root=root,
             datatype="micr",
@@ -271,7 +295,7 @@ rule affine_zarr_to_template_nii:
     input:
         ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
-        ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        ref_nii=get_template_for_reg,
     params:
         ref_opts={"chunks": (1, 50, 50, 50)},
     output:
@@ -293,7 +317,7 @@ rule affine_zarr_to_template_ome_zarr:
     input:
         ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
-        ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        ref_nii=get_template_for_reg,
     params:
         ref_opts={"chunks": (1, 50, 50, 50)},
     output:
@@ -317,7 +341,7 @@ rule deform_zarr_to_template_nii:
     input:
         xfm_ras=rules.affine_reg.output.xfm_ras,
         warp_nii=rules.deform_reg.output.warp,
-        ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        ref_nii=get_template_for_reg,
     params:
         ome_zarr=inputs["spim"].path,
         flo_opts={"level": 2},  #downsampling level to use (TODO: set this automatically based on ref resolution?)
@@ -344,7 +368,7 @@ rule deform_to_template_nii_zoomed:
         **get_storage_creds(inputs["spim"].path, config["remote_creds"]),
         xfm_ras=rules.affine_reg.output.xfm_ras,
         warp_nii=rules.deform_reg.output.warp,
-        ref_nii=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        ref_nii=get_template_for_reg,
     params:
         ome_zarr=inputs["spim"].path,
         flo_opts={},  #any additional flo znimg options
