@@ -87,23 +87,15 @@ rule crop_template:
         template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     output:
         cropped=bids_tpl(
-            root=root, 
-            template="{template}", 
-            desc="{hemisphere}crop", 
-            suffix="anat.nii.gz"
+            root=root,
+            template="{template}",
+            desc="{hemisphere}crop",
+            suffix="anat.nii.gz",
         ),
     params:
-        hemisphere="{hemisphere}"
+        hemisphere="{hemisphere}",
     script:
         "../scripts/crop_template.py"
-
-
-def get_template_for_reg(wildcards):
-    """Get the appropriate template file for registration, cropped if specified"""
-    if config.get("template_crop") is not None:
-        return get_template_path(root, wildcards.template, config["template_crop"])
-    else:
-        return bids_tpl(root=root, template=wildcards.template, suffix="anat.nii.gz")
 
 
 rule affine_reg:
