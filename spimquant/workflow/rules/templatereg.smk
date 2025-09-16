@@ -110,6 +110,8 @@ rule affine_reg:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards,
         ),
+    params:
+        iters="10x0x0" if config["sloppy"] else "100x100",
     output:
         xfm_ras=bids(
             root=root,
@@ -141,7 +143,7 @@ rule affine_reg:
     threads: 32
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
-        " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} && "
+        " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
         " greedy -threads {threads} -d 3 -rf {input.template} "
         "  -rm {input.subject} {output.warped} "
         "  -r {output.xfm_ras}"
@@ -190,7 +192,7 @@ rule deform_reg:
         ),
         xfm_ras=rules.affine_reg.output.xfm_ras,
     params:
-        iters="100x50",
+        iters="10x0x0" if config["sloppy"] else "100x50",
         metric="NMI",
         sigma1="4vox",
         sigma2="2vox",

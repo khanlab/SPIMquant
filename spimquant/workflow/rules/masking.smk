@@ -9,7 +9,11 @@ rule pre_atropos:
             **inputs["spim"].wildcards,
         ),
     params:
-        downsampling=config["masking"]["pre_atropos_downsampling"],
+        downsampling=(
+            "10%"
+            if config["sloppy"]
+            else config["masking"]["pre_atropos_downsampling"]
+        ),
     output:
         downsampled=temp(
             bids(
@@ -131,6 +135,8 @@ rule init_affine_reg:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards,
         ),
+    params:
+        iters="10x0x0" if config["sloppy"] else "100x100",
     output:
         xfm_ras=temp(
             bids(
@@ -165,7 +171,7 @@ rule init_affine_reg:
     threads: 32
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
-        " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} && "
+        " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
         " greedy -threads {threads} -d 3 -rf {input.template} "
         "  -rm {input.subject} {output.warped} "
         "  -r {output.xfm_ras}"

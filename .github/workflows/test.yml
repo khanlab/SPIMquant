@@ -42,6 +42,6 @@ jobs:
         with:
           activate-environment: true
       
-      - name: Test
+      - name: Dry-run Test
         run: |
-          ./spimquant/run.py $GITHUB_WORKSPACE/tests/data test_out participant -np
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_dryrun test_out participant -np
