@@ -55,6 +55,24 @@ if stain_for_reg == None:
 stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
 
 
+#atlas segmentations to use
+all_atlas_segs=config["templates"][config["template"]]["segs"].keys()
+
+if config["atlas_segs"] == None:
+    atlas_segs=all_atlas_segs
+else:
+    atlas_segs=[]
+    for seg in config["atlas_segs"]:
+        if seg not in all_atlas_segs:
+            raise ValueError(
+                f"Chosen segmentation {seg} was not found in the template {config['template']}"
+            )
+        else:
+            atlas_segs.append(seg)
+        
+                   
+
+
 if config["use_negative_mask"]:
     config["seg_method"].extend([f"{method}penalty" for method in config["seg_method"]])
 
@@ -96,7 +114,7 @@ rule all_blobdensity:
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
-            seg=config["templates"][config["template"]]["segs"].keys(),
+            seg=atlas_segs,
             template=config["template"],
         ),
 
@@ -181,7 +199,7 @@ rule all_segment:
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
-            seg=config["templates"][config["template"]]["segs"].keys(),
+            seg=atlas_segs,
             desc=config["seg_method"],
             template=config["template"],
         ),

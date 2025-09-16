@@ -80,6 +80,14 @@ parse_args:
     choices:
       - MouseIn
 
+  --atlas_segs:
+    help: "Atlas segmentations to use with the chosen template (default: use them all)"
+    default: null
+    action: store
+    nargs: '+'
+
+
+
   --template_negative_mask:
     help: "Negative mask, in the template space, to highlight regions to avoid\n"
     type: Path
@@ -142,6 +150,12 @@ parse_args:
     help: "Register the lightsheet data directly to a corresponding MRI (from the BIDS dataset)"
     action: store_true
     default: False
+
+  --sloppy:
+    help: "Use low-quality parameters for speed (USE FOR TESTING ONLY)"
+    action: store_true
+    default: False
+
 
   --remote_creds:
     help: "Google cloud default credentials to use for coiled"
