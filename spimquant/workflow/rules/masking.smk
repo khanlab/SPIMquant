@@ -122,7 +122,7 @@ rule post_atropos:
 rule init_affine_reg:
     """initial affine registration used to obtain priors for brainmasking"""
     input:
-        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        template=get_template_for_reg,
         subject=bids(
             root=root,
             datatype="micr",
