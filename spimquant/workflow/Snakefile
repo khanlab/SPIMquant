@@ -55,13 +55,13 @@ if stain_for_reg == None:
 stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
 
 
-#atlas segmentations to use
-all_atlas_segs=config["templates"][config["template"]]["segs"].keys()
+# atlas segmentations to use
+all_atlas_segs = config["templates"][config["template"]]["segs"].keys()
 
 if config["atlas_segs"] == None:
-    atlas_segs=all_atlas_segs
+    atlas_segs = all_atlas_segs
 else:
-    atlas_segs=[]
+    atlas_segs = []
     for seg in config["atlas_segs"]:
         if seg not in all_atlas_segs:
             raise ValueError(
@@ -69,8 +69,6 @@ else:
             )
         else:
             atlas_segs.append(seg)
-        
-                   
 
 
 if config["use_negative_mask"]:

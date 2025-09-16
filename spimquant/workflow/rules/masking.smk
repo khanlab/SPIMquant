@@ -9,7 +9,11 @@ rule pre_atropos:
             **inputs["spim"].wildcards,
         ),
     params:
-        downsampling='10%' if config["sloppy"] else config["masking"]["pre_atropos_downsampling"],
+        downsampling=(
+            "10%"
+            if config["sloppy"]
+            else config["masking"]["pre_atropos_downsampling"]
+        ),
     output:
         downsampled=temp(
             bids(
