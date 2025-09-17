@@ -16,13 +16,18 @@ znimg = ZarrNii.from_ome_zarr(
 
 import numpy as np
 
+
+def get_val(var, key):
+    return getattr(var, key, var.get(key) if isinstance(var, dict) else None)
+
+
 # Get scale and axes order
-scale = znimg.coordinate_transformations[0].scale
+scale = get_val(znimg.coordinate_transformations[0], "scale")
 
 axes = znimg.axes  # list of Axis objects
 
 # Build a mapping from axis name to index
-axis_index = {axis.name.lower(): i for i, axis in enumerate(axes)}
+axis_index = {get_val(axis, "name").lower(): i for i, axis in enumerate(axes)}
 
 # Extract x and z scales
 x_scale = scale[axis_index["x"]]
