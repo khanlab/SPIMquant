@@ -28,12 +28,18 @@ znimg_hires = ZarrNii.from_ome_zarr(
 import numpy as np
 
 # Get scale and axes order
-scale = znimg_hires.coordinate_transformations[0].scale
+def get_val(var, key):
+    return getattr(var, key, var.get(key) if isinstance(var, dict) else None)
+
+
+# Get scale and axes order
+scale = get_val(znimg_hires.coordinate_transformations[0], "scale")
+
 
 axes = znimg_hires.axes  # list of Axis objects
 
 # Build a mapping from axis name to index
-axis_index = {axis.name.lower(): i for i, axis in enumerate(axes)}
+axis_index = {get_val(axis, "name").lower(): i for i, axis in enumerate(axes)}
 
 # Extract x and z scales
 x_scale = scale[axis_index["x"]]
@@ -56,7 +62,7 @@ hires_shape = znimg_hires.darr.shape
 # where we perform thresholding
 
 # Compute step 1: first, we write the nifti n4 bias field to ome zarr (this is so we can use distributed computing)
-ZarrNii.from_nifti(snakemake.input.n4_bf_ds, chunks=(1, 10, 10, 10)).to_ome_zarr(
+ZarrNii.from_nifti(snakemake.input.n4_bf_ds, chunks=(10, 10, 10)).to_ome_zarr(
     snakemake.params.bf_ds_uri
 )
 
@@ -101,8 +107,8 @@ else:
         level=hires_level,
         **orient_opt,
     ).downsample(along_z=2**level)
-    znimg_hires.darr = znimg_hires.darr.rechunk(znimg_biasfield_upsampled.darr.chunks)
+    znimg_hires.data = znimg_hires.data.rechunk(znimg_biasfield_upsampled.data.chunks)
 
 
-znimg_hires.darr = znimg_hires.darr / znimg_biasfield_upsampled.darr
+znimg_hires.data = znimg_hires.data / znimg_biasfield_upsampled.data
 znimg_hires.to_ome_zarr(snakemake.params.spim_n4_uri, max_layer=5)
