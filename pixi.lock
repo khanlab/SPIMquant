@@ -586,8 +586,8 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b9/68/a069da6a126e5369656a4170dfb9ab55ed543237205831718a0389da2e43/wasmtime-35.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8c/77/e3362fe308358dc9f8588102481e599c83e1b91c2ae843780a7ded939a35/watchfiles-1.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/8f/aa61f528fba38578ec553c145857a181384c72b98156f858ca5c8e82d9d3/websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/bf/08/534b84df78dfa9d5cbdfed86d518fa8f1465d2987e09192437901572483a/zarrnii-0.5.0a1-py3-none-any.whl
       - pypi: ./
-      - pypi: /local/scratch/zarrnii
   dev:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -1241,8 +1241,8 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/63/cc69b41d6db6522adfc79627e7b9ad83d44797d525aae2a53f62d47d6e3e/wasmtime-36.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8c/77/e3362fe308358dc9f8588102481e599c83e1b91c2ae843780a7ded939a35/watchfiles-1.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/8f/aa61f528fba38578ec553c145857a181384c72b98156f858ca5c8e82d9d3/websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/bf/08/534b84df78dfa9d5cbdfed86d518fa8f1465d2987e09192437901572483a/zarrnii-0.5.0a1-py3-none-any.whl
       - pypi: ./
-      - pypi: /local/scratch/zarrnii
   dev-only:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -1485,9 +1485,9 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/8c/77/e3362fe308358dc9f8588102481e599c83e1b91c2ae843780a7ded939a35/watchfiles-1.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/8f/aa61f528fba38578ec553c145857a181384c72b98156f858ca5c8e82d9d3/websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c8/48/bde2f58cfbc9fd6ab844e2f2fd79d5e54195c12a17aa9b47c0b0e701a421/zarr-3.1.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/bf/08/534b84df78dfa9d5cbdfed86d518fa8f1465d2987e09192437901572483a/zarrnii-0.5.0a1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/ab/11a76c1e2126084fde2639514f24e6111b789b0bfa4fc6264a8975c7e1f1/zict-3.0.0-py2.py3-none-any.whl
       - pypi: ./
-      - pypi: /local/scratch/zarrnii
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
   sha256: fe51de6107f9edc7aa4f786a70f4a883943bc9d39b3bb7307c04c41410990726
@@ -11799,7 +11799,7 @@ packages:
 - pypi: ./
   name: spimquant
   version: 0.1.0
-  sha256: 4ba4313b590d469323ba3e0b3de25006de9ecb29531ab5a5653e79faecaf0459
+  sha256: bad861b86b5393c541ea12d4a3096db643d7599fab586b83390f974a4e24ce06
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/sqlalchemy-2.0.41-py312h66e93f0_0.conda
@@ -13378,10 +13378,10 @@ packages:
   - pkg:pypi/zarr?source=hash-mapping
   size: 267884
   timestamp: 1753948848920
-- pypi: /local/scratch/zarrnii
+- pypi: https://files.pythonhosted.org/packages/bf/08/534b84df78dfa9d5cbdfed86d518fa8f1465d2987e09192437901572483a/zarrnii-0.5.0a1-py3-none-any.whl
   name: zarrnii
-  version: 0.4.0a2.dev99+gd6d8672c8
-  sha256: aa96ed8d5222fb2e939db6f78cb4108a6bbb52ef40448b18743ad1752014b0e7
+  version: 0.5.0a1
+  sha256: 15df2bf419edb2947f65d96d19b4753e11134bb842afcfae6b00f3908364d59f
   requires_dist:
   - dask>=2025.5.1
   - h5py>=3.14.0
@@ -13410,7 +13410,6 @@ packages:
   - pytest>=8.2.0 ; extra == 'dev'
   - h5py>=3.8.0 ; extra == 'imaris'
   requires_python: '>=3.11'
-  editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/zeromq-4.3.5-h387f397_9.conda
   sha256: 47cfe31255b91b4a6fa0e9dbaf26baa60ac97e033402dbc8b90ba5fee5ffe184
   md5: 8035e5b54c08429354d5d64027041cad
