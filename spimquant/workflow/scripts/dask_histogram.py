@@ -16,10 +16,6 @@ if snakemake.config["use_coiled"]:
 
 store = get_zarr_store(snakemake.params.spim_n4_uri)
 
-in_orient = snakemake.config["in_orientation"]
-orient_opt = {} if in_orient == None else {"orientation": in_orient}
-
-
 # we use the default level=0, since we are reading in the n4 output, which is already downsampled if level was >0
 znimg_hires = ZarrNii.from_ome_zarr(store)
 

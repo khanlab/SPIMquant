@@ -17,11 +17,7 @@ if snakemake.config["use_coiled"]:
 
 store = get_zarr_store(snakemake.params.spim_n4_uri)
 
-in_orient = snakemake.config["in_orientation"]
-orient_opt = {} if in_orient == None else {"orientation": in_orient}
-
-
-znimg_hires = ZarrNii.from_ome_zarr(store, **orient_opt)
+znimg_hires = ZarrNii.from_ome_zarr(store)
 
 
 def threshold_block(x):

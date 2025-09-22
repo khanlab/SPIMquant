@@ -80,25 +80,11 @@ parse_args:
     choices:
       - MouseIn
 
-  --atlas_segs:
-    help: "Atlas segmentations to use with the chosen template (default: use them all)"
-    default: null
-    action: store
-    nargs: '+'
-
-
-
   --template_negative_mask:
     help: "Negative mask, in the template space, to highlight regions to avoid\n"
     type: Path
     default: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
 
-  --template_crop:
-    help: "Crop template along X-axis to retain specific hemisphere for registration (default: %(default)s)"
-    choices: 
-      - left
-      - right
-    default: null
 
   --stains_for_reg:
     help: "Possible stains to use for registration (will choose first available, in order)\n (default: %(default)s)"
@@ -118,8 +104,6 @@ parse_args:
       - Abeta
       - BetaAmyloid
       - AlphaSynuclein
-      - Iba1
-      - ChAT
     action: store
     nargs: '+'
 
@@ -158,12 +142,6 @@ parse_args:
     help: "Register the lightsheet data directly to a corresponding MRI (from the BIDS dataset)"
     action: store_true
     default: False
-
-  --sloppy:
-    help: "Use low-quality parameters for speed (USE FOR TESTING ONLY)"
-    action: store_true
-    default: False
-
 
   --remote_creds:
     help: "Google cloud default credentials to use for coiled"
@@ -238,7 +216,7 @@ templates:
     segs:
       paxinos: 
         dseg: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.nii.gz'
-        itksnap: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.itksnap.txt'
+        tsv: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.txt'
 
   turone:
     anat: '{workflow.basedir}/../resources/Turone_Mouse_Brain_Template/Turone_Mouse_Brain_Template/TMBTA_Brain_Template.nii.gz'
