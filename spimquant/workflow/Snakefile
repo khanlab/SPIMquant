@@ -71,8 +71,6 @@ else:
             atlas_segs.append(seg)
 
 
-if config["use_negative_mask"]:
-    config["seg_method"].extend([f"{method}penalty" for method in config["seg_method"]])
 
 
 # wildcard_constraints: **get_wildcard_constraints(config["pybids_inputs"])

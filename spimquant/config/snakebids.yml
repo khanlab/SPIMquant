@@ -90,7 +90,7 @@ parse_args:
   --template_negative_mask:
     help: "Negative mask, in the template space, to highlight regions to avoid\n"
     type: Path
-    default: null
+    default: placeholder
 
   --template_crop:
     help: "Crop template along X-axis to retain specific hemisphere for registration (default: %(default)s)"
