@@ -57,13 +57,12 @@ parse_args:
   --root_coiled:
     help: "Remote uri to use for finalized cloud outputs from coiled rules, only applicable with --use-coiled\n"
     type: str
-    default: 
-      gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids/derivatives/SPIMquant_v0.1.1-alpha
+    default: null
 
   --work_coiled:
     help: "Remote uri to use for temporary cloud outputs from coiled rules, only applicable with --use-coiled\n"
     type: str
-    default: gcs://khanlab-scratch/spimquant_work
+    default: null
   
   --template:
     help: "Template to use for SPIM registration\n"
@@ -91,7 +90,7 @@ parse_args:
   --template_negative_mask:
     help: "Negative mask, in the template space, to highlight regions to avoid\n"
     type: Path
-    default: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
+    default: null
 
   --template_crop:
     help: "Crop template along X-axis to retain specific hemisphere for registration (default: %(default)s)"
@@ -132,19 +131,12 @@ parse_args:
     default: 0
 
 
-  --in_orientation:
-    help: "Override input SPIM image orientation, using 3-letter orientation code representing ZYX directions, with R/L, A/P, S/I (default: %(default)s)"
-    
-  --use_negative_mask:
-    help: "Use the template-based negative mask to reduce boundary artifact when quantifying"
-    action: store_true
-    default: False    
+
 
   --seg_method:
     help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions"
     choices: 
       - threshold
-   #   - multiotsu
     default: 
       - threshold
     nargs: '+'
@@ -190,11 +182,6 @@ ome_zarr:
     - 1024
     - 1024
   scaling_method: 'local_mean' #can be nearest, gaussian, local_mean, zoom (zoom uses spline interp)
-
-
-#template:  ABAv3 #template to use
-
-#template_negative_mask: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
 
 
 templates:
@@ -254,7 +241,6 @@ templates:
 templatereg:
   desc: N4brain
   zooms:
-    #    - 20
     - 40
 
 masking:
