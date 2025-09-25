@@ -130,9 +130,16 @@ parse_args:
     help: "Downsampling level to use for segmentation (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
     default: 0
 
+  --correction_method:
+    help: "Method to use for intensity non-uniformity correction, prior to performing segmentation (default: %(default)s)"
+    choices: 
+      - gaussian
+      - n4
+    default: gaussian
 
 
 
+  
   --seg_method:
     help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions. "
     choices: 

@@ -6,7 +6,7 @@ ds_level = int(snakemake.wildcards.dslevel) - int(
 
 # this will downsample automatically based on the level
 znimg_density_ds = ZarrNii.from_ome_zarr(
-    snakemake.params.mask_uri,
+    snakemake.input.mask,
     level=ds_level,
     downsample_near_isotropic=True,
 )

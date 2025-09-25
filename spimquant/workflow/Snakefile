@@ -71,8 +71,6 @@ else:
             atlas_segs.append(seg)
 
 
-
-
 # wildcard_constraints: **get_wildcard_constraints(config["pybids_inputs"])
 wildcard_constraints:
     stain="[a-zA-Z0-9]+",

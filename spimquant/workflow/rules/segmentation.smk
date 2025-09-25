@@ -1,4 +1,4 @@
-
+"""
 rule antspyx_n4:
     input:
         **get_storage_creds(inputs["spim"].path, config["remote_creds"]),
@@ -28,7 +28,6 @@ rule antspyx_n4:
         mem_mb=16000,
     script:
         "../scripts/antspyx_n4.py"
-
 
 
 rule downsampled_apply_n4_mask:
@@ -72,154 +71,118 @@ rule downsampled_apply_n4_mask:
         "../envs/c3d.yaml"
     shell:
         "c3d {input.n4_bf_ds} {input.spim_ds} -divide -as N4 -replace inf 10000  {input.mask} -reslice-identity -push N4 -multiply -o {output.masked}"
+"""
 
-rule zarrnii_simplebfc:
+
+rule gaussian_biasfield:
     """simple bias field correction with gaussian"""
     input:
-        spim=inputs["spim"].path
-    params:
-        spim_uri=inputs["spim"].path,
-        spim_n4_uri=bids(
-            root=root_coiled,
-            datatype="micr",
-            stain="{stain}",
-            dslevel="{dslevel}",
-            level="{level}",
-            desc="n4corr",
-            suffix="SPIM.ome.zarr",
-            **inputs["spim"].wildcards,
-        ),
+        spim=inputs["spim"].path,
     output:
-        temp(
-            touch(
-                bids(
-                    root=root,
-                    datatype="micr",
-                    stain="{stain}",
-                    dslevel="{dslevel}",
-                    level="{level}",
-                    desc="n4corr",
-                    suffix="SPIM.DONE",
-                    **inputs["spim"].wildcards,
-                )
+        corrected=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                level="{level}",
+                desc="corrected",
+                corrmethod="gaussian",
+                suffix="SPIM.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        biasfield=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                level="{level}",
+                desc="gaussian",
+                suffix="biasfield.ome.zarr",
+                **inputs["spim"].wildcards,
             )
         ),
     threads: 32
     script:
-        "../scripts/zarrnii_simple_biasfield.py"
+        "../scripts/gaussian_biasfield.py"
 
 
-
-rule zarrnii_otsu:
+rule multiotsu:
     input:
-        n4=rules.zarrnii_simplebfc.output,
+        corrected=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            level="{level}",
+            desc="corrected",
+            corrmethod=config["correction_method"],
+            suffix="SPIM.ome.zarr",
+            **inputs["spim"].wildcards,
+        ),
     params:
         otsu_k=lambda wildcards: int(wildcards.k),
         otsu_threshold_index=lambda wildcards: int(wildcards.i),
-        spim_n4_uri=bids(
-            root=root_coiled,
-            datatype="micr",
-            stain="{stain}",
-            dslevel="{dslevel}",
-            level="{level}",
-            desc="n4corr",
-            suffix="SPIM.ome.zarr",
-            **inputs["spim"].wildcards,
-        ),
-        mask_uri=bids(
-            root=root_coiled,
-            datatype="micr",
-            stain="{stain}",
-            dslevel="{dslevel}",
-            level="{level}",
-            desc="otsu+k{k}i{i}",
-            suffix="mask.ome.zarr",
-            **inputs["spim"].wildcards,
-        ),
     output:
-        temp(
-            touch(
-                bids(
-                    root=root,
-                    datatype="micr",
-                    stain="{stain}",
-                    dslevel="{dslevel}",
-                    level="{level}",
-                    desc="otsu+k{k}i{i}",
-                    suffix="mask.DONE",
-                    **inputs["spim"].wildcards,
-                )
+        mask=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                level="{level}",
+                desc="otsu+k{k}i{i}",
+                suffix="mask.ome.zarr",
+                **inputs["spim"].wildcards,
             )
         ),
     threads: 32
     script:
-        "../scripts/zarrnii_otsu.py"
+        "../scripts/multiotsu.py"
 
 
-
-rule dask_threshold:
+rule threshold:
     input:
-        n4=rules.zarrnii_simplebfc.output
-    params:
-        threshold=int(config["seg_threshold"]),
-        spim_n4_uri=bids(
-            root=root_coiled,
+        corrected=bids(
+            root=root,
             datatype="micr",
             stain="{stain}",
             dslevel="{dslevel}",
             level="{level}",
-            desc="n4corr",
+            desc="corrected",
+            corrmethod=config["correction_method"],
             suffix="SPIM.ome.zarr",
             **inputs["spim"].wildcards,
         ),
-        mask_uri=bids(
-            root=root_coiled,
-            datatype="micr",
-            stain="{stain}",
-            dslevel="{dslevel}",
-            level="{level}",
-            desc="threshold",
-            suffix="mask.ome.zarr",
-            **inputs["spim"].wildcards,
-        ),
+    params:
+        threshold=int(config["seg_threshold"]),
     output:
-        temp(
-            touch(
-                bids(
-                    root=root,
-                    datatype="micr",
-                    stain="{stain}",
-                    dslevel="{dslevel}",
-                    level="{level}",
-                    desc="threshold",
-                    suffix="mask.DONE",
-                    **inputs["spim"].wildcards,
-                )
+        mask=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                level="{level}",
+                desc="threshold",
+                suffix="mask.DONE",
+                **inputs["spim"].wildcards,
             )
         ),
     threads: 1 if config["use_coiled"] else 32
     resources:
         coiled=1,
     script:
-        "../scripts/dask_threshold.py"
+        "../scripts/threshold.py"
 
 
-rule dask_fieldfrac:
+rule fieldfrac:
     """ Calculates fieldfrac from a binary mask via downsampling, assuming mask intensity is 100"""
     input:
-        bids(
+        mask=bids(
             root=root,
-            datatype="micr",
-            stain="{stain}",
-            dslevel=config["registration_level"],
-            level=config["segmentation_level"],
-            desc="{seg_method}",
-            suffix="mask.DONE",
-            **inputs["spim"].wildcards,
-        ),
-    params:
-        mask_uri=bids(
-            root=root_coiled,
             datatype="micr",
             stain="{stain}",
             dslevel=config["registration_level"],
@@ -242,7 +205,7 @@ rule dask_fieldfrac:
     resources:
         coiled=1,
     script:
-        "../scripts/dask_fieldfrac.py"
+        "../scripts/fieldfrac.py"
 
 
 rule deform_negative_mask_to_subject_nii:
