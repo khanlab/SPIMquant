@@ -30,66 +30,6 @@ rule antspyx_n4:
         "../scripts/antspyx_n4.py"
 
 
-rule dask_n4:
-    input:
-        n4_bf_ds=bids(
-            root=work,
-            datatype="micr",
-            stain="{stain}",
-            level="{dslevel}",
-            suffix="n4biasfield.nii",
-            **inputs["spim"].wildcards,
-        ),
-    params:
-        spim_uri=inputs["spim"].path,
-        bf_ds_uri=bids(
-            root=work_coiled,
-            datatype="micr",
-            stain="{stain}",
-            level="{dslevel}",
-            suffix="n4biasfield.ome.zarr",
-            **inputs["spim"].wildcards,
-        ),
-        bf_us_uri=bids(
-            root=work_coiled,
-            datatype="micr",
-            stain="{stain}",
-            dslevel="{dslevel}",
-            level="{level}",
-            suffix="n4biasfield.ome.zarr",
-            **inputs["spim"].wildcards,
-        ),
-        spim_n4_uri=bids(
-            root=root_coiled,
-            datatype="micr",
-            stain="{stain}",
-            dslevel="{dslevel}",
-            level="{level}",
-            desc="n4corr",
-            suffix="SPIM.ome.zarr",
-            **inputs["spim"].wildcards,
-        ),
-    output:
-        temp(
-            touch(
-                bids(
-                    root=root,
-                    datatype="micr",
-                    stain="{stain}",
-                    dslevel="{dslevel}",
-                    level="{level}",
-                    desc="n4corr",
-                    suffix="SPIM.DONE",
-                    **inputs["spim"].wildcards,
-                )
-            )
-        ),
-    threads: 1 if config["use_coiled"] else 32
-    resources:
-        coiled=1,
-    script:
-        "../scripts/dask_n4.py"
-
 
 rule downsampled_apply_n4_mask:
     input:
@@ -133,13 +73,12 @@ rule downsampled_apply_n4_mask:
     shell:
         "c3d {input.n4_bf_ds} {input.spim_ds} -divide -as N4 -replace inf 10000  {input.mask} -reslice-identity -push N4 -multiply -o {output.masked}"
 
-
-rule dask_histogram:
-    """calculate histogram at full resolution, for defining thresholds"""
+rule zarrnii_simplebfc:
+    """simple bias field correction with gaussian"""
     input:
-        n4=rules.dask_n4.output,
+        spim=inputs["spim"].path
     params:
-        histogram_opts={"bins": 2000, "range": [0, 1999]},
+        spim_uri=inputs["spim"].path,
         spim_n4_uri=bids(
             root=root_coiled,
             datatype="micr",
@@ -150,83 +89,30 @@ rule dask_histogram:
             suffix="SPIM.ome.zarr",
             **inputs["spim"].wildcards,
         ),
-        histogram_uri=bids(
-            root=root_coiled,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            dslevel="{dslevel}",
-            desc="n4corr",
-            suffix="histogram.zarr",
-            **inputs["spim"].wildcards,
-        ),
     output:
-        histogram=temp(
+        temp(
             touch(
                 bids(
-                    root=work,
+                    root=root,
                     datatype="micr",
                     stain="{stain}",
-                    level="{level}",
                     dslevel="{dslevel}",
+                    level="{level}",
                     desc="n4corr",
-                    suffix="histogram.DONE",
+                    suffix="SPIM.DONE",
                     **inputs["spim"].wildcards,
                 )
             )
         ),
-    threads: 1 if config["use_coiled"] else 32
-    resources:
-        coiled=1,
+    threads: 32
     script:
-        "../scripts/dask_histogram.py"
+        "../scripts/zarrnii_simple_biasfield.py"
 
 
-# calc thresholds using downsampled, masked image
-rule calc_otsu_thresholds:
+
+rule zarrnii_otsu:
     input:
-        rules.dask_histogram.output,
-    params:
-        histogram_uri=bids(
-            root=root_coiled,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            dslevel="{dslevel}",
-            desc="n4corr",
-            suffix="histogram.zarr",
-            **inputs["spim"].wildcards,
-        ),
-        otsu_max_k=4,
-    #        otsu_n_classes=3,
-    output:
-        otsu_thresholds=bids(
-            root=work,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            dslevel="{dslevel}",
-            desc="n4corrmasked",
-            suffix="thresholds.json",
-            **inputs["spim"].wildcards,
-        ),
-    script:
-        "../scripts/calc_otsu_thresholds.py"
-
-
-rule dask_otsu:
-    input:
-        n4=rules.dask_n4.output,
-        otsu_thresholds=bids(
-            root=work,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            dslevel="{dslevel}",
-            desc="n4corrmasked",
-            suffix="thresholds.json",
-            **inputs["spim"].wildcards,
-        ),
+        n4=rules.zarrnii_simplebfc.output,
     params:
         otsu_k=lambda wildcards: int(wildcards.k),
         otsu_threshold_index=lambda wildcards: int(wildcards.i),
@@ -246,8 +132,7 @@ rule dask_otsu:
             stain="{stain}",
             dslevel="{dslevel}",
             level="{level}",
-            desc="otsu",
-            otsu="k{k}i{i}",
+            desc="otsu+k{k}i{i}",
             suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
@@ -260,23 +145,21 @@ rule dask_otsu:
                     stain="{stain}",
                     dslevel="{dslevel}",
                     level="{level}",
-                    desc="otsu",
-                    otsu="k{k}i{i}",
+                    desc="otsu+k{k}i{i}",
                     suffix="mask.DONE",
                     **inputs["spim"].wildcards,
                 )
             )
         ),
-    threads: 1 if config["use_coiled"] else 32
-    resources:
-        coiled=1,
+    threads: 32
     script:
-        "../scripts/dask_otsu.py"
+        "../scripts/zarrnii_otsu.py"
+
 
 
 rule dask_threshold:
     input:
-        n4=rules.dask_n4.output,
+        n4=rules.zarrnii_simplebfc.output
     params:
         threshold=int(config["seg_threshold"]),
         spim_n4_uri=bids(

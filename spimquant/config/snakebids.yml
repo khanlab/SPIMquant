@@ -134,9 +134,10 @@ parse_args:
 
 
   --seg_method:
-    help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions"
+    help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions. "
     choices: 
       - threshold
+      - otsu+k3i2
     default: 
       - threshold
     nargs: '+'
