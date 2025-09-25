@@ -158,5 +158,5 @@
       "@type": "ngff:Image"
     }
   ],
-  "orientation": "IAL"
+  "orientation": "LAI"
 }
