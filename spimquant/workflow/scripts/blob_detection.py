@@ -1,12 +1,13 @@
-import zarr
-import dask.array as da
-import dask
-from dask.array.overlap import overlap, trim_overlap
-import numpy as np
 from math import sqrt
-from skimage.feature import blob_dog
-from dask.diagnostics import ProgressBar
+
+import dask
+import dask.array as da
+import numpy as np
 import sparse
+import zarr
+from dask.array.overlap import overlap, trim_overlap
+from dask.diagnostics import ProgressBar
+from skimage.feature import blob_dog
 
 # set threads
 dask.config.set(scheduler="threads", num_workers=snakemake.threads)

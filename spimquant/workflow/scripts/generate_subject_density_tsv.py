@@ -1,6 +1,6 @@
 import nibabel as nib
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 dseg_df = pd.read_csv(snakemake.input.volumes_tsv, sep="\t")
 

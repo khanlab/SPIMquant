@@ -1,6 +1,6 @@
-from scipy.interpolate import interpn
 import nibabel as nib
 import numpy as np
+from scipy.interpolate import interpn
 
 # we have coordinates of blobs, along with an image with the boundary distance penalty
 

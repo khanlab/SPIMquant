@@ -1,7 +1,8 @@
-import nibabel as nib
-import pandas as pd
 import json
+
+import nibabel as nib
 import numpy as np
+import pandas as pd
 
 # Paths to input files
 nifti_path = "../LSFM-mouse-brain-atlas/LSFM_atlas_files/gubra_ano_olf_spacing.nii.gz"  # Path to the input NIfTI file

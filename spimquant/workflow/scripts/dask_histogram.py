@@ -1,7 +1,8 @@
 import numpy as np
-from zarrnii import ZarrNii
-from lib.utils import get_zarr_store
 from dask.array import histogram
+from lib.utils import get_zarr_store
+
+from zarrnii import ZarrNii
 
 if snakemake.config["use_coiled"]:
     from coiled import Cluster

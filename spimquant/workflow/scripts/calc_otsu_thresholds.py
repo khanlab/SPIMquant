@@ -1,7 +1,8 @@
-import dask.array as da
-from skimage.filters import threshold_multiotsu
 import json
+
+import dask.array as da
 import numpy as np
+from skimage.filters import threshold_multiotsu
 
 histogram = da.from_zarr(snakemake.params.histogram_uri).compute()
 

@@ -1,7 +1,7 @@
-from zarrnii import ZarrNii
 from dask.diagnostics import ProgressBar
 from lib.utils import get_zarr_store
 
+from zarrnii import ZarrNii
 
 store = get_zarr_store(snakemake.params.uri)
 

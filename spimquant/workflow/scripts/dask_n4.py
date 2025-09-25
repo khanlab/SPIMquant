@@ -1,6 +1,6 @@
-from zarrnii import ZarrNii
-from lib.utils import get_zarr_store, get_channel_index
+from lib.utils import get_channel_index, get_zarr_store
 
+from zarrnii import ZarrNii
 
 store = get_zarr_store(snakemake.params.spim_uri)
 

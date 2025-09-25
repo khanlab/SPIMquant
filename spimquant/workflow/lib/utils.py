@@ -1,7 +1,8 @@
-import zarr
 import os
-from upath import UPath as Path
+
 import fsspec
+import zarr
+from upath import UPath as Path
 
 
 def is_remote(uri_string):

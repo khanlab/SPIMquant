@@ -1,7 +1,9 @@
-import numpy as np
 import json
-from zarrnii import ZarrNii
+
+import numpy as np
 from lib.utils import get_zarr_store
+
+from zarrnii import ZarrNii
 
 if snakemake.config["use_coiled"]:
     from coiled import Cluster

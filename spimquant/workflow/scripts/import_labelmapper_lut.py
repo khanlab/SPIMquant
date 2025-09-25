@@ -1,4 +1,5 @@
 import json
+
 import pandas as pd
 
 col_order = ["name", "abbreviation", "color"]
