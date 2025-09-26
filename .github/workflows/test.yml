@@ -15,10 +15,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.base_ref }}
 
       - name: Setup Python environment
-        uses: prefix-dev/setup-pixi@v0.9.1
+        uses: prefix-dev/setup-pixi@v0.8.14
         with:
-          pixi-version: v0.49.0
-          cache: false
+          environments: >-
+            dev-only
+          activate-environment: dev-only
 
       - name: isort
         run: isort spimquant/*.py -c --profile black
