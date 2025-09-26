@@ -49,21 +49,6 @@ parse_args:
     type: str
     default: work
 
-  --use_coiled:
-    help: "Use coiled for remote cloud execution (use this only if your input data is already on cloud) (default: %(default)s)"
-    action: "store_true"
-    default: False
-
-  --root_coiled:
-    help: "Remote uri to use for finalized cloud outputs from coiled rules, only applicable with --use-coiled\n"
-    type: str
-    default: null
-
-  --work_coiled:
-    help: "Remote uri to use for temporary cloud outputs from coiled rules, only applicable with --use-coiled\n"
-    type: str
-    default: null
-  
   --template:
     help: "Template to use for SPIM registration\n"
     default: ABAv3
@@ -135,8 +120,7 @@ parse_args:
     choices: 
       - gaussian
       - n4
-    default: gaussian
-
+    default: n4
 
 
   
@@ -146,7 +130,7 @@ parse_args:
       - threshold
       - otsu+k3i2
     default: 
-      - threshold
+      - otsu+k3i2
     nargs: '+'
 
   --seg_threshold:
@@ -165,10 +149,6 @@ parse_args:
     default: False
 
 
-  --remote_creds:
-    help: "Google cloud default credentials to use for coiled"
-    default: ~/.config/gcloud/application_default_credentials.json
-
   --skip-bids-validation:
     help: |
       Skip validation of BIDS dataset. BIDS validation is performed by
@@ -180,8 +160,6 @@ parse_args:
 
 #--- workflow specific configuration -- 
 
-
-remote_creds: '~/.config/gcloud/application_default_credentials.json' #this is needed so we can pass creds to container
 
 ome_zarr:
   max_downsampling_layers: 4 # e.g. 4 levels: { 0: orig, 1: ds2, 2: ds4, 3: ds8, 4: ds16}

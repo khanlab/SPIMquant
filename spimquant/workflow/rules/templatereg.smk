@@ -359,12 +359,11 @@ rule deform_zarr_to_template_nii:
 
 rule deform_to_template_nii_zoomed:
     input:
-        **get_storage_creds(inputs["spim"].path, config["remote_creds"]),
+        ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=get_template_for_reg,
     params:
-        ome_zarr=inputs["spim"].path,
         flo_opts={},  #any additional flo znimg options
         do_downsample=True,  #whether to perform further downsampling before transforming
         downsample_opts={"along_z": 4},  #could also be determined automatically 
