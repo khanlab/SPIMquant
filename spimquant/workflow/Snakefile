@@ -1,4 +1,5 @@
 from zarrnii import ZarrNii
+from snakemake.utils import format
 from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
 
 set_bids_spec("v0_11_0")
@@ -29,7 +30,6 @@ inputs = generate_inputs(
 
 # get stains from first subject (lazy - should use the correct stain for each subject, when defining target rules)
 #  to do this, would need to get the channel names in the function that gets the target rules
-
 stains = ZarrNii.from_ome_zarr(inputs["spim"].expand()[0]).list_channels()
 stain_for_reg = None
 for stain in config["stains_for_reg"]:

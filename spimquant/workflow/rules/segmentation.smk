@@ -131,9 +131,7 @@ rule threshold:
                 **inputs["spim"].wildcards,
             )
         ),
-    threads: 1 if config["use_coiled"] else 32
-    resources:
-        coiled=1,
+    threads: 32
     script:
         "../scripts/threshold.py"
 
@@ -161,9 +159,7 @@ rule fieldfrac:
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards,
         ),
-    threads: 1 if config["use_coiled"] else 32
-    resources:
-        coiled=1,
+    threads: 32
     script:
         "../scripts/fieldfrac.py"
 

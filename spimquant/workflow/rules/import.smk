@@ -143,6 +143,10 @@ rule lateralize_atlas_tsv:
         "../scripts/lateralize_atlas_tsv.py"
 
 
+print(workflow)
+print(workflow.basedir)
+
+
 rule import_reslice_dseg:
     input:
         ref=lambda wildcards: ancient(
