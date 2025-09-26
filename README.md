@@ -17,20 +17,33 @@ Features include:
  disk space. The more cores you have access to, the faster the code will run, but you will also need sufficient memory (e.g. 2-4 GB per core) as well.
 
 ## Software Requirements
- - A Linux machine with Singularity or Apptainer installed, and a recent version of Python (>= 3.10). The workflow will download
- any containers it requires to run non-python dependencies (c3d, greedy, ANTS).
+ - A Linux machine with pixi installed. Pixi will manage all Python dependencies and non-python dependencies (c3d, greedy, ANTS) through conda environments.
 
 ## Steps
- 1. Install the package directly from github:
+ 1. Install pixi (if not already installed):
     ```bash
-    pip install -e git+https://github.com/khanlab/spimquant#egg=spimquant
+    curl -fsSL https://pixi.sh/install.sh | bash
     ```
-
- 2. Or if you are going to make changes to the code, you should clone the repository then install it:
+    
+ 2. Clone the repository and install dependencies:
     ```bash
     git clone https://github.com/khanlab/SPIMquant.git
-    pip install ./SPIMquant
-    ```   
+    cd SPIMquant
+    pixi install
+    ```
+    
+## Development
+For development work, use the development environment which includes additional tools like formatters and linters:
+
+```bash
+pixi install --environment dev
+```
+
+Quality checks can be run using:
+```bash
+pixi run quality_check  # Check code formatting
+pixi run quality_fix    # Fix code formatting
+```   
 
 # Usage
 
@@ -39,11 +52,11 @@ workflow is the recommended tool to produce a BIDS dataset from your raw or mini
 
  1. Perform a dry run:
     ```bash
-    spimquant /path/to/bids/dir /path/to/output/dir participant -np --use-conda
+    pixi run spimquant /path/to/bids/dir /path/to/output/dir participant -np
     ```
  2. Run the app using all cores:
     ```bash
-    spimquant /path/to/bids/dir /path/to/output/dir participant --cores all --use-conda
+    pixi run spimquant /path/to/bids/dir /path/to/output/dir participant --cores all
     ```
 
 If your input BIDS dataset stores data in zarr zipstores (e.g. SPIM files ending in `*_SPIM.ome.zarr.zip`), then you should use the following option:
