@@ -1,78 +1,3 @@
-"""
-rule antspyx_n4:
-    input:
-        **get_storage_creds(inputs["spim"].path, config["remote_creds"]),
-        spim=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            suffix="SPIM.nii",
-            **inputs["spim"].wildcards,
-        ),
-    params:
-        n4_opts={"spline_param": (2, 2, 2), "shrink_factor": 1},
-    output:
-        n4_bf_ds=bids(
-            root=work,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            suffix="n4biasfield.nii",
-            **inputs["spim"].wildcards,
-        ),
-    shadow:
-        "minimal"
-    threads: 8
-    resources:
-        mem_mb=16000,
-    script:
-        "../scripts/antspyx_n4.py"
-
-
-rule downsampled_apply_n4_mask:
-    input:
-        spim_ds=bids(
-            root=work,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            suffix="SPIM.nii",
-            **inputs["spim"].wildcards,
-        ),
-        n4_bf_ds=bids(
-            root=work,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            suffix="n4biasfield.nii",
-            **inputs["spim"].wildcards,
-        ),
-        mask=bids(
-            root=root,
-            datatype="micr",
-            stain=stain_for_reg,
-            level=config["registration_level"],
-            desc="brain",
-            suffix="mask.nii",
-            **inputs["spim"].wildcards,
-        ),
-    output:
-        masked=bids(
-            root=work,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            desc="n4corrmasked",
-            suffix="SPIM.nii",
-            **inputs["spim"].wildcards,
-        ),
-    conda:
-        "../envs/c3d.yaml"
-    shell:
-        "c3d {input.n4_bf_ds} {input.spim_ds} -divide -as N4 -replace inf 10000  {input.mask} -reslice-identity -push N4 -multiply -o {output.masked}"
-"""
-
 
 rule gaussian_biasfield:
     """simple bias field correction with gaussian"""
@@ -107,6 +32,41 @@ rule gaussian_biasfield:
     threads: 32
     script:
         "../scripts/gaussian_biasfield.py"
+
+
+rule n4_biasfield:
+    """N4 bias field correction with antspyx"""
+    input:
+        spim=inputs["spim"].path,
+    output:
+        corrected=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                level="{level}",
+                desc="corrected",
+                corrmethod="n4",
+                suffix="SPIM.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        biasfield=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                level="{level}",
+                desc="n4",
+                suffix="biasfield.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
+        ),
+    threads: 32
+    script:
+        "../scripts/n4_biasfield.py"
 
 
 rule multiotsu:

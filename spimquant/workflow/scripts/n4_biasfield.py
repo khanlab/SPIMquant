@@ -1,6 +1,6 @@
 from dask.diagnostics import ProgressBar
 
-from zarrnii import GaussianBiasFieldCorrection, ZarrNii
+from zarrnii import N4BiasFieldCorrection, ZarrNii
 
 hires_level = int(snakemake.wildcards.level)
 ds_level = int(snakemake.wildcards.dslevel)
@@ -18,7 +18,7 @@ with ProgressBar():
 
     # Apply bias field correction
     znimg_corrected = znimg.apply_scaled_processing(
-        GaussianBiasFieldCorrection(sigma=5.0),
+        N4BiasFieldCorrection(sigma=5.0),
         downsample_factor=2**ds_level,
         upsampled_ome_zarr_path=snakemake.output.biasfield,
     )

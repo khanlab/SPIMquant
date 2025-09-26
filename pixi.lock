@@ -13380,8 +13380,8 @@ packages:
   timestamp: 1753948848920
 - pypi: /local/scratch/zarrnii
   name: zarrnii
-  version: 0.5.0a2.dev30+g1484fc804
-  sha256: c45a1f133802cc6c2c25003ed1b32e2ba1ce6e2d9908db00dfaf990e871448de
+  version: 0.5.0a2.dev45+gb2383ab81
+  sha256: 0241f62849df82c10bd6464edcdb91ff1f32fd9a04bab398d59df4774109caee
   requires_dist:
   - dask>=2025.5.1
   - h5py>=3.14.0
@@ -13409,6 +13409,7 @@ packages:
   - pytest-cov>=6.0.0 ; extra == 'dev'
   - pytest>=8.2.0 ; extra == 'dev'
   - h5py>=3.8.0 ; extra == 'imaris'
+  - antspyx>=0.5.0 ; extra == 'n4'
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/zeromq-4.3.5-h387f397_9.conda
