@@ -1,6 +1,6 @@
 import nibabel as nib
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 img_nib = nib.load(snakemake.input.img)
 dseg_nib = nib.load(snakemake.input.dseg)

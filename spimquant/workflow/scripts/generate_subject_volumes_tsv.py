@@ -1,6 +1,6 @@
 import nibabel as nib
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 dseg_df = pd.read_table(snakemake.input.label_tsv)
 

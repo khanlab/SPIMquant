@@ -359,12 +359,11 @@ rule deform_zarr_to_template_nii:
 
 rule deform_to_template_nii_zoomed:
     input:
-        **get_storage_creds(inputs["spim"].path, config["remote_creds"]),
+        ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         warp_nii=rules.deform_reg.output.warp,
         ref_nii=get_template_for_reg,
     params:
-        ome_zarr=inputs["spim"].path,
         flo_opts={},  #any additional flo znimg options
         do_downsample=True,  #whether to perform further downsampling before transforming
         downsample_opts={"along_z": 4},  #could also be determined automatically 
@@ -457,7 +456,16 @@ rule deform_template_dseg_to_subject_nii:
         dseg=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
         ),
-        xfm_ras=rules.init_affine_reg.output.xfm_ras,
+        xfm_itk=bids(
+            root=root,
+            datatype="warps",
+            from_="subject",
+            to="{template}",
+            type_="itk",
+            desc="affine",
+            suffix="xfm.txt",
+            **inputs["spim"].wildcards,
+        ),
         invwarp=rules.deform_reg.output.invwarp,
     output:
         dseg=bids(
@@ -471,12 +479,13 @@ rule deform_template_dseg_to_subject_nii:
             **inputs["spim"].wildcards,
         ),
     threads: 32
+    conda:
+        "../envs/ants.yaml"
     shell:
-        " greedy -threads {threads} -d 3 -rf {input.ref} "
-        " -ri NN "
-        "  -rm {input.dseg} {output.dseg} "
-        "  -r {input.xfm_ras},-1 {input.invwarp}"
-        #note: LABEL interpolation not possible with >1000 labels
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -v -n NearestNeighbor "
+        " -i {input.dseg} -o {output.dseg} "
+        " -r {input.ref} -t  [{input.xfm_itk},1] {input.invwarp}"
 
 
 rule deform_transform_labels_to_subj:

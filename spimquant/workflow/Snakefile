@@ -1,6 +1,6 @@
-from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
+from zarrnii import ZarrNii
 from snakemake.utils import format
-from lib.utils import get_channel_names
+from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
 
 set_bids_spec("v0_11_0")
 
@@ -11,14 +11,6 @@ configfile: "config/snakebids.yml"
 # use expandvars so we can use e.g. '$SLURM_TMPDIR'
 root = os.path.expandvars(config["root"])
 work = os.path.expandvars(config["work"])
-
-# set coiled remote paths if applicable, else use local
-if config["use_coiled"]:
-    root_coiled = config["root_coiled"]
-    work_coiled = config["work_coiled"]
-else:
-    root_coiled = root
-    work_coiled = work
 
 if not config["register_to_mri"]:
     del config["pybids_inputs"]["T2w"]
@@ -38,8 +30,7 @@ inputs = generate_inputs(
 
 # get stains from first subject (lazy - should use the correct stain for each subject, when defining target rules)
 #  to do this, would need to get the channel names in the function that gets the target rules
-
-stains = get_channel_names(inputs["spim"].expand()[0])
+stains = ZarrNii.from_ome_zarr(inputs["spim"].expand()[0]).list_channels()
 stain_for_reg = None
 for stain in config["stains_for_reg"]:
     if stain in stains:
@@ -53,7 +44,6 @@ if stain_for_reg == None:
 
 
 stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
-
 
 # atlas segmentations to use
 all_atlas_segs = config["templates"][config["template"]]["segs"].keys()
@@ -71,11 +61,6 @@ else:
             atlas_segs.append(seg)
 
 
-if config["use_negative_mask"]:
-    config["seg_method"].extend([f"{method}penalty" for method in config["seg_method"]])
-
-
-# wildcard_constraints: **get_wildcard_constraints(config["pybids_inputs"])
 wildcard_constraints:
     stain="[a-zA-Z0-9]+",
 

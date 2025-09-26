@@ -1,13 +1,12 @@
-import zarr
 import dask.array as da
 import nibabel as nib
 import numpy as np
 import pandas as pd
-from scipy.interpolate import interpn
+import zarr
 from dask.diagnostics import ProgressBar
-from ome_zarr.writer import write_labels, write_label_metadata
 from ome_zarr.scale import Scaler
-
+from ome_zarr.writer import write_label_metadata, write_labels
+from scipy.interpolate import interpn
 
 in_zarr = snakemake.input.zarr_zip
 in_xfm = snakemake.input.xfm_ras

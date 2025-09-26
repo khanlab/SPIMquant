@@ -49,6 +49,22 @@ parse_args:
     type: str
     default: work
 
+  --use_coiled:
+    help: "Use coiled for remote cloud execution (use this only if your input data is already on cloud) (default: %(default)s)"
+    action: "store_true"
+    default: False
+
+  --root_coiled:
+    help: "Remote uri to use for finalized cloud outputs from coiled rules, only applicable with --use-coiled\n"
+    type: str
+    default: 
+      gcs://khanlab-lightsheet/data/mouse_appmaptapoe/bids/derivatives/SPIMquant_v0.1.1-alpha
+
+  --work_coiled:
+    help: "Remote uri to use for temporary cloud outputs from coiled rules, only applicable with --use-coiled\n"
+    type: str
+    default: gcs://khanlab-scratch/spimquant_work
+  
   --template:
     help: "Template to use for SPIM registration\n"
     default: ABAv3
@@ -64,25 +80,11 @@ parse_args:
     choices:
       - MouseIn
 
-  --atlas_segs:
-    help: "Atlas segmentations to use with the chosen template (default: use them all)"
-    default: null
-    action: store
-    nargs: '+'
-
-
-
   --template_negative_mask:
     help: "Negative mask, in the template space, to highlight regions to avoid\n"
     type: Path
-    default: placeholder
+    default: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
 
-  --template_crop:
-    help: "Crop template along X-axis to retain specific hemisphere for registration (default: %(default)s)"
-    choices: 
-      - left
-      - right
-    default: null
 
   --stains_for_reg:
     help: "Possible stains to use for registration (will choose first available, in order)\n (default: %(default)s)"
@@ -102,8 +104,6 @@ parse_args:
       - Abeta
       - BetaAmyloid
       - AlphaSynuclein
-      - Iba1
-      - ChAT
     action: store
     nargs: '+'
 
@@ -115,22 +115,22 @@ parse_args:
     help: "Downsampling level to use for segmentation (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
     default: 0
 
-  --correction_method:
-    help: "Method to use for intensity non-uniformity correction, prior to performing segmentation (default: %(default)s)"
-    choices: 
-      - gaussian
-      - n4
-    default: n4
 
+  --in_orientation:
+    help: "Override input SPIM image orientation, using 3-letter orientation code representing ZYX directions, with R/L, A/P, S/I (default: %(default)s)"
+    
+  --use_negative_mask:
+    help: "Use the template-based negative mask to reduce boundary artifact when quantifying"
+    action: store_true
+    default: False    
 
-  
   --seg_method:
-    help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions. "
+    help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions"
     choices: 
       - threshold
-      - otsu+k3i2
+   #   - multiotsu
     default: 
-      - otsu+k3i2
+      - threshold
     nargs: '+'
 
   --seg_threshold:
@@ -143,11 +143,9 @@ parse_args:
     action: store_true
     default: False
 
-  --sloppy:
-    help: "Use low-quality parameters for speed (USE FOR TESTING ONLY)"
-    action: store_true
-    default: False
-
+  --remote_creds:
+    help: "Google cloud default credentials to use for coiled"
+    default: ~/.config/gcloud/application_default_credentials.json
 
   --skip-bids-validation:
     help: |
@@ -161,6 +159,8 @@ parse_args:
 #--- workflow specific configuration -- 
 
 
+remote_creds: '~/.config/gcloud/application_default_credentials.json' #this is needed so we can pass creds to container
+
 ome_zarr:
   max_downsampling_layers: 4 # e.g. 4 levels: { 0: orig, 1: ds2, 2: ds4, 3: ds8, 4: ds16}
   rechunk_size: #z, y, x
@@ -168,6 +168,11 @@ ome_zarr:
     - 1024
     - 1024
   scaling_method: 'local_mean' #can be nearest, gaussian, local_mean, zoom (zoom uses spline interp)
+
+
+#template:  ABAv3 #template to use
+
+#template_negative_mask: /cifs/trident/projects/mouse_appmaptapoe/lightsheet/derivatives/SPIMquant/v0.1.1-alpha/analysis_appmaptapoe_20241111/etc/negative_mask.nii
 
 
 templates:
@@ -211,7 +216,7 @@ templates:
     segs:
       paxinos: 
         dseg: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.nii.gz'
-        itksnap: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.itksnap.txt'
+        tsv: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.txt'
 
   turone:
     anat: '{workflow.basedir}/../resources/Turone_Mouse_Brain_Template/Turone_Mouse_Brain_Template/TMBTA_Brain_Template.nii.gz'
@@ -227,6 +232,7 @@ templates:
 templatereg:
   desc: N4brain
   zooms:
+    #    - 20
     - 40
 
 masking:

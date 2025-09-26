@@ -1,7 +1,7 @@
-from scipy.interpolate import interpn
 import nibabel as nib
 import numpy as np
 import pandas as pd
+from scipy.interpolate import interpn
 
 # load the nii dseg
 dseg_nib = nib.load(snakemake.input.dseg)

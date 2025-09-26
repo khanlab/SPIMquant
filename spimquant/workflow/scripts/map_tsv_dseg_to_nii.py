@@ -1,6 +1,6 @@
 import nibabel as nib
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 df = pd.read_csv(snakemake.input.tsv, sep="\t")
 dseg_nib = nib.load(snakemake.input.dseg)
