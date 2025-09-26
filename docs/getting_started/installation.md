@@ -5,12 +5,10 @@ SPIMquant is a BIDS App for processing SPIM (lightsheet) microscopy datasets, pe
 Hardware requirements: If run locally, make sure you have sufficient memory 
 (at least quite a bit more than 16G of memory in total), as the `greedy` diffeormorphic registration we rely on can consume a significant amount of memory during the template registration process.
 
-Software requirements: A linux machine with Singularity or Apptainer installed is 
-recommended. Other-wise with a Windows machine, you want to have the following libraries 
-installed and available in the command line:
-- `itk-snap` (`c3d` comes with itk-snap)
-- `greedy` command line tool
-- `python3` with environment installed according to pyproject.toml
+Software requirements: A linux machine with pixi installed is 
+recommended. Pixi will manage all dependencies including Python packages and external tools
+like `itk-snap` (`c3d` comes with itk-snap), `greedy` command line tool, and python environment
+according to pyproject.toml.
 
 (For developer of SPIMquant: To update dataset, replace the link below)
 A sample dataset can be downloaded from [here](https://drive.google.com/file/d/1-eVG_1VREKCE8auI81jyW4onyUcpzXI7/view?usp=sharing) 
@@ -20,13 +18,19 @@ which contains:
 
 ## Installation
 
-Install from github with pip:
+Install pixi (if not already installed):
 
 ```bash
-pip install -e git+https://github.com/khanlab/spimquant#egg=spimquant
+curl -fsSL https://pixi.sh/install.sh | bash
 ```
 
-Note: you can re-run this command to re-install with the latest version
+Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/khanlab/SPIMquant.git
+cd SPIMquant
+pixi install
+```
 
 Before running the app, you need to specify a config file to use. "SPIMquant/examples/snakebids_template.yml" 
 provides a starting point for specifying a config. If you are using the example dataset provided in the 
@@ -40,13 +44,13 @@ properties in the config file to ensure paths to the directory are properly set.
 Do a dry-run first (`-n`) and simply print (`-p`) what would be run:
 
 ```bash
-spimquant /path/to/bids/dir /path/to/output/dir participant -np --use-apptainer
+pixi run spimquant /path/to/bids/dir /path/to/output/dir participant -np
 ```
 
 Run the app, using all cores::
 
 ```bash
-spimquant /path/to/bids/dir /path/to/output/dir participant --cores all --use-apptainer
+pixi run spimquant /path/to/bids/dir /path/to/output/dir participant --cores all
 ```
 
 
@@ -60,7 +64,7 @@ run times for each job.
 To generate a report, run:
 
 ```bash
-spimquant /path/to/bids/dir /path/to/output/dir participant --report
+pixi run spimquant /path/to/bids/dir /path/to/output/dir participant --report
 ```
 
 
