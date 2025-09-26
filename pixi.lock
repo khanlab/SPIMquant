@@ -595,8 +595,8 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/63/cc69b41d6db6522adfc79627e7b9ad83d44797d525aae2a53f62d47d6e3e/wasmtime-36.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8c/77/e3362fe308358dc9f8588102481e599c83e1b91c2ae843780a7ded939a35/watchfiles-1.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/8f/aa61f528fba38578ec553c145857a181384c72b98156f858ca5c8e82d9d3/websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/e0/fb/259ab3ad95a89f0f073b43f32d0a4d51f6d76438ae77ecb36014c3dc988b/zarrnii-0.6.0a1-py3-none-any.whl
       - pypi: ./
-      - pypi: /local/scratch/zarrnii
   dev:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -1257,8 +1257,8 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/63/cc69b41d6db6522adfc79627e7b9ad83d44797d525aae2a53f62d47d6e3e/wasmtime-36.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8c/77/e3362fe308358dc9f8588102481e599c83e1b91c2ae843780a7ded939a35/watchfiles-1.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/8f/aa61f528fba38578ec553c145857a181384c72b98156f858ca5c8e82d9d3/websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/e0/fb/259ab3ad95a89f0f073b43f32d0a4d51f6d76438ae77ecb36014c3dc988b/zarrnii-0.6.0a1-py3-none-any.whl
       - pypi: ./
-      - pypi: /local/scratch/zarrnii
   dev-only:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -1500,9 +1500,9 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/25/0d/4d564798a49bf5482a4fa9416dea6b6c0733a3b5700cb8a5a503c4b15853/watchfiles-1.1.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ff/b2/83a6ddf56cdcbad4e3d841fcc55d6ba7d19aeb89c50f24dd7e859ec0805f/websockets-15.0.1-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/1a/71/9de7229515a53d1cc5705ca9c411530f711a2242f962214d9dbfe2741aa4/zarr-3.1.3-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/e0/fb/259ab3ad95a89f0f073b43f32d0a4d51f6d76438ae77ecb36014c3dc988b/zarrnii-0.6.0a1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/ab/11a76c1e2126084fde2639514f24e6111b789b0bfa4fc6264a8975c7e1f1/zict-3.0.0-py2.py3-none-any.whl
       - pypi: ./
-      - pypi: /local/scratch/zarrnii
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
   sha256: fe51de6107f9edc7aa4f786a70f4a883943bc9d39b3bb7307c04c41410990726
@@ -10423,7 +10423,7 @@ packages:
 - pypi: ./
   name: spimquant
   version: 0.1.0
-  sha256: 33c5ea1a7de9bdc80f327e859d2a5e9c82c841fa5b3f88e93943bcbb49498815
+  sha256: e89d43596ab38749511fb135048d5b91fd59f6c10138ce798ce4dda6e842b0a3
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/spirv-tools-2025.1-h84d6215_0.conda
@@ -11718,10 +11718,10 @@ packages:
   - pkg:pypi/zarr?source=hash-mapping
   size: 290974
   timestamp: 1758255670714
-- pypi: /local/scratch/zarrnii
+- pypi: https://files.pythonhosted.org/packages/e0/fb/259ab3ad95a89f0f073b43f32d0a4d51f6d76438ae77ecb36014c3dc988b/zarrnii-0.6.0a1-py3-none-any.whl
   name: zarrnii
-  version: 0.5.0a2.dev45+gb2383ab81
-  sha256: 0241f62849df82c10bd6464edcdb91ff1f32fd9a04bab398d59df4774109caee
+  version: 0.6.0a1
+  sha256: 0ea3b626aab0e2d45dfa4da6a4e065ffec3335328853bb77a0084a6938ab110d
   requires_dist:
   - dask>=2025.5.1
   - h5py>=3.14.0
@@ -11751,7 +11751,6 @@ packages:
   - h5py>=3.8.0 ; extra == 'imaris'
   - antspyx>=0.5.0 ; extra == 'n4'
   requires_python: '>=3.11'
-  editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/zeromq-4.3.5-h387f397_9.conda
   sha256: 47cfe31255b91b4a6fa0e9dbaf26baa60ac97e033402dbc8b90ba5fee5ffe184
   md5: 8035e5b54c08429354d5d64027041cad
