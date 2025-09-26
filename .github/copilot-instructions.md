@@ -93,7 +93,7 @@ This ensures BIDS-compliant file naming and organization.
 #### Dry Run Testing
 Always test workflows with the `-n` flag before full execution:
 ```bash
-spimquant /path/to/bids/dir /path/to/output/dir participant -n
+spimquant <absolute path to tests/bids_ds dataset>  /path/to/output/dir participant -n
 ```
 
 #### Quality Checks
@@ -178,7 +178,7 @@ Managed through pixi/conda:
 - Template-based registration with configurable templates:
   - ABAv3 (Allen Brain Atlas v3)
   - gubra
-  - MBMv3 (Mouse Brain Maps v3)
+  - MBMv3 (Marmoset Brain Maps v3)
   - turone
   - MouseIn (for MRI registration)
 - Atlas-based segmentation and quantification
@@ -208,7 +208,7 @@ Managed through pixi/conda:
 
 ## Best Practices
 
-1. **Always dry-run first**: Use `-n` flag to validate workflows
+1. **Always dry-run first**: Use `-n` flag to validate workflows, use the tests/bids_ds dataset, requires absolute path
 2. **Use BIDS functions**: Consistent file naming and organization
 3. **Leverage snakemake object**: No need for custom argument parsing
 4. **Document new features**: Code, configuration, and user documentation
