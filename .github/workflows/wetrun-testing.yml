@@ -55,7 +55,7 @@ jobs:
 
     - name: Run wet run
       run: |
-        ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds /mnt/test-out participant --cores all --registration-level 0 --segmentation-level 0
+        ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds /mnt/test-out participant --cores all --registration-level 0 --segmentation-level 0 --conda-prefix /mnt/conda-envs
 
   cleanup:
     needs: [launch-runner, run-wet-run]
