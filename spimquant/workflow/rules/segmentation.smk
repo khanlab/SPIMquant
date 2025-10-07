@@ -303,9 +303,12 @@ rule map_segstats_tsv_dseg_to_template_nii:
         dseg=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
         ),
+        label_tsv=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
+        ),
     params:
         label_column="index",
-        feature_column="avg_fieldfrac",
+        feature_column="mean_fieldfrac",
     output:
         nii=bids(
             root=root,
@@ -345,9 +348,12 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
+        label_tsv=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
+        ),
     params:
         label_column="index",
-        feature_column="avg_fieldfrac",
+        feature_column="mean_fieldfrac",
     output:
         nii=bids(
             root=root,

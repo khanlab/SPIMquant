@@ -1,18 +1,14 @@
-import nibabel as nib
-import numpy as np
+from zarrnii import ZarrNiiAtlas
 import pandas as pd
 
-df = pd.read_csv(snakemake.input.tsv, sep="\t")
-dseg_nib = nib.load(snakemake.input.dseg)
-dseg_vol = dseg_nib.get_fdata()
+atlas = ZarrNiiAtlas.from_files(snakemake.input.dseg, snakemake.input.label_tsv)
 
-out_vol = np.zeros(dseg_vol.shape)
+feature_data = pd.read_csv(snakemake.input.tsv, sep="\t")
 
-for i in range(len(df)):
-    label = df.loc[i, snakemake.params.label_column]
-    feature = df.loc[i, snakemake.params.feature_column]
+img = atlas.create_feature_map(
+    feature_data,
+    feature_column=snakemake.params.feature_column,
+    label_column=snakemake.params.label_column,
+)
 
-    out_vol[dseg_vol == label] = feature
-
-out_nib = nib.Nifti1Image(out_vol, affine=dseg_nib.affine)
-out_nib.to_filename(snakemake.output.nii)
+img.to_nifti(snakemake.output.nii)
