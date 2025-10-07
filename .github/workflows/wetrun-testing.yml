@@ -27,7 +27,7 @@ jobs:
     with:
       pr_number: ${{ github.event.pull_request.number }}
       repository: ${{ github.repository }}
-      server_flavor: c8-60gb-288
+      # server_flavor: c8-60gb-288
     secrets:
       OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
       OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
