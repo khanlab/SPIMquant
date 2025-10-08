@@ -23,11 +23,11 @@ jobs:
          github.event.label.name == 'ready-for-wet-run')
       ||
       (github.event_name == 'workflow_dispatch')
-    uses: khanlab/actions/.github/workflows/workflow-pr_task-launchRunner.yml@configurable-server-resources
+    uses: khanlab/actions/.github/workflows/workflow-pr_task-launchRunner.yml@main
     with:
       pr_number: ${{ github.event.pull_request.number }}
       repository: ${{ github.repository }}
-      server_flavor: c64-60gb-288
+      # server_flavor: c64-60gb-288
     secrets:
       OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
       OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
@@ -60,7 +60,7 @@ jobs:
   cleanup:
     needs: [launch-runner, run-wet-run]
     if: always()
-    uses: khanlab/actions/.github/workflows/workflow-pr_task-removeRunner.yml@configurable-server-resources
+    uses: khanlab/actions/.github/workflows/workflow-pr_task-removeRunner.yml@main
     with:
       pr_number: ${{ github.event.pull_request.number }}
       repository: ${{ github.repository }}
