@@ -1,6 +1,6 @@
 from dask.diagnostics import ProgressBar
-
-from zarrnii import GaussianBiasFieldCorrection, ZarrNii
+from zarrnii import ZarrNii
+from zarrnii.plugins import GaussianBiasFieldCorrection
 
 hires_level = int(snakemake.wildcards.level)
 ds_level = int(snakemake.wildcards.dslevel)
