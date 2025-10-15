@@ -3,6 +3,8 @@ rule gaussian_biasfield:
     """simple bias field correction with gaussian"""
     input:
         spim=inputs["spim"].path,
+    params:
+        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         corrected=directory(
             bids(
@@ -38,6 +40,8 @@ rule n4_biasfield:
     """N4 bias field correction with antspyx"""
     input:
         spim=inputs["spim"].path,
+    params:
+        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         corrected=directory(
             bids(
@@ -85,6 +89,7 @@ rule multiotsu:
     params:
         otsu_k=lambda wildcards: int(wildcards.k),
         otsu_threshold_index=lambda wildcards: int(wildcards.i),
+        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         mask=directory(
             bids(
@@ -118,6 +123,7 @@ rule threshold:
         ),
     params:
         threshold=int(config["seg_threshold"]),
+        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         mask=directory(
             bids(
@@ -149,6 +155,10 @@ rule fieldfrac:
             suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
+    params:
+        ds_level=lambda wildcards: int(wildcards.dslevel)
+        - int(config["segmentation_level"]),
+        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         fieldfrac_nii=bids(
             root=root,

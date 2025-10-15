@@ -35,7 +35,7 @@ docutils = "<0.22"
 [tool.pixi.pypi-dependencies]
 spimquant = { path = ".", editable = true }
 ngff-zarr = { version = ">=0.16.1, <0.17", extras = ["all"] }
-zarrnii = ">=0.6.0a1,<0.7.0"
+zarrnii = ">=0.7.1-alpha1,<0.8.0"
 #zarrnii = { path = "/localscratch/zarrnii", editable = true }
 
 [tool.pixi.feature.dev.dependencies]

@@ -595,7 +595,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/63/cc69b41d6db6522adfc79627e7b9ad83d44797d525aae2a53f62d47d6e3e/wasmtime-36.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8c/77/e3362fe308358dc9f8588102481e599c83e1b91c2ae843780a7ded939a35/watchfiles-1.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/8f/aa61f528fba38578ec553c145857a181384c72b98156f858ca5c8e82d9d3/websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/e0/fb/259ab3ad95a89f0f073b43f32d0a4d51f6d76438ae77ecb36014c3dc988b/zarrnii-0.6.0a1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2b/72/8d76fbd74ce645e1ef68459309791cd5f0759dbce86c60d534a2f732223e/zarrnii-0.7.1a1-py3-none-any.whl
       - pypi: ./
   dev:
     channels:
@@ -1257,7 +1257,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/63/cc69b41d6db6522adfc79627e7b9ad83d44797d525aae2a53f62d47d6e3e/wasmtime-36.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8c/77/e3362fe308358dc9f8588102481e599c83e1b91c2ae843780a7ded939a35/watchfiles-1.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/8f/aa61f528fba38578ec553c145857a181384c72b98156f858ca5c8e82d9d3/websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/e0/fb/259ab3ad95a89f0f073b43f32d0a4d51f6d76438ae77ecb36014c3dc988b/zarrnii-0.6.0a1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2b/72/8d76fbd74ce645e1ef68459309791cd5f0759dbce86c60d534a2f732223e/zarrnii-0.7.1a1-py3-none-any.whl
       - pypi: ./
   dev-only:
     channels:
@@ -1500,7 +1500,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/25/0d/4d564798a49bf5482a4fa9416dea6b6c0733a3b5700cb8a5a503c4b15853/watchfiles-1.1.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ff/b2/83a6ddf56cdcbad4e3d841fcc55d6ba7d19aeb89c50f24dd7e859ec0805f/websockets-15.0.1-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/1a/71/9de7229515a53d1cc5705ca9c411530f711a2242f962214d9dbfe2741aa4/zarr-3.1.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/e0/fb/259ab3ad95a89f0f073b43f32d0a4d51f6d76438ae77ecb36014c3dc988b/zarrnii-0.6.0a1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2b/72/8d76fbd74ce645e1ef68459309791cd5f0759dbce86c60d534a2f732223e/zarrnii-0.7.1a1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/ab/11a76c1e2126084fde2639514f24e6111b789b0bfa4fc6264a8975c7e1f1/zict-3.0.0-py2.py3-none-any.whl
       - pypi: ./
 packages:
@@ -10423,7 +10423,7 @@ packages:
 - pypi: ./
   name: spimquant
   version: 0.1.0
-  sha256: e89d43596ab38749511fb135048d5b91fd59f6c10138ce798ce4dda6e842b0a3
+  sha256: 2519c4eb30b2c1b359ab8819bd29c5a29019e8622be1a691b757019f1bc46b66
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/spirv-tools-2025.1-h84d6215_0.conda
@@ -11718,10 +11718,10 @@ packages:
   - pkg:pypi/zarr?source=hash-mapping
   size: 290974
   timestamp: 1758255670714
-- pypi: https://files.pythonhosted.org/packages/e0/fb/259ab3ad95a89f0f073b43f32d0a4d51f6d76438ae77ecb36014c3dc988b/zarrnii-0.6.0a1-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/2b/72/8d76fbd74ce645e1ef68459309791cd5f0759dbce86c60d534a2f732223e/zarrnii-0.7.1a1-py3-none-any.whl
   name: zarrnii
-  version: 0.6.0a1
-  sha256: 0ea3b626aab0e2d45dfa4da6a4e065ffec3335328853bb77a0084a6938ab110d
+  version: 0.7.1a1
+  sha256: 9dc6af5586dfb61a6bf110575773af138a3b0364107998c659ab6900212da993
   requires_dist:
   - dask>=2025.5.1
   - h5py>=3.14.0
@@ -11729,6 +11729,7 @@ packages:
   - nibabel>=5.2.0
   - numpy>=1.26.4
   - pandas>=2.2.0
+  - pyyaml>=6.0
   - scikit-image>=0.22.0
   - scipy>=1.12.0
   - zarr>=3.0.8
@@ -11750,6 +11751,7 @@ packages:
   - pytest>=8.2.0 ; extra == 'dev'
   - h5py>=3.8.0 ; extra == 'imaris'
   - antspyx>=0.5.0 ; extra == 'n4'
+  - templateflow>=0.8.0 ; extra == 'templateflow'
   requires_python: '>=3.11'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/zeromq-4.3.5-h387f397_9.conda
   sha256: 47cfe31255b91b4a6fa0e9dbaf26baa60ac97e033402dbc8b90ba5fee5ffe184

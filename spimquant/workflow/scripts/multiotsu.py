@@ -3,7 +3,9 @@ from dask.diagnostics import ProgressBar
 from zarrnii import ZarrNii
 
 # we use the default level=0, since we are reading in the n4 output, which is already downsampled if level was >0
-znimg = ZarrNii.from_ome_zarr(snakemake.input.corrected)
+znimg = ZarrNii.from_ome_zarr(
+    snakemake.input.corrected, **snakemake.params.zarrnii_kwargs
+)
 
 
 # get otsu thresholds (uses histogram)

@@ -1,6 +1,6 @@
 from dask.diagnostics import ProgressBar
-
-from zarrnii import GaussianBiasFieldCorrection, ZarrNii
+from zarrnii import ZarrNii
+from zarrnii.plugins import GaussianBiasFieldCorrection
 
 hires_level = int(snakemake.wildcards.level)
 ds_level = int(snakemake.wildcards.dslevel)
@@ -10,6 +10,7 @@ znimg = ZarrNii.from_ome_zarr(
     channel_labels=[snakemake.wildcards.stain],
     level=hires_level,
     downsample_near_isotropic=True,
+    **snakemake.params.zarrnii_kwargs,
 )
 
 

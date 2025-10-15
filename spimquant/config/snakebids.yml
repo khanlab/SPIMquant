@@ -143,6 +143,11 @@ parse_args:
     action: store_true
     default: False
 
+  --orientation:
+    help: "Forcefully set the orientation of the input OME Zarr. Only use this if the orientation in the zarr metadata is incorrect and not easily changed. Note, this orientation string is defined in XYZ, with the letter of the increasing direction. Blaze data stitched with SPIMprep should be RPI, Imaris stitched data should be RAI, and Lifecanvas stitched data should be RAS. "
+    default: null
+    
+
   --sloppy:
     help: "Use low-quality parameters for speed (USE FOR TESTING ONLY)"
     action: store_true
