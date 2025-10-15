@@ -39,11 +39,6 @@ pybids_inputs:
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
 parse_args:
-  bids_dir_or_uri:
-    help: |
-      Local path or a remote cloud uri (e.g. gcs:// ) for BIDS dataset
-    type: str
-
   --work:
     help: "Local path to use for temporary files\n"
     type: str
