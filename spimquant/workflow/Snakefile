@@ -17,7 +17,7 @@ if not config["register_to_mri"]:
 
 # Get input wildcards
 inputs = generate_inputs(
-    bids_dir=config["bids_dir_or_uri"],
+    bids_dir=config["bids_dir"],
     pybids_inputs=config["pybids_inputs"],
     pybidsdb_dir=config.get("pybidsdb_dir"),
     pybidsdb_reset=config.get("pybidsdb_reset"),
