@@ -1,31 +1,10 @@
-import nibabel as nib
-import numpy as np
-import pandas as pd
+from zarrnii import ZarrNii, ZarrNiiAtlas
 
-img_nib = nib.load(snakemake.input.img)
-dseg_nib = nib.load(snakemake.input.dseg)
-dseg_df = pd.read_table(snakemake.input.label_tsv)
+atlas = ZarrNiiAtlas.from_files(snakemake.input.dseg, snakemake.input.label_tsv)
+img = ZarrNii.from_file(snakemake.input.img)
 
-img = img_nib.get_fdata()
-dseg = dseg_nib.get_fdata()
-zooms = dseg_nib.header.get_zooms()
-
-# voxel size in mm^3
-voxel_mm3 = np.prod(zooms)
-
-
-def calc_label_volume(x, dseg, voxel_mm3):
-    return np.sum(dseg == x) * voxel_mm3
-
-
-def calc_avg_fieldfrac(x, img, dseg):
-    return np.mean(img[dseg == x])
-
-
-# calc volume and avg fieldfrac for each label
-dseg_df["volume"] = dseg_df["index"].apply(calc_label_volume, args=(dseg, voxel_mm3))
-
-dseg_df["avg_fieldfrac"] = dseg_df["index"].apply(calc_avg_fieldfrac, args=(img, dseg))
-
+dseg_df = atlas.aggregate_image_by_regions(
+    img, aggregation_func="mean", column_suffix="fieldfrac"
+)
 
 dseg_df.to_csv(snakemake.output.tsv, sep="\t", index=False)
