@@ -8,6 +8,8 @@ wildcard_constraints:
 rule get_downsampled_nii:
     input:
         spim=inputs["spim"].path,
+    params:
+        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         nii=bids(
             root=root,

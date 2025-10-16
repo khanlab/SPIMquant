@@ -8,6 +8,7 @@ znimg = ZarrNii.from_ome_zarr(
     level=int(snakemake.wildcards.level),
     channel_labels=[snakemake.wildcards.stain],
     downsample_near_isotropic=True,
+    **snakemake.params.zarrnii_kwargs,
 )
 
 with ProgressBar():
