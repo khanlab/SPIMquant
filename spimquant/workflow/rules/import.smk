@@ -24,17 +24,8 @@ rule get_downsampled_nii:
         "../scripts/ome_zarr_to_nii.py"
 
 
-rule download_gubra:
-    input:
-        storage("https://zenodo.org/records/14080380/files/gubra_20241111.tar"),
-    output:
-        anat=f"{workflow.basedir}/../resources/gubra/gubra_template_olf_spacing_reslice.nii.gz",
-        dseg=f"{workflow.basedir}/../resources/gubra/gubra_ano_olf_spacing_remap_reslice.nii.gz",
-    shell:
-        "tar -C resources -xvf {input}"
 
-
-rule import_anat:
+rule import_template_anat:
     input:
         anat=lambda wildcards: ancient(
             format(config["templates"][wildcards.template]["anat"])
@@ -45,24 +36,6 @@ rule import_anat:
         bids_tpl(
             root="logs",
             datatype="import_anat",
-            template="{template}",
-            suffix="log.txt",
-        ),
-    shell:
-        "cp {input} {output}"
-
-
-rule import_dseg:
-    input:
-        dseg=lambda wildcards: ancient(
-            format(config["templates"][wildcards.template]["dseg"])
-        ),
-    output:
-        dseg=bids_tpl(root=root, template="{template}", suffix="dseg.nii.gz"),
-    log:
-        bids_tpl(
-            root="logs",
-            datatype="import_dseg",
             template="{template}",
             suffix="log.txt",
         ),
@@ -90,21 +63,6 @@ rule import_mask:
         "cp {input} {output}"
 
 
-rule import_labelmapper_lut:
-    input:
-        json=lambda wildcards: ancient(
-            format(config["templates"][wildcards.template]["lut"])
-        ),
-    output:
-        tsv=bids_tpl(root=root, template="{template}", suffix="dseg.tsv"),
-    log:
-        bids_tpl(
-            root="logs", datatype="import_lut", template="{template}", suffix="log.txt"
-        ),
-    script:
-        "../scripts/import_labelmapper_lut.py"
-
-
 rule lut_bids_to_itksnap:
     input:
         tsv=bids_tpl(root=root, template="{template}", desc="{desc}", suffix="dseg.tsv"),
@@ -116,67 +74,30 @@ rule lut_bids_to_itksnap:
         "../scripts/lut_bids_to_itksnap.py"
 
 
-rule lateralize_atlas_dseg:
-    """splits atlas label nii into left and right, adding an offset to right hemi"""
+
+rule import_dseg:
     input:
-        dseg=bids_tpl(root=root, template="{template}", suffix="dseg.nii.gz"),
-    params:
-        offset_rh=10000,
-    output:
-        dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
-    conda:
-        "../envs/c3d.yaml"
-    shell:
-        "c3d {input.dseg} -as SEG -cmv -pop -pop -threshold 50% inf 1 0 -as MASK_RH "
-        " -push SEG -times -as SEG_RH "
-        " -push MASK_RH -replace 1 0 0 1 -as MASK_LH "
-        " -push SEG -times -as SEG_LH "
-        " -push SEG_RH -binarize -scale {params.offset_rh} -push SEG_RH -add "
-        " -push SEG_LH -add -type int -o {output.dseg}"
-
-
-rule lateralize_atlas_tsv:
-    """splits atlas label tsv into left and right, adding an offset to right hemi"""
-    input:
-        tsv=bids_tpl(root=root, template="{template}", suffix="dseg.tsv"),
-    output:
-        tsv=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.tsv"),
-    script:
-        "../scripts/lateralize_atlas_tsv.py"
-
-
-print(workflow)
-print(workflow.basedir)
-
-
-rule import_reslice_dseg:
-    input:
-        ref=lambda wildcards: ancient(
-            format(config["templates"][wildcards.template]["dseg"])
-        ),
         dseg=lambda wildcards: ancient(
             format(
-                config["templates"][wildcards.template]["segs"][wildcards.seg]["dseg"]
+                config["templates"][wildcards.template]["atlases"][wildcards.seg]["dseg"]
             )
         ),
     output:
         dseg=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
         ),
-    conda:
-        "../envs/c3d.yaml"
     shell:
-        "c3d {input.ref} {input.dseg} -interpolation NearestNeighbor -reslice-identity -o {output}"
+        "cp {input} {output}"
 
 
-ruleorder: import_lut_tsv > import_lut_csv_as_tsv
+
 
 
 rule import_lut_tsv:
     input:
         tsv=lambda wildcards: ancient(
             format(
-                config["templates"][wildcards.template]["segs"][wildcards.seg]["tsv"]
+                config["templates"][wildcards.template]["atlases"][wildcards.seg]["tsv"]
             )
         ),
     output:
@@ -184,30 +105,3 @@ rule import_lut_tsv:
     shell:
         "cp {input} {output}"
 
-
-rule import_lut_csv_as_tsv:
-    input:
-        csv=lambda wildcards: ancient(
-            format(
-                config["templates"][wildcards.template]["segs"][wildcards.seg]["csv"]
-            )
-        ),
-    output:
-        tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    script:
-        "../scripts/import_lut_csv_as_tsv.py"
-
-
-rule import_lut_itksnap_as_tsv:
-    input:
-        lut=lambda wildcards: ancient(
-            format(
-                config["templates"][wildcards.template]["segs"][wildcards.seg][
-                    "itksnap"
-                ]
-            )
-        ),
-    output:
-        tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    script:
-        "../scripts/import_lut_itksnap_as_tsv.py"

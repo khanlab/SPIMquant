@@ -1,0 +1,1328 @@
+index	name	abbreviation	color
+0	root	root	000000
+1	Basic cell groups and regions	grey	BFDAE3
+2	Cerebrum	CH	B0F0FF
+3	Cerebral cortex	CTX	B0FFB8
+4	Cortical plate	CTXpl	70FF70
+5	Isocortex	Isocortex	70FF71
+6	Frontal pole, cerebral cortex	FRP	268F44
+7	Frontal pole, layer 1	FRP1	268F45
+8	Frontal pole, layer 2/3	FRP2/3	268E45
+9	Frontal pole, layer 5	FRP5	258F45
+10	Frontal pole, layer 6a	FRP6a	268E44
+11	Frontal pole, layer 6b	FRP6b	258F44
+12	Somatomotor areas	MO	1F9C59
+13	Somatomotor areas, Layer 1	MO1	1F9D5A
+14	Somatomotor areas, Layer 2/3	MO2/3	1F9D59
+15	Somatomotor areas, Layer 5	MO5	1F9C5A
+16	Somatomotor areas, Layer 6a	MO6a	1E9D59
+17	Somatomotor areas, Layer 6b	MO6b	1F9B59
+18	Primary motor area	MOp	1E9B5A
+19	Primary motor area, Layer 1	MOp1	1E9D5A
+20	Primary motor area, Layer 2/3	MOp2/3	1F9C58
+21	Primary motor area, Layer 5	MOp5	1E9C5A
+22	Primary motor area, Layer 6a	MOp6a	1F9B5A
+23	Primary motor area, Layer 6b	MOp6b	1D9D5A
+24	Secondary motor area	MOs	1D9D59
+25	Secondary motor area, layer 1	MOs1	1E9C59
+26	Secondary motor area, layer 2/3	MOs2/3	1E9D58
+27	Secondary motor area, layer 5	MOs5	1F9D58
+28	Secondary motor area, layer 6a	MOs6a	1D9C5A
+29	Secondary motor area, layer 6b	MOs6b	1E9C58
+30	Somatosensory areas	SS	1B8061
+31	Somatosensory areas, layer 1	SS1	1A7F62
+32	Somatosensory areas, layer 2/3	SS2/3	1A7E63
+33	Somatosensory areas, layer 4	SS4	198064
+34	Somatosensory areas, layer 5	SS5	1B8064
+35	Somatosensory areas, layer 6a	SS6a	187F61
+36	Somatosensory areas, layer 6b	SS6b	187D63
+37	Primary somatosensory area	SSp	198063
+38	Primary somatosensory area, layer 1	SSp1	197D64
+39	Primary somatosensory area, layer 2/3	SSp2/3	187E64
+40	Primary somatosensory area, layer 4	SSp4	1B7F63
+41	Primary somatosensory area, layer 5	SSp5	1B7D64
+42	Primary somatosensory area, layer 6a	SSp6a	187D64
+43	Primary somatosensory area, layer 6b	SSp6b	198061
+44	Primary somatosensory area, nose	SSp-n	1A8064
+45	Primary somatosensory area, nose, layer 1	SSp-n1	197E63
+46	Primary somatosensory area, nose, layer 2/3	SSp-n2/3	1B7F64
+47	Primary somatosensory area, nose, layer 4	SSp-n4	1A8062
+48	Primary somatosensory area, nose, layer 5	SSp-n5	197E62
+49	Primary somatosensory area, nose, layer 6a	SSp-n6a	187D62
+50	Primary somatosensory area, nose, layer 6b	SSp-n6b	1B7E64
+51	Primary somatosensory area, barrel field	SSp-bfd	197F64
+52	Primary somatosensory area, barrel field, layer 1	SSp-bfd1	188060
+53	Primary somatosensory area, barrel field, layer 2/3	SSp-bfd2/3	187F63
+54	Primary somatosensory area, barrel field, layer 4	SSp-bfd4	197C64
+55	Primary somatosensory area, barrel field, layer 5	SSp-bfd5	1A7D62
+56	Primary somatosensory area, barrel field, layer 6a	SSp-bfd6a	198060
+57	Primary somatosensory area, barrel field, layer 6b	SSp-bfd6b	1A7E61
+58	Rostrolateral lateral visual area	VISrll	1B7F61
+59	Rostrolateral lateral visual area, layer 1	VISrll1	1B7D63
+60	Rostrolateral lateral visual area, layer 2/3	VISrll2/3	187E60
+61	Rostrolateral lateral visual area, layer 4	VISrll4	187C62
+62	Rostrolateral lateral visual area,layer 5	VISrll5	1A8060
+63	Rostrolateral lateral visual area, layer 6a	VISrll6a	1A7C64
+64	Rostrolateral lateral visual area, layer 6b	VISrll6b	1C8062
+65	Primary somatosensory area, lower limb	SSp-ll	197F63
+66	Primary somatosensory area, lower limb, layer 1	SSp-ll1	187F60
+67	Primary somatosensory area, lower limb, layer 2/3	SSp-ll2/3	187F64
+68	Primary somatosensory area, lower limb, layer 4	SSp-ll4	1C7F64
+69	Primary somatosensory area, lower limb, layer 5	SSp-ll5	197C63
+70	Primary somatosensory area, lower limb, layer 6a	SSp-ll6a	1A7F64
+71	Primary somatosensory area, lower limb, layer 6b	SSp-ll6b	197F62
+72	Primary somatosensory area, mouth	SSp-m	188062
+73	Primary somatosensory area, mouth, layer 1	SSp-m1	187E61
+74	Primary somatosensory area, mouth, layer 2/3	SSp-m2/3	1A7E64
+75	Primary somatosensory area, mouth, layer 4	SSp-m4	1B7F62
+76	Primary somatosensory area, mouth, layer 5	SSp-m5	1B7E63
+77	Primary somatosensory area, mouth, layer 6a	SSp-m6a	187D61
+78	Primary somatosensory area, mouth, layer 6b	SSp-m6b	188064
+79	Primary somatosensory area, upper limb	SSp-ul	187E63
+80	Primary somatosensory area, upper limb, layer 1	SSp-ul1	197E64
+81	Primary somatosensory area, upper limb, layer 2/3	SSp-ul2/3	197F61
+82	Primary somatosensory area, upper limb, layer 4	SSp-ul4	1A7F63
+83	Primary somatosensory area, upper limb, layer 5	SSp-ul5	187E62
+84	Primary somatosensory area, upper limb, layer 6a	SSp-ul6a	197D61
+85	Primary somatosensory area, upper limb, layer 6b	SSp-ul6b	1C8064
+86	Primary somatosensory area, trunk	SSp-tr	187F62
+87	Primary somatosensory area, trunk, layer 1	SSp-tr1	187C64
+88	Primary somatosensory area, trunk, layer 2/3	SSp-tr2/3	188061
+89	Primary somatosensory area, trunk, layer 4	SSp-tr4	1B7E62
+90	Primary somatosensory area, trunk, layer 5	SSp-tr5	197F60
+91	Primary somatosensory area, trunk, layer 6a	SSp-tr6a	188063
+92	Primary somatosensory area, trunk, layer 6b	SSp-tr6b	1A8063
+93	Primary somatosensory area, unassigned	SSp-un	1A7D64
+94	Primary somatosensory area, unassigned, layer 1	SSp-un1	1B8062
+95	Primary somatosensory area, unassigned, layer 2/3	SSp-un2/3	1C7F63
+96	Primary somatosensory area, unassigned, layer 4	SSp-un4	197E61
+97	Primary somatosensory area, unassigned, layer 5	SSp-un5	197D62
+98	Primary somatosensory area, unassigned, layer 6a	SSp-un6a	1A7F61
+99	Primary somatosensory area, unassigned, layer 6b	SSp-un6b	1A7D63
+100	Supplemental somatosensory area	SSs	198062
+101	Supplemental somatosensory area, layer 1	SSs1	1A7E62
+102	Supplemental somatosensory area, layer 2/3	SSs2/3	1B8063
+103	Supplemental somatosensory area, layer 4	SSs4	187C63
+104	Supplemental somatosensory area, layer 5	SSs5	1C8063
+105	Supplemental somatosensory area, layer 6a	SSs6a	197D63
+106	Supplemental somatosensory area, layer 6b	SSs6b	1A8061
+107	Gustatory areas	GU	019B75
+108	Gustatory areas, layer 1	GU1	009C75
+109	Gustatory areas, layer 2/3	GU2/3	009B75
+110	Gustatory areas, layer 4	GU4	009C74
+111	Gustatory areas, layer 5	GU5	019C75
+112	Gustatory areas, layer 6a	GU6a	009B74
+113	Gustatory areas, layer 6b	GU6b	019C74
+114	Visceral area	VISC	11AD83
+115	Visceral area, layer 1	VISC1	12AD83
+116	Visceral area, layer 2/3	VISC2/3	12AC83
+117	Visceral area, layer 4	VISC4	11AC82
+118	Visceral area, layer 5	VISC5	12AD82
+119	Visceral area, layer 6a	VISC6a	11AC83
+120	Visceral area, layer 6b	VISC6b	11AD82
+121	Auditory areas	AUD	019299
+122	Dorsal auditory area	AUDd	049399
+123	Dorsal auditory area, layer 1	AUDd1	039399
+124	Dorsal auditory area, layer 2/3	AUDd2/3	029397
+125	Dorsal auditory area, layer 4	AUDd4	039398
+126	Dorsal auditory area, layer 5	AUDd5	029398
+127	Dorsal auditory area, layer 6a	AUDd6a	019399
+128	Dorsal auditory area, layer 6b	AUDd6b	019398
+129	Laterolateral anterior visual area	VISlla	029099
+130	Laterolateral anterior visual area, layer 1	VISlla1	029299
+131	Laterolateral anterior visual area, layer 2/3	VISlla2/3	049398
+132	Laterolateral anterior visual area, layer 4	VISlla4	049299
+133	Laterolateral anterior visual area,layer 5	VISlla5	029296
+134	Laterolateral anterior visual area, layer 6a	VISlla6a	019199
+135	Laterolateral anterior visual area, layer 6b	VISlla6b	019297
+136	Primary auditory area	AUDp	039297
+137	Primary auditory area, layer 1	AUDp1	029297
+138	Primary auditory area, layer 2/3	AUDp2/3	019298
+139	Primary auditory area, layer 4	AUDp4	039397
+140	Primary auditory area, layer 5	AUDp5	039199
+141	Primary auditory area, layer 6a	AUDp6a	019396
+142	Primary auditory area, layer 6b	AUDp6b	039198
+143	Posterior auditory area	AUDpo	029396
+144	Posterior auditory area, layer 1	AUDpo1	039299
+145	Posterior auditory area, layer 2/3	AUDpo2/3	029199
+146	Posterior auditory area, layer 4	AUDpo4	039298
+147	Posterior auditory area, layer 5	AUDpo5	019197
+148	Posterior auditory area, layer 6a	AUDpo6a	029399
+149	Posterior auditory area, layer 6b	AUDpo6b	029298
+150	Ventral auditory area	AUDv	019296
+151	Ventral auditory area, layer 1	AUDv1	019099
+152	Ventral auditory area, layer 2/3	AUDv2/3	029198
+153	Ventral auditory area, layer 4	AUDv4	029197
+154	Ventral auditory area, layer 5	AUDv5	019098
+155	Ventral auditory area, layer 6a	AUDv6a	019397
+156	Ventral auditory area, layer 6b	AUDv6b	019198
+157	Visual areas	VIS	098489
+158	Visual areas, layer 1	VIS1	08828A
+159	Visual areas, layer 2/3	VIS2/3	0B858C
+160	Visual areas, layer 4	VIS4	09828A
+161	Visual areas, layer 5	VIS5	08818C
+162	Visual areas, layer 6a	VIS6a	0A838C
+163	Visual areas, layer 6b	VIS6b	09838A
+164	Anterolateral visual area	VISal	09838C
+165	Anterolateral visual area, layer 1	VISal1	0B838B
+166	Anterolateral visual area, layer 2/3	VISal2/3	098389
+167	Anterolateral visual area, layer 4	VISal4	088588
+168	Anterolateral visual area, layer 5	VISal5	08848B
+169	Anterolateral visual area, layer 6a	VISal6a	09828C
+170	Anterolateral visual area, layer 6b	VISal6b	0B848C
+171	Anteromedial visual area	VISam	08838B
+172	Anteromedial visual area, layer 1	VISam1	09848B
+173	Anteromedial visual area, layer 2/3	VISam2/3	0B848A
+174	Anteromedial visual area, layer 4	VISam4	09858A
+175	Anteromedial visual area, layer 5	VISam5	0A848B
+176	Anteromedial visual area, layer 6a	VISam6a	0A828B
+177	Anteromedial visual area, layer 6b	VISam6b	08838A
+178	Lateral visual area	VISl	0A848C
+179	Lateral visual area, layer 1	VISl1	09848A
+180	Lateral visual area, layer 2/3	VISl2/3	0A8489
+181	Lateral visual area, layer 4	VISl4	08828B
+182	Lateral visual area, layer 5	VISl5	0B858B
+183	Lateral visual area, layer 6a	VISl6a	08848C
+184	Lateral visual area, layer 6b	VISl6b	09858C
+185	Primary visual area	VISp	0A858C
+186	Primary visual area, layer 1	VISp1	098589
+187	Primary visual area, layer 2/3	VISp2/3	0A828C
+188	Primary visual area, layer 4	VISp4	0B848B
+189	Primary visual area, layer 5	VISp5	088389
+190	Primary visual area, layer 6a	VISp6a	08858C
+191	Primary visual area, layer 6b	VISp6b	08858A
+192	Posterolateral visual area	VISpl	09838B
+193	Posterolateral visual area, layer 1	VISpl1	0A838A
+194	Posterolateral visual area, layer 2/3	VISpl2/3	09848C
+195	Posterolateral visual area, layer 4	VISpl4	0B858A
+196	Posterolateral visual area, layer 5	VISpl5	0B838C
+197	Posterolateral visual area, layer 6a	VISpl6a	08838C
+198	Posterolateral visual area, layer 6b	VISpl6b	08848A
+199	posteromedial visual area	VISpm	0A838B
+200	posteromedial visual area, layer 1	VISpm1	0A8589
+201	posteromedial visual area, layer 2/3	VISpm2/3	08858B
+202	posteromedial visual area, layer 4	VISpm4	09828B
+203	posteromedial visual area, layer 5	VISpm5	088489
+204	posteromedial visual area, layer 6a	VISpm6a	09858B
+205	posteromedial visual area, layer 6b	VISpm6b	088589
+206	Laterointermediate area	VISli	0A858B
+207	Laterointermediate area, layer 1	VISli1	0C858C
+208	Laterointermediate area, layer 2/3	VISli2/3	0A858A
+209	Laterointermediate area, layer 4	VISli4	08828C
+210	Laterointermediate area, layer 5	VISli5	0A848A
+211	Laterointermediate area, layer 6a	VISli6a	088488
+212	Laterointermediate area, layer 6b	VISli6b	08818B
+213	Postrhinal area	VISpor	098588
+214	Postrhinal area, layer 1	VISpor1	09818C
+215	Postrhinal area, layer 2/3	VISpor2/3	0A8389
+216	Postrhinal area, layer 4	VISpor4	0A828A
+217	Postrhinal area, layer 5	VISpor5	0B838A
+218	Postrhinal area, layer 6a	VISpor6a	0C858B
+219	Postrhinal area, layer 6b	VISpor6b	0C848C
+220	Anterior cingulate area	ACA	40A666
+221	Anterior cingulate area, layer 1	ACA1	3FA565
+222	Anterior cingulate area, layer 2/3	ACA2/3	3FA564
+223	Anterior cingulate area, layer 5	ACA5	40A466
+224	Anterior cingulate area, layer 6a	ACA6a	3FA666
+225	Anterior cingulate area, layer 6b	ACA6b	3FA665
+226	Anterior cingulate area, dorsal part	ACAd	40A665
+227	Anterior cingulate area, dorsal part, layer 1	ACAd1	3EA665
+228	Anterior cingulate area, dorsal part, layer 2/3	ACAd2/3	40A565
+229	Anterior cingulate area, dorsal part, layer 5	ACAd5	3EA566
+230	Anterior cingulate area, dorsal part, layer 6a	ACAd6a	3FA664
+231	Anterior cingulate area, dorsal part, layer 6b	ACAd6b	3FA466
+232	Anterior cingulate area, ventral part	ACAv	40A566
+233	Anterior cingulate area, ventral part, layer 1	ACAv1	40A664
+234	Anterior cingulate area, ventral part, layer 2/3	ACAv2/3	3FA566
+235	Anterior cingulate area, ventral part, layer 5	ACAv5	3EA666
+236	Anterior cingulate area, ventral part, 6a	ACAv6a	40A564
+237	Anterior cingulate area, ventral part, 6b	ACAv6b	40A465
+238	Prelimbic area	PL	2EA750
+239	Prelimbic area, layer 1	PL1	2FA750
+240	Prelimbic area, layer 2	PL2	2EA850
+241	Prelimbic area, layer 2/3	PL2/3	2FA74F
+242	Prelimbic area, layer 5	PL5	2EA84F
+243	Prelimbic area, layer 6a	PL6a	2FA850
+244	Prelimbic area, layer 6b	PL6b	2FA84F
+245	Infralimbic area	ILA	59B363
+246	Infralimbic area, layer 1	ILA1	59B263
+247	Infralimbic area, layer 2	ILA2	58B363
+248	Infralimbic area, layer 2/3	ILA2/3	59B362
+249	Infralimbic area, layer 5	ILA5	59B262
+250	Infralimbic area, layer 6a	ILA6a	58B362
+251	Infralimbic area, layer 6b	ILA6b	58B263
+252	Orbital area	ORB	23895C
+253	Orbital area, layer 1	ORB1	248A5E
+254	Orbital area, layer 2/3	ORB2/3	24885E
+255	Orbital area, layer 5	ORB5	24895E
+256	Orbital area, layer 6a	ORB6a	23895E
+257	Orbital area, layer 6b	ORB6b	228A5E
+258	Orbital area, lateral part	ORBl	23885D
+259	Orbital area, lateral part, layer 1	ORBl1	238A5D
+260	Orbital area, lateral part, layer 2/3	ORBl2/3	238A5E
+261	Orbital area, lateral part, layer 5	ORBl5	228A5D
+262	Orbital area, lateral part, layer 6a	ORBl6a	24895D
+263	Orbital area, lateral part, layer 6b	ORBl6b	248A5C
+264	Orbital area, medial part	ORBm	22895D
+265	Orbital area, medial part, layer 1	ORBm1	23895D
+266	Orbital area, medial part, layer 2	ORBm2	24895C
+267	Orbital area, medial part, layer 2/3	ORBm2/3	24885D
+268	Orbital area, medial part, layer 5	ORBm5	23885E
+269	Orbital area, medial part, layer 6a	ORBm6a	22885E
+270	Orbital area, medial part, layer 6b	ORBm6b	24875E
+271	Orbital area, ventral part	ORBv	24885C
+272	Orbital area, ventrolateral part	ORBvl	228A5C
+273	Orbital area, ventrolateral part, layer 1	ORBvl1	248A5B
+274	Orbital area, ventrolateral part, layer 2/3	ORBvl2/3	248A5D
+275	Orbital area, ventrolateral part, layer 5	ORBvl5	23885C
+276	Orbital area, ventrolateral part, layer 6a	ORBvl6a	238A5C
+277	Orbital area, ventrolateral part, layer 6b	ORBvl6b	22895E
+278	Agranular insular area	AI	219866
+279	Agranular insular area, dorsal part	AId	219865
+280	Agranular insular area, dorsal part, layer 1	AId1	209764
+281	Agranular insular area, dorsal part, layer 2/3	AId2/3	209765
+282	Agranular insular area, dorsal part, layer 5	AId5	209665
+283	Agranular insular area, dorsal part, layer 6a	AId6a	209666
+284	Agranular insular area, dorsal part, layer 6b	AId6b	1F9766
+285	Agranular insular area, posterior part	AIp	219766
+286	Agranular insular area, posterior part, layer 1	AIp1	219765
+287	Agranular insular area, posterior part, layer 2/3	AIp2/3	209865
+288	Agranular insular area, posterior part, layer 5	AIp5	219864
+289	Agranular insular area, posterior part, layer 6a	AIp6a	209766
+290	Agranular insular area, posterior part, layer 6b	AIp6b	219666
+291	Agranular insular area, ventral part	AIv	209866
+292	Agranular insular area, ventral part, layer 1	AIv1	209864
+293	Agranular insular area, ventral part, layer 2/3	AIv2/3	219764
+294	Agranular insular area, ventral part, layer 5	AIv5	1F9865
+295	Agranular insular area, ventral part, layer 6a	AIv6a	1F9866
+296	Agranular insular area, ventral part, layer 6b	AIv6b	219665
+297	Retrosplenial area	RSP	1AA698
+298	Retrosplenial area, lateral agranular part	RSPagl	1BA497
+299	Retrosplenial area, lateral agranular part, layer 1	RSPagl1	1BA696
+300	Retrosplenial area, lateral agranular part, layer 2/3	RSPagl2/3	1AA496
+301	Retrosplenial area, lateral agranular part, layer 5	RSPagl5	1CA697
+302	Retrosplenial area, lateral agranular part, layer 6a	RSPagl6a	1CA597
+303	Retrosplenial area, lateral agranular part, layer 6b	RSPagl6b	1AA598
+304	Mediomedial anterior visual area	VISmma	1CA696
+305	Mediomedial anterior visual area, layer 1	VISmma1	1CA498
+306	Mediomedial anterior visual area, layer 2/3	VISmma2/3	1AA695
+307	Mediomedial anterior visual area, layer 4	VISmma4	1AA398
+308	Mediomedial anterior visual area,layer 5	VISmma5	1BA496
+309	Mediomedial anterior visual area, layer 6a	VISmma6a	1CA596
+310	Mediomedial anterior visual area, layer 6b	VISmma6b	1CA497
+311	Mediomedial posterior visual area	VISmmp	1DA698
+312	Mediomedial posterior visual area, layer 1	VISmmp1	1AA595
+313	Mediomedial posterior visual area, layer 2/3	VISmmp2/3	1AA397
+314	Mediomedial posterior visual area, layer 4	VISmmp4	1BA695
+315	Mediomedial posterior visual area,layer 5	VISmmp5	1BA398
+316	Mediomedial posterior visual area, layer 6a	VISmmp6a	1DA697
+317	Mediomedial posterior visual area, layer 6b	VISmmp6b	1DA598
+318	Medial visual area	VISm	1BA595
+319	Medial visual area, layer 1	VISm1	1BA397
+320	Medial visual area, layer 2/3	VISm2/3	1DA597
+321	Medial visual area, layer 4	VISm4	1CA496
+322	Medial visual area,layer 5	VISm5	1AA495
+323	Medial visual area, layer 6a	VISm6a	1AA396
+324	Medial visual area, layer 6b	VISm6b	1CA695
+325	Retrosplenial area, dorsal part	RSPd	1CA598
+326	Retrosplenial area, dorsal part, layer 1	RSPd1	1BA598
+327	Retrosplenial area, dorsal part, layer 2/3	RSPd2/3	1BA697
+328	Retrosplenial area, dorsal part, layer 4	RSPd4	1AA696
+329	Retrosplenial area, dorsal part, layer 5	RSPd5	1AA596
+330	Retrosplenial area, dorsal part, layer 6a	RSPd6a	1AA697
+331	Retrosplenial area, dorsal part, layer 6b	RSPd6b	1BA698
+332	Retrosplenial area, ventral part	RSPv	1BA596
+333	Retrosplenial area, ventral part, layer 1	RSPv1	1BA597
+334	Retrosplenial area, ventral part, layer 2	RSPv2	1CA698
+335	Retrosplenial area, ventral part, layer 2/3	RSPv2/3	1AA597
+336	Retrosplenial area, ventral part, layer 5	RSPv5	1BA498
+337	Retrosplenial area, ventral part, layer 6a	RSPv6a	1AA498
+338	Retrosplenial area, ventral part, layer 6b	RSPv6b	1AA497
+339	Posterior parietal association areas	PTLp	009FAC
+340	Posterior parietal association areas, layer 1	PTLp1	009DAB
+341	Posterior parietal association areas, layer 2/3	PTLp2/3	009EAC
+342	Posterior parietal association areas, layer 4	PTLp4	019FAA
+343	Posterior parietal association areas, layer 5	PTLp5	019DAC
+344	Posterior parietal association areas, layer 6a	PTLp6a	019FAB
+345	Posterior parietal association areas, layer 6b	PTLp6b	009FAA
+346	Anterior area	VISa	009FAB
+347	Anterior area, layer 1	VISa1	019FAC
+348	Anterior area, layer 2/3	VISa2/3	009EAB
+349	Anterior area, layer 4	VISa4	019EAC
+350	Anterior area, layer 5	VISa5	019EAB
+351	Anterior area, layer 6a	VISa6a	009DAC
+352	Anterior area, layer 6b	VISa6b	029FAC
+353	Rostrolateral visual area	VISrl	009EAA
+354	Rostrolateral area, layer 1	VISrl1	029FAB
+355	Rostrolateral area, layer 2/3	VISrl2/3	029EAC
+356	Rostrolateral area, layer 4	VISrl4	019EAA
+357	Rostrolateral area, layer 5	VISrl5	019DAB
+358	Rostrolateral area, layer 6a	VISrl6a	029EAB
+359	Rostrolateral area, layer 6b	VISrl6b	009DAA
+360	Temporal association areas	TEa	16B0B3
+361	Temporal association areas, layer 1	TEa1	15B0B3
+362	Temporal association areas, layer 2/3	TEa2/3	16AFB3
+363	Temporal association areas, layer 4	TEa4	15B0B2
+364	Temporal association areas, layer 5	TEa5	15AFB3
+365	Temporal association areas, layer 6a	TEa6a	15AFB2
+366	Temporal association areas, layer 6b	TEa6b	16B0B2
+367	Perirhinal area	PERI	0F9683
+368	Perirhinal area, layer 1	PERI1	0E9584
+369	Perirhinal area, layer 2/3	PERI2/3	0E9583
+370	Perirhinal area, layer 5	PERI5	0F9684
+371	Perirhinal area, layer 6a	PERI6a	0E9684
+372	Perirhinal area, layer 6b	PERI6b	0E9683
+373	Ectorhinal area	ECT	0D9E91
+374	Ectorhinal area/Layer 1	ECT1	0D9F90
+375	Ectorhinal area/Layer 2/3	ECT2/3	0D9F91
+376	Ectorhinal area/Layer 5	ECT5	0D9E90
+377	Ectorhinal area/Layer 6a	ECT6a	0E9F91
+378	Ectorhinal area/Layer 6b	ECT6b	0E9F90
+379	Olfactory areas	OLF	99D2BD
+380	Main olfactory bulb	MOB	9AD1BD
+381	Main olfactory bulb, glomerular layer	MOBgl	82C7AE
+382	Main olfactory bulb, granule layer	MOBgr	82C7AD
+383	Main olfactory bulb, inner plexiform layer	MOBipl	9AD2BD
+384	Main olfactory bulb, mitral layer	MOBmi	82C6AE
+385	Main olfactory bulb, outer plexiform layer	MOBopl	9AD2BC
+386	Accessory olfactory bulb	AOB	9DF0D2
+387	Accessory olfactory bulb, glomerular layer	AOBgl	9DF0D1
+388	Accessory olfactory bulb, granular layer	AOBgr	95E4C8
+389	Accessory olfactory bulb, mitral layer	AOBmi	9DEFD2
+390	Anterior olfactory nucleus	AON	54BF94
+391	Anterior olfactory nucleus, dorsal part	AONd	54BE94
+392	Anterior olfactory nucleus, external part	AONe	54BE93
+393	Anterior olfactory nucleus, lateral part	AONl	53BF93
+394	Anterior olfactory nucleus, medial part	AONm	53BE94
+395	Anterior olfactory nucleus, posteroventral part	AONpv	53BE93
+396	Anterior olfactory nucleus, layer 1	AON1	54BF93
+397	Anterior olfactory nucleus, layer 2	AON2	53BF94
+398	Taenia tecta	TT	62CF9F
+399	Taenia tecta, dorsal part	TTd	61D09F
+400	Taenia tecta, dorsal part, layers 1-4	TTd1-4	62D09F
+401	Taenia tecta, dorsal part, layer 1	TTd1	61D09E
+402	Taenia tecta, dorsal part, layer 2	TTd2	61CF9F
+403	Taenia tecta, dorsal part, layer 3	TTd3	61CF9E
+404	Taenia tecta, dorsal part, layer 4	TTd4	62D09D
+405	Taenia tecta, ventral part	TTv	62CF9E
+406	Taenia tecta, ventral part, layers 1-3	TTv1-3	62D09E
+407	Taenia tecta, ventral part, layer 1	TTv1	62CE9F
+408	Taenia tecta, ventral part, layer 2	TTv2	60D09F
+409	Taenia tecta, ventral part, layer 3	TTv3	62CF9D
+410	Dorsal peduncular area	DP	A3DAA3
+411	Dorsal peduncular area, layer 1	DP1	A4D9A4
+412	Dorsal peduncular area, layer 2	DP2	A3DAA4
+413	Dorsal peduncular area, layer 2/3	DP2/3	A4DAA3
+414	Dorsal peduncular area, layer 5	DP5	A4D9A3
+415	Dorsal peduncular area, layer 6a	DP6a	A4DAA4
+416	Piriform area	PIR	6ACAB9
+417	Piriform area, layers 1-3	PIR1-3	6ACBBA
+418	Piriform area, molecular layer	PIR1	6ACBB9
+419	Piriform area, pyramidal layer	PIR2	6ACABA
+420	Piriform area, polymorph layer	PIR3	69CBBA
+421	Nucleus of the lateral olfactory tract	NLOT	95E3C7
+422	Nucleus of the lateral olfactory tract, layers 1-3	NLOT1-3	94E4C8
+423	Nucleus of the lateral olfactory tract, molecular layer	NLOT1	95E4C7
+424	Nucleus of the lateral olfactory tract, pyramidal layer	NLOT2	95E3C8
+425	Nucleus of the lateral olfactory tract, layer 3	NLOT3	94E4C7
+426	Cortical amygdalar area	COA	60E7B5
+427	Cortical amygdalar area, anterior part	COAa	60E5B7
+428	Cortical amygdalar area, anterior part, layer 1	COAa1	61E7B7
+429	Cortical amygdalar area, anterior part, layer 2	COAa2	61E7B6
+430	Cortical amygdalar area, anterior part, layer 3	COAa3	61E6B7
+431	Cortical amygdalar area, posterior part	COAp	5FE7B6
+432	Cortical amygdalar area, posterior part, lateral zone	COApl	5FE6B7
+433	Cortical amygdalar area, posterior part, lateral zone, layers 1-2	COApl1-2	61E6B5
+434	Cortical amygdalar area, posterior part, lateral zone, layers 1-3	COApl1-3	61E5B7
+435	Cortical amygdalar area, posterior part, lateral zone, layer 1	COApl1	60E7B7
+436	Cortical amygdalar area, posterior part, lateral zone, layer 2	COApl2	61E6B6
+437	Cortical amygdalar area, posterior part, lateral zone, layer 3	COApl3	60E7B6
+438	Cortical amygdalar area, posterior part, medial zone	COApm	60E6B5
+439	Cortical amygdalar area, posterior part, medial zone, layers 1-2	COApm1-2	61E5B6
+440	Cortical amygdalar area, posterior part, medial zone, layers 1-3	COApm1-3	5FE7B7
+441	Cortical amygdalar area, posterior part, medial zone, layer 1	COApm1	60E6B7
+442	Cortical amygdalar area, posterior part, medial zone, layer 2	COApm2	60E6B6
+443	Cortical amygdalar area, posterior part, medial zone, layer 3	COApm3	61E7B5
+444	Piriform-amygdalar area	PAA	59D9AA
+445	Piriform-amygdalar area, layers 1-3	PAA1-3	59DAAB
+446	Piriform-amygdalar area, molecular layer	PAA1	59DAAA
+447	Piriform-amygdalar area, pyramidal layer	PAA2	59D9AB
+448	Piriform-amygdalar area, polymorph layer	PAA3	58DAAB
+449	Postpiriform transition area	TR	A8ECD2
+450	Postpiriform transition area, layers 1-3	TR1-3	A8ECD3
+451	Postpiriform transition area, layers 1	TR1	A8EBD3
+452	Postpiriform transition area, layers 2	TR2	A7ECD3
+453	Postpiriform transition area, layers 3	TR3	A8EBD2
+454	Hippocampal formation	HPF	7DCD4B
+455	Hippocampal region	HIP	7DD048
+456	Ammon's horn	CA	7ED04A
+457	Field CA1	CA1	7ECF4B
+458	Field CA1, stratum lacunosum-moleculare	CA1slm	7DD04B
+459	Field CA1, stratum oriens	CA1so	7ECF4A
+460	Field CA1, pyramidal layer	CA1sp	66A83D
+461	Field CA1, stratum radiatum	CA1sr	7DD04A
+462	Field CA2	CA2	7DCF4B
+463	Field CA2, stratum lacunosum-moleculare	CA2slm	7DCF4A
+464	Field CA2, stratum oriens	CA2so	7ED049
+465	Field CA2, pyramidal layer	CA2sp	66A83C
+466	Field CA2, stratum radiatum	CA2sr	7ECE4B
+467	Field CA3	CA3	7ECF49
+468	Field CA3, stratum lacunosum-moleculare	CA3slm	7DD049
+469	Field CA3, stratum lucidum	CA3slu	7DCE4B
+470	Field CA3, stratum oriens	CA3so	7CD04A
+471	Field CA3, pyramidal layer	CA3sp	66A73D
+472	Field CA3, stratum radiatum	CA3sr	7CCF4B
+473	Dentate gyrus	DG	7DCF49
+474	Dentate gyrus, molecular layer	DG-mo	7BD04A
+475	Dentate gyrus, polymorph layer	DG-po	7ECE4A
+476	Dentate gyrus, granule cell layer	DG-sg	65A83D
+477	Dentate gyrus, subgranular zone	DG-sgz	7CD04B
+478	Dentate gyrus crest	DGcr	7DCE4A
+479	Dentate gyrus crest, molecular layer	DGcr-mo	7CCF4A
+480	Dentate gyrus crest, polymorph layer	DGcr-po	7ECE49
+481	Dentate gyrus crest, granule cell layer	DGcr-sg	7CD049
+482	Dentate gyrus lateral blade	DGlb	7CCE4B
+483	Dentate gyrus lateral blade, molecular layer	DGlb-mo	7ED048
+484	Dentate gyrus lateral blade, polymorph layer	DGlb-po	7ECD4B
+485	Dentate gyrus lateral blade, granule cell layer	DGlb-sg	7DCE49
+486	Dentate gyrus medial blade	DGmb	7CCF49
+487	Dentate gyrus medial blade, molecular layer	DGmb-mo	7CCE4A
+488	Dentate gyrus medial blade, polymorph layer	DGmb-po	7BD04B
+489	Dentate gyrus medial blade, granule cell layer	DGmb-sg	7ECF48
+490	Fasciola cinerea	FC	7ECD4A
+491	Induseum griseum	IG	7ED04B
+492	Retrohippocampal region	RHP	30B625
+493	Entorhinal area	ENT	32B822
+494	Entorhinal area, lateral part	ENTl	32B525
+495	Entorhinal area, lateral part, layer 1	ENTl1	32B722
+496	Entorhinal area, lateral part, layer 2	ENTl2	32B825
+497	Entorhinal area, lateral part, layer 2/3	ENTl2/3	2FB825
+498	Entorhinal area, lateral part, layer 2a	ENTl2a	30B624
+499	Entorhinal area, lateral part, layer 2b	ENTl2b	30B823
+500	Entorhinal area, lateral part, layer 3	ENTl3	32B725
+501	Entorhinal area, lateral part, layer 4	ENTl4	32B724
+502	Entorhinal area, lateral part, layer 4/5	ENTl4/5	31B724
+503	Entorhinal area, lateral part, layer 5	ENTl5	31B824
+504	Entorhinal area, lateral part, layer 5/6	ENTl5/6	30B825
+505	Entorhinal area, lateral part, layer 6a	ENTl6a	32B824
+506	Entorhinal area, lateral part, layer 6b	ENTl6b	31B825
+507	Entorhinal area, medial part, dorsal zone	ENTm	31B623
+508	Entorhinal area, medial part, dorsal zone, layer 1	ENTm1	31B625
+509	Entorhinal area, medial part, dorsal zone, layer 2	ENTm2	30B824
+510	Entorhinal area, medial part, dorsal zone, layer 2a	ENTm2a	32B624
+511	Entorhinal area, medial part, dorsal zone, layer 2b	ENTm2b	31B823
+512	Entorhinal area, medial part, dorsal zone, layer 3	ENTm3	31B723
+513	Entorhinal area, medial part, dorsal zone, layer 4	ENTm4	31B624
+514	Entorhinal area, medial part, dorsal zone, layer 5	ENTm5	30B724
+515	Entorhinal area, medial part, dorsal zone, layer 5/6	ENTm5/6	30B725
+516	Entorhinal area, medial part, dorsal zone, layer 6	ENTm6	32B623
+517	Entorhinal area, medial part, ventral zone	ENTmv	30B723
+518	Entorhinal area, medial part, ventral zone, layer 1	ENTmv1	31B725
+519	Entorhinal area, medial part, ventral zone, layer 2	ENTmv2	32B823
+520	Entorhinal area, medial part, ventral zone, layer 3	ENTmv3	32B625
+521	Entorhinal area, medial part, ventral zone, layer 4	ENTmv4	32B723
+522	Entorhinal area, medial part, ventral zone, layer 5/6	ENTmv5/6	32B524
+523	Parasubiculum	PAR	72D568
+524	Parasubiculum, layer 1	PAR1	72D469
+525	Parasubiculum, layer 2	PAR2	71D569
+526	Parasubiculum, layer 3	PAR3	72D569
+527	Postsubiculum	POST	47C83C
+528	Postsubiculum, layer 1	POST1	48C73C
+529	Postsubiculum, layer 2	POST2	48C83B
+530	Postsubiculum, layer 3	POST3	48C83C
+531	Presubiculum	PRE	59B847
+532	Presubiculum, layer 1	PRE1	59B947
+533	Presubiculum, layer 2	PRE2	59B946
+534	Presubiculum, layer 3	PRE3	58B947
+535	Subiculum	SUB	4FC244
+536	Subiculum, dorsal part	SUBd	4FC243
+537	Subiculum, dorsal part, molecular layer	SUBd-m	4EC244
+538	Subiculum, dorsal part, pyramidal layer	SUBd-sp	4BB547
+539	Subiculum, dorsal part, stratum radiatum	SUBd-sr	4FC143
+540	Subiculum, ventral part	SUBv	4FC144
+541	Subiculum, ventral part, molecular layer	SUBv-m	4EC243
+542	Subiculum, ventral part, pyramidal layer	SUBv-sp	4BB546
+543	Subiculum, ventral part, stratum radiatum	SUBv-sr	4EC144
+544	Prosubiculum	ProS	57B947
+545	Prosubiculum, dorsal part	ProSd	57BA47
+546	Prosubiculum, dorsal part, molecular layer	ProSd-m	58BA48
+547	Prosubiculum, dorsal part, pyramidal layer	ProSd-sp	56B84B
+548	Prosubiculum, dorsal part, stratum radiatum	ProSd-sr	57B948
+549	Prosubiculum, ventral part	ProSv	58BA47
+550	Prosubiculum, ventral part, molecular layer	ProSv-m	58B948
+551	Prosubiculum, ventral part, pyramidal layer	ProSv-sp	56B84A
+552	Prosubiculum, ventral part, stratum radiatum	Prosv-sr	57BA48
+553	Hippocampo-amygdalar transition area	HATA	33B931
+554	Area prostriata	APr	33B932
+555	Cortical subplate	CTXsp	8AD987
+556	Layer 6b, isocortex	6b	8ADA87
+557	Claustrum	CLA	8ADA86
+558	Endopiriform nucleus	EP	A0EE9D
+559	Endopiriform nucleus, dorsal part	EPd	A0EE9C
+560	Endopiriform nucleus, ventral part	EPv	A0ED9D
+561	Lateral amygdalar nucleus	LA	90EB8D
+562	Basolateral amygdalar nucleus	BLA	9DE79C
+563	Basolateral amygdalar nucleus, anterior part	BLAa	9DE79B
+564	Basolateral amygdalar nucleus, posterior part	BLAp	9DE69C
+565	Basolateral amygdalar nucleus, ventral part	BLAv	9CE79C
+566	Basomedial amygdalar nucleus	BMA	84EA81
+567	Basomedial amygdalar nucleus, anterior part	BMAa	84EA80
+568	Basomedial amygdalar nucleus, posterior part	BMAp	84E981
+569	Posterior amygdalar nucleus	PA	97EC93
+570	Cerebral nuclei	CNU	98D6F8
+571	Striatum	STR	97D6F9
+572	Striatum dorsal region	STRd	98D6F9
+573	Caudoputamen	CP	98D5F9
+574	Striatum ventral region	STRv	7FCDF7
+575	Nucleus accumbens	ACB	80CDF8
+576	Fundus of striatum	FS	7ECDF8
+577	Olfactory tubercle	OT	7FCCF7
+578	Islands of Calleja	isl	80CCF7
+579	Major island of Calleja	islm	80CDF6
+580	Olfactory tubercle, layers 1-3	OT1-3	80CDF7
+581	Olfactory tubercle, molecular layer	OT1	7FCCF8
+582	Olfactory tubercle, pyramidal layer	OT2	80CCF8
+583	Olfactory tubercle, polymorph layer	OT3	7FCDF8
+584	Lateral strip of striatum	LSS	80CBF8
+585	Lateral septal complex	LSX	90CAEC
+586	Lateral septal nucleus	LS	90CBED
+587	Lateral septal nucleus, caudal (caudodorsal) part	LSc	90CBEC
+588	Lateral septal nucleus, rostral (rostroventral) part	LSr	90CAED
+589	Lateral septal nucleus, ventral part	LSv	8FCBED
+590	Septofimbrial nucleus	SF	8FCBEC
+591	Septohippocampal nucleus	SH	8FCAED
+592	Striatum-like amygdalar nuclei	sAMY	80C0E1
+593	Anterior amygdalar area	AAA	80C0E2
+594	Bed nucleus of the accessory olfactory tract	BA	80BFE2
+595	Central amygdalar nucleus	CEA	7EC0E2
+596	Central amygdalar nucleus, capsular part	CEAc	80BFE0
+597	Central amygdalar nucleus, lateral part	CEAl	80BEE1
+598	Central amygdalar nucleus, medial part	CEAm	7FC0E0
+599	Intercalated amygdalar nucleus	IA	80BEE2
+600	Medial amygdalar nucleus	MEA	80BFE1
+601	Medial amygdalar nucleus, anterodorsal part	MEAad	7FC0E2
+602	Medial amygdalar nucleus, anteroventral part	MEAav	7FC0E1
+603	Medial amygdalar nucleus, posterodorsal part	MEApd	7FBFE2
+604	Medial amygdalar nucleus, posterodorsal part, sublayer a	MEApd-a	7FBFE1
+605	Medial amygdalar nucleus, posterodorsal part, sublayer b	MEApd-b	80C0E0
+606	Medial amygdalar nucleus, posterodorsal part, sublayer c	MEApd-c	7EC0E1
+607	Medial amygdalar nucleus, posteroventral part	MEApv	7FBEE2
+608	Pallidum	PAL	8599CC
+609	Pallidum, dorsal region	PALd	8599CB
+610	Globus pallidus, external segment	GPe	8598CC
+611	Globus pallidus, internal segment	GPi	8499CC
+612	Pallidum, ventral region	PALv	A2B0D8
+613	Substantia innominata	SI	A2B1D7
+614	Magnocellular nucleus	MA	A2B1D8
+615	Pallidum, medial region	PALm	95A7D3
+616	Medial septal complex	MSC	96A6D2
+617	Medial septal nucleus	MS	96A7D3
+618	Diagonal band nucleus	NDB	96A6D3
+619	Triangular nucleus of septum	TRS	96A7D2
+620	Pallidum, caudal region	PALc	B1BFDF
+621	Bed nuclei of the stria terminalis	BST	B3C0DE
+622	Bed nuclei of the stria terminalis, anterior division	BSTa	B3BFDF
+623	Bed nuclei of the stria terminalis, anterior division, anterolateral area	BSTal	B2BFDD
+624	Bed nuclei of the stria terminalis, anterior division, anteromedial area	BSTam	B3BFDE
+625	Bed nuclei of the stria terminalis, anterior division, dorsomedial nucleus	BSTdm	B2C0DE
+626	Bed nuclei of the stria terminalis, anterior division, fusiform nucleus	BSTfu	B2BFDF
+627	Bed nuclei of the stria terminalis, anterior division, juxtacapsular nucleus	BSTju	B3BEDF
+628	Bed nuclei of the stria terminalis, anterior division, magnocellular nucleus	BSTmg	B2BFDE
+629	Bed nuclei of the stria terminalis, anterior division, oval nucleus	BSTov	B1C0DF
+630	Bed nuclei of the stria terminalis, anterior division, rhomboid nucleus	BSTrh	B3BFDD
+631	Bed nuclei of the stria terminalis, anterior division, ventral nucleus	BSTv	B3C0DD
+632	Bed nuclei of the stria terminalis, posterior division	BSTp	B2C0DF
+633	Bed nuclei of the stria terminalis, posterior division, dorsal nucleus	BSTd	B3BEDE
+634	Bed nuclei of the stria terminalis, posterior division, principal nucleus	BSTpr	B2C0DD
+635	Bed nuclei of the stria terminalis, posterior division, interfascicular nucleus	BSTif	B2BEDE
+636	Bed nuclei of the stria terminalis, posterior division, transverse nucleus	BSTtr	B2BEDF
+637	Bed nuclei of the stria terminalis, posterior division, strial extension	BSTse	B1C0DE
+638	Bed nucleus of the anterior commissure	BAC	B3C0DF
+639	Brain stem	BS	FF7080
+640	Interbrain	IB	FF707F
+641	Thalamus	TH	FF6F80
+642	Thalamus, sensory-motor cortex related	DORsm	FE7E84
+643	Ventral group of the dorsal thalamus	VENT	FF8082
+644	Ventral anterior-lateral complex of the thalamus	VAL	FD7E84
+645	Ventral medial nucleus of the thalamus	VM	FF7E84
+646	Ventral posterior complex of the thalamus	VP	FF8081
+647	Ventral posterolateral nucleus of the thalamus	VPL	FD8084
+648	Ventral posterolateral nucleus of the thalamus, parvicellular part	VPLpc	FF7F82
+649	Ventral posteromedial nucleus of the thalamus	VPM	FF7E83
+650	Ventral posteromedial nucleus of the thalamus, parvicellular part	VPMpc	FE8082
+651	Posterior triangular thalamic nucleus	PoT	FF7E82
+652	Subparafascicular nucleus	SPF	FF8083
+653	Subparafascicular nucleus, magnocellular part	SPFm	FF7F84
+654	Subparafascicular nucleus, parvicellular part	SPFp	FE8084
+655	Subparafascicular area	SPA	FE7F83
+656	Peripeduncular nucleus	PP	FD7F84
+657	Geniculate group, dorsal thalamus	GENd	FD8083
+658	Medial geniculate complex	MG	FF7F83
+659	Medial geniculate complex, dorsal part	MGd	FE7F82
+660	Medial geniculate complex, ventral part	MGv	FE7E83
+661	Medial geniculate complex, medial part	MGm	FD7F83
+662	Dorsal part of the lateral geniculate complex	LGd	FF8084
+663	Dorsal part of the lateral geniculate complex, shell	LGd-sh	FE8083
+664	Dorsal part of the lateral geniculate complex, core	LGd-co	FE7F84
+665	Dorsal part of the lateral geniculate complex, ipsilateral zone	LGd-ip	FD8082
+666	Thalamus, polymodal association cortex related	DORpm	FE909C
+667	Lateral group of the dorsal thalamus	LAT	FE8F9F
+668	Lateral posterior nucleus of the thalamus	LP	FE909D
+669	Posterior complex of the thalamus	PO	FF8E9C
+670	Posterior limiting nucleus of the thalamus	POL	FF8D9D
+671	Suprageniculate nucleus	SGN	FF8E9D
+672	Ethmoid nucleus of the thalamus	Eth	FD8F9C
+673	Retroethmoid nucleus	REth	FD8D9E
+674	Anterior group of the dorsal thalamus	ATN	FE8E9F
+675	Anteroventral nucleus of thalamus	AV	FD909E
+676	Anteromedial nucleus	AM	FE909E
+677	Anteromedial nucleus, dorsal part	AMd	FD8D9F
+678	Anteromedial nucleus, ventral part	AMv	FC909D
+679	Anterodorsal nucleus	AD	FF8F9E
+680	Interanteromedial nucleus of the thalamus	IAM	FE8E9C
+681	Interanterodorsal nucleus of the thalamus	IAD	FC8E9F
+682	Lateral dorsal nucleus of thalamus	LD	FF909D
+683	Medial group of the dorsal thalamus	MED	FF909C
+684	Intermediodorsal nucleus of the thalamus	IMD	FE909F
+685	Mediodorsal nucleus of thalamus	MD	FD909D
+686	Mediodorsal nucleus of the thalamus, central part	MDc	FC909F
+687	Mediodorsal nucleus of the thalamus, lateral part	MDl	FF8F9C
+688	Mediodorsal nucleus of the thalamus, medial part	MDm	FF8D9E
+689	Submedial nucleus of the thalamus	SMT	FD8E9F
+690	Perireunensis nucleus	PR	FD909C
+691	Midline group of the dorsal thalamus	MTN	FE8E9D
+692	Paraventricular nucleus of the thalamus	PVT	FE8F9E
+693	Parataenial nucleus	PT	FF909F
+694	Nucleus of reuniens	RE	FD909F
+695	Xiphoid thalamic nucleus	Xi	FC8F9F
+696	Intralaminar nuclei of the dorsal thalamus	ILM	FF8F9F
+697	Rhomboid nucleus	RH	FF8E9E
+698	Central medial nucleus of the thalamus	CM	FD8E9E
+699	Paracentral nucleus	PCN	FE8D9F
+700	Central lateral nucleus of the thalamus	CL	FD8F9D
+701	Parafascicular nucleus	PF	FC909E
+702	Posterior intralaminar thalamic nucleus	PIL	FE8D9E
+703	Reticular nucleus of the thalamus	RT	FD8F9F
+704	Geniculate group, ventral thalamus	GENv	FD8E9D
+705	Intergeniculate leaflet of the lateral geniculate complex	IGL	FF909E
+706	Intermediate geniculate nucleus	IntG	FE8D9D
+707	Ventral part of the lateral geniculate complex	LGv	FF8E9F
+708	Ventral part of the lateral geniculate complex, lateral zone	LGvl	FE8F9D
+709	Ventral part of the lateral geniculate complex, medial zone	LGvm	FE8E9E
+710	Subgeniculate nucleus	SubG	FD8F9E
+711	Epithalamus	EPI	FC8F9E
+712	Medial habenula	MH	FF8D9F
+713	Lateral habenula	LH	FF8F9D
+714	Pineal body	PIN	FE8F9C
+715	Hypothalamus	HY	E64438
+716	Periventricular zone	PVZ	FF5C4E
+717	Supraoptic nucleus	SO	FE5B50
+718	Accessory supraoptic group	ASO	FE5D4E
+719	Nucleus circularis	NC	FD5D4F
+720	Paraventricular hypothalamic nucleus	PVH	FF5D4F
+721	Paraventricular hypothalamic nucleus, magnocellular division	PVHm	FF5C4F
+722	Paraventricular hypothalamic nucleus, magnocellular division, anterior magnocellular part	PVHam	FF5C50
+723	Paraventricular hypothalamic nucleus, magnocellular division, medial magnocellular part	PVHmm	FE5D4F
+724	Paraventricular hypothalamic nucleus, magnocellular division, posterior magnocellular part	PVHpm	FF5D4E
+725	Paraventricular hypothalamic nucleus, magnocellular division, posterior magnocellular part, lateral zone	PVHpml	FD5C50
+726	Paraventricular hypothalamic nucleus, magnocellular division, posterior magnocellular part, medial zone	PVHpmm	FE5C4E
+727	Paraventricular hypothalamic nucleus, parvicellular division	PVHp	FE5C4F
+728	Paraventricular hypothalamic nucleus, parvicellular division, anterior parvicellular part	PVHap	FE5D50
+729	Paraventricular hypothalamic nucleus, parvicellular division, medial parvicellular part, dorsal zone	PVHmpd	FE5C50
+730	Paraventricular hypothalamic nucleus, parvicellular division, periventricular part	PVHpv	FF5B50
+731	Periventricular hypothalamic nucleus, anterior part	PVa	FF5D50
+732	Periventricular hypothalamic nucleus, intermediate part	PVi	FD5D50
+733	Arcuate hypothalamic nucleus	ARH	FF5B4F
+734	Periventricular region	PVR	FF5446
+735	Anterodorsal preoptic nucleus	ADP	FF5547
+736	Anterior hypothalamic area	AHA	FF5546
+737	Anteroventral preoptic nucleus	AVP	FE5447
+738	Anteroventral periventricular nucleus	AVPV	FE5446
+739	Dorsomedial nucleus of the hypothalamus	DMH	FE5445
+740	Dorsomedial nucleus of the hypothalamus, anterior part	DMHa	FE5545
+741	Dorsomedial nucleus of the hypothalamus, posterior part	DMHp	FE5347
+742	Dorsomedial nucleus of the hypothalamus, ventral part	DMHv	FD5546
+743	Median preoptic nucleus	MEPO	FF5445
+744	Medial preoptic area	MPO	FF5346
+745	Vascular organ of the lamina terminalis	OV	FD5447
+746	Posterodorsal preoptic nucleus	PD	FE5346
+747	Parastrial nucleus	PS	FD5446
+748	Suprachiasmatic preoptic nucleus	PSCH	FF5345
+749	Periventricular hypothalamic nucleus, posterior part	PVp	FF5447
+750	Periventricular hypothalamic nucleus, preoptic part	PVpo	FE5547
+751	Subparaventricular zone	SBPV	FD5547
+752	Suprachiasmatic nucleus	SCH	FF5545
+753	Subfornical organ	SFO	FF5347
+754	Ventromedial preoptic nucleus	VMPO	FD5545
+755	Ventrolateral preoptic nucleus	VLPO	FE5546
+756	Hypothalamic medial zone	MEZ	FF4C3C
+757	Anterior hypothalamic nucleus	AHN	FF4B3E
+758	Anterior hypothalamic nucleus, anterior part	AHNa	FE4C3C
+759	Anterior hypothalamic nucleus, central part	AHNc	FE4C3E
+760	Anterior hypothalamic nucleus, dorsal part	AHNd	FE4A3E
+761	Anterior hypothalamic nucleus, posterior part	AHNp	FD4C3D
+762	Mammillary body	MBO	FE4C3D
+763	Lateral mammillary nucleus	LM	FF4B3D
+764	Medial mammillary nucleus	MM	FF4A3E
+765	Medial mammillary nucleus, median part	Mmme	FD4B3E
+766	Medial mammillary nucleus, lateral part	Mml	FC4B3E
+767	Medial mammillary nucleus, medial part	Mmm	FE4A3C
+768	Medial mammillary nucleus, posterior part	Mmp	FE493D
+769	Medial mammillary nucleus, dorsal part	Mmd	FD4A3D
+770	Supramammillary nucleus	SUM	FF493D
+771	Supramammillary nucleus, lateral part	SUMl	FE4C3B
+772	Supramammillary nucleus, medial part	SUMm	FE493E
+773	Tuberomammillary nucleus	TM	FF4B3C
+774	Tuberomammillary nucleus, dorsal part	TMd	FC4C3D
+775	Tuberomammillary nucleus, ventral part	TMv	FF4C3E
+776	Medial preoptic nucleus	MPN	FD4C3E
+777	Medial preoptic nucleus, central part	MPNc	FE4A3D
+778	Medial preoptic nucleus, lateral part	MPNl	FD4B3D
+779	Medial preoptic nucleus, medial part	MPNm	FF4A3C
+780	Dorsal premammillary nucleus	PMd	FC4C3E
+781	Ventral premammillary nucleus	PMv	FF4B3B
+782	Paraventricular hypothalamic nucleus, descending division	PVHd	FF4C3D
+783	Paraventricular hypothalamic nucleus, descending division, dorsal parvicellular part	PVHdp	FE4B3E
+784	Paraventricular hypothalamic nucleus, descending division, forniceal part	PVHf	FE4B3D
+785	Paraventricular hypothalamic nucleus, descending division, lateral parvicellular part	PVHlp	FE4B3B
+786	Paraventricular hypothalamic nucleus, descending division, medial parvicellular part, ventral zone	PVHmpv	FE4B3C
+787	Ventromedial hypothalamic nucleus	VMH	FF4A3D
+788	Ventromedial hypothalamic nucleus, anterior part	VMHa	FD4C3C
+789	Ventromedial hypothalamic nucleus, central part	VMHc	FD4A3E
+790	Ventromedial hypothalamic nucleus, dorsomedial part	VMHdm	FF4C3B
+791	Ventromedial hypothalamic nucleus, ventrolateral part	VMHvl	FF493E
+792	Posterior hypothalamic nucleus	PH	FD4B3C
+793	Hypothalamic lateral zone	LZ	F1483B
+794	Lateral hypothalamic area	LHA	F2483A
+795	Lateral preoptic area	LPO	F2473B
+796	Preparasubthalamic nucleus	PST	F2473A
+797	Parasubthalamic nucleus	PSTN	F1483A
+798	Perifornical nucleus	PeF	F2463A
+799	Retrochiasmatic area	RCH	F2483B
+800	Subthalamic nucleus	STN	F1473B
+801	Tuberal nucleus	TU	F24839
+802	Zona incerta	ZI	F0483B
+803	Dopaminergic A13 group	A13	F2463B
+804	Fields of Forel	FF	F24739
+805	Median eminence	ME	F1473A
+806	Midbrain	MB	FF64FF
+807	Midbrain, sensory related	MBsen	FE7AFF
+808	Superior colliculus, sensory related	SCs	FF79FF
+809	Superior colliculus, optic layer	SCop	FD7AFF
+810	Superior colliculus, superficial gray layer	SCsg	FF78FF
+811	Superior colliculus, zonal layer	SCzo	FF7AFD
+812	Inferior colliculus	IC	FF7AFF
+813	Inferior colliculus, central nucleus	ICc	FE7AFE
+814	Inferior colliculus, dorsal nucleus	ICd	FE79FF
+815	Inferior colliculus, external nucleus	ICe	FE79FE
+816	Nucleus of the brachium of the inferior colliculus	NB	FE7AFD
+817	Nucleus sagulum	SAG	FF7AFE
+818	Parabigeminal nucleus	PBG	FF79FD
+819	Midbrain trigeminal nucleus	MEV	FF79FE
+820	Subcommissural organ	SCO	FF78FE
+821	Midbrain, motor related	MBmot	FE8EFE
+822	Substantia nigra, reticular part	SNr	FF8DFD
+823	Ventral tegmental area	VTA	FE8DFF
+824	Paranigral nucleus	PN	FF8EFE
+825	Midbrain reticular nucleus, retrorubral area	RR	FD8FFF
+826	Midbrain reticular nucleus	MRN	FF8FFD
+827	Midbrain reticular nucleus, magnocellular part	MRNm	FF8EFC
+828	Midbrain reticular nucleus, magnocellular part, general	MRNmg	FF8DFF
+829	Midbrain reticular nucleus, parvicellular part	MRNp	FE8EFD
+830	Superior colliculus, motor related	SCm	FE8FFD
+831	Superior colliculus, motor related, deep gray layer	SCdg	FF8FFF
+832	Superior colliculus, motor related, deep white layer	SCdw	FF8FFE
+833	Superior colliculus, motor related, intermediate white layer	SCiw	FF90FE
+834	Superior colliculus, motor related, intermediate gray layer	SCig	FF90FF
+835	Superior colliculus, motor related, intermediate gray layer, sublayer a	SCig-a	FF8EFD
+836	Superior colliculus, motor related, intermediate gray layer, sublayer b	SCig-b	FD90FD
+837	Superior colliculus, motor related, intermediate gray layer, sublayer c	SCig-c	FD8EFF
+838	Periaqueductal gray	PAG	FC8FFF
+839	Precommissural nucleus	PRC	FE90FE
+840	Interstitial nucleus of Cajal	INC	FF90FD
+841	Nucleus of Darkschewitsch	ND	FD8FFD
+842	Supraoculomotor periaqueductal gray	Su3	FD90FC
+843	Pretectal region	PRT	FD8EFD
+844	Anterior pretectal nucleus	APN	FE8EFF
+845	Medial pretectal area	MPT	FF90FC
+846	Nucleus of the optic tract	NOT	FF8FFC
+847	Nucleus of the posterior commissure	NPC	FF8DFE
+848	Olivary pretectal nucleus	OP	FE90FC
+849	Posterior pretectal nucleus	PPT	FC8FFE
+850	Retroparafascicular nucleus	RPF	FD8DFF
+851	Intercollicular nucleus	InCo	FC90FD
+852	Cuneiform nucleus	CUN	FC90FF
+853	Red nucleus	RN	FE90FD
+854	Oculomotor nucleus	III	FE90FF
+855	Medial accesory oculomotor nucleus	MA3	FC8EFF
+856	Edinger-Westphal nucleus	EW	FE8FFC
+857	Trochlear nucleus	IV	FD90FF
+858	Paratrochlear nucleus	Pa4	FE8DFE
+859	Ventral tegmental nucleus	VTN	FC90FE
+860	Anterior tegmental nucleus	AT	FD90FE
+861	Lateral terminal nucleus of the accessory optic tract	LT	FE8FFE
+862	Dorsal terminal nucleus of the accessory optic tract	DT	FF8EFF
+863	Medial terminal nucleus of the accessory optic tract	MT	FE8FFF
+864	Substantia nigra, lateral part	SNl	FD8EFE
+865	Midbrain, behavioral state related	MBsta	FD8FFE
+866	Substantia nigra, compact part	SNc	FFA6FD
+867	Pedunculopontine nucleus	PPN	FFA5FD
+868	Midbrain raphe nuclei	RAmb	FFA5FF
+869	Interfascicular nucleus raphe	IF	FFA6FF
+870	Interpeduncular nucleus	IPN	FFA6FE
+871	Interpeduncular nucleus, rostral	IPR	FFA4FE
+872	Interpeduncular nucleus, caudal	IPC	FFA5FE
+873	Interpeduncular nucleus, apical	IPA	FEA6FE
+874	Interpeduncular nucleus, lateral	IPL	FEA5FF
+875	Interpeduncular nucleus, intermediate	IPI	FEA6FD
+876	Interpeduncular nucleus, dorsomedial	IPDM	FEA4FF
+877	Interpeduncular nucleus, dorsolateral	IPDL	FDA6FE
+878	Interpeduncular nucleus, rostrolateral	IPRL	FEA5FE
+879	Rostral linear nucleus raphe	RL	FEA6FF
+880	Central linear nucleus raphe	CLI	FFA4FF
+881	Dorsal nucleus raphe	DR	FDA6FF
+882	Hindbrain	HB	FF9B87
+883	Pons	P	FF9B88
+884	Pons, sensory related	P-sen	FFAC6D
+885	Nucleus of the lateral lemniscus	NLL	FFAC6F
+886	Nucleus of the lateral lemniscus, dorsal part	NLLd	FFAE6E
+887	Nucleus of the lateral lemniscus, horizontal part	NLLh	FFAD6F
+888	Nucleus of the lateral lemniscus, ventral part	NLLv	FEAE6F
+889	Principal sensory nucleus of the trigeminal	PSV	FFAE6F
+890	Parabrachial nucleus	PB	FFAD6D
+891	Koelliker-Fuse subnucleus	KF	FEAD6E
+892	Parabrachial nucleus, lateral division	PBl	FEAE6D
+893	Parabrachial nucleus, lateral division, central lateral part	PBlc	FDAE6F
+894	Parabrachial nucleus, lateral division, dorsal lateral part	PBld	FFAC6E
+895	Parabrachial nucleus, lateral division, external lateral part	PBle	FDAE6D
+896	Parabrachial nucleus, lateral division, superior lateral part	PBls	FEAC6F
+897	Parabrachial nucleus, lateral division, ventral lateral part	PBlv	FDAD6F
+898	Parabrachial nucleus, medial division	PBm	FDAE6E
+899	Parabrachial nucleus, medial division, external medial part	PBme	FEAD6D
+900	Parabrachial nucleus, medial division, medial medial part	PBmm	FEAC6E
+901	Parabrachial nucleus, medial division, ventral medial part	PBmv	FDAD6E
+902	Superior olivary complex	SOC	FFAE6D
+903	Superior olivary complex, periolivary region	POR	FEAD6F
+904	Superior olivary complex, medial part	SOCm	FFAD6E
+905	Superior olivary complex, lateral part	SOCl	FEAE6E
+906	Pons, motor related	P-mot	FFB886
+907	Barrington's nucleus	B	FFBA86
+908	Dorsal tegmental nucleus	DTN	FEB985
+909	Lateral tegmental nucleus	LTN	FFBA85
+910	Posterodorsal tegmental nucleus	PDTg	FFB984
+911	Pontine central gray	PCG	FFBA84
+912	Pontine gray	PG	FFB885
+913	Pontine reticular nucleus, caudal part	PRNc	FDBA86
+914	Pontine reticular nucleus, ventral part	PRNv	FFB985
+915	Supragenual nucleus	SG	FFB986
+916	Superior salivatory nucleus	SSN	FEBA84
+917	Supratrigeminal nucleus	SUT	FEBA86
+918	Tegmental reticular nucleus	TRN	FEBA85
+919	Motor nucleus of trigeminal	V	FEB986
+920	Peritrigeminal zone	P5	FEB886
+921	Accessory trigeminal nucleus	Acs5	FDBA85
+922	Parvicellular motor 5 nucleus	PC5	FDB986
+923	Intertrigeminal nucleus	I5	FEB984
+924	Pons, behavioral state related	P-sat	FFC195
+925	Superior central nucleus raphe	CS	FFC393
+926	Superior central nucleus raphe, lateral part	CSl	FFC394
+927	Superior central nucleus raphe, medial part	CSm	FFC395
+928	Locus ceruleus	LC	FDC395
+929	Laterodorsal tegmental nucleus	LDT	FEC395
+930	Nucleus incertus	NI	FEC294
+931	Pontine reticular nucleus	PRNr	FFC295
+932	Nucleus raphe pontis	RPO	FFC294
+933	Subceruleus nucleus	SLC	FEC394
+934	Sublaterodorsal nucleus	SLD	FEC295
+935	Medulla	MY	FF9BCD
+936	Medulla, sensory related	MY-sen	FFA3D2
+937	Area postrema	AP	FFA5D0
+938	Cochlear nuclei	CN	FEA5D0
+939	Granular lamina of the cochlear nuclei	CNlam	FEA4D1
+940	Cochlear nucleus, subpedunclular granular region	CNspg	FFA3D1
+941	Dorsal cochlear nucleus	DCO	FEA5D1
+942	Ventral cochlear nucleus	VCO	FEA4D2
+943	Dorsal column nuclei	DCN	FDA3D2
+944	Cuneate nucleus	CU	FDA5D0
+945	Gracile nucleus	GR	FEA3D0
+946	External cuneate nucleus	ECU	FFA2D2
+947	Nucleus of the trapezoid body	NTB	FEA3D2
+948	Nucleus of the solitary tract	NTS	FDA5D1
+949	Nucleus of the solitary tract, central part	NTSce	FDA4D2
+950	Nucleus of the solitary tract, commissural part	NTSco	FEA4D0
+951	Nucleus of the solitary tract, gelatinous part	NTSge	FEA3D1
+952	Nucleus of the solitary tract, lateral part	NTSl	FDA4D1
+953	Nucleus of the solitary tract, medial part	NTSm	FFA3D0
+954	Spinal nucleus of the trigeminal, caudal part	SPVC	FDA4D0
+955	Spinal nucleus of the trigeminal, interpolar part	SPVI	FDA5D2
+956	Spinal nucleus of the trigeminal, oral part	SPVO	FFA4D0
+957	Spinal nucleus of the trigeminal, oral part, caudal dorsomedial part	SPVOcdm	FFA4D1
+958	Spinal nucleus of the trigeminal, oral part, middle dorsomedial part, dorsal zone	SPVOmdmd	FFA5D1
+959	Spinal nucleus of the trigeminal, oral part, middle dorsomedial part, ventral zone	SPVOmdmv	FFA4D2
+960	Spinal nucleus of the trigeminal, oral part, rostral dorsomedial part	SPVOrdm	FFA5D2
+961	Spinal nucleus of the trigeminal, oral part, ventrolateral part	SPVOvl	FEA5D2
+962	Paratrigeminal nucleus	Pa5	FDA3D1
+963	Nucleus z	z	FFA5CF
+964	Medulla, motor related	MY-mot	FEB2D7
+965	Abducens nucleus	VI	FDB1D9
+966	Accessory abducens nucleus	ACVI	FFB1D7
+967	Facial motor nucleus	VII	FFB3D6
+968	Accessory facial motor nucleus	ACVII	FDB0D9
+969	Efferent vestibular nucleus	EV	FDB3D7
+970	Nucleus ambiguus	AMB	FEB3D9
+971	Nucleus ambiguus, dorsal division	AMBd	FEB3D6
+972	Nucleus ambiguus, ventral division	AMBv	FEB3D8
+973	Dorsal motor nucleus of the vagus nerve	DMX	FDB1D8
+974	Efferent cochlear group	ECO	FEB1D6
+975	Gigantocellular reticular nucleus	GRN	FEB0D8
+976	Infracerebellar nucleus	ICB	FEB1D8
+977	Inferior olivary complex	IO	FFB3D8
+978	Intermediate reticular nucleus	IRN	FFB2D8
+979	Inferior salivatory nucleus	ISN	FFB2D9
+980	Linear nucleus of the medulla	LIN	FFB1D8
+981	Lateral reticular nucleus	LRN	FDB3D8
+982	Lateral reticular nucleus, magnocellular part	LRNm	FCB3D7
+983	Lateral reticular nucleus, parvicellular part	LRNp	FEB0D9
+984	Magnocellular reticular nucleus	MARN	FDB2D9
+985	Medullary reticular nucleus	MDRN	FDB2D8
+986	Medullary reticular nucleus, dorsal part	MDRNd	FDB1D7
+987	Medullary reticular nucleus, ventral part	MDRNv	FFB1D6
+988	Parvicellular reticular nucleus	PARN	FCB3D9
+989	Parasolitary nucleus	PAS	FFB2D6
+990	Paragigantocellular reticular nucleus	PGRN	FFB0D8
+991	Paragigantocellular reticular nucleus, dorsal part	PGRNd	FCB3D8
+992	Paragigantocellular reticular nucleus, lateral part	PGRNl	FCB2D9
+993	Perihypoglossal nuclei	PHY	FEB2D9
+994	Nucleus intercalatus	NIS	FEB2D8
+995	Nucleus of Roller	NR	FFB1D9
+996	Nucleus prepositus	PRP	FFB3D7
+997	Paramedian reticular nucleus	PMR	FEB2D6
+998	Parapyramidal nucleus	PPY	FCB2D8
+999	Parapyramidal nucleus, deep part	PPYd	FDB3D9
+1000	Parapyramidal nucleus, superficial part	PPYs	FFB2D7
+1001	Vestibular nuclei	VNC	FCB1D9
+1002	Lateral vestibular nucleus	LAV	FEB3D7
+1003	Medial vestibular nucleus	MV	FFB0D7
+1004	Spinal vestibular nucleus	SPIV	FEB1D9
+1005	Superior vestibular nucleus	SUV	FDB3D6
+1006	Nucleus x	x	FFB0D9
+1007	Hypoglossal nucleus	XII	FEB1D7
+1008	Nucleus y	y	FDB2D7
+1009	Interstitial nucleus of the vestibular nerve	INV	FFB3D9
+1010	Medulla, behavioral state related	MY-sat	FFC6E1
+1011	Nucleus raphe magnus	RM	FFC5E2
+1012	Nucleus raphe pallidus	RPA	FFC6E2
+1013	Nucleus raphe obscurus	RO	FEC6E2
+1014	Cerebellum	CB	F0F080
+1015	Cerebellar cortex	CBX	F0EF80
+1016	Cerebellar cortex, molecular layer	CBXmo	FFFA8E
+1017	Cerebellar cortex, Purkinje layer	CBXpu	FFF98F
+1018	Cerebellar cortex, granular layer	CBXgr	EBE753
+1019	Vermal regions	VERM	FFFA91
+1020	Lingula (I)	LING	FEFA91
+1021	Lingula (I), molecular layer	LINGmo	FFFC91
+1022	Lingula (I), Purkinje layer	LINGpu	FEFC90
+1023	Lingula (I), granular layer	LINGgr	EBE553
+1024	Central lobule	CENT	FDFB91
+1025	Lobule II	CENT2	FDFA91
+1026	Lobule II, molecular layer	CENT2mo	FEF98F
+1027	Lobule II, Purkinje layer	CENT2pu	FEF891
+1028	Lobule II, granular layer	CENT2gr	EBE654
+1029	Lobule III	CENT3	FFFC8E
+1030	Lobule III, molecular layer	CENT3mo	FDF98F
+1031	Lobule III, Purkinje layer	CENT3pu	FFFC90
+1032	Lobule III, granular layer	CENT3gr	ECE654
+1033	Culmen	CUL	FEFB8F
+1034	Lobule IV	CUL4	FFF991
+1035	Lobule IV, molecular layer	CUL4mo	FDFA90
+1036	Lobule IV, Purkinje layer	CUL4pu	FDFB8E
+1037	Lobule IV, granular layer	CUL4gr	ECE754
+1038	Lobule V	CUL5	FEFA8F
+1039	Lobule V, molecular layer	CUL5mo	FEFC8D
+1040	Lobule V, Purkinje layer	CUL5pu	FFF890
+1041	Lobule V, granular layer	CUL5gr	EBE554
+1042	Lobules IV-V	CUL4, 5	FCFB90
+1043	Lobules IV-V, molecular layer	CUL4, 5mo	FEFB91
+1044	Lobules IV-V, Purkinje layer	CUL4, 5pu	FCFA90
+1045	Lobules IV-V, granular layer	CUL4, 5gr	EBE754
+1046	Declive (VI)	DEC	FEFA90
+1047	Declive (VI), molecular layer	DECmo	FFFB8F
+1048	Declive (VI), Purkinje layer	DECpu	FCFB91
+1049	Declive (VI), granular layer	DECgr	ECE553
+1050	Folium-tuber vermis (VII)	FOTU	FDFB90
+1051	Folium-tuber vermis (VII), molecular layer	FOTUmo	FDF991
+1052	Folium-tuber vermis (VII), Purkinje layer	FOTUpu	FDFA8F
+1053	Folium-tuber vermis (VII), granular layer	FOTUgr	EAE753
+1054	Pyramus (VIII)	PYR	FBFC91
+1055	Pyramus (VIII), molecular layer	PYRmo	FFFB8D
+1056	Pyramus (VIII), Purkinje layer	PYRpu	FEFB90
+1057	Pyramus (VIII), granular layer	PYRgr	ECE752
+1058	Uvula (IX)	UVU	FFFA8F
+1059	Uvula (IX), molecular layer	UVUmo	FDFC90
+1060	Uvula (IX), Purkinje layer	UVUpu	FEFC8F
+1061	Uvula (IX), granular layer	UVUgr	EBE652
+1062	Nodulus (X)	NOD	FDFC8F
+1063	Nodulus (X), molecular layer	NODmo	FCFA8F
+1064	Nodulus (X), Purkinje layer	NODpu	FFFA90
+1065	Nodulus (X), granular layer	NODgr	ECE653
+1066	Hemispheric regions	HEM	FEF990
+1067	Simple lobule	SIM	FDFB8F
+1068	Simple lobule, molecular layer	SIMmo	FEFB8E
+1069	Simple lobule, Purkinje layer	SIMpu	FEFC8E
+1070	Simple lobule, granular layer	SIMgr	EAE654
+1071	Ansiform lobule	AN	FCFC91
+1072	Crus 1	ANcr1	FCFC90
+1073	Crus 1, molecular layer	ANcr1mo	FDFC8E
+1074	Crus 1, Purkinje layer	ANcr1pu	FFFB91
+1075	Crus 1, granular layer	ANcr1gr	ECE753
+1076	Crus 2	ANcr2	FCFA91
+1077	Crus 2, molecular layer	ANcr2mo	FEFA8E
+1078	Crus 2, Purkinje layer	ANcr2pu	FCFC8F
+1079	Crus 2, granular layer	ANcr2gr	EBE653
+1080	Paramedian lobule	PRM	FFFB8E
+1081	Paramedian lobule, molecular layer	PRMmo	FEFC91
+1082	Paramedian lobule, Purkinje layer	PRMpu	FDF990
+1083	Paramedian lobule, granular layer	PRMgr	ECE554
+1084	Copula pyramidis	COPY	FFF990
+1085	Copula pyramidis, molecular layer	COPYmo	FDFA8E
+1086	Copula pyramidis, Purkinje layer	COPYpu	FCFB8F
+1087	Copula pyramidis, granular layer	COPYgr	EAE754
+1088	Paraflocculus	PFL	FFFC8D
+1089	Paraflocculus, molecular layer	PFLmo	FFFB90
+1090	Paraflocculus, Purkinje layer	PFLpu	FFFC8F
+1091	Paraflocculus, granular layer	PFLgr	ECE652
+1092	Flocculus	FL	FEF991
+1093	Flocculus, molecular layer	FLmo	FDFC91
+1094	Flocculus, Purkinje layer	FLpu	FFF891
+1095	Flocculus, granular layer	FLgr	EBE752
+1096	Cerebellar nuclei	CBN	F0F07F
+1097	Fastigial nucleus	FN	FFFCBC
+1098	Interposed nucleus	IP	FFFDBC
+1099	Dentate nucleus	DN	FFFDBB
+1100	Vestibulocerebellar nucleus	VeCB	FEFDBC
+1101	fiber tracts	fiber tracts	CAC7CB
+1102	cranial nerves	cm	C8CAC9
+1103	terminal nerve	tn	C7CCC9
+1104	vomeronasal nerve	von	CAC8C9
+1105	olfactory nerve	In	CCCBC7
+1106	olfactory nerve layer of main olfactory bulb	onl	C7CBCA
+1107	lateral olfactory tract, general	lotg	CCCCCB
+1108	lateral olfactory tract, body	lot	CAC8C7
+1109	dorsal limb	lotd	CACAC9
+1110	accessory olfactory tract	aolt	C9CAC7
+1111	anterior commissure, olfactory limb	aco	CBCBC7
+1112	optic nerve	IIn	CBCCC7
+1113	accessory optic tract	aot	C9C8CB
+1114	brachium of the superior colliculus	bsc	C7CBCB
+1115	superior colliculus commissure	csc	C9CBCB
+1116	optic chiasm	och	CBCACC
+1117	optic tract	opt	CACCCB
+1118	tectothalamic pathway	ttp	C9CACC
+1119	oculomotor nerve	IIIn	C7CCCC
+1120	medial longitudinal fascicle	mlf	CBCBCC
+1121	posterior commissure	pc	CCCACA
+1122	trochlear nerve	IVn	C8C9C8
+1123	trochlear nerve decussation	IVd	C9CCCA
+1124	abducens nerve	VIn	CBCACB
+1125	trigeminal nerve	Vn	CBC7CB
+1126	motor root of the trigeminal nerve	moV	CCCBCA
+1127	sensory root of the trigeminal nerve	sV	CACACB
+1128	midbrain tract of the trigeminal nerve	mtV	C8C8CA
+1129	spinal tract of the trigeminal nerve	sptV	C8CACA
+1130	facial nerve	VIIn	CCCCC7
+1131	intermediate nerve	iVIIn	C9C8C9
+1132	genu of the facial nerve	gVIIn	C9CCC7
+1133	vestibulocochlear nerve	VIIIn	C9C7CA
+1134	efferent cochleovestibular bundle	cvb	C8CBC8
+1135	vestibular nerve	vVIIIn	C9CACB
+1136	cochlear nerve	cVIIIn	CAC9C8
+1137	trapezoid body	tb	CCC7CB
+1138	intermediate acoustic stria	ias	CBC7C8
+1139	dorsal acoustic stria	das	CCCBC8
+1140	lateral lemniscus	ll	C9C9CB
+1141	inferior colliculus commissure	cic	CBC9C9
+1142	brachium of the inferior colliculus	bic	C9C8C8
+1143	glossopharyngeal nerve	IXn	CCC8C9
+1144	vagus nerve	Xn	C7C9CB
+1145	solitary tract	ts	C8CAC7
+1146	accessory spinal nerve	XIn	CAC8CC
+1147	hypoglossal nerve	XIIn	C9CCC8
+1148	ventral roots	vrt	CAC7C9
+1149	dorsal roots	drt	CAC8CA
+1150	cervicothalamic tract	cett	CCC7CA
+1151	dorsolateral fascicle	dl	C8CCCB
+1152	dorsal commissure of the spinal cord	dcm	CBCCC8
+1153	ventral commissure of the spinal cord	vc	CBC8C9
+1154	fasciculus proprius	fpr	CCC9C9
+1155	dorsal column	dc	CCC8CB
+1156	cuneate fascicle	cuf	CAC9CC
+1157	gracile fascicle	grf	CAC8C8
+1158	internal arcuate fibers	iaf	CBC9CA
+1159	medial lemniscus	ml	CACCC8
+1160	spinothalamic tract	sst	C9CBC8
+1161	lateral spinothalamic tract	sttl	CCCBCC
+1162	ventral spinothalamic tract	sttv	CBCAC9
+1163	spinocervical tract	scrt	C9CCCC
+1164	spino-olivary pathway	sop	CCC7C8
+1165	spinoreticular pathway	srp	CBCCC9
+1166	spinovestibular pathway	svp	C9CBCC
+1167	spinotectal pathway	stp	C9CCCB
+1168	spinohypothalamic pathway	shp	CCCBC9
+1169	spinotelenchephalic pathway	step	C7CCC8
+1170	hypothalamohypophysial tract	hht	C8CBCB
+1171	cerebellum related fiber tracts	cbf	C9CAC8
+1172	cerebellar commissure	cbc	CBC8CA
+1173	cerebellar peduncles	cbp	CAC8CB
+1174	superior cerebelar peduncles	scp	CBC9CB
+1175	superior cerebellar peduncle decussation	dscp	CCC7CC
+1176	spinocerebellar tract	sct	CCCACC
+1177	uncinate fascicle	uf	CBC9C8
+1178	ventral spinocerebellar tract	sctv	CBC7CC
+1179	middle cerebellar peduncle	mcp	CCCCCA
+1180	inferior cerebellar peduncle	icp	C9C9C8
+1181	dorsal spinocerebellar tract	sctd	C9CACA
+1182	cuneocerebellar tract	cct	C8CCCC
+1183	juxtarestiform body	jrb	C9CBC9
+1184	bulbocerebellar tract	bct	C9C9C7
+1185	olivocerebellar tract	oct	CAC9CB
+1186	reticulocerebellar tract	rct	C9CBCA
+1187	trigeminocerebellar tract	tct	CACCC9
+1188	arbor vitae	arb	CBC9CC
+1189	supra-callosal cerebral white matter	scwm	C9C9CA
+1190	lateral forebrain bundle system	lfbs	C7CCCA
+1191	corpus callosum	cc	C7C9CA
+1192	corpus callosum, anterior forceps	fa	CAC7CC
+1193	external capsule	ec	C8CBCC
+1194	corpus callosum, extreme capsule	ee	C9C8CA
+1195	genu of corpus callosum	ccg	CCC7C9
+1196	corpus callosum, posterior forceps	fp	C8C9CA
+1197	corpus callosum, rostrum	ccr	CBC8C7
+1198	corpus callosum, body	ccb	C9C7C9
+1199	corpus callosum, splenium	ccs	C7CACC
+1200	corticospinal tract	cst	C8C7CC
+1201	internal capsule	int	CCCCCC
+1202	cerebal peduncle	cpd	CCCAC7
+1203	corticotectal tract	cte	C8CCC8
+1204	corticorubral tract	crt	C8C7CA
+1205	corticopontine tract	cpt	C7C8CB
+1206	corticobulbar tract	cbt	CBC7CA
+1207	pyramid	py	C7C9C9
+1208	pyramidal decussation	pyd	C9C7CC
+1209	corticospinal tract, crossed	cstc	C7CACB
+1210	corticospinal tract, uncrossed	cstu	CCC8C8
+1211	thalamus related	lfbst	C7CBCC
+1212	external medullary lamina of the thalamus	em	C7CACA
+1213	internal medullary lamina of the thalamus	im	CACCCA
+1214	middle thalamic commissure	mtc	CACCCC
+1215	thalamic peduncles	tp	CCC9CA
+1216	optic radiation	or	CBC9C7
+1217	auditory radiation	ar	CCC8CA
+1218	extrapyramidal fiber systems	eps	CACBC7
+1219	cerebral nuclei related	epsc	C8CACB
+1220	pallidothalamic pathway	pap	CBCBCA
+1221	nigrostriatal tract	nst	CCCACB
+1222	nigrothalamic fibers	ntt	CBCCCA
+1223	pallidotegmental fascicle	ptf	CACBCC
+1224	striatonigral pathway	snp	C7CBC9
+1225	subthalamic fascicle	stf	CBCBC9
+1226	tectospinal pathway	tsp	C8CBC9
+1227	direct tectospinal pathway	tspd	CBC8C8
+1228	doral tegmental decussation	dtd	CACAC7
+1229	crossed tectospinal pathway	tspc	C8C8CC
+1230	rubrospinal tract	rust	C8C8CB
+1231	ventral tegmental decussation	vtd	CACBC9
+1232	rubroreticular tract	rrt	CACBCA
+1233	central tegmental bundle	ctb	CBCAC8
+1234	retriculospinal tract	rst	C8CAC8
+1235	retriculospinal tract, lateral part	rstl	CCC9CC
+1236	retriculospinal tract, medial part	rstm	CBCACA
+1237	vestibulospinal pathway	vsp	CCC8C7
+1238	medial forebrain bundle system	mfbs	CBCAC7
+1239	cerebrum related	mfbc	C9CBC7
+1240	amygdalar capsule	amc	C8C9CB
+1241	ansa peduncularis	apd	C7CCCB
+1242	anterior commissure, temporal limb	act	C9C9C9
+1243	cingulum bundle	cing	CACCC7
+1244	fornix system	fxs	CCC9C7
+1245	alveus	alv	C7C8CC
+1246	dorsal fornix	df	CBC8CC
+1247	fimbria	fi	CBC8CB
+1248	precommissural fornix, general	fxprg	CACBC8
+1249	precommissural fornix diagonal band	db	CCCCC8
+1250	postcommissural fornix	fxpo	C8C8C9
+1251	medial corticohypothalamic tract	mct	CCC8CC
+1252	columns of the fornix	fx	C7C8CA
+1253	hippocampal commissures	hc	C9C9CC
+1254	dorsal hippocampal commissure	dhc	C9CCC9
+1255	ventral hippocampal commissure	vhc	C8C9C9
+1256	perforant path	per	CBCBC8
+1257	angular path	ab	CAC7C8
+1258	longitudinal association bundle	lab	CBCCCC
+1259	stria terminalis	st	C8CBC7
+1260	commissural branch of stria terminalis	stc	C7CAC8
+1261	hypothalamus related	mfsbshy	C8CCC9
+1262	medial forebrain bundle	mfb	CBCCCB
+1263	ventrolateral hypothalamic tract	vlt	CAC9C7
+1264	preoptic commissure	poc	CACACC
+1265	supraoptic commissures	sup	CCCAC9
+1266	supraoptic commissures, anterior	supa	C9C8CC
+1267	supraoptic commissures, dorsal	supd	C8C9CC
+1268	supraoptic commissures, ventral	supv	CBC7C9
+1269	premammillary commissure	pmx	C7CBC8
+1270	supramammillary decussation	smd	CACACA
+1271	propriohypothalamic pathways	php	CCCCC9
+1272	propriohypothalamic pathways, dorsal	phpd	CAC9C9
+1273	propriohypothalamic pathways, lateral	phpl	C9CAC9
+1274	propriohypothalamic pathways, medial	phpm	CCC9CB
+1275	propriohypothalamic pathways, ventral	phpv	CACAC8
+1276	periventricular bundle of the hypothalamus	pvbh	CACBCB
+1277	mammillary related	mfbsma	CCCBCB
+1278	principal mammillary tract	pm	C8CBCA
+1279	mammillothalamic tract	mtt	C7C9CC
+1280	mammillotegmental tract	mtg	C8C8C8
+1281	mammillary peduncle	mp	CCCAC8
+1282	dorsal thalamus related	mfbst	CAC7CA
+1283	periventricular bundle of the thalamus	pvbt	C8CCCA
+1284	epithalamus related	mfbse	C8C7CB
+1285	stria medullaris	sm	CCC9C8
+1286	fasciculus retroflexus	fr	C7CAC9
+1287	habenular commissure	hbc	C8CCC7
+1288	pineal stalk	PIS	C8CACC
+1289	midbrain related	mfbsm	CBCBCB
+1290	dorsal longitudinal fascicle	dlf	CAC9CA
+1291	dorsal tegmental tract	dtt	C9C7CB
+1292	ventricular systems	VS	AAA8AA
+1293	lateral ventricle	VL	A8AAAA
+1294	rhinocele	RC	AAA9A8
+1295	subependymal zone	SEZ	AAA8A9
+1296	choroid plexus	chpl	A9AAA8
+1297	choroid fissure	chfl	A9A8AA
+1298	interventricular foramen	IVF	A8AAA9
+1299	third ventricle	V3	A8A9AA
+1300	cerebral aqueduct	AQ	A9A9A8
+1301	fourth ventricle	V4	AAA9A7
+1302	lateral recess	V4r	A9AAA7
+1303	central canal, spinal cord/medulla	c	A7AAA9
+1304	grooves	grv	AAA8A8
+1305	grooves of the cerebral cortex	grv of CTX	A8AAA8
+1306	endorhinal groove	eg	AAAAA7
+1307	hippocampal fissure	hf	AAA7AA
+1308	rhinal fissure	rf	AAA7A9
+1309	rhinal incisure	ri	A9A8A8
+1310	grooves of the cerebellar cortex	grv of CBX	A8A8AA
+1311	precentral fissure	pce	A8A9A8
+1312	preculminate fissure	pcf	A8A9A9
+1313	primary fissure	pri	A9A7AA
+1314	posterior superior fissure	psf	A8A8A9
+1315	prepyramidal fissure	ppf	A7AAAA
+1316	secondary fissure	sec	AAAAAA
+1317	posterolateral fissure	plf	AAAAA9
+1318	nodular fissure	nf	AAA9AA
+1319	simple fissure	sif	A9AAAA
+1320	intercrural fissure	icf	AAA9A9
+1321	ansoparamedian fissure	apf	A9AAA9
+1322	intraparafloccular fissure	ipf	A9A9AA
+1323	paramedian sulcus	pms	A9A9A9
+1324	parafloccular sulcus	pfs	AAAAA8
+1325	Interpeduncular fossa	IPF	A9A8A9
+1326	retina	retina	7F2E7E

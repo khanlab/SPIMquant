@@ -1,0 +1,23 @@
+index	name	abbreviation
+1	L_Olfactory areas	L_OLF
+2	R_Olfactory areas	R_OLF
+3	L_Isocortex	L_Iso
+4	R_Isocortex	R_ISO
+5	L_Hippocampal formation	L_HYP
+6	R_Hippocampal formation	R_HYP
+7	L_Amygdala	L_AMY
+8	R_Amygdala	R_AMY
+9	L_Striatum	L_STR
+10	R_Striatum	R_STR
+11	L_Pallidum	L_PAL
+12	R_Pallidum	R_PAL
+13	L_Thalamus	L_THA
+14	R_Thalamus	R_THA
+15	L_Hypothalamus	L_HY
+16	R_Hypothalamus	R_HY
+17	L_Midbrain	L_MB
+18	R_Midbrain	R_MB
+19	L_Hindbrain	L_HB
+20	R_Hindbrain	R_HB
+21	L_Cerebellum	L_CEB
+22	R_Cerebellum	R_CEB

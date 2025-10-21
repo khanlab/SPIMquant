@@ -1,0 +1,199 @@
+index	name	abbreviation
+1	Frontal Pole (Right Hemisphere)	FRP_RH
+2	Frontal Pole (Left Hemisphere)	FRP_LH
+3	Primary Motor Cortex (Right Hemisphere)	MOp_RH
+4	Primary Motor Cortex (Left Hemisphere)	MOp_LH
+5	Secondary Motor Cortex (Right Hemisphere)	MOs_RH
+6	Secondary Motor Cortex (Left Hemisphere)	MOs_LH
+7	Primary Somatosensory Area - Nose (Right Hemisphere)	SSp-n_RH
+8	Primary Somatosensory Area - Nose (Left Hemisphere)	SSp-n_LH
+9	Primary Somatosensory Area - Barrel Field (Right Hemisphere)	SSp-bfd_RH
+10	Primary Somatosensory Area - Barrel Field (Left Hemisphere)	SSp-bfd_LH
+11	Primary Somatosensory Area - Lower Limb (Right Hemisphere)	SSp-ll_RH
+12	Primary Somatosensory Area - Lower Limb (Left Hemisphere)	SSp-ll_LH
+13	Primary Somatosensory Area - Mouth (Right Hemisphere)	SSp-m_RH
+14	Primary Somatosensory Area - Mouth (Left Hemisphere)	SSp-m_LH
+15	Primary Somatosensory Area - Upper Limb (Right Hemisphere)	SSp-ul_RH
+16	Primary Somatosensory Area - Upper Limb (Left Hemisphere)	SSp-ul_LH
+17	Primary Somatosensory Area - Trunk (Right Hemisphere)	SSp-tr_RH
+18	Primary Somatosensory Area - Trunk (Left Hemisphere)	SSp-tr_LH
+19	Primary Somatosensory Area - Unassigned (Right Hemisphere)	SSp-un_RH
+20	Primary Somatosensory Area - Unassigned (Left Hemisphere)	SSp-un_LH
+21	Supplemental Somatosensory Area (Right Hemisphere)	SSs_RH
+22	Supplemental Somatosensory Area (Left Hemisphere)	SSs_LH
+23	Gustatory Area (Right Hemisphere)	GU_RH
+24	Gustatory Area (Left Hemisphere)	GU_LH
+25	Visceral Area (Right Hemisphere)	VISC_RH
+26	Visceral Area (Left Hemisphere)	VISC_LH
+27	Auditory Dorsal Area (Right Hemisphere)	AUDd_RH
+28	Auditory Dorsal Area (Left Hemisphere)	AUDd_LH
+29	Auditory Posterior Area (Right Hemisphere)	AUDp_RH
+30	Auditory Posterior Area (Left Hemisphere)	AUDp_LH
+31	Auditory Posteromedial Area (Right Hemisphere)	AUDpo_RH
+32	Auditory Posteromedial Area (Left Hemisphere)	AUDpo_LH
+33	Auditory Ventral Area (Right Hemisphere)	AUDv_RH
+34	Auditory Ventral Area (Left Hemisphere)	AUDv_LH
+35	Visual Area - Anterolateral (Right Hemisphere)	VISal_RH
+36	Visual Area - Anterolateral (Left Hemisphere)	VISal_LH
+37	Visual Area - Anteromedial (Right Hemisphere)	VISam_RH
+38	Visual Area - Anteromedial (Left Hemisphere)	VISam_LH
+39	Visual Area - Lateral (Right Hemisphere)	VISl_RH
+40	Visual Area - Lateral (Left Hemisphere)	VISl_LH
+41	Primary Visual Cortex (Right Hemisphere)	VISp_RH
+42	Primary Visual Cortex (Left Hemisphere)	VISp_LH
+43	Visual Area - Posterolateral (Right Hemisphere)	VISpl_RH
+44	Visual Area - Posterolateral (Left Hemisphere)	VISpl_LH
+45	Visual Area - Posteromedial (Right Hemisphere)	VISpm_RH
+46	Visual Area - Posteromedial (Left Hemisphere)	VISpm_LH
+47	Visual Area - Laterointermediate (Right Hemisphere)	VISli_RH
+48	Visual Area - Laterointermediate (Left Hemisphere)	VISli_LH
+49	Visual Area - Postrhinal (Right Hemisphere)	VISpor_RH
+50	Visual Area - Postrhinal (Left Hemisphere)	VISpor_LH
+51	Anterior Cingulate Area - Dorsal (Right Hemisphere)	ACAd_RH
+52	Anterior Cingulate Area - Dorsal (Left Hemisphere)	ACAd_LH
+53	Anterior Cingulate Area - Ventral (Right Hemisphere)	ACAv_RH
+54	Anterior Cingulate Area - Ventral (Left Hemisphere)	ACAv_LH
+55	Prelimbic Area (Right Hemisphere)	PL_RH
+56	Prelimbic Area (Left Hemisphere)	PL_LH
+57	Infralimbic Area (Right Hemisphere)	ILA_RH
+58	Infralimbic Area (Left Hemisphere)	ILA_LH
+59	Orbital Area - Lateral (Right Hemisphere)	ORBl_RH
+60	Orbital Area - Lateral (Left Hemisphere)	ORBl_LH
+61	Orbital Area - Medial (Right Hemisphere)	ORBm_RH
+62	Orbital Area - Medial (Left Hemisphere)	ORBm_LH
+63	Orbital Area - Ventrolateral (Right Hemisphere)	ORBvl_RH
+64	Orbital Area - Ventrolateral (Left Hemisphere)	ORBvl_LH
+65	Agranular Insular Area - Dorsal (Right Hemisphere)	AId_RH
+66	Agranular Insular Area - Dorsal (Left Hemisphere)	AId_LH
+67	Agranular Insular Area - Posterior (Right Hemisphere)	AIp_RH
+68	Agranular Insular Area - Posterior (Left Hemisphere)	AIp_LH
+69	Agranular Insular Area - Ventral (Right Hemisphere)	AIv_RH
+70	Agranular Insular Area - Ventral (Left Hemisphere)	AIv_LH
+71	Retrosplenial Area - Agranular Lateral (Right Hemisphere)	RSPagl_RH
+72	Retrosplenial Area - Agranular Lateral (Left Hemisphere)	RSPagl_LH
+73	Retrosplenial Area - Dorsal (Right Hemisphere)	RSPd_RH
+74	Retrosplenial Area - Dorsal (Left Hemisphere)	RSPd_LH
+75	Retrosplenial Area - Ventral (Right Hemisphere)	RSPv_RH
+76	Retrosplenial Area - Ventral (Left Hemisphere)	RSPv_LH
+77	Visual Area - Anterior (Right Hemisphere)	VISa_RH
+78	Visual Area - Anterior (Left Hemisphere)	VISa_LH
+79	Visual Area - Rostrolateral (Right Hemisphere)	VISrl_RH
+80	Visual Area - Rostrolateral (Left Hemisphere)	VISrl_LH
+81	Temporal Association Area (Right Hemisphere)	TEa_RH
+82	Temporal Association Area (Left Hemisphere)	TEa_LH
+83	Perirhinal Area (Right Hemisphere)	PERI_RH
+84	Perirhinal Area (Left Hemisphere)	PERI_LH
+85	Ectorhinal Area (Right Hemisphere)	ECT_RH
+86	Ectorhinal Area (Left Hemisphere)	ECT_LH
+87	Hippocampus (Right Hemisphere)	HIP_RH
+88	Hippocampus (Left Hemisphere)	HIP_LH
+89	Cornu Ammonis (Right Hemisphere)	CA_RH
+90	Cornu Ammonis (Left Hemisphere)	CA_LH
+91	Dentate Gyrus (Right Hemisphere)	DG_RH
+92	Dentate Gyrus (Left Hemisphere)	DG_LH
+93	Retrohippocampal Region (Right Hemisphere)	RHP_RH
+94	Retrohippocampal Region (Left Hemisphere)	RHP_LH
+95	Entorhinal Area - Lateral (Right Hemisphere)	ENTl_RH
+96	Entorhinal Area - Lateral (Left Hemisphere)	ENTl_LH
+97	Entorhinal Area - Medial (Right Hemisphere)	ENTm_RH
+98	Entorhinal Area - Medial (Left Hemisphere)	ENTm_LH
+99	Dorsal Thalamus (Sensory-Motor) (Right Hemisphere)	DORsm_RH
+100	Dorsal Thalamus (Sensory-Motor) (Left Hemisphere)	DORsm_LH
+101	Ventral Thalamus (Right Hemisphere)	VENT_RH
+102	Ventral Thalamus (Left Hemisphere)	VENT_LH
+103	Ventral Posterior Nucleus (Right Hemisphere)	VP_RH
+104	Ventral Posterior Nucleus (Left Hemisphere)	VP_LH
+105	Subparafascicular Nucleus (Right Hemisphere)	SPF_RH
+106	Subparafascicular Nucleus (Left Hemisphere)	SPF_LH
+107	Medial Geniculate Nucleus (Right Hemisphere)	MG_RH
+108	Medial Geniculate Nucleus (Left Hemisphere)	MG_LH
+109	Lateral Geniculate Nucleus - Dorsal (Right Hemisphere)	LGd_RH
+110	Lateral Geniculate Nucleus - Dorsal (Left Hemisphere)	LGd_LH
+111	Dorsal Thalamus (Polymodal) (Right Hemisphere)	DORpm_RH
+112	Dorsal Thalamus (Polymodal) (Left Hemisphere)	DORpm_LH
+113	Lateral Thalamic Region (Right Hemisphere)	LAT_RH
+114	Lateral Thalamic Region (Left Hemisphere)	LAT_LH
+115	Anterior Thalamic Nuclei (Right Hemisphere)	ATN_RH
+116	Anterior Thalamic Nuclei (Left Hemisphere)	ATN_LH
+117	Anteromedial Nucleus (Right Hemisphere)	AM_RH
+118	Anteromedial Nucleus (Left Hemisphere)	AM_LH
+119	Mediodorsal Nucleus (Right Hemisphere)	MED_RH
+120	Mediodorsal Nucleus (Left Hemisphere)	MED_LH
+121	Midline Thalamic Nuclei (Right Hemisphere)	MTN_RH
+122	Midline Thalamic Nuclei (Left Hemisphere)	MTN_LH
+123	Intralaminar Nuclei (Right Hemisphere)	ILM_RH
+124	Intralaminar Nuclei (Left Hemisphere)	ILM_LH
+125	Ventral Geniculate (Right Hemisphere)	GENv_RH
+126	Ventral Geniculate (Left Hemisphere)	GENv_LH
+127	Epithalamus (Right Hemisphere)	EPI_RH
+128	Epithalamus (Left Hemisphere)	EPI_LH
+129	Hypothalamus (Right Hemisphere)	HY_RH
+130	Hypothalamus (Left Hemisphere)	HY_LH
+131	Periventricular Zone (Right Hemisphere)	PVZ_RH
+132	Periventricular Zone (Left Hemisphere)	PVZ_LH
+133	Periventricular Region (Right Hemisphere)	PVR_RH
+134	Periventricular Region (Left Hemisphere)	PVR_LH
+135	Median Eminence Zone (Right Hemisphere)	MEZ_RH
+136	Median Eminence Zone (Left Hemisphere)	MEZ_LH
+137	Mammillary Body (Right Hemisphere)	MBO_RH
+138	Mammillary Body (Left Hemisphere)	MBO_LH
+139	Medial Mammillary Nucleus (Right Hemisphere)	MM_RH
+140	Medial Mammillary Nucleus (Left Hemisphere)	MM_LH
+141	Tuberomammillary Nucleus (Right Hemisphere)	TM_RH
+142	Tuberomammillary Nucleus (Left Hemisphere)	TM_LH
+143	Lateral Zone (Right Hemisphere)	LZ_RH
+144	Lateral Zone (Left Hemisphere)	LZ_LH
+145	Zona Incerta (Right Hemisphere)	ZI_RH
+146	Zona Incerta (Left Hemisphere)	ZI_LH
+147	Midbrain Sensory Nucleus (Right Hemisphere)	MBsen_RH
+148	Midbrain Sensory Nucleus (Left Hemisphere)	MBsen_LH
+149	Superior Colliculus (Superficial) (Right Hemisphere)	SCs_RH
+150	Superior Colliculus (Superficial) (Left Hemisphere)	SCs_LH
+151	Inferior Colliculus (Right Hemisphere)	IC_RH
+152	Inferior Colliculus (Left Hemisphere)	IC_LH
+153	Midbrain Motor Nucleus (Right Hemisphere)	MBmot_RH
+154	Midbrain Motor Nucleus (Left Hemisphere)	MBmot_LH
+155	Superior Colliculus (Motor) (Right Hemisphere)	SCm_RH
+156	Superior Colliculus (Motor) (Left Hemisphere)	SCm_LH
+157	Periaqueductal Gray (Right Hemisphere)	PAG_RH
+158	Periaqueductal Gray (Left Hemisphere)	PAG_LH
+159	Pretectal Region (Right Hemisphere)	PRT_RH
+160	Pretectal Region (Left Hemisphere)	PRT_LH
+161	Midbrain MBsta (Right Hemisphere)	MBsta_RH
+162	Midbrain MBsta (Left Hemisphere)	MBsta_LH
+163	Midbrain RAmb (Right Hemisphere)	RAmb_RH
+164	Midbrain RAmb (Left Hemisphere)	RAmb_LH
+165	Interpeduncular Nucleus (Right Hemisphere)	IPN_RH
+166	Interpeduncular Nucleus (Left Hemisphere)	IPN_LH
+167	Primary Sensory Nucleus (Hindbrain) (Right Hemisphere)	P-sen_RH
+168	Primary Sensory Nucleus (Hindbrain) (Left Hemisphere)	P-sen_LH
+169	Parabrachial Nucleus (Right Hemisphere)	PB_RH
+170	Parabrachial Nucleus (Left Hemisphere)	PB_LH
+171	Superior Olivary Complex (Right Hemisphere)	SOC_RH
+172	Superior Olivary Complex (Left Hemisphere)	SOC_LH
+173	Primary Motor Nucleus (Hindbrain) (Right Hemisphere)	P-mot_RH
+174	Primary Motor Nucleus (Hindbrain) (Left Hemisphere)	P-mot_LH
+175	P-sat (Hindbrain) (Right Hemisphere)	P-sat_RH
+176	P-sat (Hindbrain) (Left Hemisphere)	P-sat_LH
+177	MY-sen (Hindbrain) (Right Hemisphere)	MY-sen_RH
+178	MY-sen (Hindbrain) (Left Hemisphere)	MY-sen_LH
+179	Cochlear Nucleus (Right Hemisphere)	CN_RH
+180	Cochlear Nucleus (Left Hemisphere)	CN_LH
+181	Dorsal Cochlear Nucleus (Right Hemisphere)	DCN_RH
+182	Dorsal Cochlear Nucleus (Left Hemisphere)	DCN_LH
+183	Myelencephalon Motor Nucleus (Right Hemisphere)	MY-mot_RH
+184	Myelencephalon Motor Nucleus (Left Hemisphere)	MY-mot_LH
+185	Ambiguus Nucleus (Right Hemisphere)	AMB_RH
+186	Ambiguus Nucleus (Left Hemisphere)	AMB_LH
+187	Lateral Reticular Nucleus (Right Hemisphere)	LRN_RH
+188	Lateral Reticular Nucleus (Left Hemisphere)	LRN_LH
+189	Medullary Reticular Nucleus (Right Hemisphere)	MDRN_RH
+190	Medullary Reticular Nucleus (Left Hemisphere)	MDRN_LH
+191	Paragigantocellular Reticular Nucleus (Right Hemisphere)	PGRN_RH
+192	Paragigantocellular Reticular Nucleus (Left Hemisphere)	PGRN_LH
+193	Phrenic Nucleus (Right Hemisphere)	PHY_RH
+194	Phrenic Nucleus (Left Hemisphere)	PHY_LH
+195	Vagal Complex (Right Hemisphere)	VNC_RH
+196	Vagal Complex (Left Hemisphere)	VNC_LH
+197	Myelencephalon Satiety Nucleus (Right Hemisphere)	MY-sat_RH
+198	Myelencephalon Satiety Nucleus (Left Hemisphere)	MY-sat_LH
