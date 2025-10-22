@@ -2,16 +2,16 @@ import nibabel as nib
 import numpy as np
 
 tissue_nib = nib.load(snakemake.input.tissue_dseg)
-atlas_nib = nib.load(snakemake.input.atlas_dseg)
+template_mask_nib = nib.load(snakemake.input.template_mask)
 
 tissue_vol = tissue_nib.get_fdata()
-atlas_vol = atlas_nib.get_fdata()
+template_mask_vol = template_mask_nib.get_fdata()
 
-# now, see what labels are in the atlas_mask:
-fg_tissue = tissue_vol * (atlas_vol > 0)
-bg_tissue = tissue_vol * (atlas_vol == 0)
+# now, see what labels are in the template_mask:
+fg_tissue = tissue_vol * (template_mask_vol > 0)
+bg_tissue = tissue_vol * (template_mask_vol == 0)
 
-out_mask = np.zeros(atlas_vol.shape)
+out_mask = np.zeros(template_mask_vol.shape)
 
 for i in range(1, snakemake.params.k + 1):
 

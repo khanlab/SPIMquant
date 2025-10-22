@@ -408,7 +408,7 @@ rule warp_mri_to_template_via_spim:
             suffix="T2w.nii.gz",
             **inputs["T2w"].wildcards,
         ),
-        ref=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        ref=rules.import_template_anat.output.anat,
         affine_mri_to_spim=bids(
             root=root,
             datatype="warps",

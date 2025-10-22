@@ -28,7 +28,7 @@ rule get_downsampled_nii:
 rule import_template_anat:
     input:
         anat=lambda wildcards: ancient(
-            format(config["templates"][wildcards.template]["anat"])
+            resources_path(config["templates"][wildcards.template]["anat"])
         ),
     output:
         anat=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
@@ -46,7 +46,7 @@ rule import_template_anat:
 rule import_mask:
     input:
         mask=lambda wildcards: ancient(
-            format(config["templates"][wildcards.template]["mask"])
+            resources_path(config["templates"][wildcards.template]["mask"])
         ),
     output:
         mask=bids_tpl(
@@ -78,7 +78,7 @@ rule lut_bids_to_itksnap:
 rule import_dseg:
     input:
         dseg=lambda wildcards: ancient(
-            format(
+            resources_path(
                 config["templates"][wildcards.template]["atlases"][wildcards.seg]["dseg"]
             )
         ),
@@ -96,7 +96,7 @@ rule import_dseg:
 rule import_lut_tsv:
     input:
         tsv=lambda wildcards: ancient(
-            format(
+            resources_path(
                 config["templates"][wildcards.template]["atlases"][wildcards.seg]["tsv"]
             )
         ),

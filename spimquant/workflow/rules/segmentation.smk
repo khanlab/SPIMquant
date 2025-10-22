@@ -391,7 +391,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards,
         ),
-        ref=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        ref=rules.import_template_anat.output.anat,
         xfm_itk=bids(
             root=root,
             datatype="warps",
