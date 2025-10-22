@@ -313,9 +313,12 @@ rule map_segstats_tsv_dseg_to_template_nii:
         dseg=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
         ),
+        label_tsv=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
+        ),
     params:
         label_column="index",
-        feature_column="avg_fieldfrac",
+        feature_column="mean_fieldfrac",
     output:
         nii=bids(
             root=root,
@@ -355,9 +358,12 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
+        label_tsv=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
+        ),
     params:
         label_column="index",
-        feature_column="avg_fieldfrac",
+        feature_column="mean_fieldfrac",
     output:
         nii=bids(
             root=root,
@@ -385,7 +391,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards,
         ),
-        ref=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        ref=rules.import_template_anat.output.anat,
         xfm_itk=bids(
             root=root,
             datatype="warps",

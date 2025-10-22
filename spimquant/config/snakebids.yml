@@ -169,57 +169,45 @@ ome_zarr:
     - 1024
   scaling_method: 'local_mean' #can be nearest, gaussian, local_mean, zoom (zoom uses spline interp)
 
-
+# TODO: replace single "anat" template with suffix-labelled ones, or ultimately use bids naming and include just the entities here
 templates:
+  ABAv3:
+    anat: 'tpl-ABAv3/tpl-ABAv3_anat.nii.gz'
+    mask: 'tpl-ABAv3/tpl-ABAv3_desc-brain_mask.nii.gz'
+    atlases:
+      all: 
+        dseg: 'tpl-ABAv3/tpl-ABAv3_seg-all_dseg.nii.gz'
+        tsv: 'tpl-ABAv3/tpl-ABAv3_seg-all_dseg.tsv'
+      roi22:
+        dseg: 'tpl-ABAv3/tpl-ABAv3_seg-roi22_dseg.nii.gz'
+        tsv: 'tpl-ABAv3/tpl-ABAv3_seg-roi22_dseg.tsv'
+      roi82:
+        dseg: 'tpl-ABAv3/tpl-ABAv3_seg-roi82_dseg.nii.gz'
+        tsv: 'tpl-ABAv3/tpl-ABAv3_seg-roi82_dseg.tsv'
+      roi198:
+        dseg: 'tpl-ABAv3/tpl-ABAv3_seg-roi198_dseg.nii.gz'
+        tsv: 'tpl-ABAv3/tpl-ABAv3_seg-roi198_dseg.tsv'
   MouseIn:
     # MP2RAGE inv1 chosen since its most similar to the MT GRE I had on hand.. better to create a 
     # new template later..
-    anat: '{workflow.basedir}/../resources/tpl-MouseIn/tpl-MouseIn_res-1_inv-1_MP2RAGE.nii.gz'
-    mask: '{workflow.basedir}/../resources/tpl-MouseIn/tpl-MouseIn_res-1_desc-brain_mask.nii.gz'
-
-  ABAv3:
-    anat: '{workflow.basedir}/../resources/ABAv3/P56_Atlas.nii.gz'
-    dseg: '{workflow.basedir}/../resources/ABAv3/P56_Annotation.nii.gz'
-    lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
-    segs:
-      all: 
-        dseg: 'tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.nii.gz'
-        tsv: 'tpl-ABAv3/tpl-ABAv3_desc-LR_dseg.tsv'
-      roi22: 
-        dseg: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_22_R_L.nii.gz'
-        csv: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_22_R_L.csv'
-      roi82:
-        dseg: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_82_R_L.nii.gz'
-        csv: '{workflow.basedir}/../resources/ABAv3/eed_labels/P56_annotation_82_R_L.csv'
-      roi198:
-        dseg: '{workflow.basedir}/../resources/ABAv3/ngo_labels/atlas.nii.gz'
-        csv: '{workflow.basedir}/../resources/ABAv3/ngo_labels/atlas_with_names.csv'
-
-        
-  gubra:
-    anat: '{workflow.basedir}/../resources/gubra/gubra_template_olf_spacing_reslice.nii.gz'
-    dseg: '{workflow.basedir}/../resources/gubra/gubra_ano_olf_spacing_remap_reslice.nii.gz'
-    lut: '{workflow.basedir}/../resources/ABAv3/labelmapper_ABAv3_to_all.json'
-    segs:
-      all: 
-        dseg: 'tpl-gubra/tpl-gubra_desc-LR_dseg.nii.gz'
-        tsv: 'tpl-gubra/tpl-gubra_desc-LR_dseg.tsv'
+    anat: 'tpl-MouseIn/tpl-MouseIn_res-1_inv-1_MP2RAGE.nii.gz'
+    mask: 'tpl-MouseIn/tpl-MouseIn_res-1_desc-brain_mask.nii.gz'
 
   MBMv3:
-    anat: '{workflow.basedir}/../resources/MBMv3/template_T2w_brain.nii.gz'
-    dseg: '{workflow.basedir}/../resources/MBMv3/segmentation_three_types_seg.nii.gz' #this is used for brainmasking
-    segs:
+    anat: 'tpl-MBMv3/tpl-MBMv3_T2w.nii.gz'
+    mask: 'tpl-MBMv3/tpl-MBMv3_desc-brain_mask.nii.gz'
+    atlases:
       paxinos: 
-        dseg: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.nii.gz'
-        itksnap: '{workflow.basedir}/../resources/MBMv3/atlas_MBM_cortex_vPaxinos.itksnap.txt'
+        dseg: 'tpl-MBMv3/tpl-MBMv3_seg-paxinos_dseg.nii.gz'
+        tsv: 'tpl-MBMv3/tpl-MBMv3_seg-paxinos_dseg.tsv'
 
   turone:
-    anat: '{workflow.basedir}/../resources/Turone_Mouse_Brain_Template/Turone_Mouse_Brain_Template/TMBTA_Brain_Template.nii.gz'
-    dseg: '{workflow.basedir}/../resources/Turone_Mouse_Brain_Template/Turone_Mouse_Brain_Template/TMBTA_tissue_dseg.nii.gz'
-    segs:
+    anat: 'tpl-turone/tpl-turone_T2w.nii.gz'
+    atlases:
       all:
-        dseg: '{workflow.basedir}/../resources/Turone_Mouse_Brain_Template/Turone_Mouse_Brain_Atlas/TMBTA_Brain_Atlas.nii.gz'
-        itksnap: '{workflow.basedir}/../resources/Turone_Mouse_Brain_Template/Turone_Mouse_Brain_Atlas/TMBTA_ItK_Label_File.txt'
+        dseg: 'tpl-turone/tpl-turone_seg-all_dseg.nii.gz'
+        tsv: 'tpl-turone/tpl-turone_seg-all_dseg.tsv'
+
 
 
 

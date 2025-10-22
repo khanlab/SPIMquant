@@ -46,7 +46,7 @@ if stain_for_reg == None:
 stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
 
 # atlas segmentations to use
-all_atlas_segs = config["templates"][config["template"]]["segs"].keys()
+all_atlas_segs = config["templates"][config["template"]]["atlases"].keys()
 
 if config["atlas_segs"] == None:
     atlas_segs = all_atlas_segs

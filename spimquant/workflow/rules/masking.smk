@@ -177,7 +177,7 @@ rule init_affine_reg:
         "  -r {output.xfm_ras}"
 
 
-rule affine_transform_template_dseg_to_subject:
+rule affine_transform_template_mask_to_subject:
     input:
         ref=bids(
             root=root,
@@ -187,7 +187,7 @@ rule affine_transform_template_dseg_to_subject:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards,
         ),
-        dseg=rules.import_dseg.output.dseg,
+        dseg=rules.import_mask.output.mask,
         xfm_ras=rules.init_affine_reg.output.xfm_ras,
     output:
         dseg=temp(
@@ -196,7 +196,7 @@ rule affine_transform_template_dseg_to_subject:
                 datatype="micr",
                 desc="initaffine",
                 from_="{template}",
-                suffix="dseg.nii.gz",
+                suffix="mask.nii.gz",
                 **inputs["spim"].wildcards,
             )
         ),
@@ -220,12 +220,12 @@ rule create_mask_from_gmm_and_prior:
             suffix="dseg.nii",
             **inputs["spim"].wildcards,
         ),
-        atlas_dseg=bids(
+        template_mask=bids(
             root=root,
             datatype="micr",
             desc="initaffine",
             from_=config["template"],
-            suffix="dseg.nii.gz",
+            suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
     params:

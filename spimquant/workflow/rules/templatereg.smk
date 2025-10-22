@@ -403,7 +403,7 @@ rule deform_spim_nii_to_template_nii:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards,
         ),
-        ref=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        ref=rules.import_template_anat.output.anat,
         xfm_itk=bids(
             root=root,
             datatype="warps",
@@ -488,6 +488,7 @@ rule deform_template_dseg_to_subject_nii:
         " -r {input.ref} -t  [{input.xfm_itk},1] {input.invwarp}"
 
 
+""" this rule needs updating - use atlas/seg wildcard and proper script
 rule deform_transform_labels_to_subj:
     input:
         ref_ome_zarr=inputs["spim"].path,
@@ -510,7 +511,6 @@ rule deform_transform_labels_to_subj:
     threads: 32
     script:  #TODO this script doesn't exist??
         "../scripts/deform_transform_channel_to_template_nii.py"
-
 
 rule transform_labels_to_zoomed_template:
     input:
@@ -542,3 +542,4 @@ rule transform_labels_to_zoomed_template:
         "antsApplyTransforms -d 3 -v -n NearestNeighbor "
         " -i {input.dseg} -o {output.dseg} "
         " -r {input.ref} "
+"""
