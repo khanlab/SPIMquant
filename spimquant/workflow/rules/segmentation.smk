@@ -56,19 +56,18 @@ rule n4_biasfield:
                 **inputs["spim"].wildcards,
             )
         ),
-        biasfield=directory(
-            bids(
+        profiling_dir=directory(bids(
                 root=root,
-                datatype="micr",
+                datatype="profiles",
                 stain="{stain}",
                 dslevel="{dslevel}",
                 level="{level}",
-                desc="n4",
-                suffix="biasfield.ome.zarr",
+                desc="corrected",
+                corrmethod="n4",
+                suffix="n4biascorrection.html",
                 **inputs["spim"].wildcards,
-            )
-        ),
-    threads: 32
+        )),
+    threads: 1
     script:
         "../scripts/n4_biasfield.py"
 
