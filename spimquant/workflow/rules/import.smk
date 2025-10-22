@@ -24,7 +24,6 @@ rule get_downsampled_nii:
         "../scripts/ome_zarr_to_nii.py"
 
 
-
 rule import_template_anat:
     input:
         anat=lambda wildcards: ancient(
@@ -74,12 +73,13 @@ rule lut_bids_to_itksnap:
         "../scripts/lut_bids_to_itksnap.py"
 
 
-
 rule import_dseg:
     input:
         dseg=lambda wildcards: ancient(
             resources_path(
-                config["templates"][wildcards.template]["atlases"][wildcards.seg]["dseg"]
+                config["templates"][wildcards.template]["atlases"][wildcards.seg][
+                    "dseg"
+                ]
             )
         ),
     output:
@@ -90,18 +90,16 @@ rule import_dseg:
         "cp {input} {output}"
 
 
-
-
-
 rule import_lut_tsv:
     input:
         tsv=lambda wildcards: ancient(
             resources_path(
-                config["templates"][wildcards.template]["atlases"][wildcards.seg]["tsv"]
+                config["templates"][wildcards.template]["atlases"][wildcards.seg][
+                    "tsv"
+                ]
             )
         ),
     output:
         tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     shell:
         "cp {input} {output}"
-

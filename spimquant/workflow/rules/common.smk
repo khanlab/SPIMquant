@@ -6,9 +6,10 @@ def bids_tpl(root, template, **entities):
     """bids() wrapper for files in tpl-template folder"""
     return str(Path(bids(root=root, tpl=template)) / bids(tpl=template, **entities))
 
+
 def resources_path(path):
-    """ Get path relative to the resources folder """
-    return str(Path(workflow.basedir).parent / 'resources' / path)
+    """Get path relative to the resources folder"""
+    return str(Path(workflow.basedir).parent / "resources" / path)
 
 
 def get_template_path(root, template, template_crop=None):

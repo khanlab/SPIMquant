@@ -487,6 +487,7 @@ rule deform_template_dseg_to_subject_nii:
         " -i {input.dseg} -o {output.dseg} "
         " -r {input.ref} -t  [{input.xfm_itk},1] {input.invwarp}"
 
+
 """ this rule needs updating - use atlas/seg wildcard and proper script
 rule deform_transform_labels_to_subj:
     input:
