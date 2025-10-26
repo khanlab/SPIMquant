@@ -1,9 +1,23 @@
-from zarrnii import ZarrNii
+if __name__ == "__main__":
 
-znimg_hires = ZarrNii.from_ome_zarr(
-    snakemake.input.corrected, **snakemake.params.zarrnii_kwargs
-)
+    from dask.distributed import Client, LocalCluster
 
-znimg_hires.segment_threshold(snakemake.params.threshold).to_ome_zarr(
-    snakemake.output.mask, max_layer=5
-)
+    cluster = LocalCluster(
+        n_workers=int(snakemake.threads/2),             # or 32, depending on workload
+        threads_per_worker=2,     # isolate GIL
+        memory_limit="auto",       # or tune to your RAM
+        dashboard_address=':8788',
+    )
+    client = Client(cluster)
+    print(cluster.dashboard_link)
+
+
+    from zarrnii import ZarrNii
+
+    znimg_hires = ZarrNii.from_ome_zarr(
+        snakemake.input.corrected, **snakemake.params.zarrnii_kwargs
+    )
+
+    znimg_hires.segment_threshold(snakemake.params.threshold).to_ome_zarr(
+        snakemake.output.mask, max_layer=5
+    )
