@@ -18,7 +18,7 @@ if __name__ == "__main__":
     )
 
     print("thresholding image, saving as ome zarr")
-    znimg_mask = znimg.segment_threshold(snakemake.params.threshold)
+    znimg_mask = znimg_hires.segment_threshold(snakemake.params.threshold)
 
     # multiplying binary mask by 100 (so values are 0  and 100) to enable
     # field fraction calculation by subsequent local-mean downsampling
