@@ -31,7 +31,7 @@ rule gaussian_biasfield:
                 **inputs["spim"].wildcards,
             )
         ),
-    threads: 32
+    threads: 128
     script:
         "../scripts/gaussian_biasfield.py"
 
@@ -68,7 +68,7 @@ rule n4_biasfield:
                 **inputs["spim"].wildcards,
             )
         ),
-    threads: 32
+    threads: 128
     script:
         "../scripts/n4_biasfield.py"
 
@@ -87,6 +87,8 @@ rule multiotsu:
             **inputs["spim"].wildcards,
         ),
     params:
+        hist_bins=int(config["seg_hist_bins"]),
+        hist_range=[int(x) for x in config["seg_hist_range"]],
         otsu_k=lambda wildcards: int(wildcards.k),
         otsu_threshold_index=lambda wildcards: int(wildcards.i),
         zarrnii_kwargs={"orientation": config["orientation"]},
@@ -103,7 +105,17 @@ rule multiotsu:
                 **inputs["spim"].wildcards,
             )
         ),
-    threads: 32
+        thresholds_png=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            level="{level}",
+            desc="otsu+k{k}i{i}",
+            suffix="thresholds.png",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 128
     script:
         "../scripts/multiotsu.py"
 
@@ -137,7 +149,7 @@ rule threshold:
                 **inputs["spim"].wildcards,
             )
         ),
-    threads: 32
+    threads: 128
     script:
         "../scripts/threshold.py"
 
