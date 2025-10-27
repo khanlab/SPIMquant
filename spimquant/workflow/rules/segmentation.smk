@@ -104,15 +104,15 @@ rule multiotsu:
             )
         ),
         thresholds_png=bids(
-                root=root,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="otsu+k{k}i{i}",
-                suffix="thresholds.png",
-                **inputs["spim"].wildcards,
-            )
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            level="{level}",
+            desc="otsu+k{k}i{i}",
+            suffix="thresholds.png",
+            **inputs["spim"].wildcards,
+        ),
     threads: 128
     script:
         "../scripts/multiotsu.py"
