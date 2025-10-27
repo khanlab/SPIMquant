@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # first calculate histogram - using preset bins to avoid issues where bins are too large
     # because of high intensity outliers
-    (hist_counts, bin_edges) = znimg.compute_histogram(bins=1000, range=(0, 1000))
+    (hist_counts, bin_edges) = znimg.compute_histogram(bins=snakemake.params.hist_bins, range=snakemake.params.hist_range)
 
     # get otsu thresholds (uses histogram)
     print("computing thresholds")
