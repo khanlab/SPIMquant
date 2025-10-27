@@ -34,4 +34,4 @@ if __name__ == "__main__":
     )
 
     # write to ome_zarr
-    znimg_corrected.to_ome_zarr(snakemake.output.corrected, max_layer=1)
+    znimg_corrected.to_ome_zarr(snakemake.output.corrected, max_layer=5)
