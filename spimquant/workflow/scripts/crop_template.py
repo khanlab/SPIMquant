@@ -31,16 +31,16 @@ def crop_template_hemisphere(input_path, output_path, hemisphere):
     x_middle = x_size // 2
 
     # Crop based on hemisphere, by setting values to zero
-    #  we do this so the brain is "empty" there, to ensure 
+    #  we do this so the brain is "empty" there, to ensure
     #  the downstream registration isn't able to "cheat" by
-    #  stretching the image beyond the fov.. 
+    #  stretching the image beyond the fov..
     if hemisphere == "left":
         # Keep the left half (first half of X dimension)
-          # set right half to zero
+        # set right half to zero
         data[x_middle:, :, :] = 0
     elif hemisphere == "right":
         # Keep the right half (second half of X dimension)
-          # set left half to zero
+        # set left half to zero
         data[:x_middle, :, :] = 0
     else:
         raise ValueError(f"Hemisphere must be 'left' or 'right', got '{hemisphere}'")
