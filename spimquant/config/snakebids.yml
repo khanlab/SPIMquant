@@ -49,6 +49,7 @@ parse_args:
     default: ABAv3
     choices: 
      - ABAv3
+     - DSURQE
      - gubra
      - MBMv3
      - turone
@@ -58,6 +59,9 @@ parse_args:
     default: MouseIn
     choices:
       - MouseIn
+      - DSURQE
+      - MBMv3
+      - turone
 
   --atlas_segs:
     help: "Atlas segmentations to use with the chosen template (default: use them all)"
@@ -219,7 +223,14 @@ templates:
         dseg: 'tpl-turone/tpl-turone_seg-all_dseg.nii.gz'
         tsv: 'tpl-turone/tpl-turone_seg-all_dseg.tsv'
 
-
+  DSURQE:
+    anat: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/nifti/DSURQE_40micron_average.nii
+    mask: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/nifti/DSURQE_40micron_mask.nii
+    atlases:
+      all: 
+        dseg: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/nifti/DSURQE_40micron_labels.nii
+        custom_csv: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/mappings/DSURQE_40micron_R_mapping.csv
+        tsv: tpl-DSURQE/seg-all_tpl-DSURQE_dseg.tsv
 
 
   
