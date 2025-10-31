@@ -62,15 +62,14 @@ rule import_mask:
         "cp {input} {output}"
 
 
-rule lut_bids_to_itksnap:
+rule generic_lut_bids_to_itksnap:
     input:
-        tsv=bids_tpl(root=root, template="{template}", desc="{desc}", suffix="dseg.tsv"),
+        tsv="{prefix}_dseg.tsv"
     output:
-        lut=bids_tpl(
-            root=root, template="{template}", desc="{desc}", suffix="dseg.itksnap.txt"
-        ),
+        lut="{prefix}_dseg.itksnap.txt"
     script:
         "../scripts/lut_bids_to_itksnap.py"
+
 
 
 rule import_dseg:
