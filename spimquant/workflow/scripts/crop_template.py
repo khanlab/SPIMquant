@@ -30,25 +30,23 @@ def crop_template_hemisphere(input_path, output_path, hemisphere):
     x_size = data.shape[0]
     x_middle = x_size // 2
 
-    # Crop based on hemisphere
+    # Crop based on hemisphere, by setting values to zero
+    #  we do this so the brain is "empty" there, to ensure
+    #  the downstream registration isn't able to "cheat" by
+    #  stretching the image beyond the fov..
     if hemisphere == "left":
         # Keep the left half (first half of X dimension)
-        cropped_data = data[:x_middle, :, :]
+        # set right half to zero
+        data[x_middle:, :, :] = 0
     elif hemisphere == "right":
         # Keep the right half (second half of X dimension)
-        cropped_data = data[x_middle:, :, :]
+        # set left half to zero
+        data[:x_middle, :, :] = 0
     else:
         raise ValueError(f"Hemisphere must be 'left' or 'right', got '{hemisphere}'")
 
-    # Update the affine matrix to reflect the cropping
-    affine = img.affine.copy()
-    if hemisphere == "right":
-        # For right hemisphere, we need to adjust the origin in the affine matrix
-        # since we're removing the left part of the image
-        affine[0, 3] += x_middle * affine[0, 0]  # Adjust X translation
-
     # Create new image with cropped data
-    cropped_img = nib.Nifti1Image(cropped_data, affine, img.header)
+    cropped_img = nib.Nifti1Image(data, img.affine, img.header)
 
     # Save the cropped image
     nib.save(cropped_img, output_path)

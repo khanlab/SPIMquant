@@ -40,7 +40,7 @@ rule pre_atropos:
     conda:
         "../envs/c3d.yaml"
     shell:
-        "c3d {input.nii} -resample {params.downsampling} -o {output.downsampled} -scale 0 -shift 1 -o {output.mask}"
+        "c3d {input.nii} -resample {params.downsampling} -shift 1 -log -stretch 2% 98% 0 100 -clip 0 100 -o {output.downsampled} -scale 0 -shift 1 -o {output.mask}"
 
 
 rule atropos_seg:
