@@ -1,4 +1,3 @@
-import json
 import pandas as pd
 import random
 from matplotlib import colormaps
