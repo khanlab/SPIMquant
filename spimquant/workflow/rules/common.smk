@@ -9,7 +9,7 @@ def bids_tpl(root, template, **entities):
 
 def resources_path(path):
     """Get path relative to the resources folder"""
-    if 'http' in path:
+    if "http" in path:
         return path
     else:
         return str(Path(workflow.basedir).parent / "resources" / path)

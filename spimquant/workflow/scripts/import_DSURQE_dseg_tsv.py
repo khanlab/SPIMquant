@@ -31,10 +31,7 @@ df_out = df_out[["index", "name", "hierarchy", "tissue type", "ABI"]]
 df_out = df_out.rename(columns={"tissue type": "tissue_type"})
 
 # sort by index
-#df_out = df_out.sort_values(["index"]).reset_index(drop=True)
+# df_out = df_out.sort_values(["index"]).reset_index(drop=True)
 
 # save as TSV
 df_out.to_csv(snakemake.output.tsv, sep="\t", index=False)
-
-
-

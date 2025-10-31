@@ -21,6 +21,7 @@ lut_header = """
 ################################################
 """
 
+
 def hex_to_rgb(hex_string):
     try:
         hex_string = str(hex_string).strip().replace("#", "")
@@ -32,6 +33,7 @@ def hex_to_rgb(hex_string):
         return r, g, b
     except Exception:
         return None
+
 
 # Read TSV
 df = pd.read_csv(snakemake.input.tsv, sep="\t")
@@ -76,5 +78,3 @@ with open(snakemake.output.lut, "w") as f:
 df[["index", "R", "G", "B", "A", "VIS", "IDX", "LABEL"]].to_csv(
     snakemake.output.lut, sep="\t", index=False, header=False, mode="a", quoting=3
 )
-
-

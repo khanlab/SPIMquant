@@ -231,8 +231,9 @@ rule all_segment:
             level=config["registration_level"],
             seg=atlas_segs,
             template=config["template"],
-            ext=['tsv','itksnap.txt'],
+            ext=["tsv", "itksnap.txt"],
         ),
+
 
 rule all_mri_reg:
     input:

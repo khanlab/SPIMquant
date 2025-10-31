@@ -487,11 +487,10 @@ rule deform_template_dseg_to_subject_nii:
         " -i {input.dseg} -o {output.dseg} "
         " -r {input.ref} -t  [{input.xfm_itk},1] {input.invwarp}"
 
+
 rule copy_template_dseg_tsv:
     input:
-        dseg=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        dseg=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     output:
         dseg=bids(
             root=root,
