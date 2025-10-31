@@ -215,6 +215,24 @@ rule all_segment:
             desc=config["seg_method"],
             template=config["template"],
         ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                seg="{seg}",
+                desc="deform",
+                level="{level}",
+                from_="{template}",
+                suffix="dseg.{ext}",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            level=config["registration_level"],
+            seg=atlas_segs,
+            template=config["template"],
+            ext=["tsv", "itksnap.txt"],
+        ),
 
 
 rule all_mri_reg:

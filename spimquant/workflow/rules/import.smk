@@ -26,8 +26,8 @@ rule get_downsampled_nii:
 
 rule import_template_anat:
     input:
-        anat=lambda wildcards: ancient(
-            resources_path(config["templates"][wildcards.template]["anat"])
+        anat=lambda wildcards: storage(
+            ancient(resources_path(config["templates"][wildcards.template]["anat"]))
         ),
     output:
         anat=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
@@ -44,8 +44,8 @@ rule import_template_anat:
 
 rule import_mask:
     input:
-        mask=lambda wildcards: ancient(
-            resources_path(config["templates"][wildcards.template]["mask"])
+        mask=lambda wildcards: storage(
+            ancient(resources_path(config["templates"][wildcards.template]["mask"]))
         ),
     output:
         mask=bids_tpl(
@@ -62,24 +62,24 @@ rule import_mask:
         "cp {input} {output}"
 
 
-rule lut_bids_to_itksnap:
+rule generic_lut_bids_to_itksnap:
     input:
-        tsv=bids_tpl(root=root, template="{template}", desc="{desc}", suffix="dseg.tsv"),
+        tsv="{prefix}_dseg.tsv",
     output:
-        lut=bids_tpl(
-            root=root, template="{template}", desc="{desc}", suffix="dseg.itksnap.txt"
-        ),
+        lut="{prefix}_dseg.itksnap.txt",
     script:
         "../scripts/lut_bids_to_itksnap.py"
 
 
 rule import_dseg:
     input:
-        dseg=lambda wildcards: ancient(
-            resources_path(
-                config["templates"][wildcards.template]["atlases"][wildcards.seg][
-                    "dseg"
-                ]
+        dseg=lambda wildcards: storage(
+            ancient(
+                resources_path(
+                    config["templates"][wildcards.template]["atlases"][wildcards.seg][
+                        "dseg"
+                    ]
+                )
             )
         ),
     output:
@@ -103,3 +103,12 @@ rule import_lut_tsv:
         tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     shell:
         "cp {input} {output}"
+
+
+rule import_DSURQE_tsv:
+    input:
+        csv=storage(config["templates"]["DSURQE"]["atlases"]["all"]["custom_csv"]),
+    output:
+        tsv=bids_tpl(root=root, template="DSURQE", seg="all", suffix="dseg.tsv"),
+    script:
+        "../scripts/import_DSURQE_dseg_tsv.py"

@@ -488,6 +488,25 @@ rule deform_template_dseg_to_subject_nii:
         " -r {input.ref} -t  [{input.xfm_itk},1] {input.invwarp}"
 
 
+rule copy_template_dseg_tsv:
+    input:
+        dseg=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
+    output:
+        dseg=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            desc="deform",
+            level="{level}",
+            from_="{template}",
+            suffix="dseg.tsv",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 1
+    shell:
+        "cp {input} {output}"
+
+
 """ this rule needs updating - use atlas/seg wildcard and proper script
 rule deform_transform_labels_to_subj:
     input:
