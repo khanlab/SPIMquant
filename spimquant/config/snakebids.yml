@@ -128,8 +128,10 @@ parse_args:
     choices: 
       - threshold
       - otsu+k3i2
+      - threshold+cleaned
+      - otsu+k3i2+cleaned
     default: 
-      - otsu+k3i2
+      - otsu+k3i2+cleaned
     nargs: '+'
 
   --seg_hist_range:
