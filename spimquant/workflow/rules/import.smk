@@ -59,7 +59,7 @@ rule import_mask:
             template="{template}",
             suffix="log.txt",
         ),
-    script: '../scripts/copy_nii.py'
+    script: "../scripts/copy_nii.py"
 
 
 rule generic_lut_bids_to_itksnap:
