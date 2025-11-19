@@ -24,8 +24,6 @@ rule get_downsampled_nii:
         "../scripts/ome_zarr_to_nii.py"
 
 
-
-
 rule import_template_anat:
     input:
         anat=lambda wildcards: storage(
@@ -40,7 +38,8 @@ rule import_template_anat:
             template="{template}",
             suffix="log.txt",
         ),
-    script: '../scripts/copy_nii.py'
+    script:
+        "../scripts/copy_nii.py"
 
 
 rule import_mask:
@@ -59,7 +58,8 @@ rule import_mask:
             template="{template}",
             suffix="log.txt",
         ),
-    script: "../scripts/copy_nii.py"
+    script:
+        "../scripts/copy_nii.py"
 
 
 rule generic_lut_bids_to_itksnap:
