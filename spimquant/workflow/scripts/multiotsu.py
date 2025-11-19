@@ -14,7 +14,8 @@ if __name__ == "__main__":
     from zarrnii import ZarrNii
     from zarrnii.analysis import compute_otsu_thresholds
     import matplotlib
-    matplotlib.use('agg')
+
+    matplotlib.use("agg")
 
     # we use the default level=0, since we are reading in the n4 output, which is already downsampled if level was >0
     znimg = ZarrNii.from_ome_zarr(
