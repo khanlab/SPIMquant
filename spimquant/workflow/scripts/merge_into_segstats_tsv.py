@@ -1,10 +1,10 @@
 import pandas as pd
+from functools import reduce
 
 # read each TSV into a list of dataframes
 dfs = [pd.read_csv(f, sep="\t") for f in snakemake.input]
 
 # merge all dataframes on 'index'
-from functools import reduce
 
 merged = reduce(
     lambda left, right: pd.merge(left, right, on=("index", "name"), how="outer"), dfs
