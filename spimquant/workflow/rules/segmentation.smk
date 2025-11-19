@@ -290,7 +290,6 @@ rule deform_negative_mask_to_subject_nii:
         " -ri NN "
         "  -rm {input.mask} {output.mask} "
         "  -r {input.xfm_ras},-1 {input.invwarp}"
-        #note: LABEL interpolation not possible with >1000 labels
 
 
 rule map_img_to_roi_tsv:

@@ -5,9 +5,11 @@ regions, generating two outputs:
 1. Labeled centroids with their corresponding atlas region assignments
 2. Count statistics showing the number of centroids per atlas region
 """
+
 from zarrnii import ZarrNii, ZarrNiiAtlas
 from zarrnii import ZarrNiiAtlas
 import numpy as np
+
 centroids = np.load(snakemake.input.centroids_npy)
 
 atlas = ZarrNiiAtlas.from_files(snakemake.input.dseg, snakemake.input.label_tsv)
