@@ -1,16 +1,21 @@
-if __name__ == "__main__":
-    """
-    from dask.distributed import Client, LocalCluster
+"""
+Example Dask cluster setup for advanced users:
 
-    cluster = LocalCluster(
-        n_workers=2, #int(snakemake.threads / 2),  # or 32, depending on workload
-        threads_per_worker=2,  # isolate GIL
-        memory_limit="12GB", #"auto",  # or tune to your RAM
-        dashboard_address=":8788",
-    )
-    client = Client(cluster)
-    print(cluster.dashboard_link)
-    """
+from dask.distributed import Client, LocalCluster
+
+cluster = LocalCluster(
+    n_workers=2, #int(snakemake.threads / 2),  # or 32, depending on workload
+    threads_per_worker=2,  # isolate GIL
+    memory_limit="12GB", #"auto",  # or tune to your RAM
+    dashboard_address=":8788",
+)
+client = Client(cluster)
+print(cluster.dashboard_link)
+
+To use a custom Dask cluster, uncomment and adapt the above code as needed.
+"""
+
+if __name__ == "__main__":
     from dask.diagnostics import ProgressBar
 
     from zarrnii import ZarrNii
