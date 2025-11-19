@@ -1,4 +1,9 @@
-"""
+"""Compute centroids from segmentation masks using ZarrNii.
+
+This script reads a segmentation mask from an OME-Zarr file and computes the
+centroids of labeled regions using ZarrNii's compute_centroids method. The
+resulting centroids are saved as a NumPy array.
+
 Example Dask cluster setup for advanced users:
 
 from dask.distributed import Client, LocalCluster
