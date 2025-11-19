@@ -1,3 +1,10 @@
+"""Merge multiple segmentation statistics TSV files.
+
+This script merges multiple TSV files containing segmentation statistics
+(e.g., counts, volumes) for different regions. The files are merged on the
+'index' and 'name' columns using an outer join. After merging, density metrics
+are computed as count/volume when both columns are present.
+"""
 import pandas as pd
 from functools import reduce
 
