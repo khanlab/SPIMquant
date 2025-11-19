@@ -1,3 +1,10 @@
+"""Map computed centroids to atlas regions and generate labeled statistics.
+
+This script takes computed centroids from segmentation and maps them to atlas
+regions, generating two outputs:
+1. Labeled centroids with their corresponding atlas region assignments
+2. Count statistics showing the number of centroids per atlas region
+"""
 from zarrnii import ZarrNii, ZarrNiiAtlas
 import numpy as np
 import pandas as pd
