@@ -14,7 +14,6 @@ if __name__ == "__main__":
     from zarrnii import ZarrNii
     from zarrnii.plugins import SegmentationCleaner
 
-
     hires_level = int(snakemake.wildcards.level)
     ds_level = int(snakemake.wildcards.dslevel)
 
@@ -24,16 +23,15 @@ if __name__ == "__main__":
         **snakemake.params.zarrnii_kwargs,
     )
 
-    # perform cleaning of artifactual positives by 
-    # removing objects with low extent (extent is ratio of num voxels to bounding box) 
+    # perform cleaning of artifactual positives by
+    # removing objects with low extent (extent is ratio of num voxels to bounding box)
 
     # the downsample_factor we use should be proportional to the segmentation level
-    #   e.g. if segmentation level is 3, then we have already downsampled by 2^3, so 
-    #   the downsample factor should be divided by that.. 
-    unadjusted_downsample_factor=2**ds_level 
+    #   e.g. if segmentation level is 3, then we have already downsampled by 2^3, so
+    #   the downsample factor should be divided by that..
+    unadjusted_downsample_factor = 2**ds_level
 
-    adjusted_downsample_factor= unadjusted_downsample_factor / (2**hires_level)
-    
+    adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
 
     znimg_cleaned = znimg.apply_scaled_processing(
         SegmentationCleaner(max_extent=snakemake.params.max_extent),
@@ -43,4 +41,3 @@ if __name__ == "__main__":
 
     # write to final ome_zarr
     znimg_cleaned.to_ome_zarr(snakemake.output.cleaned_mask, max_layer=5)
-

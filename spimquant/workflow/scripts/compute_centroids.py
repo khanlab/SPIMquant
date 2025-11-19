@@ -25,5 +25,3 @@ if __name__ == "__main__":
         centroids = znimg.compute_centroids()
 
     np.save(snakemake.output.centroids_npy, centroids)
-
-

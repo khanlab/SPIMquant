@@ -157,18 +157,18 @@ rule threshold:
 rule clean_segmentation:
     input:
         mask=bids(
-                root=root,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="{desc}",
-                suffix="mask.ome.zarr",
-                **inputs["spim"].wildcards,
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            level="{level}",
+            desc="{desc}",
+            suffix="mask.ome.zarr",
+            **inputs["spim"].wildcards,
         ),
     params:
         max_extent=0.15,
-        zarrnii_kwargs={}
+        zarrnii_kwargs={},
     output:
         exclude_mask=directory(
             bids(
@@ -182,7 +182,8 @@ rule clean_segmentation:
                 **inputs["spim"].wildcards,
             )
         ),
-        cleaned_mask=directory(bids(
+        cleaned_mask=directory(
+            bids(
                 root=root,
                 datatype="micr",
                 stain="{stain}",
@@ -191,13 +192,13 @@ rule clean_segmentation:
                 desc="{desc}+cleaned",
                 suffix="mask.ome.zarr",
                 **inputs["spim"].wildcards,
-                )
+            )
         ),
     threads: 128
     script:
         "../scripts/clean_segmentation.py"
 
-   
+
 rule compute_centroids:
     """Calculate object/cell centroids from the segmentation"""
     input:
@@ -212,7 +213,7 @@ rule compute_centroids:
             **inputs["spim"].wildcards,
         ),
     params:
-        zarrnii_kwargs={}
+        zarrnii_kwargs={},
     output:
         centroids_npy=bids(
             root=root,
@@ -226,7 +227,6 @@ rule compute_centroids:
     threads: 128
     script:
         "../scripts/compute_centroids.py"
-
 
 
 rule fieldfrac:
@@ -380,7 +380,6 @@ rule map_centroids_to_atlas_rois:
             suffix="countstats.tsv",
             **inputs["spim"].wildcards,
         ),
-
     script:
         "../scripts/map_atlas_to_centroids.py"
 
@@ -421,7 +420,9 @@ rule merge_into_segstats_tsv:
             suffix="segstats.tsv",
             **inputs["spim"].wildcards,
         ),
-    script: '../scripts/merge_into_segstats_tsv.py'
+    script:
+        "../scripts/merge_into_segstats_tsv.py"
+
 
 rule map_segstats_tsv_dseg_to_template_nii:
     """ uses generic script that paints regions with column data (e.g. use this to make density heat-maps)"""

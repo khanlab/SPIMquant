@@ -177,13 +177,14 @@ rule all_segment:
                 space="{template}",
                 stain="{stain}",
                 desc="{desc}",
-                suffix="fieldfrac.nii",
+                suffix="{suffix}.nii",
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
             seg=atlas_segs,
             desc=config["seg_method"],
             template=config["template"],
+            suffix=config["seg_metrics"],
         ),
         inputs["spim"].expand(
             bids(
