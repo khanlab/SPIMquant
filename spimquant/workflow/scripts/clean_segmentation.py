@@ -1,3 +1,16 @@
+"""
+Clean segmentation by removing objects with low extent to eliminate artifactual positives.
+
+This script performs post-processing on segmentation masks to remove spurious detections.
+Objects with low extent (ratio of number of voxels to bounding box volume) are removed
+as they typically represent artifacts rather than true biological structures. The cleaning
+is performed using downsampled data for efficiency and then upsampled to the original
+resolution.
+
+The script uses Dask for parallel processing and zarrnii's SegmentationCleaner plugin to
+perform the extent-based filtering.
+"""
+
 if __name__ == "__main__":
 
     from dask.distributed import Client, LocalCluster
