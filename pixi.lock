@@ -658,7 +658,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/54/de/7b8898c9e7f73a2f4c20b621279143cfc27836dba0db676e9a923cd0a461/wasmtime-38.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/cf/68/5707da262a119fb06fbe214d82dd1fe4a6f4af32d2d14de368d0349eb52a/watchfiles-1.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/8f/aa61f528fba38578ec553c145857a181384c72b98156f858ca5c8e82d9d3/websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/9e/42/bfac876c10c855a32b67d99144c71823de62c93221d89ac7019c29b146a7/zarrnii-0.10.0a1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/1c/70/ddf32c7d78e9092f78f564bf6f4571fa0b43c1137418d682b38cbf731f85/zarrnii-0.10.1a1-py3-none-any.whl
       - pypi: ./
   dev:
     channels:
@@ -1322,7 +1322,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/54/de/7b8898c9e7f73a2f4c20b621279143cfc27836dba0db676e9a923cd0a461/wasmtime-38.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/cf/68/5707da262a119fb06fbe214d82dd1fe4a6f4af32d2d14de368d0349eb52a/watchfiles-1.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/8f/aa61f528fba38578ec553c145857a181384c72b98156f858ca5c8e82d9d3/websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/9e/42/bfac876c10c855a32b67d99144c71823de62c93221d89ac7019c29b146a7/zarrnii-0.10.0a1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/1c/70/ddf32c7d78e9092f78f564bf6f4571fa0b43c1137418d682b38cbf731f85/zarrnii-0.10.1a1-py3-none-any.whl
       - pypi: ./
   dev-only:
     channels:
@@ -1578,7 +1578,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/0c/37/6faf15cfa41bf1f3dba80cd3f5ccc6622dfccb660ab26ed79f0178c7497f/wrapt-1.17.3-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/11/c9/cd8538dc2e7727095e0c1d867bad1e40c98f37763e6d995c1939f5fdc7b1/yarl-1.22.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/1a/71/9de7229515a53d1cc5705ca9c411530f711a2242f962214d9dbfe2741aa4/zarr-3.1.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/9e/42/bfac876c10c855a32b67d99144c71823de62c93221d89ac7019c29b146a7/zarrnii-0.10.0a1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/1c/70/ddf32c7d78e9092f78f564bf6f4571fa0b43c1137418d682b38cbf731f85/zarrnii-0.10.1a1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/ab/11a76c1e2126084fde2639514f24e6111b789b0bfa4fc6264a8975c7e1f1/zict-3.0.0-py2.py3-none-any.whl
       - pypi: ./
 packages:
@@ -10610,7 +10610,7 @@ packages:
 - pypi: ./
   name: spimquant
   version: 0.1.0
-  sha256: bbf5cc0ed191b53eb92c6ff565a2de0b8a9e9f7299c2254d83d78dc5d49fa093
+  sha256: 35adda39813dc9bb6fe2e1a87018f7e598f2961ede6ef0dab4b79cf971e44e88
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/spirv-tools-2025.4-hb700be7_0.conda
@@ -11904,10 +11904,10 @@ packages:
   - pkg:pypi/zarr?source=hash-mapping
   size: 290974
   timestamp: 1758255670714
-- pypi: https://files.pythonhosted.org/packages/9e/42/bfac876c10c855a32b67d99144c71823de62c93221d89ac7019c29b146a7/zarrnii-0.10.0a1-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/1c/70/ddf32c7d78e9092f78f564bf6f4571fa0b43c1137418d682b38cbf731f85/zarrnii-0.10.1a1-py3-none-any.whl
   name: zarrnii
-  version: 0.10.0a1
-  sha256: 03ad1c9ce48960fe0d7d3c7249e71090d485ac544abaac8c02782f43310c7b7a
+  version: 0.10.1a1
+  sha256: d1d239b428b95ccd5f9d26a6c03e8ee36fdaa6b60ae46d700a8ae979c2bb0806
   requires_dist:
   - dask>=2025.5.1
   - h5py>=3.14.0
