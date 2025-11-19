@@ -21,6 +21,7 @@ if __name__ == "__main__":
         snakemake.input.spim,
         channel_labels=[snakemake.wildcards.stain],
         level=hires_level,
+        downsample_near_isotropic=True,
         **snakemake.params.zarrnii_kwargs,
     )
 

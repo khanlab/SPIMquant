@@ -100,7 +100,7 @@ rule multiotsu:
                 stain="{stain}",
                 dslevel="{dslevel}",
                 level="{level}",
-                desc="otsu+k{k}i{i}",
+                desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
                 suffix="mask.ome.zarr",
                 **inputs["spim"].wildcards,
             )
@@ -111,7 +111,7 @@ rule multiotsu:
             stain="{stain}",
             dslevel="{dslevel}",
             level="{level}",
-            desc="otsu+k{k}i{i}",
+            desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
             suffix="thresholds.png",
             **inputs["spim"].wildcards,
         ),
@@ -152,6 +152,81 @@ rule threshold:
     threads: 128
     script:
         "../scripts/threshold.py"
+
+
+rule clean_segmentation:
+    input:
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            level="{level}",
+            desc="{desc}",
+            suffix="mask.ome.zarr",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        max_extent=0.15,
+        zarrnii_kwargs={},
+    output:
+        exclude_mask=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                level="{level}",
+                desc="{desc}+cleaned",
+                suffix="excludemask.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        cleaned_mask=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{dslevel}",
+                level="{level}",
+                desc="{desc}+cleaned",
+                suffix="mask.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
+        ),
+    threads: 128
+    script:
+        "../scripts/clean_segmentation.py"
+
+
+rule compute_centroids:
+    """Calculate object/cell centroids from the segmentation"""
+    input:
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            dslevel=config["registration_level"],
+            level=config["segmentation_level"],
+            desc="{seg_method}",
+            suffix="mask.ome.zarr",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        zarrnii_kwargs={},
+    output:
+        centroids_npy=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            desc="{seg_method}",
+            suffix="centroids.npy",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 128
+    script:
+        "../scripts/compute_centroids.py"
 
 
 rule fieldfrac:
@@ -215,60 +290,9 @@ rule deform_negative_mask_to_subject_nii:
         " -ri NN "
         "  -rm {input.mask} {output.mask} "
         "  -r {input.xfm_ras},-1 {input.invwarp}"
-        #note: LABEL interpolation not possible with >1000 labels
 
 
-rule apply_boundary_penalty:
-    input:
-        fieldfrac=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            dslevel="{dslevel}",
-            desc="{seg_method}",
-            suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards,
-        ),
-        mask1=bids(
-            root=root,
-            datatype="micr",
-            desc="negative",
-            level="{dslevel}",
-            from_=config["template"],
-            suffix="mask.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        mask2=bids(
-            root=root,
-            datatype="micr",
-            stain=stain_for_reg,
-            desc="brain",
-            level="{dslevel}",
-            suffix="penalty.nii",
-            **inputs["spim"].wildcards,
-        ),
-    output:
-        fieldfrac_mod=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            dslevel="{dslevel}",
-            desc="{seg_method}penalty",
-            suffix="fieldfrac.nii",
-            **inputs["spim"].wildcards,
-        ),
-    conda:
-        "../envs/c3d.yaml"
-    shell:
-        "c3d {input.fieldfrac} {input.mask1} -multiply {input.mask2} -multiply -o {output.fieldfrac_mod}"
-
-
-# now we have fieldfrac modulated by brainmask boundary penalty
-# just need to calc avg fieldfrac in each ROI
-# if we then want total volume of plaques in each ROI, it is avg_fieldfrac * volume of voxel * number of voxels
-
-
-rule map_fieldfrac_to_atlas_rois:
+rule map_img_to_roi_tsv:
     input:
         img=bids(
             root=root,
@@ -276,7 +300,7 @@ rule map_fieldfrac_to_atlas_rois:
             stain="{stain}",
             dslevel="{dslevel}",
             desc="{desc}",
-            suffix="fieldfrac.nii",
+            suffix="{suffix}.nii",
             **inputs["spim"].wildcards,
         ),
         dseg=bids(
@@ -301,11 +325,102 @@ rule map_fieldfrac_to_atlas_rois:
             stain="{stain}",
             dslevel="{dslevel}",
             desc="{desc}",
-            suffix="segstats.tsv",
+            suffix="{suffix,fieldfrac}stats.tsv",
             **inputs["spim"].wildcards,
         ),
     script:
         "../scripts/map_img_to_roi_tsv.py"
+
+
+rule map_centroids_to_atlas_rois:
+    input:
+        centroids_npy=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            desc="{seg_method}",
+            suffix="centroids.npy",
+            **inputs["spim"].wildcards,
+        ),
+        dseg=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            desc="deform",
+            level="{dslevel}",
+            from_="{template}",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        label_tsv=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
+        ),
+    output:
+        centroids_tsv=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            desc="{seg_method}",
+            suffix="centroidstats.tsv",
+            **inputs["spim"].wildcards,
+        ),
+        counts_tsv=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            desc="{seg_method}",
+            suffix="countstats.tsv",
+            **inputs["spim"].wildcards,
+        ),
+    script:
+        "../scripts/map_atlas_to_centroids.py"
+
+
+rule merge_into_segstats_tsv:
+    input:
+        counts_tsv=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            desc="{desc}",
+            suffix="countstats.tsv",
+            **inputs["spim"].wildcards,
+        ),
+        fieldfrac_tsv=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            desc="{desc}",
+            suffix="fieldfracstats.tsv",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        tsv=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            desc="{desc}",
+            suffix="segstats.tsv",
+            **inputs["spim"].wildcards,
+        ),
+    script:
+        "../scripts/merge_into_segstats_tsv.py"
 
 
 rule map_segstats_tsv_dseg_to_template_nii:
@@ -330,7 +445,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
         ),
     params:
         label_column="index",
-        feature_column="mean_fieldfrac",
+        feature_column="{suffix}",
     output:
         nii=bids(
             root=root,
@@ -339,7 +454,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
             space="{template}",
             stain="{stain}",
             desc="{desc}",
-            suffix="fieldfrac.nii",
+            suffix="{suffix}.nii",
             **inputs["spim"].wildcards,
         ),
     script:
@@ -375,7 +490,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
         ),
     params:
         label_column="index",
-        feature_column="mean_fieldfrac",
+        feature_column="{suffix}",
     output:
         nii=bids(
             root=root,
@@ -385,7 +500,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             from_="{template}",
             stain="{stain}",
             desc="{desc}",
-            suffix="fieldfrac.nii",
+            suffix="{suffix}.nii",
             **inputs["spim"].wildcards,
         ),
     script:

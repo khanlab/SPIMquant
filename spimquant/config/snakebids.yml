@@ -128,8 +128,10 @@ parse_args:
     choices: 
       - threshold
       - otsu+k3i2
+      - threshold+cleaned
+      - otsu+k3i2+cleaned
     default: 
-      - otsu+k3i2
+      - otsu+k3i2+cleaned
     nargs: '+'
 
   --seg_hist_range:
@@ -249,4 +251,9 @@ blobdetect:
   dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
   dseg_template: ABAv3
 
-
+seg_metrics:
+  - fieldfrac
+  - density
+  - count
+  - volume
+  
