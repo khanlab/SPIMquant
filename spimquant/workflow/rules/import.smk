@@ -86,7 +86,8 @@ rule import_dseg:
         dseg=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
         ),
-    script: '../scripts/copy_nii.py'
+    script:
+        "../scripts/copy_nii.py"
 
 
 rule import_lut_tsv:
