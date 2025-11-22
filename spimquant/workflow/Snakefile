@@ -1,3 +1,5 @@
+import os
+
 from zarrnii import ZarrNii
 from snakemake.utils import format
 from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
