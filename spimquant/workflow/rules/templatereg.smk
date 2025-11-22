@@ -418,9 +418,10 @@ rule deform_to_template_nii_zoomed:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards,
         ),
+    threads: 4
     resources:
         mem_mb=15000,
-    threads: 4
+        runtime=15,
     script:
         "../scripts/deform_to_template_nii.py"
 
@@ -541,6 +542,9 @@ rule copy_template_dseg_tsv:
             **inputs["spim"].wildcards,
         ),
     threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
     shell:
         "cp {input} {output}"
 
