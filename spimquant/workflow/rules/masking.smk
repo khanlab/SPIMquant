@@ -37,6 +37,10 @@ rule pre_atropos:
                 **inputs["spim"].wildcards,
             )
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -84,6 +88,7 @@ rule atropos_seg:
     threads: 1
     resources:
         mem_mb=8000,
+        runtime=15,
     shell:
         "mkdir -p {output.posteriors_dir} && "
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
@@ -117,6 +122,10 @@ rule post_atropos:
                 **inputs["spim"].wildcards,
             )
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -169,6 +178,9 @@ rule init_affine_reg:
             **inputs["spim"].wildcards,
         ),
     threads: 32
+    resources:
+        mem_mb=16000,
+        runtime=5,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
@@ -201,6 +213,9 @@ rule affine_transform_template_mask_to_subject:
             )
         ),
     threads: 32
+    resources:
+        mem_mb=16000,
+        runtime=5,
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         " -ri NN"
@@ -240,6 +255,10 @@ rule create_mask_from_gmm_and_prior:
             suffix="mask.nii",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
     script:
         "../scripts/create_mask_from_gmm_and_prior.py"
 
@@ -268,6 +287,10 @@ rule create_mask_from_gmm:
             suffix="mask.nii",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
     conda:
         "../envs/c3d.yaml"
     shell:

@@ -32,6 +32,9 @@ rule gaussian_biasfield:
             )
         ),
     threads: 128
+    resources:
+        mem_mb=256000,
+        runtime=15,
     script:
         "../scripts/gaussian_biasfield.py"
 
@@ -69,6 +72,9 @@ rule n4_biasfield:
             )
         ),
     threads: 128
+    resources:
+        mem_mb=256000,
+        runtime=60,
     script:
         "../scripts/n4_biasfield.py"
 
@@ -116,6 +122,9 @@ rule multiotsu:
             **inputs["spim"].wildcards,
         ),
     threads: 128
+    resources:
+        mem_mb=256000,
+        runtime=15,
     script:
         "../scripts/multiotsu.py"
 
@@ -150,6 +159,9 @@ rule threshold:
             )
         ),
     threads: 128
+    resources:
+        mem_mb=256000,
+        runtime=15,
     script:
         "../scripts/threshold.py"
 
@@ -195,6 +207,9 @@ rule clean_segmentation:
             )
         ),
     threads: 128
+    resources:
+        mem_mb=256000,
+        runtime=30,
     script:
         "../scripts/clean_segmentation.py"
 
@@ -225,6 +240,9 @@ rule compute_centroids:
             **inputs["spim"].wildcards,
         ),
     threads: 128
+    resources:
+        mem_mb=256000,
+        runtime=30,
     script:
         "../scripts/compute_centroids.py"
 
@@ -257,6 +275,9 @@ rule fieldfrac:
             **inputs["spim"].wildcards,
         ),
     threads: 32
+    resources:
+        mem_mb=16000,
+        runtime=5,
     script:
         "../scripts/fieldfrac.py"
 
@@ -285,6 +306,9 @@ rule deform_negative_mask_to_subject_nii:
             **inputs["spim"].wildcards,
         ),
     threads: 32
+    resources:
+        mem_mb=16000,
+        runtime=15,
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         " -ri NN "
@@ -328,6 +352,10 @@ rule map_img_to_roi_tsv:
             suffix="{suffix,fieldfrac}stats.tsv",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
     script:
         "../scripts/map_img_to_roi_tsv.py"
 
@@ -379,6 +407,10 @@ rule map_centroids_to_atlas_rois:
             suffix="countstats.tsv",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
     script:
         "../scripts/map_atlas_to_centroids.py"
 
@@ -419,6 +451,10 @@ rule merge_into_segstats_tsv:
             suffix="segstats.tsv",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
     script:
         "../scripts/merge_into_segstats_tsv.py"
 
@@ -457,6 +493,10 @@ rule map_segstats_tsv_dseg_to_template_nii:
             suffix="{suffix}.nii",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
@@ -503,6 +543,10 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             suffix="{suffix}.nii",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
@@ -549,6 +593,9 @@ rule deform_fieldfrac_nii_to_template_nii:
             **inputs["spim"].wildcards,
         ),
     threads: 32
+    resources:
+        mem_mb=16000,
+        runtime=5,
     conda:
         "../envs/ants.yaml"
     shell:
