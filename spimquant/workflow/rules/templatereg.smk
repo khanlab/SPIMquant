@@ -317,7 +317,7 @@ rule affine_zarr_to_template_ome_zarr:
     output:
         ome_zarr=directory(
             bids(
-                root=root,
+                root=work,
                 datatype="micr",
                 desc="affine",
                 space="{template}",
@@ -519,7 +519,7 @@ rule deform_transform_labels_to_subj:
     output:
         zarr=directory(
             bids(
-                root=root,
+                root=work,
                 datatype="micr",
                 desc="deform",
                 space="subject",

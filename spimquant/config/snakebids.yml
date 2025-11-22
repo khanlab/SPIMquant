@@ -42,7 +42,7 @@ parse_args:
   --work:
     help: "Local path to use for temporary files\n"
     type: str
-    default: work
+    default: null
 
   --template:
     help: "Template to use for SPIM registration\n"
