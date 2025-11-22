@@ -37,6 +37,10 @@ rule n4:
             suffix="biasfield.nii",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
     conda:
         "../envs/ants.yaml"
     shell:
@@ -76,6 +80,10 @@ rule apply_mask_to_corrected:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -94,6 +102,10 @@ rule crop_template:
         ),
     params:
         hemisphere="{hemisphere}",
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
     script:
         "../scripts/crop_template.py"
 
@@ -141,6 +153,9 @@ rule affine_reg:
             **inputs["spim"].wildcards,
         ),
     threads: 32
+    resources:
+        mem_mb=16000,
+        runtime=5,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
@@ -172,6 +187,10 @@ rule convert_ras_to_itk:
             suffix="xfm.txt",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -235,6 +254,7 @@ rule deform_reg:
     threads: 32
     resources:
         mem_mb=16000,
+        runtime=5,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -it {input.xfm_ras} -m {params.metric} "
@@ -273,6 +293,9 @@ rule resample_labels_to_zarr:
             )
         ),
     threads: 10
+    resources:
+        mem_mb=16000,
+        runtime=15,
     log:
         bids(
             root="logs",
@@ -303,6 +326,9 @@ rule affine_zarr_to_template_nii:
             **inputs["spim"].wildcards,
         ),
     threads: 32
+    resources:
+        mem_mb=16000,
+        runtime=15,
     script:
         "../scripts/affine_to_template_nii.py"
 
@@ -327,6 +353,9 @@ rule affine_zarr_to_template_ome_zarr:
             )
         ),
     threads: 32
+    resources:
+        mem_mb=16000,
+        runtime=15,
     script:
         "../scripts/affine_to_template_ome_zarr.py"
 
@@ -353,6 +382,9 @@ rule deform_zarr_to_template_nii:
             **inputs["spim"].wildcards,
         ),
     threads: 32
+    resources:
+        mem_mb=16000,
+        runtime=15,
     script:
         "../scripts/deform_to_template_nii.py"
 
@@ -433,6 +465,9 @@ rule deform_spim_nii_to_template_nii:
             **inputs["spim"].wildcards,
         ),
     threads: 32
+    resources:
+        mem_mb=16000,
+        runtime=5,
     conda:
         "../envs/ants.yaml"
     shell:
@@ -479,6 +514,9 @@ rule deform_template_dseg_to_subject_nii:
             **inputs["spim"].wildcards,
         ),
     threads: 32
+    resources:
+        mem_mb=16000,
+        runtime=5,
     conda:
         "../envs/ants.yaml"
     shell:

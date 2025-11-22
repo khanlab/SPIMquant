@@ -35,6 +35,10 @@ rule brainmask_penalty:
             suffix="penalty.nii",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -78,6 +82,9 @@ rule blob_detection:
             **inputs["spim"].wildcards,
         ),
     threads: 6
+    resources:
+        mem_mb=16000,
+        runtime=15,
     shadow:
         "minimal"
     script:
@@ -118,6 +125,10 @@ rule filter_blobs:
             suffix="points.npy",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
     script:
         "../scripts/filter_blobs.py"
 
@@ -152,6 +163,10 @@ rule map_labels_to_blobs:
             suffix="blobs.tsv",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
     script:
         "../scripts/map_labels_to_blobs.py"
 
@@ -181,6 +196,10 @@ rule generate_subject_volumes_tsv:
             suffix="volumes.tsv",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
     script:
         "../scripts/generate_subject_volumes_tsv.py"
 
@@ -214,6 +233,10 @@ rule generate_subject_density_tsv:
             suffix="blobdensity.tsv",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
     script:
         "../scripts/generate_subject_density_tsv.py"
 
@@ -253,6 +276,10 @@ rule map_density_tsv_dseg_to_nii:
             suffix="blobdensity.nii",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
@@ -285,6 +312,10 @@ rule map_density_tsv_dseg_to_template_nii:
             suffix="blobdensity.nii",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
@@ -317,5 +348,9 @@ rule map_volume_tsv_dseg_to_template_nii:
             suffix="volume.nii",
             **inputs["spim"].wildcards,
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
