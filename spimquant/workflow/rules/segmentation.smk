@@ -8,7 +8,7 @@ rule gaussian_biasfield:
     output:
         corrected=directory(
             bids(
-                root=root,
+                root=work,
                 datatype="micr",
                 stain="{stain}",
                 dslevel="{dslevel}",
@@ -21,7 +21,7 @@ rule gaussian_biasfield:
         ),
         biasfield=directory(
             bids(
-                root=root,
+                root=work,
                 datatype="micr",
                 stain="{stain}",
                 dslevel="{dslevel}",
@@ -45,7 +45,7 @@ rule n4_biasfield:
     output:
         corrected=directory(
             bids(
-                root=root,
+                root=work,
                 datatype="micr",
                 stain="{stain}",
                 dslevel="{dslevel}",
@@ -58,7 +58,7 @@ rule n4_biasfield:
         ),
         biasfield=directory(
             bids(
-                root=root,
+                root=work,
                 datatype="micr",
                 stain="{stain}",
                 dslevel="{dslevel}",
@@ -76,7 +76,7 @@ rule n4_biasfield:
 rule multiotsu:
     input:
         corrected=bids(
-            root=root,
+            root=work,
             datatype="micr",
             stain="{stain}",
             dslevel="{dslevel}",
@@ -95,7 +95,7 @@ rule multiotsu:
     output:
         mask=directory(
             bids(
-                root=root,
+                root=work,
                 datatype="micr",
                 stain="{stain}",
                 dslevel="{dslevel}",
@@ -123,7 +123,7 @@ rule multiotsu:
 rule threshold:
     input:
         corrected=bids(
-            root=root,
+            root=work,
             datatype="micr",
             stain="{stain}",
             dslevel="{dslevel}",
@@ -157,7 +157,7 @@ rule threshold:
 rule clean_segmentation:
     input:
         mask=bids(
-            root=root,
+            root=work,
             datatype="micr",
             stain="{stain}",
             dslevel="{dslevel}",
@@ -172,7 +172,7 @@ rule clean_segmentation:
     output:
         exclude_mask=directory(
             bids(
-                root=root,
+                root=work,
                 datatype="micr",
                 stain="{stain}",
                 dslevel="{dslevel}",
@@ -184,7 +184,7 @@ rule clean_segmentation:
         ),
         cleaned_mask=directory(
             bids(
-                root=root,
+                root=work,
                 datatype="micr",
                 stain="{stain}",
                 dslevel="{dslevel}",
@@ -203,7 +203,7 @@ rule compute_centroids:
     """Calculate object/cell centroids from the segmentation"""
     input:
         mask=bids(
-            root=root,
+            root=work,
             datatype="micr",
             stain="{stain}",
             dslevel=config["registration_level"],
@@ -233,7 +233,7 @@ rule fieldfrac:
     """ Calculates fieldfrac from a binary mask via downsampling, assuming mask intensity is 100"""
     input:
         mask=bids(
-            root=root,
+            root=work,
             datatype="micr",
             stain="{stain}",
             dslevel=config["registration_level"],

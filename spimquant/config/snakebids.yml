@@ -39,10 +39,11 @@ pybids_inputs:
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
 parse_args:
-  --work:
+  --work_dir:
     help: "Local path to use for temporary files\n"
     type: str
-    default: work
+    dest: work
+    default: null
 
   --template:
     help: "Template to use for SPIM registration\n"

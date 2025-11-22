@@ -1,3 +1,5 @@
+import os
+
 from zarrnii import ZarrNii
 from snakemake.utils import format
 from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
@@ -10,7 +12,7 @@ configfile: "config/snakebids.yml"
 
 # use expandvars so we can use e.g. '$SLURM_TMPDIR'
 root = os.path.expandvars(config["root"])
-work = os.path.expandvars(config["work"])
+work = os.path.expandvars(config["work"]) if config["work"] is not None else root
 
 if not config["register_to_mri"]:
     del config["pybids_inputs"]["T2w"]
