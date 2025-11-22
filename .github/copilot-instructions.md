@@ -132,6 +132,7 @@ When adding new features, ensure:
 3. **Add tests**: Include dry-run tests for new workflows
 4. **Code comments**: Document complex algorithms and data processing steps
 5. **README updates**: Add new features to the features list and usage examples
+6. **CLI updates**: the cli is defined declaratively in the parse_args key of the config file.
 
 ### Code Documentation Standards
 - Use docstrings for functions and classes
