@@ -230,13 +230,13 @@ rule compute_centroids:
     params:
         zarrnii_kwargs={},
     output:
-        centroids_npy=bids(
+        centroids_parquet=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
             dslevel="{dslevel}",
             desc="{seg_method}",
-            suffix="centroids.npy",
+            suffix="centroids.parquet",
             **inputs["spim"].wildcards,
         ),
     threads: 128
@@ -362,13 +362,13 @@ rule map_img_to_roi_tsv:
 
 rule map_centroids_to_atlas_rois:
     input:
-        centroids_npy=bids(
+        centroids_parquet=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
             dslevel="{dslevel}",
             desc="{seg_method}",
-            suffix="centroids.npy",
+            suffix="centroids.parquet",
             **inputs["spim"].wildcards,
         ),
         dseg=bids(

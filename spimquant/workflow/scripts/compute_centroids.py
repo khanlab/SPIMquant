@@ -5,33 +5,31 @@ centroids of labeled regions using ZarrNii's compute_centroids method. The
 resulting centroids are saved as a NumPy array.
 
 Example Dask cluster setup for advanced users:
-
-from dask.distributed import Client, LocalCluster
-
-cluster = LocalCluster(
-    n_workers=2, #int(snakemake.threads / 2),  # or 32, depending on workload
-    threads_per_worker=2,  # isolate GIL
-    memory_limit="12GB", #"auto",  # or tune to your RAM
-    dashboard_address=":8788",
-)
-client = Client(cluster)
-print(cluster.dashboard_link)
-
-To use a custom Dask cluster, uncomment and adapt the above code as needed.
 """
 
+
 if __name__ == "__main__":
-    from dask.diagnostics import ProgressBar
+    from dask.distributed import Client, LocalCluster
+
+    cluster = LocalCluster(
+        n_workers=int(snakemake.threads / 2),  # or 32, depending on workload
+        threads_per_worker=2,  # isolate GIL
+        memory_limit="auto",  # or tune to your RAM
+        dashboard_address=":8788",
+    )
+    client = Client(cluster)
+    print(cluster.dashboard_link)
+
 
     from zarrnii import ZarrNii
     import numpy as np
+    import pandas as pd
 
     znimg = ZarrNii.from_ome_zarr(
         snakemake.input.mask,
         level=0,
         **snakemake.params.zarrnii_kwargs,
     )
-    with ProgressBar():
-        centroids = znimg.compute_centroids()
+        
+    centroids = znimg.compute_centroids(output_path=snakemake.output.centroids_parquet)
 
-    np.save(snakemake.output.centroids_npy, centroids)
