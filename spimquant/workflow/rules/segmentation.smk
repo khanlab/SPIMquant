@@ -180,7 +180,7 @@ rule clean_segmentation:
         ),
     params:
         max_extent=0.15,
-        zarrnii_kwargs={},
+        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         exclude_mask=directory(
             bids(
@@ -228,13 +228,12 @@ rule compute_centroids:
             **inputs["spim"].wildcards,
         ),
     params:
-        zarrnii_kwargs={},
+        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         centroids_parquet=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
-            dslevel="{dslevel}",
             desc="{seg_method}",
             suffix="centroids.parquet",
             **inputs["spim"].wildcards,
@@ -245,6 +244,38 @@ rule compute_centroids:
         runtime=30,
     script:
         "../scripts/compute_centroids.py"
+
+
+rule counts_per_voxel:
+    """Calculate counts per voxel based on points"""
+    input:
+        ref_spim=inputs["spim"].path,
+        centroids_parquet=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            desc="{seg_method}",
+            suffix="centroids.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        zarrnii_kwargs={"orientation": config["orientation"]},
+    output:
+        counts_nii=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            dslevel="{dslevel}",
+            desc="{seg_method}",
+            suffix="counts.nii",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 16
+    resources:
+        mem_mb=15000,
+        runtime=10,
+    script:
+        "../scripts/counts_per_voxel.py"
 
 
 rule fieldfrac:
@@ -366,7 +397,6 @@ rule map_centroids_to_atlas_rois:
             root=root,
             datatype="micr",
             stain="{stain}",
-            dslevel="{dslevel}",
             desc="{seg_method}",
             suffix="centroids.parquet",
             **inputs["spim"].wildcards,

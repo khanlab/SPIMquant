@@ -7,7 +7,6 @@ resulting centroids are saved as a NumPy array.
 Example Dask cluster setup for advanced users:
 """
 
-
 if __name__ == "__main__":
     from dask.distributed import Client, LocalCluster
 
@@ -20,7 +19,6 @@ if __name__ == "__main__":
     client = Client(cluster)
     print(cluster.dashboard_link)
 
-
     from zarrnii import ZarrNii
     import numpy as np
     import pandas as pd
@@ -30,6 +28,5 @@ if __name__ == "__main__":
         level=0,
         **snakemake.params.zarrnii_kwargs,
     )
-        
-    centroids = znimg.compute_centroids(output_path=snakemake.output.centroids_parquet)
 
+    centroids = znimg.compute_centroids(output_path=snakemake.output.centroids_parquet)
