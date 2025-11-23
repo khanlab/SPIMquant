@@ -86,6 +86,8 @@ rule all_templatereg_deform_zooms:
         ),
 
 
+    group:
+        "subj"
 rule all_blobdensity:
     input:
         inputs["spim"].expand(
@@ -104,6 +106,8 @@ rule all_blobdensity:
         ),
 
 
+    group:
+        "subj"
 rule all_blobs:
     input:
         spim_zoomed=inputs["spim"].expand(
@@ -118,6 +122,8 @@ rule all_blobs:
         ),
 
 
+    group:
+        "subj"
 rule all_templatereg_deform:
     input:
         spim=inputs["spim"].expand(
@@ -135,6 +141,8 @@ rule all_templatereg_deform:
         ),
 
 
+    group:
+        "subj"
 rule all_templatereg_lbl:
     input:
         dseg=inputs["spim"].expand(
@@ -150,6 +158,8 @@ rule all_templatereg_lbl:
         ),
 
 
+    group:
+        "subj"
 rule all_fieldfrac_tune:
     input:
         inputs["spim"].expand(
@@ -169,6 +179,8 @@ rule all_fieldfrac_tune:
         ),
 
 
+    group:
+        "subj"
 rule all_segment:
     input:
         inputs["spim"].expand(
@@ -252,6 +264,8 @@ rule all_segment:
         ),
 
 
+    group:
+        "subj"
 rule all_mri_reg:
     input:
         inputs["spim"].expand(
@@ -268,6 +282,8 @@ rule all_mri_reg:
         ),
 
 
+    group:
+        "subj"
 rule all:
     default_target: True
     input:

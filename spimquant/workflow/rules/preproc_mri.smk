@@ -6,6 +6,8 @@ rule import_subj_T2w:
         nii=bids(
             root=root, datatype="anat", suffix="T2w.nii.gz", **inputs["T2w"].wildcards
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -28,6 +30,8 @@ rule n4_mri:
             suffix="T2w.nii.gz",
             **inputs["T2w"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -114,6 +118,8 @@ rule rigid_greedy_reg_mri_to_template:
                 **inputs["T2w"].wildcards,
             )
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -160,6 +166,8 @@ rule all_tune_mri_mask:
             radius=[f"{i}x{i}x{i}" for i in range(2, 5)],
             subject="o21",
         ),
+    group:
+        "subj"
 
 
 rule transform_template_mask_to_mri:
@@ -217,6 +225,8 @@ rule transform_template_mask_to_mri:
         ),
     shadow:
         "minimal"
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -258,6 +268,8 @@ rule apply_mri_brain_mask:
             suffix="T2w.nii.gz",
             **inputs["T2w"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -365,6 +377,8 @@ rule rigid_greedy_reg_mri_to_spim:
             warpsigma="{warpsigma}",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -418,6 +432,8 @@ rule all_tune_mri_spim_reg:
             sample="brain",
             acq="blaze",
         ),
+    group:
+        "subj"
 
 
 rule warp_mri_to_template_via_spim:
@@ -485,6 +501,8 @@ rule warp_mri_to_template_via_spim:
             suffix="T2w.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -563,6 +581,8 @@ rule warp_mri_brainmask_to_spim:
             suffix="jacobian.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,

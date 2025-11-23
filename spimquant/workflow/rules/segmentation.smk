@@ -31,6 +31,8 @@ rule gaussian_biasfield:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj"
     threads: 128
     resources:
         mem_mb=256000,
@@ -71,6 +73,8 @@ rule n4_biasfield:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj"
     threads: 128
     resources:
         mem_mb=256000,
@@ -121,6 +125,8 @@ rule multiotsu:
             suffix="thresholds.png",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 128
     resources:
         mem_mb=256000,
@@ -158,6 +164,8 @@ rule threshold:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj"
     threads: 128
     resources:
         mem_mb=256000,
@@ -206,6 +214,8 @@ rule clean_segmentation:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj"
     threads: 128
     resources:
         mem_mb=256000,
@@ -238,6 +248,8 @@ rule compute_centroids:
             suffix="centroids.parquet",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 128
     resources:
         mem_mb=256000,
@@ -270,6 +282,8 @@ rule counts_per_voxel:
             suffix="counts.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 16
     resources:
         mem_mb=15000,
@@ -305,6 +319,8 @@ rule fieldfrac:
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -336,6 +352,8 @@ rule deform_negative_mask_to_subject_nii:
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -383,6 +401,8 @@ rule map_img_to_roi_tsv:
             suffix="{suffix,fieldfrac}stats.tsv",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -437,6 +457,8 @@ rule map_centroids_to_atlas_rois:
             suffix="countstats.tsv",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -481,6 +503,8 @@ rule merge_into_segstats_tsv:
             suffix="segstats.tsv",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -523,6 +547,8 @@ rule map_segstats_tsv_dseg_to_template_nii:
             suffix="{suffix}.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -573,6 +599,8 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             suffix="{suffix}.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -622,6 +650,8 @@ rule deform_fieldfrac_nii_to_template_nii:
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,

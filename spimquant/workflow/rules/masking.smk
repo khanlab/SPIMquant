@@ -37,6 +37,8 @@ rule pre_atropos:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -81,6 +83,8 @@ rule atropos_seg:
                 )
             )
         ),
+    group:
+        "subj"
     conda:
         "../envs/ants.yaml"
     shadow:
@@ -122,6 +126,8 @@ rule post_atropos:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -169,6 +175,8 @@ rule init_affine_reg:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj"
     log:
         bids(
             root="logs",
@@ -212,6 +220,8 @@ rule affine_transform_template_mask_to_subject:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -255,6 +265,8 @@ rule create_mask_from_gmm_and_prior:
             suffix="mask.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -287,6 +299,8 @@ rule create_mask_from_gmm:
             suffix="mask.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,

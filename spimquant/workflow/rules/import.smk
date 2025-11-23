@@ -19,6 +19,8 @@ rule get_downsampled_nii:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -78,6 +80,8 @@ rule generic_lut_bids_to_itksnap:
         tsv="{prefix}_dseg.tsv",
     output:
         lut="{prefix}_dseg.itksnap.txt",
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
