@@ -236,6 +236,20 @@ rule all_segment:
             template=config["template"],
             ext=["tsv", "itksnap.txt"],
         ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                dslevel="{level}",
+                desc="{desc}",
+                suffix="counts.nii",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            level=config["registration_level"],
+            desc=config["seg_method"],
+        ),
 
 
 rule all_mri_reg:

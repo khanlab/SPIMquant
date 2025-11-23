@@ -9,8 +9,10 @@ regions, generating two outputs:
 from zarrnii import ZarrNii, ZarrNiiAtlas
 from zarrnii import ZarrNiiAtlas
 import numpy as np
+import pandas as pd
 
-centroids = np.load(snakemake.input.centroids_npy)
+centroids = pd.read_parquet(snakemake.input.centroids_parquet).to_numpy()
+
 
 atlas = ZarrNiiAtlas.from_files(snakemake.input.dseg, snakemake.input.label_tsv)
 
