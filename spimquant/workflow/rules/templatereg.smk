@@ -307,6 +307,7 @@ rule resample_labels_to_zarr:
     threads: 10
     resources:
         mem_mb=16000,
+        disk_mb=2097152,
         runtime=15,
     log:
         bids(
@@ -355,15 +356,17 @@ rule affine_zarr_to_template_ome_zarr:
     params:
         ref_opts={"chunks": (1, 50, 50, 50)},
     output:
-        ome_zarr=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                desc="affine",
-                space="{template}",
-                stain="{stain}",
-                suffix="spim.ome.zarr",
-                **inputs["spim"].wildcards,
+        ome_zarr=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    desc="affine",
+                    space="{template}",
+                    stain="{stain}",
+                    suffix="spim.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
     group:
@@ -371,6 +374,7 @@ rule affine_zarr_to_template_ome_zarr:
     threads: 32
     resources:
         mem_mb=16000,
+        disk_mb=2097152,
         runtime=15,
     script:
         "../scripts/affine_to_template_ome_zarr.py"

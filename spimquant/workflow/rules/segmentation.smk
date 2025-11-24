@@ -6,29 +6,33 @@ rule gaussian_biasfield:
     params:
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        corrected=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="corrected",
-                corrmethod="gaussian",
-                suffix="SPIM.ome.zarr",
-                **inputs["spim"].wildcards,
+        corrected=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="corrected",
+                    corrmethod="gaussian",
+                    suffix="SPIM.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
-        biasfield=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="gaussian",
-                suffix="biasfield.ome.zarr",
-                **inputs["spim"].wildcards,
+        biasfield=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="gaussian",
+                    suffix="biasfield.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
     group:
@@ -36,6 +40,7 @@ rule gaussian_biasfield:
     threads: 128
     resources:
         mem_mb=256000,
+        disk_mb=2097152,
         runtime=15,
     script:
         "../scripts/gaussian_biasfield.py"
@@ -48,29 +53,33 @@ rule n4_biasfield:
     params:
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        corrected=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="corrected",
-                corrmethod="n4",
-                suffix="SPIM.ome.zarr",
-                **inputs["spim"].wildcards,
+        corrected=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="corrected",
+                    corrmethod="n4",
+                    suffix="SPIM.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
-        biasfield=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="n4",
-                suffix="biasfield.ome.zarr",
-                **inputs["spim"].wildcards,
+        biasfield=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="n4",
+                    suffix="biasfield.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
     group:
@@ -78,6 +87,7 @@ rule n4_biasfield:
     threads: 128
     resources:
         mem_mb=256000,
+        disk_mb=2097152,
         runtime=60,
     script:
         "../scripts/n4_biasfield.py"
@@ -103,16 +113,18 @@ rule multiotsu:
         otsu_threshold_index=lambda wildcards: int(wildcards.i),
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        mask=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
-                suffix="mask.ome.zarr",
-                **inputs["spim"].wildcards,
+        mask=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
+                    suffix="mask.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
         thresholds_png=bids(
@@ -130,6 +142,7 @@ rule multiotsu:
     threads: 128
     resources:
         mem_mb=256000,
+        disk_mb=2097152,
         runtime=15,
     script:
         "../scripts/multiotsu.py"
@@ -190,28 +203,32 @@ rule clean_segmentation:
         max_extent=0.15,
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        exclude_mask=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="{desc}+cleaned",
-                suffix="excludemask.ome.zarr",
-                **inputs["spim"].wildcards,
+        exclude_mask=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="{desc}+cleaned",
+                    suffix="excludemask.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
-        cleaned_mask=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="{desc}+cleaned",
-                suffix="mask.ome.zarr",
-                **inputs["spim"].wildcards,
+        cleaned_mask=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="{desc}+cleaned",
+                    suffix="mask.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
     group:
@@ -219,6 +236,7 @@ rule clean_segmentation:
     threads: 128
     resources:
         mem_mb=256000,
+        disk_mb=2097152,
         runtime=30,
     script:
         "../scripts/clean_segmentation.py"
