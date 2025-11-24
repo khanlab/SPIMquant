@@ -19,12 +19,23 @@ rule get_downsampled_nii:
             suffix="SPIM.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,
         runtime=5,
     script:
         "../scripts/ome_zarr_to_nii.py"
+
+
+localrules:
+    import_template_anat,
+    import_mask,
+    generic_lut_bids_to_itksnap,
+    import_dseg,
+    import_lut_tsv,
+    import_DSURQE_tsv,
 
 
 rule import_template_anat:

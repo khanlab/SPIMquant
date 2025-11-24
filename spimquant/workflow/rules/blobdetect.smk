@@ -35,6 +35,8 @@ rule brainmask_penalty:
             suffix="penalty.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -81,6 +83,8 @@ rule blob_detection:
             suffix="points.npy",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 6
     resources:
         mem_mb=16000,
@@ -125,6 +129,8 @@ rule filter_blobs:
             suffix="points.npy",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -163,6 +169,8 @@ rule map_labels_to_blobs:
             suffix="blobs.tsv",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -196,6 +204,8 @@ rule generate_subject_volumes_tsv:
             suffix="volumes.tsv",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -233,6 +243,8 @@ rule generate_subject_density_tsv:
             suffix="blobdensity.tsv",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -276,6 +288,8 @@ rule map_density_tsv_dseg_to_nii:
             suffix="blobdensity.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -312,6 +326,8 @@ rule map_density_tsv_dseg_to_template_nii:
             suffix="blobdensity.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -348,6 +364,8 @@ rule map_volume_tsv_dseg_to_template_nii:
             suffix="volume.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,

@@ -6,34 +6,41 @@ rule gaussian_biasfield:
     params:
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        corrected=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="corrected",
-                corrmethod="gaussian",
-                suffix="SPIM.ome.zarr",
-                **inputs["spim"].wildcards,
+        corrected=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="corrected",
+                    corrmethod="gaussian",
+                    suffix="SPIM.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
-        biasfield=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="gaussian",
-                suffix="biasfield.ome.zarr",
-                **inputs["spim"].wildcards,
+        biasfield=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="gaussian",
+                    suffix="biasfield.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
+    group:
+        "subj"
     threads: 128
     resources:
         mem_mb=256000,
+        disk_mb=2097152,
         runtime=15,
     script:
         "../scripts/gaussian_biasfield.py"
@@ -46,34 +53,41 @@ rule n4_biasfield:
     params:
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        corrected=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="corrected",
-                corrmethod="n4",
-                suffix="SPIM.ome.zarr",
-                **inputs["spim"].wildcards,
+        corrected=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="corrected",
+                    corrmethod="n4",
+                    suffix="SPIM.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
-        biasfield=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="n4",
-                suffix="biasfield.ome.zarr",
-                **inputs["spim"].wildcards,
+        biasfield=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="n4",
+                    suffix="biasfield.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
+    group:
+        "subj"
     threads: 128
     resources:
         mem_mb=256000,
+        disk_mb=2097152,
         runtime=60,
     script:
         "../scripts/n4_biasfield.py"
@@ -99,16 +113,18 @@ rule multiotsu:
         otsu_threshold_index=lambda wildcards: int(wildcards.i),
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        mask=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
-                suffix="mask.ome.zarr",
-                **inputs["spim"].wildcards,
+        mask=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
+                    suffix="mask.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
         thresholds_png=bids(
@@ -121,9 +137,12 @@ rule multiotsu:
             suffix="thresholds.png",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 128
     resources:
         mem_mb=256000,
+        disk_mb=2097152,
         runtime=15,
     script:
         "../scripts/multiotsu.py"
@@ -158,6 +177,8 @@ rule threshold:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj"
     threads: 128
     resources:
         mem_mb=256000,
@@ -182,33 +203,40 @@ rule clean_segmentation:
         max_extent=0.15,
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        exclude_mask=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="{desc}+cleaned",
-                suffix="excludemask.ome.zarr",
-                **inputs["spim"].wildcards,
+        exclude_mask=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="{desc}+cleaned",
+                    suffix="excludemask.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
-        cleaned_mask=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                dslevel="{dslevel}",
-                level="{level}",
-                desc="{desc}+cleaned",
-                suffix="mask.ome.zarr",
-                **inputs["spim"].wildcards,
+        cleaned_mask=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    dslevel="{dslevel}",
+                    level="{level}",
+                    desc="{desc}+cleaned",
+                    suffix="mask.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
+    group:
+        "subj"
     threads: 128
     resources:
         mem_mb=256000,
+        disk_mb=2097152,
         runtime=30,
     script:
         "../scripts/clean_segmentation.py"
@@ -238,6 +266,8 @@ rule compute_centroids:
             suffix="centroids.parquet",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 128
     resources:
         mem_mb=256000,
@@ -270,6 +300,8 @@ rule counts_per_voxel:
             suffix="counts.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 16
     resources:
         mem_mb=15000,
@@ -305,6 +337,8 @@ rule fieldfrac:
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -336,6 +370,8 @@ rule deform_negative_mask_to_subject_nii:
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -383,6 +419,8 @@ rule map_img_to_roi_tsv:
             suffix="{suffix,fieldfrac}stats.tsv",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -437,6 +475,8 @@ rule map_centroids_to_atlas_rois:
             suffix="countstats.tsv",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -481,6 +521,8 @@ rule merge_into_segstats_tsv:
             suffix="segstats.tsv",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -523,6 +565,8 @@ rule map_segstats_tsv_dseg_to_template_nii:
             suffix="{suffix}.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -573,6 +617,8 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             suffix="{suffix}.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -622,6 +668,8 @@ rule deform_fieldfrac_nii_to_template_nii:
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj"
     threads: 32
     resources:
         mem_mb=16000,
