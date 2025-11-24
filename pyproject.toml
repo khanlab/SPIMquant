@@ -34,8 +34,8 @@ docutils = "<0.22"
 
 [tool.pixi.pypi-dependencies]
 spimquant = { path = ".", editable = true }
-ngff-zarr = { version = ">=0.16.1, <0.17", extras = ["all"] }
-zarrnii = ">=0.11.0-alpha1,<0.12.0"
+ngff-zarr = { version = ">=0.19.1", extras = ["cli","dask-image","itk","tensorstore","validate"] }
+zarrnii = ">=0.12.0-alpha1,<0.13.0"
 #zarrnii = { git = "https://github.com/khanlab/zarrnii", rev = "copilot/fix-chunking-issue-ome-zarr",  editable = true }
 #zarrnii = { path = "./zarrnii", editable = true }
 
@@ -46,11 +46,18 @@ snakefmt = ">=0.10.0, <0.11.0"
 pytest  = "*"
 jupyterlab = ">=4.4.7,<5"
 
+
+[tool.pixi.feature.vis.dependencies]
+napari = ">=0.6.6,<0.7"
+napari-ome-zarr = ">=0.6.1,<0.7"
+pyqt = ">=5.15.11,<6"
+
 [tool.pixi.environments.default]
 features = ["runtime"]
 
 [tool.pixi.environments.dev]
-features = ["runtime", "dev"]
+features = ["runtime", "dev", "vis"]
+
 
 [tool.pixi.environments.dev-only]
 features = ["dev"]

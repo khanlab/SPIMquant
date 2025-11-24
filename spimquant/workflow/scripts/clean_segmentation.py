@@ -28,7 +28,7 @@ if __name__ == "__main__":
     from zarrnii.plugins import SegmentationCleaner
 
     hires_level = int(snakemake.wildcards.level)
-    ds_level = int(snakemake.wildcards.dslevel)
+    ds_level = int(snakemake.params.ds_level)
 
     znimg = ZarrNii.from_ome_zarr(
         snakemake.input.mask,
