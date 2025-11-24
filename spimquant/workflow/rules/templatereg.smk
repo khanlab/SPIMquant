@@ -569,8 +569,7 @@ rule copy_template_dseg_tsv:
             suffix="dseg.tsv",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
+    localrule: True
     threads: 1
     resources:
         mem_mb=16000,

@@ -28,6 +28,7 @@ rule get_downsampled_nii:
     script:
         "../scripts/ome_zarr_to_nii.py"
 
+localrules: import_template_anat, import_mask, generic_lut_bids_to_itksnap, import_dseg, import_lut_tsv, import_DSURQE_tsv
 
 rule import_template_anat:
     input:
@@ -80,8 +81,6 @@ rule generic_lut_bids_to_itksnap:
         tsv="{prefix}_dseg.tsv",
     output:
         lut="{prefix}_dseg.itksnap.txt",
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
