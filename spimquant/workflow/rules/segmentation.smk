@@ -148,6 +148,21 @@ rule multiotsu:
         "../scripts/multiotsu.py"
 
 
+rule convert_zarr_to_ozx:
+    input:
+        zarr=str(Path(work) / "{prefix}.ome.zarr"),
+    output:
+        ozx=str(Path(root) / "{prefix}.ozx"),
+    threads: 4
+    resources:
+        mem_mb=32000,
+        runtime=60,
+    group:
+        "subj"
+    script:
+        "../scripts/convert_zarr_to_ozx.py"
+
+
 rule threshold:
     input:
         corrected=bids(
@@ -201,6 +216,7 @@ rule clean_segmentation:
         ),
     params:
         max_extent=0.15,
+        ds_level=2,  #level at which to calculate conncomp
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         exclude_mask=temp(
