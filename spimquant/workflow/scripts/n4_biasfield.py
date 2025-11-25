@@ -15,7 +15,7 @@ if __name__ == "__main__":
     from zarrnii.plugins import N4BiasFieldCorrection
 
     hires_level = int(snakemake.wildcards.level)
-    proc_level = int(snakemake.wildcards.proc_level)
+    proc_level = int(snakemake.params.proc_level)
 
     unadjusted_downsample_factor = 2**proc_level
     adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
