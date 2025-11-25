@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     znimg = ZarrNii.from_ome_zarr(
         snakemake.input.mask,
-        level=0,
+        level=0,  # input image is already downsampled to the wildcard level
         **snakemake.params.zarrnii_kwargs,
     )
 

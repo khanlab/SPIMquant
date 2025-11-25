@@ -28,11 +28,11 @@ if __name__ == "__main__":
     from zarrnii.plugins import SegmentationCleaner
 
     hires_level = int(snakemake.wildcards.level)
-    ds_level = int(snakemake.params.ds_level)
+    proc_level = int(snakemake.params.proc_level)
 
     znimg = ZarrNii.from_ome_zarr(
         snakemake.input.mask,
-        level=0,
+        level=0,  # we load level 0 since we are already at the highres level
         **snakemake.params.zarrnii_kwargs,
     )
 
@@ -42,8 +42,7 @@ if __name__ == "__main__":
     # the downsample_factor we use should be proportional to the segmentation level
     #   e.g. if segmentation level is 3, then we have already downsampled by 2^3, so
     #   the downsample factor should be divided by that..
-    unadjusted_downsample_factor = 2**ds_level
-
+    unadjusted_downsample_factor = 2**proc_level
     adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
 
     znimg_cleaned = znimg.apply_scaled_processing(

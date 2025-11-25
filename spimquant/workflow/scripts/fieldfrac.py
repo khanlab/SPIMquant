@@ -1,11 +1,17 @@
 from zarrnii import ZarrNii
 
-ds_level = snakemake.params.ds_level
+target_level = int(snakemake.wildcards.level)
+hires_level = int(snakemake.params.hires_level)
+
+downsampling_level = target_level - hires_level
+if downsampling_level < 0:
+    raise ValueError("Target level for fieldfrac is smaller than the input level!")
+
 
 # this will downsample automatically based on the level
 znimg_density_ds = ZarrNii.from_ome_zarr(
     snakemake.input.mask,
-    level=ds_level,
+    level=downsampling_level,
     downsample_near_isotropic=True,
     **snakemake.params.zarrnii_kwargs,
 )

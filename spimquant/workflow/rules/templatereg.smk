@@ -565,6 +565,7 @@ rule copy_template_dseg_tsv:
             seg="{seg}",
             desc="deform",
             level="{level}",
+            stain="{stain}",
             from_="{template}",
             suffix="dseg.tsv",
             **inputs["spim"].wildcards,

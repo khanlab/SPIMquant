@@ -5,6 +5,9 @@ rule create_spim_patches:
     This rule extracts fixed-size patches from the SPIM zarr data at locations
     sampled from specified atlas regions. Patches are saved as NIfTI files
     named with the atlas, label abbreviation, and patch number.
+
+    Level in the output file is the resolution of the patches, (e.g. level 0)
+    but level in the dseg input is the (downsampled) registration_level.
     """
     input:
         spim=inputs["spim"].path,
@@ -13,7 +16,7 @@ rule create_spim_patches:
             datatype="micr",
             seg="{seg}",
             desc="deform",
-            level="{level}",
+            level=config["registration_level"],
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
@@ -25,6 +28,7 @@ rule create_spim_patches:
         patch_size=config.get("patch_size", [256, 256, 256]),
         n_patches=config.get("n_patches_per_label", 10),
         patch_labels=config.get("patch_labels", None),
+        hires_level=0,  #input is the raw data
         seed=config.get("patch_seed", 42),
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
@@ -63,7 +67,6 @@ rule create_mask_patches:
             root=work,
             datatype="micr",
             stain="{stain}",
-            dslevel=config["registration_level"],
             level=config["segmentation_level"],
             desc="{desc}",
             suffix="mask.ome.zarr",
@@ -74,7 +77,7 @@ rule create_mask_patches:
             datatype="micr",
             seg="{seg}",
             desc="deform",
-            level="{level}",
+            level=config["registration_level"],
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
@@ -87,6 +90,7 @@ rule create_mask_patches:
         n_patches=config.get("n_patches_per_label", 10),
         patch_labels=config.get("patch_labels", None),
         seed=config.get("patch_seed", 42),
+        hires_level=config["segmentation_level"],
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         patches_dir=directory(
@@ -124,7 +128,6 @@ rule create_corrected_spim_patches:
             root=work,
             datatype="micr",
             stain="{stain}",
-            dslevel=config["registration_level"],
             level=config["segmentation_level"],
             desc="corrected",
             corrmethod="{corrmethod}",
@@ -136,7 +139,7 @@ rule create_corrected_spim_patches:
             datatype="micr",
             seg="{seg}",
             desc="deform",
-            level="{level}",
+            level=config["registration_level"],
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
@@ -149,6 +152,7 @@ rule create_corrected_spim_patches:
         n_patches=config.get("n_patches_per_label", 10),
         patch_labels=config.get("patch_labels", None),
         seed=config.get("patch_seed", 42),
+        hires_level=config["segmentation_level"],
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         patches_dir=directory(
