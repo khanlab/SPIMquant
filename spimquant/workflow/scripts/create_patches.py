@@ -9,13 +9,16 @@ The output is a directory containing NIfTI files named:
     seg-{atlas_seg}_label-{labelabbrev}_patch-{patchnum}.nii
 """
 
-import os
+import logging
+import re
 from pathlib import Path
 
 import dask
 from dask.diagnostics import ProgressBar
-
 from zarrnii import ZarrNii, ZarrNiiAtlas
+
+# Set up logging for snakemake scripts
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 # Determine which input we have (spim, mask, or corrected)
 if hasattr(snakemake.input, "spim"):
@@ -120,16 +123,23 @@ with ProgressBar():
 
             # Save each patch
             for i, patch in enumerate(patches):
-                # Clean label abbreviation for filename (remove special chars)
-                clean_abbrev = "".join(
-                    c if c.isalnum() else "" for c in str(label_abbrev)
+                # Clean label abbreviation for filename: replace non-alphanumeric
+                # chars with underscore, collapse multiple underscores, strip edges
+                clean_abbrev = re.sub(r"[^a-zA-Z0-9]+", "_", str(label_abbrev)).strip(
+                    "_"
                 )
+                # Fallback to label index if abbreviation would be empty
+                if not clean_abbrev:
+                    clean_abbrev = f"idx{label_idx}"
                 out_file = Path(output_dir) / (
                     f"seg-{atlas_seg}_label-{clean_abbrev}_patch-{i:04d}.nii"
                 )
                 patch.to_nifti(str(out_file))
 
-        except (ValueError, IndexError) as e:
-            # Skip labels with no voxels or other issues
-            print(f"Skipping label {label_abbrev} (index {label_idx}): {e}")
+        except ValueError as e:
+            # ValueError from sample_region_patches when region has no voxels
+            logging.warning(
+                f"Skipping label {label_abbrev} (index {label_idx}): "
+                f"no voxels in region - {e}"
+            )
             continue
