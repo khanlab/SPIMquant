@@ -1,6 +1,14 @@
-from ngff_zarr.rfc9_zip import write_store_to_zip
-from zarr.storage import LocalStore
+#import ngff_zarr as nz
+from zarrnii import ZarrNii
 
-# Direct conversion of existing store to .ozx
-source_store = LocalStore(snakemake.input.zarr)
-write_store_to_zip(source_store, snakemake.output.ozx, version="0.5")
+# Read from directory store
+#multiscales = nz.from_ngff_zarr(snakemake.input.zarr)
+
+#print(multiscales)
+# Write as .ozx file
+#nz.to_ngff_zarr(snakemake.output.ozx, multiscales, version='0.5')
+
+#note, this recomputes the multiscales
+ZarrNii.from_ome_zarr(snakemake.input.zarr).to_ome_zarr(snakemake.output.ozx)
+
+
