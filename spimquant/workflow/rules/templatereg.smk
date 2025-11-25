@@ -565,11 +565,13 @@ rule copy_template_dseg_tsv:
             seg="{seg}",
             desc="deform",
             level="{level}",
+            stain="{stain}",
             from_="{template}",
             suffix="dseg.tsv",
             **inputs["spim"].wildcards,
         ),
-    localrule: True
+    group:
+        "subj"
     threads: 1
     resources:
         mem_mb=16000,

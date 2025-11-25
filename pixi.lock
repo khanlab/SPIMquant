@@ -630,7 +630,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/4a/60e234147570e21bbab4ac70ab79dd794a5ef9a4945d36c34c1914a73205/tensorstore-0.1.79-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e6/5e/56c751afab61336cf0e7aa671b134255a30f15f59cd9e04f59c598a37ff5/tifffile-2025.10.16-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/ca/eaa71d487fe87d342d26de5186587a31fc978ed42d8c44087cf45351b528/wasmtime-39.0.0-py3-none-manylinux1_x86_64.whl
-      - pypi: git+https://github.com/khanlab/zarrnii?rev=v0.13.0-alpha1#b58bd99b0aea90d24d6f6b2955b2a0bf849c4f5d
+      - pypi: https://files.pythonhosted.org/packages/5a/19/c469a41139dea38364c9b0d6e0a0e16383d96c2cd513169739286965e98d/zarrnii-0.13.0a1-py3-none-any.whl
       - pypi: ./
   dev:
     channels:
@@ -1341,7 +1341,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e8/ae/fa6cd331b364ad2bbc31652d025f5747d89cbb75576733dfdf8efe3e4d62/slicerator-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/87/4a/60e234147570e21bbab4ac70ab79dd794a5ef9a4945d36c34c1914a73205/tensorstore-0.1.79-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/52/ca/eaa71d487fe87d342d26de5186587a31fc978ed42d8c44087cf45351b528/wasmtime-39.0.0-py3-none-manylinux1_x86_64.whl
-      - pypi: git+https://github.com/khanlab/zarrnii?rev=v0.13.0-alpha1#b58bd99b0aea90d24d6f6b2955b2a0bf849c4f5d
+      - pypi: https://files.pythonhosted.org/packages/5a/19/c469a41139dea38364c9b0d6e0a0e16383d96c2cd513169739286965e98d/zarrnii-0.13.0a1-py3-none-any.whl
       - pypi: ./
   dev-only:
     channels:
@@ -1570,7 +1570,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/0c/37/6faf15cfa41bf1f3dba80cd3f5ccc6622dfccb660ab26ed79f0178c7497f/wrapt-1.17.3-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/11/c9/cd8538dc2e7727095e0c1d867bad1e40c98f37763e6d995c1939f5fdc7b1/yarl-1.22.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/44/15/bb13b4913ef95ad5448490821eee4671d0e67673342e4d4070854e5fe081/zarr-3.1.5-py3-none-any.whl
-      - pypi: git+https://github.com/khanlab/zarrnii?rev=v0.13.0-alpha1#b58bd99b0aea90d24d6f6b2955b2a0bf849c4f5d
+      - pypi: https://files.pythonhosted.org/packages/5a/19/c469a41139dea38364c9b0d6e0a0e16383d96c2cd513169739286965e98d/zarrnii-0.13.0a1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/ab/11a76c1e2126084fde2639514f24e6111b789b0bfa4fc6264a8975c7e1f1/zict-3.0.0-py2.py3-none-any.whl
       - pypi: ./
 packages:
@@ -11485,7 +11485,7 @@ packages:
 - pypi: ./
   name: spimquant
   version: 0.1.0
-  sha256: b82e414172dd00ebf51546f242f640868c5d5000b1bce9d7f47b82bc2cca0936
+  sha256: 0586f20dd0a8ded1278f4c863be37a35015def323b91ee0a98fe9b89b67d0eb4
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/spirv-tools-2025.4-hb700be7_0.conda
@@ -12815,9 +12815,10 @@ packages:
   - pkg:pypi/zarr?source=hash-mapping
   size: 305998
   timestamp: 1763742695201
-- pypi: git+https://github.com/khanlab/zarrnii?rev=v0.13.0-alpha1#b58bd99b0aea90d24d6f6b2955b2a0bf849c4f5d
+- pypi: https://files.pythonhosted.org/packages/5a/19/c469a41139dea38364c9b0d6e0a0e16383d96c2cd513169739286965e98d/zarrnii-0.13.0a1-py3-none-any.whl
   name: zarrnii
   version: 0.13.0a1
+  sha256: 95d1b08fee5bfa4202110974f81d72a0b1382f8762d5c72af6ef0e8ea677958c
   requires_dist:
   - dask>=2025.5.1
   - h5py>=3.14.0

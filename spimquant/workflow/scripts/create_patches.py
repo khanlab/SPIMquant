@@ -47,7 +47,13 @@ zarrnii_kwargs = snakemake.params.zarrnii_kwargs
 atlas_seg = snakemake.wildcards.seg
 
 # Get level from wildcards if available
-level = int(snakemake.wildcards.get("level", 0))
+target_level = int(snakemake.wildcards.level)
+hires_level = int(snakemake.params.hires_level)
+
+downsampling_level = target_level - hires_level
+if downsampling_level < 0:
+    raise ValueError("Target level for create_patches is smaller than the input level!")
+
 
 # Set up dask for parallel processing
 dask.config.set(scheduler="threads", num_workers=snakemake.threads)
@@ -66,7 +72,7 @@ atlas = ZarrNiiAtlas.from_files(
 # Check if input is ome.zarr format or nifti
 image = ZarrNii.from_ome_zarr(
     input_zarr,
-    level=level,
+    level=downsampling_level,
     **channel_args,
     **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
 )

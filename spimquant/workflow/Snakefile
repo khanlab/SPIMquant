@@ -96,38 +96,6 @@ rule all_templatereg_deform_zooms:
         ),
 
 
-rule all_blobdensity:
-    input:
-        inputs["spim"].expand(
-            bids(
-                root=root,
-                datatype="micr",
-                seg="{seg}",
-                space="{template}",
-                stain="{stain}",
-                suffix="blobdensity.nii",
-                **inputs["spim"].wildcards,
-            ),
-            stain=stains_for_seg,
-            seg=atlas_segs,
-            template=config["template"],
-        ),
-
-
-rule all_blobs:
-    input:
-        spim_zoomed=inputs["spim"].expand(
-            bids(
-                root=root,
-                datatype="micr",
-                stain="{stain}",
-                suffix="blobs.npy",
-                **inputs["spim"].wildcards,
-            ),
-            stain=stains_for_seg,
-        ),
-
-
 rule all_templatereg_deform:
     input:
         spim=inputs["spim"].expand(
@@ -167,13 +135,13 @@ rule all_fieldfrac_tune:
                 root=root,
                 datatype="micr",
                 stain="{stain}",
-                dslevel="{dslevel}",
+                level="{level}",
                 desc="otsu+k{k}i{i}",
                 suffix="fieldfrac.nii",
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
-            dslevel=config["registration_level"],
+            level=config["registration_level"],
             k=4,
             i=range(4),
         ),
@@ -217,7 +185,7 @@ rule all_segment:
                 root=root,
                 datatype="micr",
                 stain="{stain}",
-                dslevel="{level}",
+                level="{level}",
                 desc="{desc}",
                 space="{template}",
                 suffix="fieldfrac.nii",
@@ -251,7 +219,7 @@ rule all_segment:
                 root=root,
                 datatype="micr",
                 stain="{stain}",
-                dslevel="{level}",
+                level="{level}",
                 desc="{desc}",
                 suffix="counts.nii",
                 **inputs["spim"].wildcards,
@@ -265,15 +233,13 @@ rule all_segment:
                 root=root,
                 datatype="micr",
                 stain="{stain}",
-                dslevel="{dslevel}",
                 level="{level}",
-                desc="corrected",
-                corrmethod=config["correction_method"],
+                desc="corrected{correction_method}",
                 suffix="SPIM.ozx",
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
-            dslevel=config["registration_level"],
+            correction_method=config["correction_method"],
             level=config["segmentation_level"],
         ),
         inputs["spim"].expand(
@@ -281,7 +247,6 @@ rule all_segment:
                 root=root,
                 datatype="micr",
                 stain="{stain}",
-                dslevel="{dslevel}",
                 level="{level}",
                 desc="{desc}",
                 suffix="mask.ozx",
@@ -289,7 +254,6 @@ rule all_segment:
             ),
             stain=stains_for_seg,
             desc=config["seg_method"],
-            dslevel=config["registration_level"],
             level=config["segmentation_level"],
         ),
         inputs["spim"].expand(
@@ -297,7 +261,6 @@ rule all_segment:
                 root=root,
                 datatype="micr",
                 stain="{stain}",
-                dslevel="{dslevel}",
                 level="{level}",
                 desc="{desc}",
                 suffix="mask.ozx",
@@ -305,7 +268,6 @@ rule all_segment:
             ),
             stain=stains_for_seg,
             desc=config["seg_method"],
-            dslevel=config["registration_level"],
             level=config["segmentation_level"],
         ),
 
@@ -321,7 +283,6 @@ rule all_mri_reg:
                 suffix="T2w.nii.gz",
                 **inputs["spim"].wildcards,
             ),
-            level=config["registration_level"],
             template=config["template"],
         ),
 
@@ -378,7 +339,6 @@ include: "rules/common.smk"
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
-include: "rules/blobdetect.smk"
 include: "rules/segmentation.smk"
 include: "rules/patches.smk"
 

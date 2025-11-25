@@ -4,6 +4,7 @@ rule gaussian_biasfield:
     input:
         spim=inputs["spim"].path,
     params:
+        proc_level=2,
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         corrected=temp(
@@ -12,10 +13,8 @@ rule gaussian_biasfield:
                     root=work,
                     datatype="micr",
                     stain="{stain}",
-                    dslevel="{dslevel}",
                     level="{level}",
-                    desc="corrected",
-                    corrmethod="gaussian",
+                    desc="correctedgaussian",
                     suffix="SPIM.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
@@ -27,7 +26,6 @@ rule gaussian_biasfield:
                     root=work,
                     datatype="micr",
                     stain="{stain}",
-                    dslevel="{dslevel}",
                     level="{level}",
                     desc="gaussian",
                     suffix="biasfield.ome.zarr",
@@ -51,6 +49,7 @@ rule n4_biasfield:
     input:
         spim=inputs["spim"].path,
     params:
+        proc_level=2,
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         corrected=temp(
@@ -59,10 +58,8 @@ rule n4_biasfield:
                     root=work,
                     datatype="micr",
                     stain="{stain}",
-                    dslevel="{dslevel}",
                     level="{level}",
-                    desc="corrected",
-                    corrmethod="n4",
+                    desc="correctedn4",
                     suffix="SPIM.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
@@ -74,7 +71,6 @@ rule n4_biasfield:
                     root=work,
                     datatype="micr",
                     stain="{stain}",
-                    dslevel="{dslevel}",
                     level="{level}",
                     desc="n4",
                     suffix="biasfield.ome.zarr",
@@ -99,10 +95,8 @@ rule multiotsu:
             root=work,
             datatype="micr",
             stain="{stain}",
-            dslevel="{dslevel}",
             level="{level}",
-            desc="corrected",
-            corrmethod=config["correction_method"],
+            desc="corrected{method}".format(method=config["correction_method"]),
             suffix="SPIM.ome.zarr",
             **inputs["spim"].wildcards,
         ),
@@ -119,7 +113,6 @@ rule multiotsu:
                     root=work,
                     datatype="micr",
                     stain="{stain}",
-                    dslevel="{dslevel}",
                     level="{level}",
                     desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
                     suffix="mask.ome.zarr",
@@ -131,7 +124,6 @@ rule multiotsu:
             root=root,
             datatype="micr",
             stain="{stain}",
-            dslevel="{dslevel}",
             level="{level}",
             desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
             suffix="thresholds.png",
@@ -149,6 +141,7 @@ rule multiotsu:
 
 
 rule convert_zarr_to_ozx:
+    """generic rule to convert ome zarr to zip (.ozx)"""
     input:
         zarr=str(Path(work) / "{prefix}.ome.zarr"),
     output:
@@ -169,10 +162,8 @@ rule threshold:
             root=work,
             datatype="micr",
             stain="{stain}",
-            dslevel="{dslevel}",
             level="{level}",
-            desc="corrected",
-            corrmethod=config["correction_method"],
+            desc="corrected{method}".format(method=config["correction_method"]),
             suffix="SPIM.ome.zarr",
             **inputs["spim"].wildcards,
         ),
@@ -185,7 +176,6 @@ rule threshold:
                 root=root,
                 datatype="micr",
                 stain="{stain}",
-                dslevel="{dslevel}",
                 level="{level}",
                 desc="threshold",
                 suffix="mask.DONE",
@@ -208,7 +198,6 @@ rule clean_segmentation:
             root=work,
             datatype="micr",
             stain="{stain}",
-            dslevel="{dslevel}",
             level="{level}",
             desc="{desc}",
             suffix="mask.ome.zarr",
@@ -216,7 +205,7 @@ rule clean_segmentation:
         ),
     params:
         max_extent=0.15,
-        ds_level=2,  #level at which to calculate conncomp
+        proc_level=2,  #level at which to calculate conncomp
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         exclude_mask=temp(
@@ -225,7 +214,6 @@ rule clean_segmentation:
                     root=work,
                     datatype="micr",
                     stain="{stain}",
-                    dslevel="{dslevel}",
                     level="{level}",
                     desc="{desc}+cleaned",
                     suffix="excludemask.ome.zarr",
@@ -239,7 +227,6 @@ rule clean_segmentation:
                     root=work,
                     datatype="micr",
                     stain="{stain}",
-                    dslevel="{dslevel}",
                     level="{level}",
                     desc="{desc}+cleaned",
                     suffix="mask.ome.zarr",
@@ -265,7 +252,6 @@ rule compute_centroids:
             root=work,
             datatype="micr",
             stain="{stain}",
-            dslevel=config["registration_level"],
             level=config["segmentation_level"],
             desc="{seg_method}",
             suffix="mask.ome.zarr",
@@ -311,7 +297,7 @@ rule counts_per_voxel:
             root=root,
             datatype="micr",
             stain="{stain}",
-            dslevel="{dslevel}",
+            level="{level}",
             desc="{seg_method}",
             suffix="counts.nii",
             **inputs["spim"].wildcards,
@@ -327,28 +313,30 @@ rule counts_per_voxel:
 
 
 rule fieldfrac:
-    """ Calculates fieldfrac from a binary mask via downsampling, assuming mask intensity is 100"""
+    """ Calculates fieldfrac from a binary mask via downsampling, assuming mask intensity is 100.
+        The level in the input corresponds to the level of the input mask, and the level in the 
+        output image is the level of the downsampled fieldfrac map. Internally we calculate 
+        what downsampling factor to use to achieve the desired level
+        """
     input:
         mask=bids(
             root=work,
             datatype="micr",
             stain="{stain}",
-            dslevel=config["registration_level"],
             level=config["segmentation_level"],
             desc="{seg_method}",
             suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     params:
-        ds_level=lambda wildcards: int(wildcards.dslevel)
-        - int(config["segmentation_level"]),
+        hires_level=config["segmentation_level"],
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         fieldfrac_nii=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
-            dslevel="{dslevel}",
+            level="{level}",
             desc="{seg_method}",
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards,
@@ -405,7 +393,7 @@ rule map_img_to_roi_tsv:
             root=root,
             datatype="micr",
             stain="{stain}",
-            dslevel="{dslevel}",
+            level="{level}",
             desc="{desc}",
             suffix="{suffix}.nii",
             **inputs["spim"].wildcards,
@@ -415,7 +403,7 @@ rule map_img_to_roi_tsv:
             datatype="micr",
             seg="{seg}",
             desc="deform",
-            level="{dslevel}",
+            level="{level}",
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
@@ -430,7 +418,7 @@ rule map_img_to_roi_tsv:
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
-            dslevel="{dslevel}",
+            level="{level}",
             desc="{desc}",
             suffix="{suffix,fieldfrac}stats.tsv",
             **inputs["spim"].wildcards,
@@ -460,7 +448,7 @@ rule map_centroids_to_atlas_rois:
             datatype="micr",
             seg="{seg}",
             desc="deform",
-            level="{dslevel}",
+            level="{level}",
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
@@ -475,7 +463,7 @@ rule map_centroids_to_atlas_rois:
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
-            dslevel="{dslevel}",
+            level="{level}",
             desc="{seg_method}",
             suffix="centroidstats.tsv",
             **inputs["spim"].wildcards,
@@ -486,7 +474,7 @@ rule map_centroids_to_atlas_rois:
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
-            dslevel="{dslevel}",
+            level="{level}",
             desc="{seg_method}",
             suffix="countstats.tsv",
             **inputs["spim"].wildcards,
@@ -509,7 +497,7 @@ rule merge_into_segstats_tsv:
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
-            dslevel="{dslevel}",
+            level="{level}",
             desc="{desc}",
             suffix="countstats.tsv",
             **inputs["spim"].wildcards,
@@ -520,7 +508,7 @@ rule merge_into_segstats_tsv:
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
-            dslevel="{dslevel}",
+            level="{level}",
             desc="{desc}",
             suffix="fieldfracstats.tsv",
             **inputs["spim"].wildcards,
@@ -532,7 +520,7 @@ rule merge_into_segstats_tsv:
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
-            dslevel="{dslevel}",
+            level="{level}",
             desc="{desc}",
             suffix="segstats.tsv",
             **inputs["spim"].wildcards,
@@ -556,7 +544,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
-            dslevel=config["registration_level"],
+            level=config["registration_level"],
             desc="{desc}",
             suffix="segstats.tsv",
             **inputs["spim"].wildcards,
@@ -600,7 +588,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
-            dslevel="{dslevel}",
+            level="{level}",
             desc="{desc}",
             suffix="segstats.tsv",
             **inputs["spim"].wildcards,
@@ -610,7 +598,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             datatype="micr",
             seg="{seg}",
             desc="deform",
-            level="{dslevel}",
+            level="{level}",
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
@@ -626,7 +614,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             root=root,
             datatype="micr",
             seg="{seg}",
-            dslevel="{dslevel}",
+            level="{level}",
             from_="{template}",
             stain="{stain}",
             desc="{desc}",
@@ -649,7 +637,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             root=root,
             datatype="micr",
             stain="{stain}",
-            dslevel="{dslevel}",
+            level="{level}",
             desc="{desc}",
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards,
@@ -678,7 +666,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             root=root,
             datatype="micr",
             stain="{stain}",
-            dslevel="{dslevel}",
+            level="{level}",
             desc="{desc}",
             space="{template}",
             suffix="fieldfrac.nii",

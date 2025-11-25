@@ -3,7 +3,11 @@ from zarrnii import ZarrNii
 from zarrnii.plugins import GaussianBiasFieldCorrection
 
 hires_level = int(snakemake.wildcards.level)
-ds_level = int(snakemake.wildcards.dslevel)
+proc_level = int(snakemake.params.proc_level)
+
+unadjusted_downsample_factor = 2**proc_level
+adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
+
 
 znimg = ZarrNii.from_ome_zarr(
     snakemake.input.spim,
@@ -20,7 +24,7 @@ with ProgressBar():
     # Apply bias field correction
     znimg_corrected = znimg.apply_scaled_processing(
         GaussianBiasFieldCorrection(sigma=5.0),
-        downsample_factor=2**ds_level,
+        downsample_factor=adjusted_downsample_factor,
         upsampled_ome_zarr_path=snakemake.output.biasfield,
     )
 
