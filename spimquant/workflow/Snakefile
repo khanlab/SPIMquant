@@ -84,8 +84,6 @@ rule all_templatereg_deform_zooms:
             stain=stains,
             res=config["templatereg"]["zooms"],
         ),
-    group:
-        "subj"
 
 
 rule all_blobdensity:
@@ -104,8 +102,6 @@ rule all_blobdensity:
             seg=atlas_segs,
             template=config["template"],
         ),
-    group:
-        "subj"
 
 
 rule all_blobs:
@@ -120,8 +116,6 @@ rule all_blobs:
             ),
             stain=stains_for_seg,
         ),
-    group:
-        "subj"
 
 
 rule all_templatereg_deform:
@@ -139,8 +133,6 @@ rule all_templatereg_deform:
             template=config["template"],
             stain=stains,
         ),
-    group:
-        "subj"
 
 
 rule all_templatereg_lbl:
@@ -156,8 +148,6 @@ rule all_templatereg_lbl:
             ),
             template=config["template"],
         ),
-    group:
-        "subj"
 
 
 rule all_fieldfrac_tune:
@@ -177,8 +167,6 @@ rule all_fieldfrac_tune:
             k=4,
             i=range(4),
         ),
-    group:
-        "subj"
 
 
 rule all_segment:
@@ -326,8 +314,6 @@ rule all_mri_reg:
             level=config["registration_level"],
             template=config["template"],
         ),
-    group:
-        "subj"
 
 
 rule all:
@@ -337,12 +323,53 @@ rule all:
         rules.all_mri_reg.input if config["register_to_mri"] else [],
 
 
+rule all_spim_patches:
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                seg="{seg}",
+                from_="{template}",
+                level="{level}",
+                desc="{desc}",
+                suffix="SPIM.patches",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            seg=atlas_segs,
+            template=config["template"],
+            level=config["segmentation_level"],
+            desc=["raw", "corrected" + config["correction_method"]],
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                seg="{seg}",
+                from_="{template}",
+                level="{level}",
+                desc="{desc}",
+                suffix="mask.patches",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            seg=atlas_segs,
+            template=config["template"],
+            desc=config["seg_method"],
+            level=config["segmentation_level"],
+        ),
+
+
 include: "rules/common.smk"
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/blobdetect.smk"
 include: "rules/segmentation.smk"
+include: "rules/patches.smk"
 
 
 if config["register_to_mri"]:
