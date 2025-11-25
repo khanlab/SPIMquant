@@ -62,6 +62,16 @@ else:
         else:
             atlas_segs.append(seg)
 
+# atlas segmentations to use for patches (defaults to roi22)
+patch_atlas_segs = []
+for seg in config["patch_atlas_segs"]:
+    if seg not in all_atlas_segs:
+        raise ValueError(
+            f"Chosen patch segmentation {seg} was not found in the template {config['template']}"
+        )
+    else:
+        patch_atlas_segs.append(seg)
+
 
 wildcard_constraints:
     stain="[a-zA-Z0-9]+",
@@ -290,7 +300,7 @@ rule all_spim_patches:
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
-            seg=atlas_segs,
+            seg=patch_atlas_segs,
             template=config["template"],
             level=config["segmentation_level"],
             desc=["raw", "corrected" + config["correction_method"]],
@@ -308,7 +318,7 @@ rule all_spim_patches:
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
-            seg=atlas_segs,
+            seg=patch_atlas_segs,
             template=config["template"],
             desc=config["seg_method"],
             level=config["segmentation_level"],
