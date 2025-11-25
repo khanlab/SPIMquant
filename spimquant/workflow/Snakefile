@@ -278,13 +278,6 @@ rule all_mri_reg:
         ),
 
 
-rule all:
-    default_target: True
-    input:
-        rules.all_segment.input,
-        rules.all_mri_reg.input if config["register_to_mri"] else [],
-
-
 rule all_spim_patches:
     input:
         inputs["spim"].expand(
@@ -323,6 +316,14 @@ rule all_spim_patches:
             desc=config["seg_method"],
             level=config["segmentation_level"],
         ),
+
+
+rule all:
+    default_target: True
+    input:
+        rules.all_segment.input,
+        rules.all_spim_patches.input,
+        rules.all_mri_reg.input if config["register_to_mri"] else [],
 
 
 include: "rules/common.smk"
