@@ -301,7 +301,7 @@ rule all_segment:
                 stain="{stain}",
                 dslevel="{dslevel}",
                 level="{level}",
-                desc="{desc}+cleaned",
+                desc="{desc}",
                 suffix="mask.ozx",
                 **inputs["spim"].wildcards,
             ),
