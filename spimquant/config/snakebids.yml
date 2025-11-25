@@ -70,6 +70,13 @@ parse_args:
     action: store
     nargs: '+'
 
+  --patch_atlas_segs:
+    help: "Atlas segmentations to use for extracting patches (default: roi22)"
+    default:
+      - roi22
+    action: store
+    nargs: '+'
+
 
 
   --template_negative_mask:

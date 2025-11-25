@@ -62,6 +62,16 @@ else:
         else:
             atlas_segs.append(seg)
 
+# atlas segmentations to use for patches (defaults to roi22)
+patch_atlas_segs = []
+for seg in config["patch_atlas_segs"]:
+    if seg not in all_atlas_segs:
+        raise ValueError(
+            f"Chosen patch segmentation {seg} was not found in the template {config['template']}"
+        )
+    else:
+        patch_atlas_segs.append(seg)
+
 
 wildcard_constraints:
     stain="[a-zA-Z0-9]+",
@@ -316,13 +326,6 @@ rule all_mri_reg:
         ),
 
 
-rule all:
-    default_target: True
-    input:
-        rules.all_segment.input,
-        rules.all_mri_reg.input if config["register_to_mri"] else [],
-
-
 rule all_spim_patches:
     input:
         inputs["spim"].expand(
@@ -338,7 +341,7 @@ rule all_spim_patches:
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
-            seg=atlas_segs,
+            seg=patch_atlas_segs,
             template=config["template"],
             level=config["segmentation_level"],
             desc=["raw", "corrected" + config["correction_method"]],
@@ -356,11 +359,19 @@ rule all_spim_patches:
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
-            seg=atlas_segs,
+            seg=patch_atlas_segs,
             template=config["template"],
             desc=config["seg_method"],
             level=config["segmentation_level"],
         ),
+
+
+rule all:
+    default_target: True
+    input:
+        rules.all_segment.input,
+        rules.all_spim_patches.input,
+        rules.all_mri_reg.input if config["register_to_mri"] else [],
 
 
 include: "rules/common.smk"
