@@ -20,9 +20,11 @@ from zarrnii import ZarrNii, ZarrNiiAtlas
 # Set up logging for snakemake scripts
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
+channel_args = {}
 # Determine which input we have (spim, mask, or corrected)
 if hasattr(snakemake.input, "spim"):
     input_zarr = snakemake.input.spim
+    channel_args = {"channel_labels": [snakemake.wildcards.stain]}
 elif hasattr(snakemake.input, "mask"):
     input_zarr = snakemake.input.mask
 elif hasattr(snakemake.input, "corrected"):
@@ -54,7 +56,7 @@ dask.config.set(scheduler="threads", num_workers=snakemake.threads)
 Path(output_dir).mkdir(parents=True, exist_ok=True)
 
 # Load the atlas with labels
-atlas = ZarrNiiAtlas.from_tsv_lut(
+atlas = ZarrNiiAtlas.from_files(
     input_dseg,
     input_tsv,
     **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
@@ -62,17 +64,12 @@ atlas = ZarrNiiAtlas.from_tsv_lut(
 
 # Load the image data
 # Check if input is ome.zarr format or nifti
-if str(input_zarr).endswith((".ome.zarr", ".ome.zarr.zip", ".zarr")):
-    image = ZarrNii.from_ome_zarr(
-        input_zarr,
-        level=level,
-        **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
-    )
-else:
-    image = ZarrNii.from_nifti(
-        input_zarr,
-        **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
-    )
+image = ZarrNii.from_ome_zarr(
+    input_zarr,
+    level=level,
+    **channel_args,
+    **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
+)
 
 # Determine which labels to use for patches
 if patch_labels is None:

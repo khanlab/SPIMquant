@@ -187,7 +187,7 @@ parse_args:
 
   --n_patches_per_label:
     help: "Number of patches to extract per atlas label (default: %(default)s)"
-    default: 10
+    default: 5
     type: int
 
   --patch_labels:
