@@ -291,12 +291,35 @@ rule all:
         rules.all_mri_reg.input if config["register_to_mri"] else [],
 
 
+rule all_spim_patches:
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                seg="{seg}",
+                from_="{template}",
+                level="{level}",
+                suffix="SPIM.patches",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains,
+            seg=atlas_segs,
+            template=config["template"],
+            level=config["registration_level"],
+        ),
+    group:
+        "subj"
+
+
 include: "rules/common.smk"
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/blobdetect.smk"
 include: "rules/segmentation.smk"
+include: "rules/patches.smk"
 
 
 if config["register_to_mri"]:

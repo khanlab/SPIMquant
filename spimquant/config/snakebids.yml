@@ -176,6 +176,30 @@ parse_args:
     action: "store_true"
     default: False
 
+  --patch_size:
+    help: "Size of patches to extract in voxels (x, y, z) (default: %(default)s)"
+    default:
+      - 256
+      - 256
+      - 256
+    nargs: 3
+    type: int
+
+  --n_patches_per_label:
+    help: "Number of patches to extract per atlas label (default: %(default)s)"
+    default: 10
+    type: int
+
+  --patch_labels:
+    help: "List of atlas label names, abbreviations, or indices to extract patches from. If not specified, patches are extracted from all labels."
+    default: null
+    nargs: '+'
+
+  --patch_seed:
+    help: "Random seed for reproducible patch sampling (default: %(default)s)"
+    default: 42
+    type: int
+
 #--- workflow specific configuration -- 
 
 
