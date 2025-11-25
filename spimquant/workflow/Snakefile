@@ -307,7 +307,7 @@ rule all_spim_patches:
             stain=stains,
             seg=atlas_segs,
             template=config["template"],
-            level=config["registration_level"],
+            level=config["segmentation_level"],
         ),
     group:
         "subj"
