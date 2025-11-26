@@ -4,7 +4,7 @@ rule gaussian_biasfield:
     input:
         spim=inputs["spim"].path,
     params:
-        proc_level=2,
+        proc_level=5,
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         corrected=temp(
@@ -49,7 +49,7 @@ rule n4_biasfield:
     input:
         spim=inputs["spim"].path,
     params:
-        proc_level=2,
+        proc_level=5,
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         corrected=temp(
@@ -82,7 +82,7 @@ rule n4_biasfield:
         "subj"
     threads: 128
     resources:
-        mem_mb=256000,
+        mem_mb=500000,
         disk_mb=2097152,
         runtime=60,
     script:
@@ -133,7 +133,7 @@ rule multiotsu:
         "subj"
     threads: 128
     resources:
-        mem_mb=256000,
+        mem_mb=500000,
         disk_mb=2097152,
         runtime=15,
     script:
