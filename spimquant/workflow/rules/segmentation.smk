@@ -245,27 +245,29 @@ rule clean_segmentation:
         "../scripts/clean_segmentation.py"
 
 
-rule compute_centroids:
-    """Calculate object/cell centroids from the segmentation"""
+rule compute_filtered_regionprops:
+    """Calculate region props from filtered objects of segmentation."""
     input:
         mask=bids(
             root=work,
             datatype="micr",
             stain="{stain}",
             level=config["segmentation_level"],
-            desc="{seg_method}",
+            desc="{desc}",
             suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     params:
+        region_filters=config["regionprop_filters"],
+        output_properties=config["regionprop_outputs"],
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        centroids_parquet=bids(
+        regionprops_parquet=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
-            desc="{seg_method}",
-            suffix="centroids.parquet",
+            desc="{desc}",
+            suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -275,22 +277,23 @@ rule compute_centroids:
         mem_mb=256000,
         runtime=30,
     script:
-        "../scripts/compute_centroids.py"
+        "../scripts/compute_filtered_regionprops.py"
 
 
 rule counts_per_voxel:
     """Calculate counts per voxel based on points"""
     input:
         ref_spim=inputs["spim"].path,
-        centroids_parquet=bids(
+        regionprops_parquet=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
-            desc="{seg_method}",
-            suffix="centroids.parquet",
+            desc="{desc}",
+            suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
     params:
+        coord_column_names=config["coord_column_names"],
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         counts_nii=bids(
@@ -298,7 +301,7 @@ rule counts_per_voxel:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc="{seg_method}",
+            desc="{desc}",
             suffix="counts.nii",
             **inputs["spim"].wildcards,
         ),
@@ -324,7 +327,7 @@ rule fieldfrac:
             datatype="micr",
             stain="{stain}",
             level=config["segmentation_level"],
-            desc="{seg_method}",
+            desc="{desc}",
             suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
@@ -337,7 +340,7 @@ rule fieldfrac:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            desc="{seg_method}",
+            desc="{desc}",
             suffix="fieldfrac.nii",
             **inputs["spim"].wildcards,
         ),
@@ -433,14 +436,14 @@ rule map_img_to_roi_tsv:
         "../scripts/map_img_to_roi_tsv.py"
 
 
-rule map_centroids_to_atlas_rois:
+rule map_regionprops_to_atlas_rois:
     input:
-        centroids_parquet=bids(
+        regionprops_parquet=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
-            desc="{seg_method}",
-            suffix="centroids.parquet",
+            desc="{desc}",
+            suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
         dseg=bids(
@@ -456,16 +459,18 @@ rule map_centroids_to_atlas_rois:
         label_tsv=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
         ),
+    params:
+        coord_column_names=config["coord_column_names"],
     output:
-        centroids_tsv=bids(
+        regionprops_tsv=bids(
             root=root,
             datatype="micr",
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
             level="{level}",
-            desc="{seg_method}",
-            suffix="centroidstats.tsv",
+            desc="{desc}",
+            suffix="regionpropstats.tsv",
             **inputs["spim"].wildcards,
         ),
         counts_tsv=bids(
@@ -475,7 +480,7 @@ rule map_centroids_to_atlas_rois:
             from_="{template}",
             stain="{stain}",
             level="{level}",
-            desc="{seg_method}",
+            desc="{desc}",
             suffix="countstats.tsv",
             **inputs["spim"].wildcards,
         ),
@@ -486,11 +491,22 @@ rule map_centroids_to_atlas_rois:
         mem_mb=16000,
         runtime=5,
     script:
-        "../scripts/map_atlas_to_centroids.py"
+        "../scripts/map_atlas_to_regionprops.py"
 
 
 rule merge_into_segstats_tsv:
     input:
+        regionprops_tsv=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}",
+            suffix="regionpropstats.tsv",
+            **inputs["spim"].wildcards,
+        ),
         counts_tsv=bids(
             root=root,
             datatype="micr",
