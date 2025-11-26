@@ -7,7 +7,6 @@ regions, generating two outputs:
 """
 
 from zarrnii import ZarrNiiAtlas
-import numpy as np
 import pandas as pd
 
 regionprops = pd.read_parquet(snakemake.input.regionprops_parquet).to_dict(
