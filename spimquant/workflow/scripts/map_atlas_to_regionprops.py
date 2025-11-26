@@ -7,7 +7,6 @@ regions, generating two outputs:
 """
 
 from zarrnii import ZarrNii, ZarrNiiAtlas
-from zarrnii import ZarrNiiAtlas
 import numpy as np
 import pandas as pd
 
