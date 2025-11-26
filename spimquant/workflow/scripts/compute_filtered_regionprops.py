@@ -1,10 +1,8 @@
-"""Compute centroids from segmentation masks using ZarrNii.
+"""Compute region properties from filtered segmentation masks using ZarrNii.
 
-This script reads a segmentation mask from an OME-Zarr file and computes the
-centroids of labeled regions using ZarrNii's compute_centroids method. The
-resulting centroids are saved as a NumPy array.
-
-Example Dask cluster setup for advanced users:
+This script reads a segmentation mask from an OME-Zarr file, performs
+connected components on chunks with overlap, applys filters based on 
+region properties, and outputs region properties on these filtered objects
 """
 
 if __name__ == "__main__":
@@ -29,4 +27,8 @@ if __name__ == "__main__":
         **snakemake.params.zarrnii_kwargs,
     )
 
-    centroids = znimg.compute_centroids(output_path=snakemake.output.centroids_parquet)
+    znimg.compute_region_properties(
+        output_path=snakemake.output.regionprops_parquet,
+        region_filters=snakemake.params.region_filters,
+        output_properties=snakemake.params.output_properties,
+    )

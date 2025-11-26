@@ -35,7 +35,7 @@ docutils = "<0.22"
 [tool.pixi.pypi-dependencies]
 spimquant = { path = ".", editable = true }
 ngff-zarr = { version = ">=0.19.1", extras = ["cli","dask-image","itk","tensorstore","validate"] }
-zarrnii = ">=0.13.0-alpha1,<0.14.0"
+zarrnii = ">=0.14.0-alpha1,<0.15.0"
 #zarrnii = { git = "https://github.com/khanlab/zarrnii", rev = "v0.13.0-alpha1",  editable = true }
 #zarrnii = { path = "./zarrnii", editable = true }
 
@@ -51,6 +51,7 @@ jupyterlab = ">=4.4.7,<5"
 napari = ">=0.6.6,<0.7"
 napari-ome-zarr = ">=0.6.1,<0.7"
 pyqt = ">=5.15.11,<6"
+micro_sam = ">=1.6.2,<2"
 
 [tool.pixi.environments.default]
 features = ["runtime"]

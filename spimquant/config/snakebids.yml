@@ -278,14 +278,30 @@ masking:
   gmm_bg_class: 1
   pre_atropos_downsampling: '50%'
 
-blobdetect:
-  level: 5 #downsampling level to use for blob detection
-  dseg_level: 5 # downsampling level to use for template when assigning labels to blobs
-  dseg_template: ABAv3
 
+regionprop_filters:
+  area:
+    - ">="
+    - 5
+
+regionprop_outputs:
+  centroid: pos
+  area: nvoxels
+  equivalent_diameter_area: equivdiameter
+
+coord_column_names:
+  - pos_x
+  - pos_y
+  - pos_z
+
+#metrics to compute feature maps for
+# (can be from regionprops_outputs too)
 seg_metrics:
   - fieldfrac
   - density
   - count
   - volume
-  
+  - nvoxels
+  - equivdiameter
+
+
