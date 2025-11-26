@@ -45,13 +45,13 @@ isort   = ">=5.10.1, <6.0.0"
 snakefmt = ">=0.10.0, <0.11.0"
 pytest  = "*"
 jupyterlab = ">=4.4.7,<5"
-micro_sam = ">=1.6.2,<2"
 
 
 [tool.pixi.feature.vis.dependencies]
 napari = ">=0.6.6,<0.7"
 napari-ome-zarr = ">=0.6.1,<0.7"
 pyqt = ">=5.15.11,<6"
+micro_sam = ">=1.6.2,<2"
 
 [tool.pixi.environments.default]
 features = ["runtime"]
