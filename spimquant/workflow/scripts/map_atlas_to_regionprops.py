@@ -6,7 +6,7 @@ regions, generating two outputs:
 2. Count statistics showing the number of objects per atlas region
 """
 
-from zarrnii import ZarrNii, ZarrNiiAtlas
+from zarrnii import ZarrNiiAtlas
 import numpy as np
 import pandas as pd
 
