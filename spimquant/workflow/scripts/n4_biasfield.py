@@ -11,31 +11,37 @@ if __name__ == "__main__":
     client = Client(cluster)
     print(cluster.dashboard_link)
 
-    from zarrnii import ZarrNii
-    from zarrnii.plugins import N4BiasFieldCorrection
+    try:
 
-    hires_level = int(snakemake.wildcards.level)
-    proc_level = int(snakemake.params.proc_level)
+        from zarrnii import ZarrNii
+        from zarrnii.plugins import N4BiasFieldCorrection
 
-    unadjusted_downsample_factor = 2**proc_level
-    adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
+        hires_level = int(snakemake.wildcards.level)
+        proc_level = int(snakemake.params.proc_level)
 
-    znimg = ZarrNii.from_ome_zarr(
-        snakemake.input.spim,
-        channel_labels=[snakemake.wildcards.stain],
-        level=hires_level,
-        downsample_near_isotropic=True,
-        **snakemake.params.zarrnii_kwargs,
-    )
+        unadjusted_downsample_factor = 2**proc_level
+        adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
 
-    print("compute bias field correction")
+        znimg = ZarrNii.from_ome_zarr(
+            snakemake.input.spim,
+            channel_labels=[snakemake.wildcards.stain],
+            level=hires_level,
+            downsample_near_isotropic=True,
+            **snakemake.params.zarrnii_kwargs,
+        )
 
-    # Apply bias field correction
-    znimg_corrected = znimg.apply_scaled_processing(
-        N4BiasFieldCorrection(sigma=5.0),
-        downsample_factor=adjusted_downsample_factor,
-        upsampled_ome_zarr_path=snakemake.output.biasfield,
-    )
+        print("compute bias field correction")
 
-    # write to ome_zarr
-    znimg_corrected.to_ome_zarr(snakemake.output.corrected, max_layer=5)
+        # Apply bias field correction
+        znimg_corrected = znimg.apply_scaled_processing(
+            N4BiasFieldCorrection(sigma=5.0),
+            downsample_factor=adjusted_downsample_factor,
+            upsampled_ome_zarr_path=snakemake.output.biasfield,
+        )
+
+        # write to ome_zarr
+        znimg_corrected.to_ome_zarr(snakemake.output.corrected, max_layer=5)
+
+    finally:
+        client.close()
+        cluster.close()

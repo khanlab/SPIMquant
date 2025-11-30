@@ -168,18 +168,20 @@ rule threshold:
             **inputs["spim"].wildcards,
         ),
     params:
-        threshold=int(config["seg_threshold"]),
+        threshold=lambda wildcards: int(wildcards.threshold),
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        mask=directory(
-            bids(
-                root=root,
-                datatype="micr",
-                stain="{stain}",
-                level="{level}",
-                desc="threshold",
-                suffix="mask.DONE",
-                **inputs["spim"].wildcards,
+        mask=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    level="{level}",
+                    desc="th{threshold,[0-9]+}",
+                    suffix="mask.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
             )
         ),
     group:
