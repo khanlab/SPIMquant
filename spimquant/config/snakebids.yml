@@ -133,13 +133,9 @@ parse_args:
   
   --seg_method:
     help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions. "
-    choices: 
-      - threshold
-      - otsu+k3i2
-      - threshold+cleaned
-      - otsu+k3i2+cleaned
     default: 
-      - otsu+k3i2+cleaned
+      - otsu+k3i2
+      - th900
     nargs: '+'
 
   --seg_hist_range:
@@ -152,10 +148,6 @@ parse_args:
   --seg_hist_bins:
     help: "Number of bins to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. (default: %(default)s)"
     default: 1000
-
-  --seg_threshold:
-    help: "Threshold to use, only applicable when seg_method is 'threshold'."
-    default: 75
 
 
   --register_to_mri:
@@ -279,15 +271,23 @@ masking:
   pre_atropos_downsampling: '50%'
 
 
+
+stain_defaults:
+  regionprop_filters:
+    YoPro:
+      area:
+        - ">="
+        - 100
+
+
 regionprop_filters:
   area:
     - ">="
-    - 5
+    - 200
 
 regionprop_outputs:
   centroid: pos
   area: nvoxels
-  equivalent_diameter_area: equivdiameter
 
 coord_column_names:
   - pos_x
@@ -302,6 +302,4 @@ seg_metrics:
   - count
   - volume
   - nvoxels
-  - equivdiameter
-
 

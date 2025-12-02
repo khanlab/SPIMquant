@@ -24,32 +24,38 @@ if __name__ == "__main__":
     client = Client(cluster)
     print(cluster.dashboard_link)
 
-    from zarrnii import ZarrNii
-    from zarrnii.plugins import SegmentationCleaner
+    try:
 
-    hires_level = int(snakemake.wildcards.level)
-    proc_level = int(snakemake.params.proc_level)
+        from zarrnii import ZarrNii
+        from zarrnii.plugins import SegmentationCleaner
 
-    znimg = ZarrNii.from_ome_zarr(
-        snakemake.input.mask,
-        level=0,  # we load level 0 since we are already at the highres level
-        **snakemake.params.zarrnii_kwargs,
-    )
+        hires_level = int(snakemake.wildcards.level)
+        proc_level = int(snakemake.params.proc_level)
 
-    # perform cleaning of artifactual positives by
-    # removing objects with low extent (extent is ratio of num voxels to bounding box)
+        znimg = ZarrNii.from_ome_zarr(
+            snakemake.input.mask,
+            level=0,  # we load level 0 since we are already at the highres level
+            **snakemake.params.zarrnii_kwargs,
+        )
 
-    # the downsample_factor we use should be proportional to the segmentation level
-    #   e.g. if segmentation level is 3, then we have already downsampled by 2^3, so
-    #   the downsample factor should be divided by that..
-    unadjusted_downsample_factor = 2**proc_level
-    adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
+        # perform cleaning of artifactual positives by
+        # removing objects with low extent (extent is ratio of num voxels to bounding box)
 
-    znimg_cleaned = znimg.apply_scaled_processing(
-        SegmentationCleaner(max_extent=snakemake.params.max_extent),
-        downsample_factor=adjusted_downsample_factor,
-        upsampled_ome_zarr_path=snakemake.output.exclude_mask,
-    )
+        # the downsample_factor we use should be proportional to the segmentation level
+        #   e.g. if segmentation level is 3, then we have already downsampled by 2^3, so
+        #   the downsample factor should be divided by that..
+        unadjusted_downsample_factor = 2**proc_level
+        adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
 
-    # write to final ome_zarr
-    znimg_cleaned.to_ome_zarr(snakemake.output.cleaned_mask, max_layer=5)
+        znimg_cleaned = znimg.apply_scaled_processing(
+            SegmentationCleaner(max_extent=snakemake.params.max_extent),
+            downsample_factor=adjusted_downsample_factor,
+            upsampled_ome_zarr_path=snakemake.output.exclude_mask,
+        )
+
+        # write to final ome_zarr
+        znimg_cleaned.to_ome_zarr(snakemake.output.cleaned_mask, max_layer=5)
+
+    finally:
+        client.close()
+        cluster.close()
