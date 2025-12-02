@@ -271,6 +271,15 @@ masking:
   pre_atropos_downsampling: '50%'
 
 
+
+stain_defaults:
+  regionprop_filters:
+    YoPro:
+      area:
+        - ">="
+        - 100
+
+
 regionprop_filters:
   area:
     - ">="
