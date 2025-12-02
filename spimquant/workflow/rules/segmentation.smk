@@ -260,7 +260,9 @@ rule compute_filtered_regionprops:
             **inputs["spim"].wildcards,
         ),
     params:
-        region_filters=lambda wildcards: config['stain_defaults']['regionprop_filters'].get(wildcards.stain,config["regionprop_filters"]), 
+        region_filters=lambda wildcards: config["stain_defaults"][
+            "regionprop_filters"
+        ].get(wildcards.stain, config["regionprop_filters"]),
         output_properties=config["regionprop_outputs"],
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
