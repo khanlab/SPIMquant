@@ -1,0 +1,5 @@
+name: greedy
+channels:
+  - conda-forge
+dependencies:
+  - greedyreg=0.0.20250712

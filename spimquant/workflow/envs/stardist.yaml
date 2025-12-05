@@ -1,0 +1,13 @@
+name: stardist
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - stardist=0.9.1
+  - dask
+  - zarr
+  - pip
+  - pip:
+    - zarrnii
+
