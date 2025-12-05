@@ -299,7 +299,7 @@ include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/segmentation.smk"
 include: "rules/patches.smk"
-
+include: "rules/stardist.smk"
 
 if config["register_to_mri"]:
 

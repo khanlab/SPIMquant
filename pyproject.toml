@@ -12,6 +12,7 @@ requires = ["hatchling"]
 [tool.pixi.workspace]
 channels = ["conda-forge", "bioconda"]
 platforms = ["linux-64"]
+preview = ["pixi-build"]
 
 [tool.pixi.feature.runtime.dependencies]
 snakemake = ">=9.5.1,<10"
@@ -27,7 +28,6 @@ conda = ">=25.5.0,<26"
 snakemake-executor-plugin-slurm = ">=1.4.0,<2"
 snakemake-storage-plugin-fs = ">=1.1.2,<2"
 snakemake-storage-plugin-http = ">=0.3.0,<0.4.0"
-greedyreg = "==0.0.20250712"
 antspyx = "==0.6.1"
 markdown-it-py = "<4"
 docutils = "<0.22"
@@ -35,9 +35,9 @@ docutils = "<0.22"
 [tool.pixi.pypi-dependencies]
 spimquant = { path = ".", editable = true }
 ngff-zarr = { version = ">=0.19.1", extras = ["cli","dask-image","itk","tensorstore","validate"] }
-zarrnii = ">=0.14.0-alpha1,<0.15.0"
+#zarrnii = ">=0.14.0-alpha1,<0.15.0"
 #zarrnii = { git = "https://github.com/khanlab/zarrnii", rev = "v0.13.0-alpha1",  editable = true }
-#zarrnii = { path = "./zarrnii", editable = true }
+zarrnii = { path = "./zarrnii", editable = true }
 
 [tool.pixi.feature.dev.dependencies]
 black   = ">=24.0.0, <25.0.0"
@@ -51,10 +51,23 @@ jupyterlab = ">=4.4.7,<5"
 napari = ">=0.6.6,<0.7"
 napari-ome-zarr = ">=0.6.1,<0.7"
 pyqt = ">=5.15.11,<6"
+jupyterlab = ">=4.4.10,<5"
+seaborn = ">=0.13.2,<0.14"
+
+[tool.pixi.feature.experimental.dependencies]
 micro_sam = ">=1.6.2,<2"
+cellpose = ">=4.0.7,<5"
+
+
+[tool.pixi.feature.stardist.dependencies]
+tensorflow = "*"
+
+[tool.pixi.feature.stardist.pypi-dependencies]
+stardist = { path = "/local/scratch/stardist", editable = true }
+
 
 [tool.pixi.environments.default]
-features = ["runtime"]
+features = ["runtime","stardist"]
 
 [tool.pixi.environments.dev]
 features = ["runtime", "dev", "vis"]
@@ -63,10 +76,14 @@ features = ["runtime", "dev", "vis"]
 [tool.pixi.environments.dev-only]
 features = ["dev"]
 
+[tool.pixi.environments.experimental]
+features = ["runtime","vis","experimental"]
+
+
+
+
 [tool.pixi.tasks]
 quality_check = "isort --profile black spimquant/*.py -c && black spimquant --check && snakefmt spimquant --check"
 quality_fix = "isort --profile black spimquant/*.py && black spimquant  && snakefmt spimquant"
 
-[tool.pixi.dependencies]
-jupyterlab = ">=4.4.10,<5"
-pip = ">=25.3,<26"
+

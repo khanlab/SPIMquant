@@ -302,4 +302,8 @@ seg_metrics:
   - count
   - volume
   - nvoxels
+  - equivdiameter
 
+stardist:
+  model_urls:
+    3D_demo: https://github.com/stardist/stardist-models/releases/download/v0.1/python_3D_demo.zip

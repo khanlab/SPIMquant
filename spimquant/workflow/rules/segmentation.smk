@@ -387,6 +387,7 @@ rule deform_negative_mask_to_subject_nii:
     resources:
         mem_mb=16000,
         runtime=15,
+    conda: "../envs/greedy.yaml"
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         " -ri NN "

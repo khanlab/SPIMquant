@@ -189,6 +189,7 @@ rule init_affine_reg:
     resources:
         mem_mb=16000,
         runtime=5,
+    conda: "../envs/greedy.yaml"
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
@@ -226,6 +227,7 @@ rule affine_transform_template_mask_to_subject:
     resources:
         mem_mb=16000,
         runtime=5,
+    conda: "../envs/greedy.yaml"
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         " -ri NN"

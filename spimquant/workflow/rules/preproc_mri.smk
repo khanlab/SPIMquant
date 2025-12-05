@@ -124,6 +124,7 @@ rule rigid_greedy_reg_mri_to_template:
     resources:
         mem_mb=16000,
         runtime=15,
+    conda: "../envs/greedy.yaml"
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 6 -ia-image-centers -m {params.metric} -o {output.xfm_ras} && "
@@ -274,6 +275,7 @@ rule apply_mri_brain_mask:
     resources:
         mem_mb=16000,
         runtime=15,
+    conda: "../envs/c3d.yaml"
     shell:
         "c3d {input.nii} {input.mask} -multiply -resample 300% -o {output.nii}"
 
@@ -383,6 +385,7 @@ rule rigid_greedy_reg_mri_to_spim:
     resources:
         mem_mb=16000,
         runtime=15,
+    conda: "../envs/greedy.yaml"
     shell:
         "greedy -threads {threads} -d 3 -i {input.spim} {input.mri} "
         " -a -dof {params.dof} -ia-image-centers -m {params.metric_rigid} -o {output.xfm_ras} && "
@@ -507,6 +510,7 @@ rule warp_mri_to_template_via_spim:
     resources:
         mem_mb=16000,
         runtime=15,
+    conda: "../envs/greedy.yaml"
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         "  -rm {input.mri} {output.warped} "
@@ -587,6 +591,7 @@ rule warp_mri_brainmask_to_spim:
     resources:
         mem_mb=16000,
         runtime=15,
+    conda: "../envs/greedy.yaml"
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} -ri NN"
         "  -rm {input.mask} {output.mask} "
