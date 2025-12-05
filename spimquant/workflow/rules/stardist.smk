@@ -11,7 +11,49 @@ rule test_stardist:
         model_dir=directory('resources/stardist_models/3D_demo')
     output:
         out_dir=directory('test_stardist')
-#    conda: '../envs/stardist.yaml'
     script: '../scripts/test_stardist.py'
+
+rule segment_stardist:
+    input:
+        spim=inputs["spim"].path,
+    params:
+        zarrnii_kwargs=lambda wildcards: {"orientation": config["orientation"],channel_labels=[wildcards.stain]},
+    output:
+        regionprops=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    level="{level}",
+                    desc="correctedn4",
+                    suffix="SPIM.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
+            )
+        ),
+        biasfield=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    level="{level}",
+                    desc="n4",
+                    suffix="biasfield.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
+            )
+        ),
+    group:
+        "subj"
+    threads: 128
+    resources:
+        mem_mb=500000,
+        disk_mb=2097152,
+        runtime=60,
+    script:
+        "../scripts/n4_biasfield.py"
+
 
 
