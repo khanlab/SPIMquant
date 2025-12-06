@@ -529,7 +529,6 @@ rule transform_regionprops_to_template:
         ),
     params:
         coord_column_names=config["coord_column_names"],
-        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         regionprops_transformed_parquet=bids(
             root=root,
@@ -561,7 +560,7 @@ rule aggregate_regionprops_across_stains:
                 desc=wildcards.desc,
                 space=wildcards.template,
                 suffix="regionprops.parquet",
-                **{k: wildcards[k] for k in inputs["spim"].wildcards.keys() if k in wildcards},
+                **{k: getattr(wildcards, k) for k in inputs["spim"].wildcards.keys() if hasattr(wildcards, k)},
             ),
             stain=stains_for_seg,
         ),
