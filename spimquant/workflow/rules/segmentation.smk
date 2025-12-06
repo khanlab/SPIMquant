@@ -146,7 +146,7 @@ rule convert_zarr_to_ozx:
         zarr=str(Path(work) / "{prefix}.ome.zarr"),
     output:
         ozx=str(Path(root) / "{prefix}.ozx"),
-    threads: 4
+    threads: 128
     resources:
         mem_mb=32000,
         runtime=60,
