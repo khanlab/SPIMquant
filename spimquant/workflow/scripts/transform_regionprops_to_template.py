@@ -17,8 +17,17 @@ df = pd.read_parquet(snakemake.input.regionprops_parquet)
 # Get coordinate column names from config
 coord_cols = snakemake.params.coord_column_names  # e.g., ['pos_x', 'pos_y', 'pos_z']
 
+# Validate that coordinate columns exist
+for col in coord_cols:
+    if col not in df.columns:
+        raise ValueError(f"Coordinate column '{col}' not found in regionprops data. Available columns: {df.columns.tolist()}")
+
 # Extract the coordinates as a numpy array (N x 3) in physical RAS coordinates
 points = df[coord_cols].values
+
+# Validate that coordinates are numeric
+if not np.issubdtype(points.dtype, np.number):
+    raise ValueError(f"Coordinate columns must contain numeric data, got dtype: {points.dtype}")
 
 # Load the RAS affine transform from greedy registration
 # According to resample_labels_to_zarr.py: "affine_inv_xfm = np.linalg.inv(np.loadtxt(in_xfm))"
@@ -67,11 +76,11 @@ except (ImportError, AttributeError) as e:
     
     # Interpolate the warp displacement at these voxel coordinates
     # map_coordinates expects coordinates in array index order
-    displacements = np.zeros_like(points_warp_vox)
+    displacements = np.zeros((points_warp_vox.shape[0], 3))
+    coords = points_warp_vox.T  # Transpose once for map_coordinates (3, N)
     for i in range(3):
         # Interpolate the i-th component of the displacement field
         # Note: warp_data has shape (X, Y, Z, 3) and we need (i, j, k) indexing
-        coords = points_warp_vox.T  # Transpose to (3, N) for map_coordinates
         displacements[:, i] = map_coordinates(
             warp_data[..., i], coords, order=1, mode='constant', cval=0
         )
