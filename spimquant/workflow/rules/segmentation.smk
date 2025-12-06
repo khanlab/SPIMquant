@@ -498,6 +498,130 @@ rule map_regionprops_to_atlas_rois:
         "../scripts/map_atlas_to_regionprops.py"
 
 
+rule transform_regionprops_to_template:
+    """Transform regionprops coordinates from subject to template space."""
+    input:
+        regionprops_parquet=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            desc="{desc}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+        xfm_ras=bids(
+            root=root,
+            datatype="warps",
+            from_="subject",
+            to="{template}",
+            type_="ras",
+            desc="affine",
+            suffix="xfm.txt",
+            **inputs["spim"].wildcards,
+        ),
+        invwarp=bids(
+            root=root,
+            datatype="warps",
+            from_="{template}",
+            to="subject",
+            suffix="warp.nii",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        coord_column_names=config["coord_column_names"],
+        zarrnii_kwargs={"orientation": config["orientation"]},
+    output:
+        regionprops_transformed_parquet=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            desc="{desc}",
+            space="{template}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
+    script:
+        "../scripts/transform_regionprops_to_template.py"
+
+
+rule aggregate_regionprops_across_stains:
+    """Aggregate transformed regionprops across stains."""
+    input:
+        regionprops_parquets=lambda wildcards: expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                desc=wildcards.desc,
+                space=wildcards.template,
+                suffix="regionprops.parquet",
+                **{k: wildcards[k] for k in inputs["spim"].wildcards.keys() if k in wildcards},
+            ),
+            stain=stains_for_seg,
+        ),
+    params:
+        stains=stains_for_seg,
+    output:
+        regionprops_aggregated_parquet=bids(
+            root=root,
+            datatype="micr",
+            desc="{desc}",
+            space="{template}",
+            cohort="stains",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
+    script:
+        "../scripts/aggregate_regionprops_across_stains.py"
+
+
+rule aggregate_regionprops_across_subjects:
+    """Aggregate transformed regionprops across subjects."""
+    input:
+        regionprops_parquets=lambda wildcards: expand(
+            bids(
+                root=root,
+                datatype="micr",
+                desc=wildcards.desc,
+                space=wildcards.template,
+                cohort="stains",
+                suffix="regionprops.parquet",
+                subject="{subject}",
+                sample="brain",
+            ),
+            subject=inputs["spim"].zip_lists["subject"],
+        ),
+    params:
+        subjects=lambda wildcards: inputs["spim"].zip_lists["subject"],
+    output:
+        regionprops_aggregated_parquet=bids(
+            root=root,
+            datatype="micr",
+            desc="{desc}",
+            space="{template}",
+            cohort="all",
+            suffix="regionprops.parquet",
+        ),
+    threads: 1
+    resources:
+        mem_mb=32000,
+        runtime=10,
+    script:
+        "../scripts/aggregate_regionprops_across_subjects.py"
+
+
 rule merge_into_segstats_tsv:
     input:
         regionprops_tsv=bids(
