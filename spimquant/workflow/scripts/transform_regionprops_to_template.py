@@ -20,79 +20,32 @@ coord_cols = snakemake.params.coord_column_names  # e.g., ['pos_x', 'pos_y', 'po
 # Validate that coordinate columns exist
 for col in coord_cols:
     if col not in df.columns:
-        raise ValueError(f"Coordinate column '{col}' not found in regionprops data. Available columns: {df.columns.tolist()}")
+        raise ValueError(
+            f"Coordinate column '{col}' not found in regionprops data. Available columns: {df.columns.tolist()}"
+        )
 
 # Extract the coordinates as a numpy array (N x 3) in physical RAS coordinates
 points = df[coord_cols].values
 
 # Validate that coordinates are numeric
 if not np.issubdtype(points.dtype, np.number):
-    raise ValueError(f"Coordinate columns must contain numeric data, got dtype: {points.dtype}")
+    raise ValueError(
+        f"Coordinate columns must contain numeric data, got dtype: {points.dtype}"
+    )
 
-# Load the RAS affine transform from greedy registration
-# According to resample_labels_to_zarr.py: "affine_inv_xfm = np.linalg.inv(np.loadtxt(in_xfm))"
-# is used to go from spim ras to template ras. So the xfm_ras file is template->subject.
-# For transforming points from subject to template, we invert it.
-xfm_ras = np.loadtxt(snakemake.input.xfm_ras)
-affine_subj_to_template = np.linalg.inv(xfm_ras)
 
-# Try to use zarrnii's transform classes if available
-try:
-    from zarrnii import ZarrNii
-    from zarrnii.transforms import AffineTransform, DisplacementTransform
-    
-    # Create affine transform object
-    affine_transform = AffineTransform(affine_subj_to_template)
-    
-    # Apply affine transform to points (transpose for apply_transform: 3 x N)
-    points_after_affine = affine_transform.apply_transform(points.T).T
-    
-    # Load and apply warp transform
-    warp_img = ZarrNii.from_nifti(snakemake.input.invwarp)
-    warp_transform = DisplacementTransform(warp_img)
-    
-    # Apply warp transform (invwarp is template->subject, which is correct for point transformation)
-    points_transformed = warp_transform.apply_transform(points_after_affine.T).T
-    
-except (ImportError, AttributeError) as e:
-    # Fallback to manual implementation if zarrnii transforms are not available
-    print(f"Using manual transform implementation: {e}")
-    
-    # Apply affine transform to points (add homogeneous coordinate)
-    points_homog = np.hstack([points, np.ones((points.shape[0], 1))])  # N x 4
-    points_after_affine = (affine_subj_to_template @ points_homog.T).T[:, :3]  # N x 3
-    
-    # Load the inverse warp (template-to-subject warp)
-    # When transforming points (not images), we use the opposite warp direction
-    # The invwarp is template->subject displacement field
-    warp_nib = nib.load(snakemake.input.invwarp)
-    warp_data = warp_nib.get_fdata()  # 4D array (X, Y, Z, 3) with displacement vectors
-    warp_affine = warp_nib.affine
-    
-    # Convert affine-transformed points to warp's voxel coordinates for interpolation
-    warp_ras2vox = np.linalg.inv(warp_affine)
-    points_warp_vox_homog = np.hstack([points_after_affine, np.ones((points_after_affine.shape[0], 1))])
-    points_warp_vox = (warp_ras2vox @ points_warp_vox_homog.T).T[:, :3]
-    
-    # Interpolate the warp displacement at these voxel coordinates
-    # map_coordinates expects coordinates in array index order
-    displacements = np.zeros((points_warp_vox.shape[0], 3))
-    coords = points_warp_vox.T  # Transpose once for map_coordinates (3, N)
-    for i in range(3):
-        # Interpolate the i-th component of the displacement field
-        # Note: warp_data has shape (X, Y, Z, 3) and we need (i, j, k) indexing
-        displacements[:, i] = map_coordinates(
-            warp_data[..., i], coords, order=1, mode='constant', cval=0
-        )
-    
-    # The greedy warp is a displacement field in physical (RAS) coordinates
-    # So we add the displacement directly to the RAS coordinates
-    points_transformed = points_after_affine + displacements
+# Transform points by applying inverse affine, then inverse warp
+invaff = AffineTransform.from_txt(snakemake.input.xfm_ras).invert()
+invwarp = DisplacementTransform.from_nifti(snakemake.input.invwarp)
+
+
+points_transformed = invwarp.apply_transform(invaff.apply_transform(points.T))
+
 
 # Add the transformed coordinates as new columns
-df['template_x'] = points_transformed[:, 0]
-df['template_y'] = points_transformed[:, 1]
-df['template_z'] = points_transformed[:, 2]
+df["template_x"] = points_transformed[:, 0]
+df["template_y"] = points_transformed[:, 1]
+df["template_z"] = points_transformed[:, 2]
 
 # Save the output
 df.to_parquet(snakemake.output.regionprops_transformed_parquet, index=False)

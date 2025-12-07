@@ -8,9 +8,11 @@ import pandas as pd
 
 # Load all the transformed regionprops parquet files
 dfs = []
-for stain, parquet_file in zip(snakemake.params.stains, snakemake.input.regionprops_parquets):
+for stain, parquet_file in zip(
+    snakemake.params.stains, snakemake.input.regionprops_parquets
+):
     df = pd.read_parquet(parquet_file)
-    df['stain'] = stain
+    df["stain"] = stain
     dfs.append(df)
 
 # Concatenate all dataframes
