@@ -373,7 +373,16 @@ rule aggregate_regionprops_across_stains:
 
 
 rule colocalize_regionprops:
-    """Perform colocalization analysis across channel pairs."""
+    """Perform colocalization analysis across channel pairs.
+    
+    Optional parameters (with defaults in script):
+        - search_radius_multiplier: 3.0 (controls search distance)
+        - overlap_threshold: 0.0 (minimum overlap to record)
+    
+    To customize, add to params section, e.g.:
+        search_radius_multiplier=5.0,
+        overlap_threshold=0.3,
+    """
     input:
         regionprops_aggregated_parquet=bids(
             root=root,
@@ -385,6 +394,9 @@ rule colocalize_regionprops:
         ),
     params:
         coord_column_names=config["template_coord_column_names"],
+        # Optional: Uncomment to customize colocalization parameters
+        # search_radius_multiplier=3.0,  # Default: 3.0
+        # overlap_threshold=0.0,  # Default: 0.0
     output:
         coloc_links_parquet=bids(
             root=root,
