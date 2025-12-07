@@ -12,7 +12,7 @@ img = ZarrNii.from_nifti(
 
 df = pd.read_parquet(snakemake.input.regionprops_parquet)
 
-df = df[df['stain'] == snakemake.wildcards.stain]
+df = df[df["stain"] == snakemake.wildcards.stain]
 points = df[snakemake.params.coord_column_names].values
 
 # Create counts map (zarrnii is calling this density right now)..

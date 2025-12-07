@@ -406,6 +406,7 @@ rule counts_per_voxel:
     script:
         "../scripts/counts_per_voxel.py"
 
+
 rule counts_per_voxel_template:
     """Calculate counts per voxel based on points
     in template space"""
@@ -440,8 +441,6 @@ rule counts_per_voxel_template:
         runtime=10,
     script:
         "../scripts/counts_per_voxel_template.py"
-
-
 
 
 rule fieldfrac:
