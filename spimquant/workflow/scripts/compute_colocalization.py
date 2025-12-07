@@ -35,6 +35,12 @@ coord_cols = (
     snakemake.params.coord_column_names
 )  # e.g., ['template_x', 'template_y', 'template_z']
 
+# Validate that we have exactly 3 coordinate columns for 3D analysis
+if len(coord_cols) != 3:
+    raise ValueError(
+        f"Expected exactly 3 coordinate columns for 3D analysis, got {len(coord_cols)}: {coord_cols}"
+    )
+
 # Validate that coordinate columns exist
 for col in coord_cols:
     if col not in df.columns:
@@ -74,7 +80,8 @@ def estimate_radius_from_nvoxels(nvoxels, voxel_size=1.0):
 
 
 # Add unique object IDs and compute radii
-df["object_id"] = range(len(df))
+# Use compound IDs to ensure uniqueness across stains
+df["object_id"] = df.apply(lambda row: f"{row['stain']}_{row.name}", axis=1)
 df["radius"] = estimate_radius_from_nvoxels(df["nvoxels"].values)
 
 # Get list of unique stains/channels
@@ -111,8 +118,11 @@ for i, stain_a in enumerate(stains):
             radius_a = obj_a["radius"]
 
             # Query the tree for objects within search distance
-            # Use sum of radii as the search distance for potential colocalization
-            search_distance = radius_a * 3.0  # Use 3x radius as conservative search
+            # Use 3x radius as conservative search distance to capture nearby objects
+            # This multiplier ensures we find all objects that might be colocalized
+            # while keeping search space manageable
+            SEARCH_RADIUS_MULTIPLIER = 3.0
+            search_distance = radius_a * SEARCH_RADIUS_MULTIPLIER
 
             indices = tree_b.query_ball_point(pos_a, r=search_distance)
 
@@ -128,7 +138,12 @@ for i, stain_a in enumerate(stains):
                 # Estimate overlap based on distance and radii
                 # Overlap is significant if distance < sum of radii
                 sum_radii = radius_a + radius_b
-                overlap_ratio = max(0, 1 - (distance / sum_radii))
+
+                # Handle edge case where both radii are zero
+                if sum_radii == 0:
+                    overlap_ratio = 0.0
+                else:
+                    overlap_ratio = max(0, 1 - (distance / sum_radii))
 
                 # Only record if there's potential overlap
                 if overlap_ratio > 0:
