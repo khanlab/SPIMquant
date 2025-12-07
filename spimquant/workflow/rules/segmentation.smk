@@ -284,6 +284,94 @@ rule compute_filtered_regionprops:
         "../scripts/compute_filtered_regionprops.py"
 
 
+rule transform_regionprops_to_template:
+    """Transform regionprops coordinates from subject to template space."""
+    input:
+        regionprops_parquet=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            desc="{desc}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+        xfm_ras=bids(
+            root=root,
+            datatype="warps",
+            from_="subject",
+            to="{template}",
+            type_="ras",
+            desc="affine",
+            suffix="xfm.txt",
+            **inputs["spim"].wildcards,
+        ),
+        invwarp=bids(
+            root=root,
+            datatype="warps",
+            from_="{template}",
+            to="subject",
+            suffix="warp.nii",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        coord_column_names=config["coord_column_names"],
+    output:
+        regionprops_transformed_parquet=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            desc="{desc}",
+            space="{template}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
+    script:
+        "../scripts/transform_regionprops_to_template.py"
+
+
+rule aggregate_regionprops_across_stains:
+    """Aggregate transformed regionprops across stains."""
+    input:
+        regionprops_parquets=expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                desc="{desc}",
+                space="{template}",
+                suffix="regionprops.parquet",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            allow_missing=True,
+        ),
+    params:
+        stains=stains_for_seg,
+    output:
+        regionprops_aggregated_parquet=bids(
+            root=root,
+            datatype="micr",
+            desc="{desc}",
+            space="{template}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
+    script:
+        "../scripts/aggregate_regionprops_across_stains.py"
+
+
 rule counts_per_voxel:
     """Calculate counts per voxel based on points"""
     input:
@@ -317,6 +405,42 @@ rule counts_per_voxel:
         runtime=10,
     script:
         "../scripts/counts_per_voxel.py"
+
+
+rule counts_per_voxel_template:
+    """Calculate counts per voxel based on points
+    in template space"""
+    input:
+        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        regionprops_parquet=bids(
+            root=root,
+            datatype="micr",
+            space="{template}",
+            desc="{desc}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        coord_column_names=config["template_coord_column_names"],
+        zarrnii_kwargs={"orientation": config["orientation"]},
+    output:
+        counts_nii=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            space="{template}",
+            desc="{desc}",
+            suffix="counts.nii",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj"
+    threads: 16
+    resources:
+        mem_mb=15000,
+        runtime=10,
+    script:
+        "../scripts/counts_per_voxel_template.py"
 
 
 rule fieldfrac:
