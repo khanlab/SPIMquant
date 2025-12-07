@@ -8,8 +8,7 @@ and applies the affine and warp transforms to convert the spatial coordinates
 
 import pandas as pd
 import numpy as np
-import nibabel as nib
-from scipy.ndimage import map_coordinates
+from zarrnii import AffineTransform, DisplacementTransform
 
 # Load the regionprops data
 df = pd.read_parquet(snakemake.input.regionprops_parquet)
@@ -39,7 +38,7 @@ invaff = AffineTransform.from_txt(snakemake.input.xfm_ras).invert()
 invwarp = DisplacementTransform.from_nifti(snakemake.input.invwarp)
 
 
-points_transformed = invwarp.apply_transform(invaff.apply_transform(points.T))
+points_transformed = invwarp.apply_transform(invaff.apply_transform(points.T)).T
 
 
 # Add the transformed coordinates as new columns

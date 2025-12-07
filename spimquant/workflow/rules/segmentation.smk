@@ -406,6 +406,43 @@ rule counts_per_voxel:
     script:
         "../scripts/counts_per_voxel.py"
 
+rule counts_per_voxel_template:
+    """Calculate counts per voxel based on points
+    in template space"""
+    input:
+        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        regionprops_parquet=bids(
+            root=root,
+            datatype="micr",
+            space="{template}",
+            desc="{desc}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        coord_column_names=config["template_coord_column_names"],
+        zarrnii_kwargs={"orientation": config["orientation"]},
+    output:
+        counts_nii=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            space="{template}",
+            desc="{desc}",
+            suffix="counts.nii",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj"
+    threads: 16
+    resources:
+        mem_mb=15000,
+        runtime=10,
+    script:
+        "../scripts/counts_per_voxel_template.py"
+
+
+
 
 rule fieldfrac:
     """ Calculates fieldfrac from a binary mask via downsampling, assuming mask intensity is 100.

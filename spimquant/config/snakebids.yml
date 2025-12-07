@@ -294,6 +294,12 @@ coord_column_names:
   - pos_y
   - pos_z
 
+template_coord_column_names:
+  - template_x
+  - template_y
+  - template_z
+
+
 #metrics to compute feature maps for
 # (can be from regionprops_outputs too)
 seg_metrics:
