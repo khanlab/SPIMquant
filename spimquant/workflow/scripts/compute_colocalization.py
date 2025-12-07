@@ -9,6 +9,12 @@ Input:
     - regionprops_aggregated_parquet: Aggregated regionprops with 'stain' column and 
       template space coordinates (template_x, template_y, template_z)
 
+Parameters:
+    - search_radius_multiplier: Multiplier for object radius to define search distance
+      (default: 3.0). A value of 3.0 means searching within 3x the object's radius.
+    - overlap_threshold: Minimum overlap ratio to record a colocalization
+      (default: 0.0). Value of 0.0 records all potential overlaps.
+
 Output:
     - coloc_links_parquet: Table of colocalized object pairs with:
       * object_id_a, object_id_b: IDs of the paired objects
@@ -26,6 +32,17 @@ histograms, voxelization, or further colocalization analysis.
 import numpy as np
 import pandas as pd
 from scipy.spatial import KDTree
+
+# Get configuration parameters with defaults
+# Search radius multiplier: determines how far to look for potential colocalizations
+# A value of 3.0 is conservative - it searches within 3x the object's radius
+# Smaller values (e.g., 1.5) give tighter colocalization, larger values (e.g., 5.0) are more permissive
+SEARCH_RADIUS_MULTIPLIER = getattr(snakemake.params, "search_radius_multiplier", 3.0)
+
+# Overlap threshold: minimum overlap ratio to record a colocalization
+# 0.0 records all overlaps (distance < sum of radii)
+# Higher values (e.g., 0.5) require more significant overlap
+OVERLAP_THRESHOLD = getattr(snakemake.params, "overlap_threshold", 0.0)
 
 # Load the aggregated regionprops data (in template space)
 df = pd.read_parquet(snakemake.input.regionprops_aggregated_parquet)
@@ -81,7 +98,8 @@ def estimate_radius_from_nvoxels(nvoxels, voxel_size=1.0):
 
 # Add unique object IDs and compute radii
 # Use compound IDs to ensure uniqueness across stains
-df["object_id"] = df.apply(lambda row: f"{row['stain']}_{row.name}", axis=1)
+# Use vectorized operation for better performance
+df["object_id"] = df["stain"] + "_" + df.index.astype(str)
 df["radius"] = estimate_radius_from_nvoxels(df["nvoxels"].values)
 
 # Get list of unique stains/channels
@@ -118,10 +136,7 @@ for i, stain_a in enumerate(stains):
             radius_a = obj_a["radius"]
 
             # Query the tree for objects within search distance
-            # Use 3x radius as conservative search distance to capture nearby objects
-            # This multiplier ensures we find all objects that might be colocalized
-            # while keeping search space manageable
-            SEARCH_RADIUS_MULTIPLIER = 3.0
+            # Use configured multiplier to determine search radius
             search_distance = radius_a * SEARCH_RADIUS_MULTIPLIER
 
             indices = tree_b.query_ball_point(pos_a, r=search_distance)
@@ -145,8 +160,8 @@ for i, stain_a in enumerate(stains):
                 else:
                     overlap_ratio = max(0, 1 - (distance / sum_radii))
 
-                # Only record if there's potential overlap
-                if overlap_ratio > 0:
+                # Only record if overlap exceeds threshold
+                if overlap_ratio > OVERLAP_THRESHOLD:
                     # Calculate colocalization coordinate (midpoint)
                     coloc_coord = (pos_a + pos_b) / 2.0
 
