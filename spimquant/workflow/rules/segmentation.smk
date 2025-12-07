@@ -372,6 +372,38 @@ rule aggregate_regionprops_across_stains:
         "../scripts/aggregate_regionprops_across_stains.py"
 
 
+rule colocalize_regionprops:
+    """Perform colocalization analysis across channel pairs."""
+    input:
+        regionprops_aggregated_parquet=bids(
+            root=root,
+            datatype="micr",
+            desc="{desc}",
+            space="{template}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        coord_column_names=config["template_coord_column_names"],
+    output:
+        coloc_links_parquet=bids(
+            root=root,
+            datatype="micr",
+            desc="{desc}",
+            space="{template}",
+            suffix="coloclinks.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=10,
+    script:
+        "../scripts/compute_colocalization.py"
+
+
 rule counts_per_voxel:
     """Calculate counts per voxel based on points"""
     input:
