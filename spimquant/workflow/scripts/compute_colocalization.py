@@ -4,6 +4,23 @@ This script takes aggregated regionprops from multiple stains (in template space
 and performs KDTree-based spatial colocalization analysis across all channel pairs.
 For each pair of nearby objects from different channels, it records their relationship
 and computes a colocalization coordinate.
+
+Input:
+    - regionprops_aggregated_parquet: Aggregated regionprops with 'stain' column and 
+      template space coordinates (template_x, template_y, template_z)
+
+Output:
+    - coloc_links_parquet: Table of colocalized object pairs with:
+      * object_id_a, object_id_b: IDs of the paired objects
+      * stain_a, stain_b: Channels/stains of each object
+      * radius_a, radius_b: Estimated radii (from nvoxels)
+      * nvoxels_a, nvoxels_b: Volume in voxels
+      * distance: Euclidean distance between centroids
+      * overlap_ratio: Estimated overlap (1 - distance/sum_radii)
+      * x_coloc, y_coloc, z_coloc: Colocalization coordinate (midpoint)
+
+The output can be used for downstream spatial statistics including KDE, 
+histograms, voxelization, or further colocalization analysis.
 """
 
 import numpy as np
