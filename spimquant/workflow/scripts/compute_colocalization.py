@@ -16,14 +16,14 @@ Parameters:
       (default: 0.0). Value of 0.0 records all potential overlaps.
 
 Output:
-    - coloc_links_parquet: Table of colocalized object pairs with:
+    - coloc_parquet: Table of colocalized object pairs with:
       * object_id_a, object_id_b: IDs of the paired objects
       * stain_a, stain_b: Channels/stains of each object
       * radius_a, radius_b: Estimated radii (from nvoxels)
       * nvoxels_a, nvoxels_b: Volume in voxels
       * distance: Euclidean distance between centroids
       * overlap_ratio: Estimated overlap (1 - distance/sum_radii)
-      * x_coloc, y_coloc, z_coloc: Colocalization coordinate (midpoint)
+      * template_coloc_x/y/z: Colocalization coordinate (midpoint)
 
 The output can be used for downstream spatial statistics including KDE, 
 histograms, voxelization, or further colocalization analysis.
@@ -33,24 +33,25 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import KDTree
 
+
 # Get configuration parameters with defaults
 # Search radius multiplier: determines how far to look for potential colocalizations
 # A value of 3.0 is conservative - it searches within 3x the object's radius
 # Smaller values (e.g., 1.5) give tighter colocalization, larger values (e.g., 5.0) are more permissive
-SEARCH_RADIUS_MULTIPLIER = getattr(snakemake.params, "search_radius_multiplier", 3.0)
+SEARCH_RADIUS_MULTIPLIER = 1.0
 
 # Overlap threshold: minimum overlap ratio to record a colocalization
 # 0.0 records all overlaps (distance < sum of radii)
 # Higher values (e.g., 0.5) require more significant overlap
-OVERLAP_THRESHOLD = getattr(snakemake.params, "overlap_threshold", 0.0)
+OVERLAP_THRESHOLD = 0.0
 
 # Load the aggregated regionprops data (in template space)
-df = pd.read_parquet(snakemake.input.regionprops_aggregated_parquet)
+df = pd.read_parquet(snakemake.input.regionprops_parquet)
+
 
 # Get coordinate column names from config
-coord_cols = (
-    snakemake.params.coord_column_names
-)  # e.g., ['template_x', 'template_y', 'template_z']
+coord_cols = snakemake.params.coord_column_names
+template_coord_cols = snakemake.params.template_coord_column_names
 
 # Validate that we have exactly 3 coordinate columns for 3D analysis
 if len(coord_cols) != 3:
@@ -64,6 +65,20 @@ for col in coord_cols:
         raise ValueError(
             f"Coordinate column '{col}' not found in regionprops data. Available columns: {df.columns.tolist()}"
         )
+
+# Validate that we have exactly 3 coordinate columns for 3D analysis
+if len(template_coord_cols) != 3:
+    raise ValueError(
+        f"Expected exactly 3 coordinate columns for 3D analysis, got {len(template_coord_cols)}: {template_coord_cols}"
+    )
+
+# Validate that coordinate columns exist
+for col in template_coord_cols:
+    if col not in df.columns:
+        raise ValueError(
+            f"Coordinate column '{col}' not found in regionprops data. Available columns: {df.columns.tolist()}"
+        )
+
 
 # Validate that required columns exist
 required_cols = ["stain", "nvoxels"]
@@ -100,13 +115,15 @@ def estimate_radius_from_nvoxels(nvoxels, voxel_size=1.0):
 # Use compound IDs to ensure uniqueness across stains
 # Use vectorized operation for better performance
 df["object_id"] = df["stain"] + "_" + df.index.astype(str)
-df["radius"] = estimate_radius_from_nvoxels(df["nvoxels"].values)
+df["radius"] = estimate_radius_from_nvoxels(df["nvoxels"].values, voxel_size=0.002)
+
 
 # Get list of unique stains/channels
 stains = df["stain"].unique()
 
 # Prepare list to store colocalization results
 coloc_results = []
+
 
 # Perform pairwise colocalization across all channel pairs
 for i, stain_a in enumerate(stains):
@@ -119,12 +136,13 @@ for i, stain_a in enumerate(stains):
         df_a = df[df["stain"] == stain_a].copy()
         df_b = df[df["stain"] == stain_b].copy()
 
-        if len(df_a) == 0 or len(df_b) == 0:
-            continue
-
         # Extract coordinates
         coords_a = df_a[coord_cols].values
         coords_b = df_b[coord_cols].values
+
+        # Get template coords (use these when computing final coords)
+        template_coords_a = df_a[template_coord_cols].values
+        template_coords_b = df_b[template_coord_cols].values
 
         # Build KDTree for stain_b
         tree_b = KDTree(coords_b)
@@ -133,6 +151,8 @@ for i, stain_a in enumerate(stains):
         for idx_a in range(len(df_a)):
             obj_a = df_a.iloc[idx_a]
             pos_a = coords_a[idx_a]
+            template_pos_a = template_coords_a[idx_a]
+
             radius_a = obj_a["radius"]
 
             # Query the tree for objects within search distance
@@ -145,6 +165,8 @@ for i, stain_a in enumerate(stains):
             for idx_b in indices:
                 obj_b = df_b.iloc[idx_b]
                 pos_b = coords_b[idx_b]
+                template_pos_b = template_coords_b[idx_b]
+
                 radius_b = obj_b["radius"]
 
                 # Calculate distance between centroids
@@ -163,7 +185,7 @@ for i, stain_a in enumerate(stains):
                 # Only record if overlap exceeds threshold
                 if overlap_ratio > OVERLAP_THRESHOLD:
                     # Calculate colocalization coordinate (midpoint)
-                    coloc_coord = (pos_a + pos_b) / 2.0
+                    coloc_coord = (template_pos_a + template_pos_b) / 2.0
 
                     # Store the colocalization result
                     coloc_results.append(
@@ -178,11 +200,12 @@ for i, stain_a in enumerate(stains):
                             "nvoxels_b": obj_b["nvoxels"],
                             "distance": distance,
                             "overlap_ratio": overlap_ratio,
-                            "x_coloc": coloc_coord[0],
-                            "y_coloc": coloc_coord[1],
-                            "z_coloc": coloc_coord[2],
+                            "template_coloc_x": coloc_coord[0],
+                            "template_coloc_y": coloc_coord[1],
+                            "template_coloc_z": coloc_coord[2],
                         }
                     )
+
 
 # Create output dataframe
 if len(coloc_results) > 0:
@@ -201,14 +224,14 @@ else:
             "nvoxels_b",
             "distance",
             "overlap_ratio",
-            "x_coloc",
-            "y_coloc",
-            "z_coloc",
+            "template_coloc_x",
+            "template_coloc_y",
+            "template_coloc_z",
         ]
     )
 
 # Save the colocalization results
-df_coloc.to_parquet(snakemake.output.coloc_links_parquet, index=False)
+df_coloc.to_parquet(snakemake.output.coloc_parquet, index=False)
 
 print(f"Colocalization analysis complete:")
 print(f"  Total objects: {len(df)}")

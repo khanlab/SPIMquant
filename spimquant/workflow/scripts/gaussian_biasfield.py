@@ -1,3 +1,4 @@
+import dask
 from dask.diagnostics import ProgressBar
 from zarrnii import ZarrNii
 from zarrnii.plugins import GaussianBiasFieldCorrection
@@ -17,6 +18,7 @@ znimg = ZarrNii.from_ome_zarr(
     **snakemake.params.zarrnii_kwargs,
 )
 
+dask.config.set(scheduler="threads", num_workers=snakemake.threads)
 
 print("compute bias field correction")
 with ProgressBar():

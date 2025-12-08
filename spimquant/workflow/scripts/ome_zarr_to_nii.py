@@ -1,7 +1,9 @@
+import dask
 from dask.diagnostics import ProgressBar
 
 from zarrnii import ZarrNii
 
+dask.config.set(scheduler="threads", num_workers=snakemake.threads)
 
 znimg = ZarrNii.from_ome_zarr(
     snakemake.input.spim,

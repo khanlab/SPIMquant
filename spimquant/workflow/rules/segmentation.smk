@@ -376,15 +376,11 @@ rule colocalize_regionprops:
     """Perform colocalization analysis across channel pairs.
     
     Optional parameters (with defaults in script):
-        - search_radius_multiplier: 3.0 (controls search distance)
+        - search_radius_multiplier: 1.0 (controls search distance)
         - overlap_threshold: 0.0 (minimum overlap to record)
-    
-    To customize, add to params section, e.g.:
-        search_radius_multiplier=5.0,
-        overlap_threshold=0.3,
     """
     input:
-        regionprops_aggregated_parquet=bids(
+        regionprops_parquet=bids(
             root=root,
             datatype="micr",
             desc="{desc}",
@@ -393,17 +389,17 @@ rule colocalize_regionprops:
             **inputs["spim"].wildcards,
         ),
     params:
-        coord_column_names=config["template_coord_column_names"],
-        # Optional: Uncomment to customize colocalization parameters
-        # search_radius_multiplier=3.0,  # Default: 3.0
-        # overlap_threshold=0.0,  # Default: 0.0
+        coord_column_names=config["coord_column_names"],
+        template_coord_column_names=config["template_coord_column_names"],
+        search_radius_multiplier=1.0,
+        overlap_threshold=0.0,
     output:
-        coloc_links_parquet=bids(
+        coloc_parquet=bids(
             root=root,
             datatype="micr",
             desc="{desc}",
             space="{template}",
-            suffix="coloclinks.parquet",
+            suffix="coloc.parquet",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -466,7 +462,6 @@ rule counts_per_voxel_template:
         ),
     params:
         coord_column_names=config["template_coord_column_names"],
-        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         counts_nii=bids(
             root=root,
@@ -485,6 +480,40 @@ rule counts_per_voxel_template:
         runtime=10,
     script:
         "../scripts/counts_per_voxel_template.py"
+
+
+rule coloc_per_voxel_template:
+    """Calculate coloc counts per voxel based on points
+    in template space"""
+    input:
+        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        coloc_parquet=bids(
+            root=root,
+            datatype="micr",
+            space="{template}",
+            desc="{desc}",
+            suffix="coloc.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        coord_column_names=["template_coloc_x", "template_coloc_y", "template_coloc_z"],
+    output:
+        counts_nii=bids(
+            root=root,
+            datatype="micr",
+            space="{template}",
+            desc="{desc}",
+            suffix="coloccounts.nii",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj"
+    threads: 16
+    resources:
+        mem_mb=15000,
+        runtime=10,
+    script:
+        "../scripts/coloc_per_voxel_template.py"
 
 
 rule fieldfrac:
