@@ -1,22 +1,16 @@
 import numpy as np
 from zarrnii import ZarrNii, density_from_points
-import dask
 from dask.diagnostics import ProgressBar
+import dask
 import pandas as pd
 
-level = int(snakemake.wildcards.level)
-stain = snakemake.wildcards.stain
-
-img = ZarrNii.from_ome_zarr(
-    snakemake.input.ref_spim,
-    level=level,
-    channel_labels=[stain],
-    downsample_near_isotropic=True,
+img = ZarrNii.from_nifti(
+    snakemake.input.template,
 )
 
 dask.config.set(scheduler="threads", num_workers=snakemake.threads)
 
-df = pd.read_parquet(snakemake.input.regionprops_parquet)
+df = pd.read_parquet(snakemake.input.coloc_parquet)
 
 points = df[snakemake.params.coord_column_names].values
 

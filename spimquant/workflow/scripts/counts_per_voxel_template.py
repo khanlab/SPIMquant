@@ -1,7 +1,10 @@
 import numpy as np
 from zarrnii import ZarrNii, density_from_points
+import dask
 from dask.diagnostics import ProgressBar
 import pandas as pd
+
+dask.config.set(scheduler="threads", num_workers=snakemake.threads)
 
 stain = snakemake.wildcards.stain
 
