@@ -2,6 +2,9 @@
 
 This script generates heatmaps to visualize statistical test results across
 brain regions for different metrics.
+
+This is a Snakemake script that expects the `snakemake` object to be available,
+which is automatically provided when executed as part of a Snakemake workflow.
 """
 
 import pandas as pd
@@ -204,6 +207,7 @@ def create_summary_heatmap(data, metric_columns, output_path):
 
 
 def main():
+    """Main function - uses snakemake object provided by Snakemake workflow."""
     # Load statistics results
     stats_df = pd.read_csv(snakemake.input.stats_tsv, sep="\t")
     

@@ -3,6 +3,9 @@
 This script reads segstats.tsv files from multiple participants and performs
 statistical tests (e.g., t-tests, ANOVA) based on contrasts defined in the
 participants.tsv file.
+
+This is a Snakemake script that expects the `snakemake` object to be available,
+which is automatically provided when executed as part of a Snakemake workflow.
 """
 
 import os
@@ -153,6 +156,7 @@ def perform_two_group_test(data, group_column, group1_value, group2_value, metri
 
 
 def main():
+    """Main function - uses snakemake object provided by Snakemake workflow."""
     # Load participants.tsv
     if not os.path.exists(snakemake.input.participants_tsv):
         raise FileNotFoundError(
