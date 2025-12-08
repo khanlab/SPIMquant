@@ -319,12 +319,48 @@ rule all:
         rules.all_mri_reg.input if config["register_to_mri"] else [],
 
 
+rule all_group_stats:
+    """Target rule for group-level statistical analysis."""
+    input:
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                seg="{seg}",
+                from_="{template}",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="groupstats.tsv",
+            ),
+            seg=atlas_segs,
+            stain=stains_for_seg,
+            desc=config["seg_method"],
+            template=config["template"],
+        ),
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                seg="{seg}",
+                from_="{template}",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="groupstats.png",
+            ),
+            seg=atlas_segs,
+            stain=stains_for_seg,
+            desc=config["seg_method"],
+            template=config["template"],
+        ),
+
+
 include: "rules/common.smk"
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/segmentation.smk"
 include: "rules/patches.smk"
+include: "rules/groupstats.smk"
 
 
 if config["register_to_mri"]:

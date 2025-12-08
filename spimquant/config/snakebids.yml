@@ -1,11 +1,14 @@
 #list of analysis levels in the bids app
 analysis_levels: &analysis_levels
  - participant
+ - group
 
 #mapping from analysis_level to set of target rules or files
 targets_by_analysis_level:
   participant:
     - ''  # if '', then the first rule is run
+  group:
+    - 'all_group_stats'
 
 # Configure components:
 # Each entry creates a new component that can be retreived within the workflow
@@ -198,6 +201,16 @@ parse_args:
     help: "Random seed for reproducible patch sampling (default: %(default)s)"
     default: 42
     type: int
+
+  --contrast_column:
+    help: "Column name in participants.tsv to use for defining group contrasts (e.g., 'treatment', 'genotype'). Required for group-level statistical analysis."
+    default: null
+    type: str
+
+  --contrast_values:
+    help: "Two group values for contrast comparison (e.g., 'control' 'drug'). Used with --contrast_column for statistical testing. Provide exactly 2 values."
+    default: null
+    nargs: 2
 
 #--- workflow specific configuration -- 
 
