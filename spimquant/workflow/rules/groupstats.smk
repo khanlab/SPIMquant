@@ -14,7 +14,7 @@ rule perform_group_stats:
     statistical tests based on contrasts defined in participants.tsv.
     """
     input:
-        segstats_tsvs=lambda wildcards: expand(
+        segstats_tsvs=lambda wildcards: inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="micr",
@@ -25,9 +25,7 @@ rule perform_group_stats:
                 desc=wildcards.desc,
                 suffix="segstats.tsv",
                 **inputs["spim"].wildcards,
-            ),
-            zip,
-            **inputs["spim"].zip_lists,
+            )
         ),
         participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
     params:
