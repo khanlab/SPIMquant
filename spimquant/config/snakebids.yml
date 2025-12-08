@@ -322,3 +322,10 @@ seg_metrics:
   - volume
   - nvoxels
 
+# metrics to include in group statistics analysis
+stats_metric_columns:
+  - fieldfrac
+  - density
+  - count
+  - volume
+
