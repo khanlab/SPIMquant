@@ -100,10 +100,8 @@ with ProgressBar():
         try:
             # Get bounding box for this region
             bbox = atlas.get_region_bounding_box(region_ids=int(label_idx))
-            
             # Crop the image using the bounding box
             cropped = image.crop(bbox)
-            
             # Clean label abbreviation for filename: replace non-alphanumeric
             # chars with underscore, collapse multiple underscores, strip edges
             clean_abbrev = re.sub(r"[^a-zA-Z0-9]+", "_", str(label_abbrev)).strip(
@@ -112,11 +110,9 @@ with ProgressBar():
             # Fallback to label index if abbreviation would be empty
             if not clean_abbrev:
                 clean_abbrev = f"idx{label_idx}"
-            
             out_file = Path(output_dir) / (
                 f"seg-{atlas_seg}_label-{clean_abbrev}.ims"
             )
-            
             # Save as Imaris dataset
             cropped.to_imaris(str(out_file))
             
