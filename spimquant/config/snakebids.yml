@@ -309,3 +309,8 @@ seg_metrics:
   - volume
   - nvoxels
 
+coloc_seg_metrics:
+  colocoverlap: overlap_ratio
+  colocdistance: distance
+  coloccount: count
+  colocdensity: density

@@ -26,5 +26,7 @@ merged[cols_to_fill] = merged[cols_to_fill].fillna(0)
 if "count" in merged.columns and "volume" in merged.columns:
     merged["density"] = merged["count"] / merged["volume"]
 
+if hasattr(snakemake.params, "columns_to_drop"):
+    merged = merged.drop(columns=snakemake.params.columns_to_drop)
 
 merged.to_csv(snakemake.output.tsv, sep="\t", index=False)

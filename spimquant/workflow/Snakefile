@@ -170,6 +170,22 @@ rule all_segment:
             bids(
                 root=root,
                 datatype="micr",
+                seg="{seg}",
+                space="{template}",
+                desc="{desc}",
+                suffix="{suffix}.nii",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            suffix=config["coloc_seg_metrics"].keys(),
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
                 stain="{stain}",
                 level="{level}",
                 space="{template}",
