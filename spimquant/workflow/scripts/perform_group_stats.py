@@ -154,7 +154,19 @@ def perform_two_group_test(data, group_column, group1_value, group2_value, metri
 
 def main():
     # Load participants.tsv
+    if not os.path.exists(snakemake.input.participants_tsv):
+        raise FileNotFoundError(
+            f"participants.tsv not found at {snakemake.input.participants_tsv}. "
+            "Please create a participants.tsv file in your BIDS directory."
+        )
+    
     participants_df = pd.read_csv(snakemake.input.participants_tsv, sep="\t")
+    
+    # Validate participants.tsv has required columns
+    if "participant_id" not in participants_df.columns:
+        raise ValueError(
+            "participants.tsv must contain a 'participant_id' column"
+        )
     
     # Load and combine all segstats files
     combined_data = load_segstats_with_metadata(
@@ -165,6 +177,13 @@ def main():
     # Get contrast information
     contrast_column = snakemake.params.contrast_column
     contrast_values = snakemake.params.contrast_values
+    
+    # Validate contrast column exists if specified
+    if contrast_column is not None and contrast_column not in participants_df.columns:
+        raise ValueError(
+            f"Contrast column '{contrast_column}' not found in participants.tsv. "
+            f"Available columns: {list(participants_df.columns)}"
+        )
     
     if contrast_column is None or contrast_values is None:
         # No contrasts specified - just aggregate data

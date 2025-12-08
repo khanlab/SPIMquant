@@ -207,6 +207,9 @@ def main():
     # Load statistics results
     stats_df = pd.read_csv(snakemake.input.stats_tsv, sep="\t")
     
+    if len(stats_df) == 0:
+        raise ValueError("No data found in group statistics TSV file")
+    
     # Load label information
     label_df = pd.read_csv(snakemake.input.label_tsv, sep="\t")
     
