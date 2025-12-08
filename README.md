@@ -5,6 +5,7 @@ SPIMquant is a Snakebids app for quantitative analysis of SPIM (lightsheet) brai
 Features include:
  - Deformable registration to a template 
  - Atlas-based quantification of pathology 
+ - High-resolution Imaris dataset creation from atlas region bounding boxes
  - Coarse-grained and fine-grained parallelization using Snakemake and Dask
  - Support for reading BIDS datasets directly from cloud-based object storage
  - Support for simple and scalable cloud-based processing with Coiled
