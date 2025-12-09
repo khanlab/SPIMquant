@@ -12,6 +12,7 @@ The output is a directory containing Imaris datasets named:
 import logging
 import re
 from pathlib import Path
+import numpy as np
 
 import dask
 from dask.diagnostics import ProgressBar
@@ -41,7 +42,9 @@ hires_level = int(snakemake.params.hires_level)
 
 downsampling_level = target_level - hires_level
 if downsampling_level < 0:
-    raise ValueError("Target level for create_imaris_crops is smaller than the input level!")
+    raise ValueError(
+        "Target level for create_imaris_crops is smaller than the input level!"
+    )
 
 
 # Set up dask for parallel processing
@@ -99,23 +102,26 @@ with ProgressBar():
     for label_idx, label_abbrev in labels_to_use:
         try:
             # Get bounding box for this region
-            bbox = atlas.get_region_bounding_box(region_ids=int(label_idx))
-            # Crop the image using the bounding box
-            cropped = image.crop(bbox)
-            # Clean label abbreviation for filename: replace non-alphanumeric
-            # chars with underscore, collapse multiple underscores, strip edges
-            clean_abbrev = re.sub(r"[^a-zA-Z0-9]+", "_", str(label_abbrev)).strip(
-                "_"
+            bbox_min, bbox_max = atlas.get_region_bounding_box(
+                region_ids=int(label_idx)
             )
-            # Fallback to label index if abbreviation would be empty
+            # Crop the image using the bounding box
+            cropped = image.crop(bbox_min, bbox_max, physical_coords=True)
+
+            if np.prod(cropped.shape) > 1e11:
+                raise ValueError(
+                    f"Cropped image too large, shape={cropped.shape}, skipping"
+                )
+
+            # Clean label namn for filename: remove non-alphanumeric chars
+            clean_abbrev = re.sub(r"[^a-zA-Z0-9]+", "", str(label_abbrev))
+            # Fallback to label index if name would be empty
             if not clean_abbrev:
                 clean_abbrev = f"idx{label_idx}"
-            out_file = Path(output_dir) / (
-                f"seg-{atlas_seg}_label-{clean_abbrev}.ims"
-            )
+            out_file = Path(output_dir) / (f"seg-{atlas_seg}_label-{clean_abbrev}.ims")
             # Save as Imaris dataset
             cropped.to_imaris(str(out_file))
-            
+
             logging.info(
                 f"Created Imaris crop for label {label_abbrev} (index {label_idx}): {out_file}"
             )
