@@ -329,3 +329,8 @@ stats_metric_columns:
   - count
   - volume
 
+coloc_seg_metrics:
+  colocoverlap: overlap_ratio
+  colocdistance: distance
+  coloccount: count
+  colocdensity: density
