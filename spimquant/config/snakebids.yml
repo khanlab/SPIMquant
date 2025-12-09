@@ -334,3 +334,8 @@ coloc_seg_metrics:
   colocdistance: distance
   coloccount: count
   colocdensity: density
+
+stats_maps:
+  - tstat
+  - pval
+  - cohensd

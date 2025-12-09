@@ -69,7 +69,7 @@ rule create_stats_heatmap:
             root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
         ),
     params:
-        metric_columns=config.get("stats_metric_columns", ["fieldfrac", "density", "count", "volume"]),
+        metric_columns=config["stats_metric_columns"],
     output:
         heatmap_png=bids(
             root=root,
@@ -95,7 +95,7 @@ rule map_groupstats_to_template_nii:
     p-values) to create volumetric heatmaps for 3D visualization.
     """
     input:
-        stats_tsv=bids(
+        tsv=bids(
             root=root,
             datatype="group",
             seg="{seg}",
@@ -112,7 +112,7 @@ rule map_groupstats_to_template_nii:
         ),
     params:
         label_column="index",
-        feature_column="{metric}",
+        feature_column="{metric}_{stat}",
     output:
         nii=bids(
             root=root,
@@ -122,9 +122,9 @@ rule map_groupstats_to_template_nii:
             stain="{stain}",
             desc="{desc}",
             metric="{metric}",
-            suffix="groupstats.nii",
+            suffix="{stat}.nii.gz",
         ),
-    threads: 1
+    threads: 8
     resources:
         mem_mb=16000,
         runtime=5,
