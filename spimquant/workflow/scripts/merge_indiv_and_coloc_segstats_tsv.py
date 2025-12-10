@@ -1,3 +1,13 @@
+
+"""Merge individual stain statistics with colocalization statistics into a single TSV.
+
+This script combines per-stain segmentation statistics (e.g., fieldfrac, density) 
+with colocalization statistics (e.g., overlap_ratio, distance) into a unified TSV
+file where columns are prefixed by stain name or 'coloc'.
+
+This is a Snakemake script that expects the `snakemake` object to be available.
+"""
+
 import pandas as pd
 
 indiv_files = snakemake.input.indiv_tsvs
