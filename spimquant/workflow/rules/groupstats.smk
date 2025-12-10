@@ -20,10 +20,8 @@ rule perform_group_stats:
                 datatype="micr",
                 seg=wildcards.seg,
                 from_=wildcards.template,
-                stain=wildcards.stain,
-                level=config["registration_level"],
                 desc=wildcards.desc,
-                suffix="segstats.tsv",
+                suffix="mergedsegstats.tsv",
                 **inputs["spim"].wildcards,
             )
         ),
@@ -31,13 +29,18 @@ rule perform_group_stats:
     params:
         contrast_column=config.get("contrast_column", None),
         contrast_values=config.get("contrast_values", None),
+        metric_columns=expand(
+            "{stain}+{metric}", stain=stains_for_seg, metric=config["seg_metrics"]
+        ),
+        coloc_metric_columns=expand(
+            "coloc+{metric}", metric=config["coloc_seg_metrics"]
+        ),
     output:
         stats_tsv=bids(
             root=root,
             datatype="group",
             seg="{seg}",
             from_="{template}",
-            stain="{stain}",
             desc="{desc}",
             suffix="groupstats.tsv",
         ),
@@ -61,7 +64,6 @@ rule create_stats_heatmap:
             datatype="group",
             seg="{seg}",
             from_="{template}",
-            stain="{stain}",
             desc="{desc}",
             suffix="groupstats.tsv",
         ),
@@ -69,14 +71,18 @@ rule create_stats_heatmap:
             root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
         ),
     params:
-        metric_columns=config["stats_metric_columns"],
+        metric_columns=expand(
+            "{stain}+{metric}", stain=stains_for_seg, metric=config["seg_metrics"]
+        ),
+        coloc_metric_columns=expand(
+            "coloc_{metric}", metric=config["coloc_seg_metrics"]
+        ),
     output:
         heatmap_png=bids(
             root=root,
             datatype="group",
             seg="{seg}",
             from_="{template}",
-            stain="{stain}",
             desc="{desc}",
             suffix="groupstats.png",
         ),
@@ -100,7 +106,6 @@ rule map_groupstats_to_template_nii:
             datatype="group",
             seg="{seg}",
             from_="{template}",
-            stain="{stain}",
             desc="{desc}",
             suffix="groupstats.tsv",
         ),
@@ -119,7 +124,6 @@ rule map_groupstats_to_template_nii:
             datatype="group",
             seg="{seg}",
             space="{template}",
-            stain="{stain}",
             desc="{desc}",
             metric="{metric}",
             suffix="{stat}.nii.gz",

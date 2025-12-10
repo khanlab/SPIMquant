@@ -322,18 +322,12 @@ seg_metrics:
   - volume
   - nvoxels
 
-# metrics to include in group statistics analysis
-stats_metric_columns:
-  - fieldfrac
-  - density
-  - count
-  - volume
 
 coloc_seg_metrics:
-  colocoverlap: overlap_ratio
-  colocdistance: distance
-  coloccount: count
-  colocdensity: density
+  - overlapratio
+  - distance
+  - density
+  - count
 
 stats_maps:
   - tstat
