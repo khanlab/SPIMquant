@@ -220,7 +220,9 @@ def main():
     label_df = pd.read_csv(snakemake.input.label_tsv, sep="\t")
 
     # Get metric columns to visualize
-    metric_columns = snakemake.params.metric_columns
+    metric_columns = (
+        snakemake.params.metric_columns + snakemake.params.coloc_metric_columns
+    )
 
     # Create heatmap
     create_stats_heatmap(

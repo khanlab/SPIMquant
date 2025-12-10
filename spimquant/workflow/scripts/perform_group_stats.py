@@ -163,13 +163,6 @@ def perform_two_group_test(data, group_column, group1_value, group2_value, metri
 
 def main():
     """Main function - uses snakemake object provided by Snakemake workflow."""
-    # Load participants.tsv
-    if not os.path.exists(snakemake.input.participants_tsv):
-        raise FileNotFoundError(
-            f"participants.tsv not found at {snakemake.input.participants_tsv}. "
-            "Please create a participants.tsv file in your BIDS directory."
-        )
-
     participants_df = pd.read_csv(snakemake.input.participants_tsv, sep="\t")
 
     # Validate participants.tsv has required columns
@@ -184,6 +177,7 @@ def main():
     # Get contrast information
     contrast_column = snakemake.params.contrast_column
     contrast_values = snakemake.params.contrast_values
+    metrics = snakemake.params.metric_columns + snakemake.params.coloc_metric_columns
 
     # Validate contrast column exists if specified
     if contrast_column is not None and contrast_column not in participants_df.columns:
@@ -195,8 +189,6 @@ def main():
     if contrast_column is None or contrast_values is None:
         # No contrasts specified - just aggregate data
         # Group by region and compute summary statistics
-        metrics = ["fieldfrac", "density", "count", "volume", "nvoxels"]
-        metrics = [m for m in metrics if m in combined_data.columns]
 
         agg_dict = {"participant_id": "count"}
         for metric in metrics:
@@ -208,8 +200,6 @@ def main():
 
     elif len(contrast_values) == 2:
         # Two-group comparison
-        metrics = ["fieldfrac", "density", "count", "volume", "nvoxels"]
-        metrics = [m for m in metrics if m in combined_data.columns]
 
         results = perform_two_group_test(
             combined_data,
