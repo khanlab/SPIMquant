@@ -75,7 +75,7 @@ rule create_stats_heatmap:
             "{stain}+{metric}", stain=stains_for_seg, metric=config["seg_metrics"]
         ),
         coloc_metric_columns=expand(
-            "coloc_{metric}", metric=config["coloc_seg_metrics"]
+            "coloc+{metric}", metric=config["coloc_seg_metrics"]
         ),
     output:
         heatmap_png=bids(
