@@ -134,3 +134,73 @@ rule map_groupstats_to_template_nii:
         runtime=5,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
+
+
+rule concat_subj_regionprops:
+    """Concatenate regionprops.parquet files across all subjects.
+    
+    This rule collects regionprops.parquet files from all participants,
+    adds a participant_id column to identify each subject's data,
+    and merges with participant metadata from participants.tsv.
+    """
+    input:
+        parquet_files=lambda wildcards: inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                space=wildcards.template,
+                desc=wildcards.desc,
+                suffix="regionprops.parquet",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+    output:
+        parquet=bids(
+            root=root,
+            datatype="group",
+            space="{template}",
+            desc="{desc}",
+            suffix="regionprops.parquet",
+        ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=10,
+    script:
+        "../scripts/concat_subj_parquet.py"
+
+
+rule concat_subj_coloc:
+    """Concatenate coloc.parquet files across all subjects.
+    
+    This rule collects coloc.parquet files from all participants,
+    adds a participant_id column to identify each subject's data,
+    and merges with participant metadata from participants.tsv.
+    """
+    input:
+        parquet_files=lambda wildcards: inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                space=wildcards.template,
+                desc=wildcards.desc,
+                suffix="coloc.parquet",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+    output:
+        parquet=bids(
+            root=root,
+            datatype="group",
+            space="{template}",
+            desc="{desc}",
+            suffix="coloc.parquet",
+        ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=10,
+    script:
+        "../scripts/concat_subj_parquet.py"
