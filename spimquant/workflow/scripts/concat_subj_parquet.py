@@ -68,7 +68,11 @@ def load_parquets_with_metadata(parquet_paths, participants_df):
         all_data.append(df)
 
     if not all_data:
-        raise ValueError("No valid parquet files found")
+        raise ValueError(
+            f"No valid parquet files found. Attempted to load {len(parquet_paths)} "
+            f"file(s). Check that the files exist and contain valid parquet data with "
+            f"subject IDs in the file paths (e.g., 'sub-01')."
+        )
 
     # Combine all data
     combined = pd.concat(all_data, ignore_index=True)
