@@ -12,6 +12,9 @@ img = ZarrNii.from_nifti(
     snakemake.input.template,
 )
 
+if hasattr(snakemake.wildcards, "level"):
+    img = img.downsample(level=int(snakemake.wildcards.level))
+
 
 df = pd.read_parquet(snakemake.input.regionprops_parquet)
 

@@ -500,7 +500,7 @@ rule coloc_per_voxel_template:
             **inputs["spim"].wildcards,
         ),
     params:
-        coord_column_names=["template_coloc_x", "template_coloc_y", "template_coloc_z"],
+        coord_column_names=config["template_coloc_coord_column_names"],
     output:
         counts_nii=bids(
             root=root,

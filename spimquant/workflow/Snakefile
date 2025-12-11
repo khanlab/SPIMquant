@@ -383,6 +383,33 @@ rule all_group_stats:
             metric=config["coloc_seg_metrics"],
             stat=config["stats_maps"],
         ),
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                level="{level}",
+                space="{template}",
+                desc="{desc}",
+                suffix="{stain}+count.nii",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+            level=range(4),
+            stain=stains_for_seg,
+        ),
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                space="{template}",
+                level="{level}",
+                desc="{desc}",
+                suffix="coloccount.nii",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+            level=range(4),
+        ),
 
 
 include: "rules/common.smk"
