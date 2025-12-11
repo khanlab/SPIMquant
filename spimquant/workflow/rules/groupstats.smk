@@ -270,7 +270,7 @@ rule concat_subj_parquet_contrast:
             datatype="group",
             space="{template}",
             desc="{desc}",
-            contrast="{contrast_column}-{contrast_value}",
+            contrast="{contrast_column}+{contrast_value}",
             suffix="{suffix,regionprops|coloc}.parquet",
         ),
     threads: 1
@@ -291,7 +291,7 @@ rule group_counts_per_voxel_contrast:
             datatype="group",
             space="{template}",
             desc="{desc}",
-            contrast="{contrast_column}-{contrast_value}",
+            contrast="{contrast_column}+{contrast_value}",
             suffix="regionprops.parquet",
         ),
     params:
@@ -303,7 +303,7 @@ rule group_counts_per_voxel_contrast:
             space="{template}",
             level="{level}",
             desc="{desc}",
-            contrast="{contrast_column}-{contrast_value}",
+            contrast="{contrast_column}+{contrast_value}",
             suffix="{stain}+count.nii",
         ),
     group:
@@ -326,7 +326,7 @@ rule group_coloc_counts_per_voxel_contrast:
             datatype="group",
             space="{template}",
             desc="{desc}",
-            contrast="{contrast_column}-{contrast_value}",
+            contrast="{contrast_column}+{contrast_value}",
             suffix="coloc.parquet",
         ),
     params:
@@ -338,7 +338,7 @@ rule group_coloc_counts_per_voxel_contrast:
             space="{template}",
             level="{level}",
             desc="{desc}",
-            contrast="{contrast_column}-{contrast_value}",
+            contrast="{contrast_column}+{contrast_value}",
             suffix="coloccount.nii",
         ),
     group:
