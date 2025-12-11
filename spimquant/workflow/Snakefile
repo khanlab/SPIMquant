@@ -81,10 +81,19 @@ for seg in config["crop_atlas_segs"]:
         )
     else:
         crop_atlas_segs.append(seg)
+# Validate that contrast arguments are provided when using group analysis level
+if config.get("analysis_level") == "group":
+    if config.get("contrast_column") is None or config.get("contrast_values") is None:
+        raise ValueError(
+            "When using group analysis level, both --contrast_column and "
+            "--contrast_values must be specified for filtering group data by contrasts."
+        )
 
 
 wildcard_constraints:
     stain="[a-zA-Z0-9]+",
+    contrast_column="[a-zA-Z0-9_]+",
+    contrast_value="[a-zA-Z0-9_]+",
 
 
 rule all_templatereg_deform_zooms:
@@ -165,16 +174,30 @@ rule all_segment:
                 datatype="micr",
                 seg="{seg}",
                 space="{template}",
-                stain="{stain}",
                 desc="{desc}",
-                suffix="{suffix}.nii",
+                suffix="{stain}+{suffix}.nii",
                 **inputs["spim"].wildcards,
             ),
-            stain=stains_for_seg,
             seg=atlas_segs,
             desc=config["seg_method"],
             template=config["template"],
             suffix=config["seg_metrics"],
+            stain=stains_for_seg,
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                seg="{seg}",
+                space="{template}",
+                desc="{desc}",
+                suffix="coloc+{suffix}.nii",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            suffix=config["coloc_seg_metrics"],
         ),
         inputs["spim"].expand(
             bids(
@@ -350,12 +373,126 @@ rule all:
         rules.all_mri_reg.input if config["register_to_mri"] else [],
 
 
+rule all_group_stats:
+    """Target rule for group-level statistical analysis."""
+    input:
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="groupstats.{ext}",
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            ext=["png", "tsv"],
+        ),
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                seg="{seg}",
+                space="{template}",
+                desc="{desc}",
+                metric="{stain}+{metric}",
+                suffix="{stat}.nii.gz",
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            stain=stains_for_seg,
+            metric=config["seg_metrics"],
+            stat=config["stats_maps"],
+        ),
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                seg="{seg}",
+                space="{template}",
+                desc="{desc}",
+                metric="coloc+{metric}",
+                suffix="{stat}.nii.gz",
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            metric=config["coloc_seg_metrics"],
+            stat=config["stats_maps"],
+        ),
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                level="{level}",
+                space="{template}",
+                desc="{desc}",
+                suffix="{stain}+count.nii",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+            level=range(4),
+            stain=stains_for_seg,
+        ),
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                space="{template}",
+                level="{level}",
+                desc="{desc}",
+                suffix="coloccount.nii",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+            level=range(4),
+        ),
+        # Add contrast-filtered outputs
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                level="{level}",
+                space="{template}",
+                desc="{desc}",
+                contrast="{contrast_column}+{contrast_value}",
+                suffix="{stain}+count.nii",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+            level=range(4),
+            stain=stains_for_seg,
+            contrast_column=config["contrast_column"],
+            contrast_value=config["contrast_values"],
+        ),
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                space="{template}",
+                level="{level}",
+                desc="{desc}",
+                contrast="{contrast_column}+{contrast_value}",
+                suffix="coloccount.nii",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+            level=range(4),
+            contrast_column=config["contrast_column"],
+            contrast_value=config["contrast_values"],
+        ),
+
+
 include: "rules/common.smk"
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/segmentation.smk"
 include: "rules/patches.smk"
+include: "rules/groupstats.smk"
 
 
 if config["register_to_mri"]:

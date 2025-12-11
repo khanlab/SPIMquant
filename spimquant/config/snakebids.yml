@@ -1,11 +1,14 @@
 #list of analysis levels in the bids app
 analysis_levels: &analysis_levels
  - participant
+ - group
 
 #mapping from analysis_level to set of target rules or files
 targets_by_analysis_level:
   participant:
     - ''  # if '', then the first rule is run
+  group:
+    - 'all_group_stats'
 
 # Configure components:
 # Each entry creates a new component that can be retreived within the workflow
@@ -210,6 +213,15 @@ parse_args:
       - roi22
     action: store
     nargs: '+'
+  --contrast_column:
+    help: "Column name in participants.tsv to use for defining group contrasts (e.g., 'treatment', 'genotype'). Required for group-level statistical analysis."
+    default: null
+    type: str
+
+  --contrast_values:
+    help: "Two group values for contrast comparison (e.g., 'control' 'drug'). Used with --contrast_column for statistical testing. Provide exactly 2 values."
+    default: null
+    nargs: 2
 
 #--- workflow specific configuration -- 
 
@@ -311,6 +323,10 @@ template_coord_column_names:
   - template_y
   - template_z
 
+template_coloc_coord_column_names:
+  - template_coloc_x
+  - template_coloc_y
+  - template_coloc_z
 
 #metrics to compute feature maps for
 # (can be from regionprops_outputs too)
@@ -321,3 +337,14 @@ seg_metrics:
   - volume
   - nvoxels
 
+
+coloc_seg_metrics:
+  - overlapratio
+  - distance
+  - density
+  - count
+
+stats_maps:
+  - tstat
+  - pval
+  - cohensd

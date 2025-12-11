@@ -8,6 +8,9 @@ img = ZarrNii.from_nifti(
     snakemake.input.template,
 )
 
+if hasattr(snakemake.wildcards, "level"):
+    img = img.downsample(level=int(snakemake.wildcards.level))
+
 dask.config.set(scheduler="threads", num_workers=snakemake.threads)
 
 df = pd.read_parquet(snakemake.input.coloc_parquet)

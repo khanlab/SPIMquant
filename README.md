@@ -6,6 +6,7 @@ Features include:
  - Deformable registration to a template 
  - Atlas-based quantification of pathology 
  - High-resolution Imaris dataset creation from atlas region bounding boxes
+ - Group-level statistical analysis with contrast comparisons
  - Coarse-grained and fine-grained parallelization using Snakemake and Dask
  - Support for reading BIDS datasets directly from cloud-based object storage
  - Support for simple and scalable cloud-based processing with Coiled
@@ -64,6 +65,32 @@ If your input BIDS dataset stores data in zarr zipstores (e.g. SPIM files ending
 ```
 --filter-spim extension='ome.zarr.zip'
 ```
+
+## Group-Level Statistical Analysis
+
+SPIMquant supports group-level statistical analysis to compare segmentation statistics (e.g., fieldfrac, density, volume) across groups of participants. 
+
+1. First, create a `participants.tsv` file in your BIDS directory with participant metadata including a column for group assignments (e.g., 'treatment', 'genotype'):
+   ```tsv
+   participant_id	treatment	age	sex
+   sub-01	control	12	M
+   sub-02	control	13	F
+   sub-03	drug	11	M
+   sub-04	drug	12	F
+   ```
+
+2. Run group-level analysis specifying the contrast column and values:
+   ```bash
+   pixi run spimquant /path/to/bids/dir /path/to/output/dir group \
+     --contrast_column treatment \
+     --contrast_values control drug \
+     --cores all
+   ```
+
+This will generate:
+- `*_groupstats.tsv`: Statistical test results (t-statistics, p-values, effect sizes) for each brain region
+- `*_groupstats.png`: Heatmap visualizations of statistical results
+- `*_groupstats.nii`: 3D volumetric maps of statistical values for visualization in neuroimaging software
 
 # Contributing
  We welcome contributions! Please refer to the [contributing guidelines](CONTRIBUTING.md) for more details on how to contribute.
