@@ -83,6 +83,8 @@ if config.get("analysis_level") == "group":
 
 wildcard_constraints:
     stain="[a-zA-Z0-9]+",
+    contrast_column="[a-zA-Z0-9_]+",
+    contrast_value="[a-zA-Z0-9_]+",
 
 
 rule all_templatereg_deform_zooms:
