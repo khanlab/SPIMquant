@@ -13,6 +13,31 @@ import seaborn as sns
 import numpy as np
 
 
+def calculate_figure_height(num_rows, base_height=12, base_num_rows=50):
+    """Calculate figure height proportional to number of rows.
+
+    Parameters
+    ----------
+    num_rows : int
+        Number of rows (regions) in the heatmap
+    base_height : float, optional
+        Base height that works well for base_num_rows, by default 12
+    base_num_rows : int, optional
+        Reference number of rows for base_height, by default 50
+
+    Returns
+    -------
+    float
+        Calculated figure height, with a minimum of base_height
+
+    Notes
+    -----
+    Reference: N=~50 works well with height=12, so scale proportionally.
+    For example, N=100 → height=24, N=200 → height=48.
+    """
+    return max(base_height, (num_rows / base_num_rows) * base_height)
+
+
 def create_stats_heatmap(stats_df, label_df, metric_columns, output_path):
     """Create a heatmap showing statistics across brain regions.
 
@@ -55,9 +80,12 @@ def create_test_results_heatmap(data, metric_columns, output_path):
         # No statistical results to plot
         return
 
+    # Calculate figure height proportional to number of rows
+    fig_height = calculate_figure_height(len(data))
+
     # Create figure with subplots for different statistics
     n_plots = (1 if pval_cols else 0) + (1 if tstat_cols else 0)
-    fig, axes = plt.subplots(1, n_plots, figsize=(8 * n_plots, 12))
+    fig, axes = plt.subplots(1, n_plots, figsize=(8 * n_plots, fig_height))
 
     if n_plots == 1:
         axes = [axes]
@@ -187,8 +215,11 @@ def create_summary_heatmap(data, metric_columns, output_path):
 
     matrix_data = np.array(matrix_data)
 
+    # Calculate figure height proportional to number of rows
+    fig_height = calculate_figure_height(len(data))
+
     # Create heatmap
-    fig, ax = plt.subplots(figsize=(10, 12))
+    fig, ax = plt.subplots(figsize=(10, fig_height))
 
     sns.heatmap(
         matrix_data,
