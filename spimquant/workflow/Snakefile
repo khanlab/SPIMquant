@@ -72,6 +72,14 @@ for seg in config["patch_atlas_segs"]:
     else:
         patch_atlas_segs.append(seg)
 
+# Validate that contrast arguments are provided when using group analysis level
+if config.get("analysis_level") == "group":
+    if config.get("contrast_column") is None or config.get("contrast_values") is None:
+        raise ValueError(
+            "When using group analysis level, both --contrast_column and "
+            "--contrast_values must be specified for filtering group data by contrasts."
+        )
+
 
 wildcard_constraints:
     stain="[a-zA-Z0-9]+",
@@ -409,6 +417,40 @@ rule all_group_stats:
             desc=config["seg_method"],
             template=config["template"],
             level=range(4),
+        ),
+        # Add contrast-filtered outputs
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                level="{level}",
+                space="{template}",
+                desc="{desc}",
+                contrast="{contrast_column}-{contrast_value}",
+                suffix="{stain}+count.nii",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+            level=range(4),
+            stain=stains_for_seg,
+            contrast_column=config["contrast_column"],
+            contrast_value=config["contrast_values"],
+        ),
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                space="{template}",
+                level="{level}",
+                desc="{desc}",
+                contrast="{contrast_column}-{contrast_value}",
+                suffix="coloccount.nii",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+            level=range(4),
+            contrast_column=config["contrast_column"],
+            contrast_value=config["contrast_values"],
         ),
 
 
