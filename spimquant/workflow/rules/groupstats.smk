@@ -134,3 +134,106 @@ rule map_groupstats_to_template_nii:
         runtime=5,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
+
+
+rule concat_subj_parquet:
+    """Concatenate parquet files across all subjects.
+    
+    This rule collects regionprops.parquet or coloc.parquet files
+    from all participants, adds a participant_id column to 
+    identify each subject's data, and merges with participant 
+    metadata from participants.tsv.
+    """
+    input:
+        parquet_files=inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                space="{template}",
+                desc="{desc}",
+                suffix="{suffix}.parquet",
+                **inputs["spim"].wildcards,
+            ),
+            allow_missing=True,
+        ),
+        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+    output:
+        parquet=bids(
+            root=root,
+            datatype="group",
+            space="{template}",
+            desc="{desc}",
+            suffix="{suffix,regionprops|coloc}.parquet",
+        ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=10,
+    script:
+        "../scripts/concat_subj_parquet.py"
+
+
+rule group_counts_per_voxel:
+    """Calculate counts per voxel based on concatenated points
+    in template space"""
+    input:
+        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        regionprops_parquet=bids(
+            root=root,
+            datatype="group",
+            space="{template}",
+            desc="{desc}",
+            suffix="regionprops.parquet",
+        ),
+    params:
+        coord_column_names=config["template_coord_column_names"],
+    output:
+        counts_nii=bids(
+            root=root,
+            datatype="group",
+            space="{template}",
+            level="{level}",
+            desc="{desc}",
+            suffix="{stain}+count.nii",
+        ),
+    group:
+        "subj"
+    threads: 16
+    resources:
+        mem_mb=15000,
+        runtime=10,
+    script:
+        "../scripts/counts_per_voxel_template.py"
+
+
+rule group_coloc_counts_per_voxel:
+    """Calculate counts per voxel based on concatenated coloc points
+    in template space"""
+    input:
+        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        coloc_parquet=bids(
+            root=root,
+            datatype="group",
+            space="{template}",
+            desc="{desc}",
+            suffix="coloc.parquet",
+        ),
+    params:
+        coord_column_names=config["template_coloc_coord_column_names"],
+    output:
+        counts_nii=bids(
+            root=root,
+            datatype="group",
+            space="{template}",
+            level="{level}",
+            desc="{desc}",
+            suffix="coloccount.nii",
+        ),
+    group:
+        "subj"
+    threads: 16
+    resources:
+        mem_mb=15000,
+        runtime=10,
+    script:
+        "../scripts/coloc_per_voxel_template.py"

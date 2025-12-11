@@ -312,6 +312,10 @@ template_coord_column_names:
   - template_y
   - template_z
 
+template_coloc_coord_column_names:
+  - template_coloc_x
+  - template_coloc_y
+  - template_coloc_z
 
 #metrics to compute feature maps for
 # (can be from regionprops_outputs too)
