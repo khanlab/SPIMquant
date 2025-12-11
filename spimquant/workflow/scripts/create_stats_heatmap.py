@@ -55,9 +55,16 @@ def create_test_results_heatmap(data, metric_columns, output_path):
         # No statistical results to plot
         return
 
+    # Calculate figure height proportional to number of rows
+    # Reference: N=~50 works well with height=12, so scale proportionally
+    num_rows = len(data)
+    base_height = 12
+    base_num_rows = 50
+    fig_height = max(base_height, (num_rows / base_num_rows) * base_height)
+
     # Create figure with subplots for different statistics
     n_plots = (1 if pval_cols else 0) + (1 if tstat_cols else 0)
-    fig, axes = plt.subplots(1, n_plots, figsize=(8 * n_plots, 12))
+    fig, axes = plt.subplots(1, n_plots, figsize=(8 * n_plots, fig_height))
 
     if n_plots == 1:
         axes = [axes]
@@ -187,8 +194,15 @@ def create_summary_heatmap(data, metric_columns, output_path):
 
     matrix_data = np.array(matrix_data)
 
+    # Calculate figure height proportional to number of rows
+    # Reference: N=~50 works well with height=12, so scale proportionally
+    num_rows = len(data)
+    base_height = 12
+    base_num_rows = 50
+    fig_height = max(base_height, (num_rows / base_num_rows) * base_height)
+
     # Create heatmap
-    fig, ax = plt.subplots(figsize=(10, 12))
+    fig, ax = plt.subplots(figsize=(10, fig_height))
 
     sns.heatmap(
         matrix_data,
