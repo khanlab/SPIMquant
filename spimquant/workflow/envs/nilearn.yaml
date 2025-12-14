@@ -1,0 +1,10 @@
+name: nilearn
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - nilearn=0.10.4
+  - nibabel=5.2.1
+  - matplotlib=3.9.2
+  - numpy=1.26.4

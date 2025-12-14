@@ -639,3 +639,79 @@ rule transform_labels_to_zoomed_template:
         " -i {input.dseg} -o {output.dseg} "
         " -r {input.ref} "
 """
+
+
+rule registration_qc_report:
+    """Generate registration quality control notebook with visualizations"""
+    input:
+        template=get_template_for_reg,
+        subject=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level=config["registration_level"],
+            desc=config["templatereg"]["desc"],
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards,
+        ),
+        warped_affine=bids(
+            root=root,
+            datatype="warps",
+            space="{template}",
+            stain="{stain}",
+            desc="affinewarped",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards,
+        ),
+        warped_deform=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level=config["registration_level"],
+            space="{template}",
+            suffix="SPIM.nii",
+            **inputs["spim"].wildcards,
+        ),
+        warp=bids(
+            root=root,
+            datatype="warps",
+            from_="subject",
+            to="{template}",
+            suffix="warp.nii",
+            **inputs["spim"].wildcards,
+        ),
+        dseg=lambda wildcards: bids_tpl(
+            root=root,
+            template=wildcards.template,
+            seg=atlas_segs[0],
+            suffix="dseg.nii.gz",
+        ),
+    output:
+        notebook=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            space="{template}",
+            desc="reg",
+            suffix="report.ipynb",
+            **inputs["spim"].wildcards,
+        ),
+    log:
+        notebook=bids(
+            root="logs",
+            datatype="registration_qc",
+            stain="{stain}",
+            space="{template}",
+            suffix="notebook.ipynb",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=8000,
+        runtime=10,
+    conda:
+        "../envs/nilearn.yaml"
+    notebook:
+        "../notebooks/registration_qc.py.ipynb"
