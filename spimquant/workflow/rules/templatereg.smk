@@ -683,7 +683,7 @@ rule registration_qc_report:
         dseg=lambda wildcards: bids_tpl(
             root=root,
             template=wildcards.template,
-            seg=atlas_segs[0],
+            seg=list(atlas_segs)[0],
             suffix="dseg.nii.gz",
         ),
     output:
