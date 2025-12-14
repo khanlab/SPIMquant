@@ -687,22 +687,12 @@ rule registration_qc_report:
             suffix="dseg.nii.gz",
         ),
     output:
-        notebook=bids(
+        report_html=bids(
             root=root,
             datatype="micr",
             stain="{stain}",
             space="{template}",
-            desc="reg",
-            suffix="report.ipynb",
-            **inputs["spim"].wildcards,
-        ),
-    log:
-        notebook=bids(
-            root="logs",
-            datatype="registration_qc",
-            stain="{stain}",
-            space="{template}",
-            suffix="notebook.ipynb",
+            suffix="regqc.html",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -713,5 +703,5 @@ rule registration_qc_report:
         runtime=10,
     conda:
         "../envs/nilearn.yaml"
-    notebook:
-        "../notebooks/registration_qc.py.ipynb"
+    script:
+        "../scripts/reg_qc_report.py"
