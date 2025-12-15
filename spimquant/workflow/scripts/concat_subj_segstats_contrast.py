@@ -104,11 +104,25 @@ def compute_group_averages(data, metric_columns):
     # Group by region (index and name)
     groupby_cols = ["index", "name"]
     
-    # Build aggregation dict
+    # Build aggregation dict - only include columns that exist
     agg_dict = {}
+    missing_columns = []
     for col in metric_columns:
         if col in data.columns:
             agg_dict[col] = "mean"
+        else:
+            missing_columns.append(col)
+    
+    # Warn about missing columns to aid debugging
+    if missing_columns:
+        print(f"Warning: The following metric columns were not found in data: {missing_columns}")
+        print(f"Available columns: {list(data.columns)}")
+    
+    if not agg_dict:
+        raise ValueError(
+            f"None of the specified metric columns were found in the data. "
+            f"Requested: {metric_columns}. Available: {list(data.columns)}"
+        )
     
     # Compute group averages
     group_avg = data.groupby(groupby_cols, as_index=False).agg(agg_dict)
@@ -151,8 +165,15 @@ def main():
             f"{combined_data[contrast_column].unique().tolist()}"
         )
 
-    # Get metric columns to average
-    metric_columns = snakemake.params.metric_columns + snakemake.params.coloc_metric_columns
+    # Get metric columns to average - handle None values
+    metric_columns = []
+    if snakemake.params.metric_columns is not None:
+        metric_columns.extend(snakemake.params.metric_columns)
+    if snakemake.params.coloc_metric_columns is not None:
+        metric_columns.extend(snakemake.params.coloc_metric_columns)
+    
+    if not metric_columns:
+        raise ValueError("No metric columns specified for averaging")
 
     # Compute group averages
     group_avg = compute_group_averages(filtered_data, metric_columns)
