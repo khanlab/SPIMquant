@@ -359,7 +359,7 @@ rule all_imaris_crops:
             ),
             seg=crop_atlas_segs,
             template=config["template"],
-            level=0,  # Default to level 0 for high-resolution
+            level=0,
         ),
 
 

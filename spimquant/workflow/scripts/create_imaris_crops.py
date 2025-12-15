@@ -121,7 +121,7 @@ with ProgressBar():
             out_file = Path(output_dir) / (
                 f"sub-{subject}_seg-{atlas_seg}_label-{clean_abbrev}_SPIM.ims"
             )
-            
+
             # Save as Imaris dataset
             cropped.to_imaris(str(out_file))
 
