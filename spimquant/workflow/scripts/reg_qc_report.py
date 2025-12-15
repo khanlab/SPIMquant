@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 """
 Registration Quality Control Report Generator
 
@@ -131,12 +128,19 @@ fig, axes = plt.subplots(2, 1, figsize=(15, 10))
 fig.suptitle(f"Deformable Registration: {subject} to {template}", fontsize=16)
 
 display = plotting.plot_anat(
-    template_img, title="Template", display_mode="ortho", figure=fig, axes=axes[0]
+    template_img,
+    title="Template",
+    display_mode="ortho",
+    cut_coords=(0, 0, 0),
+    figure=fig,
+    axes=axes[0],
 )
 display = plotting.plot_anat(
     warped_deform_img,
     title="Deformably Warped Subject",
     display_mode="ortho",
+    cut_coords=(0, 0, 0),
+    dim=-1.5,
     figure=fig,
     axes=axes[1],
 )
@@ -277,28 +281,6 @@ if len(warp_data.shape) == 5 and warp_data.shape[-1] == 3:
         f"Deformation field magnitude (mean: {warp_stats['mean']:.2f}, std: {warp_stats['std']:.2f}, max: {warp_stats['max']:.2f})",
     )
 
-    # Visualize individual warp components
-    print("Generating warp field components...")
-    fig, axes = plt.subplots(1, 3, figsize=(20, 6))
-    fig.suptitle(f"Deformation Field Components (X, Y, Z)", fontsize=16)
-
-    component_names = ["X", "Y", "Z"]
-    for i, (ax, name) in enumerate(zip(axes, component_names)):
-        component_img = nib.Nifti1Image(
-            warp_data[..., i], warp_img.affine, warp_img.header
-        )
-        display = plotting.plot_stat_map(
-            component_img,
-            bg_img=template_img,
-            title=f"Warp {name} component",
-            display_mode="z",
-            cut_coords=5,
-            cmap="coolwarm",
-            symmetric_cbar=True,
-            axes=ax,
-        )
-    plt.tight_layout()
-    add_figure_to_html(fig, "Deformation field components in X, Y, and Z directions")
 else:
     print(f"Warp field has unexpected shape: {warp_data.shape}")
 

@@ -701,7 +701,5 @@ rule registration_qc_report:
     resources:
         mem_mb=8000,
         runtime=10,
-    conda:
-        "../envs/nilearn.yaml"
     script:
         "../scripts/reg_qc_report.py"
