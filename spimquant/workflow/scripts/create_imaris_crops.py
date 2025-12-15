@@ -23,7 +23,6 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 # Get input from spim
 input_zarr = snakemake.input.spim
-channel_args = {"channel_labels": [snakemake.wildcards.stain]}
 
 input_dseg = snakemake.input.dseg
 input_tsv = snakemake.input.label_tsv
@@ -64,7 +63,6 @@ atlas = ZarrNiiAtlas.from_files(
 image = ZarrNii.from_ome_zarr(
     input_zarr,
     level=downsampling_level,
-    **channel_args,
     **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
 )
 
@@ -108,7 +106,8 @@ with ProgressBar():
             # Crop the image using the bounding box
             cropped = image.crop(bbox_min, bbox_max, physical_coords=True)
 
-            if np.prod(cropped.shape) > 1e11:
+            logging.info(f"cropped shape for {label_abbrev} is {cropped.shape}")
+            if any(d > 5000 for d in cropped.shape):
                 raise ValueError(
                     f"Cropped image too large, shape={cropped.shape}, skipping"
                 )
@@ -118,7 +117,11 @@ with ProgressBar():
             # Fallback to label index if name would be empty
             if not clean_abbrev:
                 clean_abbrev = f"idx{label_idx}"
-            out_file = Path(output_dir) / (f"seg-{atlas_seg}_label-{clean_abbrev}.ims")
+            subject = snakemake.wildcards.subject
+            out_file = Path(output_dir) / (
+                f"sub-{subject}_seg-{atlas_seg}_label-{clean_abbrev}_SPIM.ims"
+            )
+            
             # Save as Imaris dataset
             cropped.to_imaris(str(out_file))
 

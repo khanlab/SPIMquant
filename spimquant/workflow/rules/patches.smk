@@ -208,7 +208,6 @@ rule create_imaris_crops:
             bids(
                 root=root,
                 datatype="micr",
-                stain="{stain}",
                 seg="{seg}",
                 from_="{template}",
                 level="{level}",

@@ -350,7 +350,6 @@ rule all_imaris_crops:
             bids(
                 root=root,
                 datatype="micr",
-                stain="{stain}",
                 seg="{seg}",
                 from_="{template}",
                 level="{level}",
@@ -358,7 +357,6 @@ rule all_imaris_crops:
                 suffix="SPIM.imaris",
                 **inputs["spim"].wildcards,
             ),
-            stain=stains_for_seg,
             seg=crop_atlas_segs,
             template=config["template"],
             level=0,  # Default to level 0 for high-resolution
