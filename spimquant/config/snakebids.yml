@@ -202,6 +202,17 @@ parse_args:
     default: 42
     type: int
 
+  --crop_labels:
+    help: "List of atlas label names, abbreviations, or indices to extract as Imaris crops. If not specified, all labels are cropped."
+    default: null
+    nargs: '+'
+
+  --crop_atlas_segs:
+    help: "Atlas segmentations to use for extracting Imaris crops (default: roi22)"
+    default:
+      - roi22
+    action: store
+    nargs: '+'
   --contrast_column:
     help: "Column name in participants.tsv to use for defining group contrasts (e.g., 'treatment', 'genotype'). Required for group-level statistical analysis."
     default: null

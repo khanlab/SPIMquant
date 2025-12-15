@@ -175,3 +175,52 @@ rule create_corrected_spim_patches:
         runtime=30,
     script:
         "../scripts/create_patches.py"
+
+
+rule create_imaris_crops:
+    """Create high-resolution Imaris datasets from SPIM data based on atlas region bounding boxes.
+
+    This rule extracts crops from SPIM zarr data based on bounding boxes of
+    specified atlas regions. Crops are saved as Imaris datasets using zarrnii's
+    to_imaris() function. Level defaults to 0 for high-resolution output.
+    """
+    input:
+        spim=inputs["spim"].path,
+        dseg=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            desc="deform",
+            level=config["registration_level"],
+            from_="{template}",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        label_tsv=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
+        ),
+    params:
+        crop_labels=config.get("crop_labels", None),
+        hires_level=0,  # input is the raw data
+        zarrnii_kwargs={"orientation": config["orientation"]},
+    output:
+        crops_dir=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                seg="{seg}",
+                from_="{template}",
+                level="{level}",
+                desc="crop",
+                suffix="SPIM.imaris",
+                **inputs["spim"].wildcards,
+            )
+        ),
+    group:
+        "subj"
+    threads: 32
+    resources:
+        mem_mb=32000,
+        runtime=60,
+    script:
+        "../scripts/create_imaris_crops.py"

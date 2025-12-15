@@ -72,6 +72,15 @@ for seg in config["patch_atlas_segs"]:
     else:
         patch_atlas_segs.append(seg)
 
+# atlas segmentations to use for Imaris crops (defaults to roi22)
+crop_atlas_segs = []
+for seg in config["crop_atlas_segs"]:
+    if seg not in all_atlas_segs:
+        raise ValueError(
+            f"Chosen crop segmentation {seg} was not found in the template {config['template']}"
+        )
+    else:
+        crop_atlas_segs.append(seg)
 # Validate that contrast arguments are provided when using group analysis level
 if config.get("analysis_level") == "group":
     if config.get("contrast_column") is None or config.get("contrast_values") is None:
@@ -332,6 +341,25 @@ rule all_spim_patches:
             template=config["template"],
             desc=config["seg_method"],
             level=config["segmentation_level"],
+        ),
+
+
+rule all_imaris_crops:
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                seg="{seg}",
+                from_="{template}",
+                level="{level}",
+                desc="crop",
+                suffix="SPIM.imaris",
+                **inputs["spim"].wildcards,
+            ),
+            seg=crop_atlas_segs,
+            template=config["template"],
+            level=0,
         ),
 
 
