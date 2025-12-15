@@ -349,3 +349,98 @@ rule group_coloc_counts_per_voxel_contrast:
         runtime=10,
     script:
         "../scripts/coloc_per_voxel_template.py"
+
+
+rule concat_subj_segstats_contrast:
+    """Concatenate segstats.tsv files across subjects filtered by contrast
+    and compute group averages.
+    
+    This rule collects mergedsegstats.tsv files from all participants, 
+    adds a participant_id column to identify each subject's data, 
+    merges with participant metadata from participants.tsv, filters 
+    to include only rows where the contrast_column matches the 
+    contrast_value, and computes group averages for each atlas region.
+    """
+    input:
+        segstats_tsvs=lambda wildcards: inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                seg=wildcards.seg,
+                from_=wildcards.template,
+                desc=wildcards.desc,
+                suffix="mergedsegstats.tsv",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+    params:
+        contrast_column="{contrast_column}",
+        contrast_value="{contrast_value}",
+        metric_columns=expand(
+            "{stain}+{metric}", stain=stains_for_seg, metric=config["seg_metrics"]
+        ),
+        coloc_metric_columns=expand(
+            "coloc+{metric}", metric=config["coloc_seg_metrics"]
+        ),
+    output:
+        tsv=bids(
+            root=root,
+            datatype="group",
+            seg="{seg}",
+            from_="{template}",
+            desc="{desc}",
+            contrast="{contrast_column}+{contrast_value}",
+            suffix="groupavgsegstats.tsv",
+        ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=10,
+    script:
+        "../scripts/concat_subj_segstats_contrast.py"
+
+
+rule map_groupavg_segstats_to_template_nii:
+    """Map group-averaged segstats to template space as NIfTI files.
+    
+    This rule takes the group-averaged segstats for a specific contrast
+    and paints brain regions with the averaged metric values to create 
+    volumetric maps for 3D visualization.
+    """
+    input:
+        tsv=bids(
+            root=root,
+            datatype="group",
+            seg="{seg}",
+            from_="{template}",
+            desc="{desc}",
+            contrast="{contrast_column}+{contrast_value}",
+            suffix="groupavgsegstats.tsv",
+        ),
+        dseg=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
+        ),
+        label_tsv=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
+        ),
+    params:
+        label_column="index",
+        feature_column="{metric}",
+    output:
+        nii=bids(
+            root=root,
+            datatype="group",
+            seg="{seg}",
+            space="{template}",
+            desc="{desc}",
+            contrast="{contrast_column}+{contrast_value}",
+            metric="{metric}",
+            suffix="groupavg.nii.gz",
+        ),
+    threads: 8
+    resources:
+        mem_mb=16000,
+        runtime=5,
+    script:
+        "../scripts/map_tsv_dseg_to_nii.py"
