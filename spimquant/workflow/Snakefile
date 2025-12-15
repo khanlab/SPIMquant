@@ -287,6 +287,18 @@ rule all_segment:
             desc=config["seg_method"],
             template=config["template"],
         ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                space="{template}",
+                suffix="regqc.html",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stain_for_reg,
+            template=config["template"],
+        ),
 
 
 rule all_mri_reg:
