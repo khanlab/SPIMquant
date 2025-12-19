@@ -130,6 +130,8 @@ parse_args:
     choices: 
       - gaussian
       - n4
+      - destripe
+      - n4destripe
     default: n4
 
 

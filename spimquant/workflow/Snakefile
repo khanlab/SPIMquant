@@ -554,6 +554,7 @@ rule all_group:
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
+include: "rules/preproc_spim.smk"
 include: "rules/segmentation.smk"
 include: "rules/patches.smk"
 include: "rules/groupstats.smk"
