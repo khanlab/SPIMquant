@@ -12626,7 +12626,7 @@ packages:
 - pypi: ./
   name: spimquant
   version: 0.1.0
-  sha256: 5f9d12822461a2cf2f320c51f61f9424befe61ee32930fa5232adf71e3e201e5
+  sha256: dfaefc388c5ef0ce9d1cfdc153b35af57e91ed4b1c456cf153ee7058c44baf94
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/spirv-tools-2025.4-hb700be7_0.conda
