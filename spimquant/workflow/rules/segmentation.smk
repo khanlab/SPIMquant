@@ -312,7 +312,7 @@ rule transform_regionprops_to_template:
             datatype="warps",
             from_="{template}",
             to="subject",
-            suffix="warp.nii",
+            suffix="warp.nii.gz",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -438,7 +438,7 @@ rule counts_per_voxel:
             stain="{stain}",
             level="{level}",
             desc="{desc}",
-            suffix="counts.nii",
+            suffix="counts.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -473,7 +473,7 @@ rule counts_per_voxel_template:
             stain="{stain}",
             space="{template}",
             desc="{desc}",
-            suffix="counts.nii",
+            suffix="counts.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -507,7 +507,7 @@ rule coloc_per_voxel_template:
             datatype="micr",
             space="{template}",
             desc="{desc}",
-            suffix="coloccounts.nii",
+            suffix="coloccounts.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -546,7 +546,7 @@ rule fieldfrac:
             stain="{stain}",
             level="{level}",
             desc="{desc}",
-            suffix="fieldfrac.nii",
+            suffix="fieldfrac.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -566,7 +566,7 @@ rule deform_negative_mask_to_subject_nii:
             datatype="micr",
             stain=stain_for_reg,
             level="{level}",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         mask=config["template_negative_mask"],
@@ -603,7 +603,7 @@ rule map_img_to_roi_tsv:
             stain="{stain}",
             level="{level}",
             desc="{desc}",
-            suffix="{suffix}.nii",
+            suffix="{suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
         dseg=bids(
@@ -871,52 +871,87 @@ rule merge_into_colocsegstats_tsv:
         "../scripts/merge_into_segstats_tsv.py"
 
 
-rule merge_indiv_and_coloc_segstats_tsv:
-    input:
-        indiv_tsvs=expand(
-            bids(
+if len(stains_for_seg) == 1:
+
+    rule cp_indiv_segstats_tsv:
+        input:
+            indiv_tsv=bids(
                 root=root,
                 datatype="micr",
                 seg="{seg}",
                 from_="{template}",
-                stain="{stain}",
+                stain=stains_for_seg[0],
                 level=config["registration_level"],
                 desc="{desc}",
                 suffix="segstats.tsv",
                 **inputs["spim"].wildcards,
             ),
-            stain=stains_for_seg,
-            allow_missing=True,
-        ),
-        coloc_tsv=bids(
-            root=root,
-            datatype="micr",
-            seg="{seg}",
-            from_="{template}",
-            desc="{desc}",
-            suffix="colocsegstats.tsv",
-            **inputs["spim"].wildcards,
-        ),
-    params:
-        stains=stains_for_seg,
-    output:
-        merged_tsv=bids(
-            root=root,
-            datatype="micr",
-            seg="{seg}",
-            from_="{template}",
-            desc="{desc}",
-            suffix="mergedsegstats.tsv",
-            **inputs["spim"].wildcards,
-        ),
-    group:
-        "subj"
-    threads: 1
-    resources:
-        mem_mb=16000,
-        runtime=5,
-    script:
-        "../scripts/merge_indiv_and_coloc_segstats_tsv.py"
+        output:
+            merged_tsv=bids(
+                root=root,
+                datatype="micr",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="mergedsegstats.tsv",
+                **inputs["spim"].wildcards,
+            ),
+        group:
+            "subj"
+        threads: 1
+        resources:
+            runtime=5,
+        shell:
+            "cp {input} {output}"
+
+else:
+
+    rule merge_indiv_and_coloc_segstats_tsv:
+        input:
+            indiv_tsvs=expand(
+                bids(
+                    root=root,
+                    datatype="micr",
+                    seg="{seg}",
+                    from_="{template}",
+                    stain="{stain}",
+                    level=config["registration_level"],
+                    desc="{desc}",
+                    suffix="segstats.tsv",
+                    **inputs["spim"].wildcards,
+                ),
+                stain=stains_for_seg,
+                allow_missing=True,
+            ),
+            coloc_tsv=bids(
+                root=root,
+                datatype="micr",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="colocsegstats.tsv",
+                **inputs["spim"].wildcards,
+            ),
+        params:
+            stains=stains_for_seg,
+        output:
+            merged_tsv=bids(
+                root=root,
+                datatype="micr",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="mergedsegstats.tsv",
+                **inputs["spim"].wildcards,
+            ),
+        group:
+            "subj"
+        threads: 1
+        resources:
+            mem_mb=16000,
+            runtime=5,
+        script:
+            "../scripts/merge_indiv_and_coloc_segstats_tsv.py"
 
 
 rule map_segstats_tsv_dseg_to_template_nii:
@@ -947,7 +982,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
             seg="{seg}",
             space="{template}",
             desc="{desc}",
-            suffix="{suffix}.nii",
+            suffix="{suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -996,7 +1031,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             level="{level}",
             from_="{template}",
             desc="{desc}",
-            suffix="{suffix}.nii",
+            suffix="{suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -1017,7 +1052,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             stain="{stain}",
             level="{level}",
             desc="{desc}",
-            suffix="fieldfrac.nii",
+            suffix="fieldfrac.nii.gz",
             **inputs["spim"].wildcards,
         ),
         ref=rules.import_template_anat.output.anat,
@@ -1036,7 +1071,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             datatype="warps",
             from_="subject",
             to="{template}",
-            suffix="warp.nii",
+            suffix="warp.nii.gz",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -1047,7 +1082,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             level="{level}",
             desc="{desc}",
             space="{template}",
-            suffix="fieldfrac.nii",
+            suffix="fieldfrac.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:

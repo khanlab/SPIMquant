@@ -30,27 +30,29 @@ inputs = generate_inputs(
 )
 
 
-# get stains from first subject (lazy - should use the correct stain for each subject, when defining target rules)
-#  to do this, would need to get the channel names in the function that gets the target rules
-stains = ZarrNii.from_ome_zarr(inputs["spim"].expand()[0]).list_channels()
+include: "rules/common.smk"
+
+
+stains = get_stains_all_subjects()
+
 stain_for_reg = None
 for stain in config["stains_for_reg"]:
     if stain in stains:
         stain_for_reg = stain
         break
 
-if stain_for_reg == None:
-    raise ValueError(
-        "a stain for registration was not found in the first OME zarr file"
-    )
+if stain_for_reg is None:
+    raise ValueError(f"a stain for registration was not found in {stains}")
 
 
 stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
 
+do_coloc = len(stains_for_seg) > 1
+
 # atlas segmentations to use
 all_atlas_segs = config["templates"][config["template"]]["atlases"].keys()
 
-if config["atlas_segs"] == None:
+if config["atlas_segs"] is None:
     atlas_segs = all_atlas_segs
 else:
     atlas_segs = []
@@ -106,7 +108,7 @@ rule all_templatereg_deform_zooms:
                 space="{template}",
                 stain="{stain}",
                 res="{res}um",
-                suffix="SPIM.nii",
+                suffix="SPIM.nii.gz",
                 **inputs["spim"].wildcards,
             ),
             template=config["template"],
@@ -124,7 +126,7 @@ rule all_templatereg_deform:
                 desc="deform",
                 space="{template}",
                 stain="{stain}",
-                suffix="SPIM.nii",
+                suffix="SPIM.nii.gz",
                 **inputs["spim"].wildcards,
             ),
             template=config["template"],
@@ -156,7 +158,7 @@ rule all_fieldfrac_tune:
                 stain="{stain}",
                 level="{level}",
                 desc="otsu+k{k}i{i}",
-                suffix="fieldfrac.nii",
+                suffix="fieldfrac.nii.gz",
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
@@ -175,7 +177,7 @@ rule all_segment:
                 seg="{seg}",
                 space="{template}",
                 desc="{desc}",
-                suffix="{stain}+{suffix}.nii",
+                suffix="{stain}+{suffix}.nii.gz",
                 **inputs["spim"].wildcards,
             ),
             seg=atlas_segs,
@@ -188,25 +190,10 @@ rule all_segment:
             bids(
                 root=root,
                 datatype="micr",
-                seg="{seg}",
-                space="{template}",
-                desc="{desc}",
-                suffix="coloc+{suffix}.nii",
-                **inputs["spim"].wildcards,
-            ),
-            seg=atlas_segs,
-            desc=config["seg_method"],
-            template=config["template"],
-            suffix=config["coloc_seg_metrics"],
-        ),
-        inputs["spim"].expand(
-            bids(
-                root=root,
-                datatype="micr",
                 stain="{stain}",
                 level="{level}",
                 space="{template}",
-                suffix="SPIM.nii",
+                suffix="SPIM.nii.gz",
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg + [stain_for_reg],
@@ -221,7 +208,7 @@ rule all_segment:
                 level="{level}",
                 desc="{desc}",
                 space="{template}",
-                suffix="fieldfrac.nii",
+                suffix="fieldfrac.nii.gz",
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
@@ -254,7 +241,7 @@ rule all_segment:
                 stain="{stain}",
                 level="{level}",
                 desc="{desc}",
-                suffix="counts.nii",
+                suffix="counts.nii.gz",
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
@@ -268,24 +255,12 @@ rule all_segment:
                 stain="{stain}",
                 space="{template}",
                 desc="{desc}",
-                suffix="counts.nii",
+                suffix="counts.nii.gz",
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
             template=config["template"],
             desc=config["seg_method"],
-        ),
-        inputs["spim"].expand(
-            bids(
-                root=root,
-                datatype="micr",
-                desc="{desc}",
-                space="{template}",
-                suffix="coloccounts.nii",
-                **inputs["spim"].wildcards,
-            ),
-            desc=config["seg_method"],
-            template=config["template"],
         ),
         inputs["spim"].expand(
             bids(
@@ -297,6 +272,37 @@ rule all_segment:
                 **inputs["spim"].wildcards,
             ),
             stain=stain_for_reg,
+            template=config["template"],
+        ),
+
+
+rule all_segment_coloc:
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                seg="{seg}",
+                space="{template}",
+                desc="{desc}",
+                suffix="coloc+{suffix}.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            suffix=config["coloc_seg_metrics"],
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="{desc}",
+                space="{template}",
+                suffix="coloccounts.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            desc=config["seg_method"],
             template=config["template"],
         ),
 
@@ -375,14 +381,6 @@ rule all_imaris_crops:
         ),
 
 
-rule all:
-    default_target: True
-    input:
-        rules.all_segment.input,
-        rules.all_spim_patches.input,
-        rules.all_mri_reg.input if config["register_to_mri"] else [],
-
-
 rule all_group_stats:
     """Target rule for group-level statistical analysis."""
     input:
@@ -421,44 +419,15 @@ rule all_group_stats:
             bids(
                 root=root,
                 datatype="group",
-                seg="{seg}",
-                space="{template}",
-                desc="{desc}",
-                metric="coloc+{metric}",
-                suffix="{stat}.nii.gz",
-            ),
-            seg=atlas_segs,
-            desc=config["seg_method"],
-            template=config["template"],
-            metric=config["coloc_seg_metrics"],
-            stat=config["stats_maps"],
-        ),
-        expand(
-            bids(
-                root=root,
-                datatype="group",
                 level="{level}",
                 space="{template}",
                 desc="{desc}",
-                suffix="{stain}+count.nii",
+                suffix="{stain}+count.nii.gz",
             ),
             desc=config["seg_method"],
             template=config["template"],
             level=range(4),
             stain=stains_for_seg,
-        ),
-        expand(
-            bids(
-                root=root,
-                datatype="group",
-                space="{template}",
-                level="{level}",
-                desc="{desc}",
-                suffix="coloccount.nii",
-            ),
-            desc=config["seg_method"],
-            template=config["template"],
-            level=range(4),
         ),
         # Add contrast-filtered outputs
         expand(
@@ -469,28 +438,12 @@ rule all_group_stats:
                 space="{template}",
                 desc="{desc}",
                 contrast="{contrast_column}+{contrast_value}",
-                suffix="{stain}+count.nii",
+                suffix="{stain}+count.nii.gz",
             ),
             desc=config["seg_method"],
             template=config["template"],
             level=range(4),
             stain=stains_for_seg,
-            contrast_column=config["contrast_column"],
-            contrast_value=config["contrast_values"],
-        ),
-        expand(
-            bids(
-                root=root,
-                datatype="group",
-                space="{template}",
-                level="{level}",
-                desc="{desc}",
-                contrast="{contrast_column}+{contrast_value}",
-                suffix="coloccount.nii",
-            ),
-            desc=config["seg_method"],
-            template=config["template"],
-            level=range(4),
             contrast_column=config["contrast_column"],
             contrast_value=config["contrast_values"],
         ),
@@ -514,6 +467,55 @@ rule all_group_stats:
             contrast_column=config["contrast_column"],
             contrast_value=config["contrast_values"],
         ),
+
+
+rule all_group_stats_coloc:
+    input:
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                seg="{seg}",
+                space="{template}",
+                desc="{desc}",
+                metric="coloc+{metric}",
+                suffix="{stat}.nii.gz",
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            metric=config["coloc_seg_metrics"],
+            stat=config["stats_maps"],
+        ),
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                space="{template}",
+                level="{level}",
+                desc="{desc}",
+                suffix="coloccount.nii.gz",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+            level=range(4),
+        ),
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                space="{template}",
+                level="{level}",
+                desc="{desc}",
+                contrast="{contrast_column}+{contrast_value}",
+                suffix="coloccount.nii.gz",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+            level=range(4),
+            contrast_column=config["contrast_column"],
+            contrast_value=config["contrast_values"],
+        ),
         expand(
             bids(
                 root=root,
@@ -534,7 +536,21 @@ rule all_group_stats:
         ),
 
 
-include: "rules/common.smk"
+rule all_participant:
+    default_target: True
+    input:
+        rules.all_segment.input,
+        rules.all_spim_patches.input,
+        rules.all_mri_reg.input if config["register_to_mri"] else [],
+        rules.all_segment_coloc.input if do_coloc else [],
+
+
+rule all_group:
+    input:
+        rules.all_group_stats.input,
+        rules.all_group_stats_coloc.input if do_coloc else [],
+
+
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
