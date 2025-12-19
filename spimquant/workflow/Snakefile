@@ -47,10 +47,7 @@ if stain_for_reg == None:
 
 stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
 
-if len(stains_for_seg) > 1:
-    do_coloc = True
-else:
-    do_coloc = False
+do_coloc = len(stains_for_seg) > 1
 
 # atlas segmentations to use
 all_atlas_segs = config["templates"][config["template"]]["atlases"].keys()
