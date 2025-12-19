@@ -6,9 +6,9 @@ analysis_levels: &analysis_levels
 #mapping from analysis_level to set of target rules or files
 targets_by_analysis_level:
   participant:
-    - ''  # if '', then the first rule is run
+    - 'all_participant'  # if '', then the first rule is run
   group:
-    - 'all_group_stats'
+    - 'all_group'
 
 # Configure components:
 # Each entry creates a new component that can be retreived within the workflow

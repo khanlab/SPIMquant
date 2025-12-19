@@ -6,7 +6,7 @@ rule n4:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         mask=bids(
@@ -15,7 +15,7 @@ rule n4:
             stain="{stain}",
             level="{level}",
             desc="brain",
-            suffix="mask.nii",
+            suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -25,7 +25,7 @@ rule n4:
             stain="{stain}",
             level="{level}",
             desc="N4",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         biasfield=bids(
@@ -34,7 +34,7 @@ rule n4:
             stain="{stain}",
             level="{level}",
             desc="N4",
-            suffix="biasfield.nii",
+            suffix="biasfield.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -60,7 +60,7 @@ rule apply_mask_to_corrected:
             stain="{stain}",
             level="{level}",
             desc="N4",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         mask=bids(
@@ -69,7 +69,7 @@ rule apply_mask_to_corrected:
             stain="{stain}",
             level="{level}",
             desc="brain",
-            suffix="mask.nii",
+            suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -79,7 +79,7 @@ rule apply_mask_to_corrected:
             stain="{stain}",
             level="{level}",
             desc="N4brain",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -123,7 +123,7 @@ rule affine_reg:
             stain=stain_for_reg,
             level=config["registration_level"],
             desc=config["templatereg"]["desc"],
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -145,7 +145,7 @@ rule affine_reg:
             space="{template}",
             stain=stain_for_reg,
             desc="affinewarped",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -214,7 +214,7 @@ rule deform_reg:
             stain=stain_for_reg,
             level=config["registration_level"],
             desc=config["templatereg"]["desc"],
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         xfm_ras=rules.affine_reg.output.xfm_ras,
@@ -229,7 +229,7 @@ rule deform_reg:
             datatype="warps",
             from_="subject",
             to="{template}",
-            suffix="warp.nii",
+            suffix="warp.nii.gz",
             **inputs["spim"].wildcards,
         ),
         invwarp=bids(
@@ -237,7 +237,7 @@ rule deform_reg:
             datatype="warps",
             from_="{template}",
             to="subject",
-            suffix="warp.nii",
+            suffix="warp.nii.gz",
             **inputs["spim"].wildcards,
         ),
         warped=temp(
@@ -335,7 +335,7 @@ rule affine_zarr_to_template_nii:
             desc="affine",
             space="{template}",
             stain="{stain}",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -398,7 +398,7 @@ rule deform_zarr_to_template_nii:
             desc="deform",
             space="{template}",
             stain="{stain}",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -437,7 +437,7 @@ rule deform_to_template_nii_zoomed:
             space="{template}",
             stain="{stain}",
             res="{res}um",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -457,7 +457,7 @@ rule deform_spim_nii_to_template_nii:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         ref=rules.import_template_anat.output.anat,
@@ -476,7 +476,7 @@ rule deform_spim_nii_to_template_nii:
             datatype="warps",
             from_="subject",
             to="{template}",
-            suffix="warp.nii",
+            suffix="warp.nii.gz",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -486,7 +486,7 @@ rule deform_spim_nii_to_template_nii:
             stain="{stain}",
             level="{level}",
             space="{template}",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -512,7 +512,7 @@ rule deform_template_dseg_to_subject_nii:
             datatype="micr",
             stain=stain_for_reg,
             level="{level}",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         dseg=bids_tpl(
@@ -616,7 +616,7 @@ rule transform_labels_to_zoomed_template:
             space="{template}",
             stain=stain_for_reg,
             res="{res}um",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -625,7 +625,7 @@ rule transform_labels_to_zoomed_template:
             datatype="micr",
             space="{template}",
             res="{res}um",
-            suffix="dseg.nii",
+            suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -651,7 +651,7 @@ rule registration_qc_report:
             stain="{stain}",
             level=config["registration_level"],
             desc=config["templatereg"]["desc"],
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         warped_affine=bids(
@@ -660,7 +660,7 @@ rule registration_qc_report:
             space="{template}",
             stain="{stain}",
             desc="affinewarped",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         warped_deform=bids(
@@ -669,7 +669,7 @@ rule registration_qc_report:
             stain="{stain}",
             level=config["registration_level"],
             space="{template}",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         warp=bids(
@@ -677,7 +677,7 @@ rule registration_qc_report:
             datatype="warps",
             from_="subject",
             to="{template}",
-            suffix="warp.nii",
+            suffix="warp.nii.gz",
             **inputs["spim"].wildcards,
         ),
         dseg=lambda wildcards: bids_tpl(

@@ -16,7 +16,7 @@ rule get_downsampled_nii:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:

@@ -5,7 +5,7 @@ rule pre_atropos:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -109,7 +109,7 @@ rule post_atropos:
             datatype="micr",
             stain="{stain}",
             level="{level}",
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         dseg=rules.atropos_seg.output.dseg,
@@ -147,7 +147,7 @@ rule init_affine_reg:
             datatype="micr",
             stain=stain_for_reg,
             level=config["registration_level"],
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -204,7 +204,7 @@ rule affine_transform_template_mask_to_subject:
             datatype="micr",
             stain=stain_for_reg,
             level=config["registration_level"],
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         dseg=rules.import_mask.output.mask,
@@ -262,7 +262,7 @@ rule create_mask_from_gmm_and_prior:
             stain="{stain}",
             level="{level}",
             desc="brain",
-            suffix="mask.nii",
+            suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -296,7 +296,7 @@ rule create_mask_from_gmm:
             stain="{stain}",
             level="{level}",
             desc="brain1class",
-            suffix="mask.nii",
+            suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:

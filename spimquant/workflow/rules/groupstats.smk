@@ -194,7 +194,7 @@ rule group_counts_per_voxel:
             space="{template}",
             level="{level}",
             desc="{desc}",
-            suffix="{stain}+count.nii",
+            suffix="{stain}+count.nii.gz",
         ),
     group:
         "subj"
@@ -227,7 +227,7 @@ rule group_coloc_counts_per_voxel:
             space="{template}",
             level="{level}",
             desc="{desc}",
-            suffix="coloccount.nii",
+            suffix="coloccount.nii.gz",
         ),
     group:
         "subj"
@@ -304,7 +304,7 @@ rule group_counts_per_voxel_contrast:
             level="{level}",
             desc="{desc}",
             contrast="{contrast_column}+{contrast_value}",
-            suffix="{stain}+count.nii",
+            suffix="{stain}+count.nii.gz",
         ),
     group:
         "subj"
@@ -339,7 +339,7 @@ rule group_coloc_counts_per_voxel_contrast:
             level="{level}",
             desc="{desc}",
             contrast="{contrast_column}+{contrast_value}",
-            suffix="coloccount.nii",
+            suffix="coloccount.nii.gz",
         ),
     group:
         "subj"
