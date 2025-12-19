@@ -91,6 +91,8 @@ This will generate:
 - `*_groupstats.tsv`: Statistical test results (t-statistics, p-values, effect sizes) for each brain region
 - `*_groupstats.png`: Heatmap visualizations of statistical results
 - `*_groupstats.nii`: 3D volumetric maps of statistical values for visualization in neuroimaging software
+- `*_groupavgsegstats.tsv`: Group-averaged segmentation statistics for each contrast group and brain region
+- `*_groupavg.nii.gz`: 3D volumetric maps of group-averaged metrics (fieldfrac, density, volume) for each contrast group
 
 # Contributing
  We welcome contributions! Please refer to the [contributing guidelines](CONTRIBUTING.md) for more details on how to contribute.

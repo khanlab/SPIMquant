@@ -494,6 +494,44 @@ rule all_group_stats:
             contrast_column=config["contrast_column"],
             contrast_value=config["contrast_values"],
         ),
+        # Add group-averaged segstats maps by contrast
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                seg="{seg}",
+                space="{template}",
+                desc="{desc}",
+                contrast="{contrast_column}+{contrast_value}",
+                metric="{stain}+{metric}",
+                suffix="groupavg.nii.gz",
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            stain=stains_for_seg,
+            metric=config["seg_metrics"],
+            contrast_column=config["contrast_column"],
+            contrast_value=config["contrast_values"],
+        ),
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                seg="{seg}",
+                space="{template}",
+                desc="{desc}",
+                contrast="{contrast_column}+{contrast_value}",
+                metric="coloc+{metric}",
+                suffix="groupavg.nii.gz",
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            metric=config["coloc_seg_metrics"],
+            contrast_column=config["contrast_column"],
+            contrast_value=config["contrast_values"],
+        ),
 
 
 include: "rules/common.smk"
