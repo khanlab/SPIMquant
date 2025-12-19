@@ -41,7 +41,7 @@ for stain in config["stains_for_reg"]:
         stain_for_reg = stain
         break
 
-if stain_for_reg == None:
+if stain_for_reg is None:
     raise ValueError(f"a stain for registration was not found in {stains}")
 
 
@@ -52,7 +52,7 @@ do_coloc = len(stains_for_seg) > 1
 # atlas segmentations to use
 all_atlas_segs = config["templates"][config["template"]]["atlases"].keys()
 
-if config["atlas_segs"] == None:
+if config["atlas_segs"] is None:
     atlas_segs = all_atlas_segs
 else:
     atlas_segs = []
