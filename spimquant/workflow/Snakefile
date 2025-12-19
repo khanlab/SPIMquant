@@ -42,7 +42,7 @@ for stain in config["stains_for_reg"]:
         break
 
 if stain_for_reg == None:
-    raise ValueError("a stain for registration was not found in {stains}")
+    raise ValueError(f"a stain for registration was not found in {stains}")
 
 
 stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
