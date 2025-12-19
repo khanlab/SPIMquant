@@ -39,7 +39,7 @@ nilearn = ">=0.12.1,<0.13"
 [tool.pixi.pypi-dependencies]
 spimquant = { path = ".", editable = true }
 ngff-zarr = { version = ">=0.19.1", extras = ["cli","dask-image","itk","tensorstore","validate"] }
-zarrnii = ">=0.14.0-alpha1,<0.15.0"
+zarrnii = ">=0.14.1-alpha1,<0.15.0"
 #zarrnii = { git = "https://github.com/khanlab/zarrnii", rev = "v0.13.0-alpha1",  editable = true }
 #zarrnii = { path = "./zarrnii", editable = true }
 
