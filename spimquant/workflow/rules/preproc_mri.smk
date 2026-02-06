@@ -19,8 +19,10 @@ rule import_subj_T2w:
 
 rule n4_mri:
     input:
-        nii=bids(
-            root=root, datatype="anat", suffix="T2w.nii.gz", **inputs["T2w"].wildcards
+        nii=inputs["T2w"].expand(
+            bids(
+                root=root, datatype="anat", suffix="T2w.nii.gz", **inputs["T2w"].wildcards
+        )
         ),
     output:
         nii=bids(
@@ -61,7 +63,7 @@ rule rigid_greedy_reg_mri_to_template:
         sigma2="{warpsigma}vox",  #2
     output:
         xfm_ras=temp(
-            bids(
+                bids(
                 root=root,
                 datatype="warps",
                 from_="mri",
@@ -74,10 +76,10 @@ rule rigid_greedy_reg_mri_to_template:
                 gradsigma="{gradsigma}",
                 warpsigma="{warpsigma}",
                 **inputs["T2w"].wildcards,
-            )
-        ),
+        )
+            ),
         warp=temp(
-            bids(
+                bids(
                 root=root,
                 datatype="warps",
                 from_="mri",
@@ -91,7 +93,7 @@ rule rigid_greedy_reg_mri_to_template:
             )
         ),
         invwarp=temp(
-            bids(
+                bids(
                 root=root,
                 datatype="warps",
                 from_="{template}",
@@ -105,7 +107,7 @@ rule rigid_greedy_reg_mri_to_template:
             )
         ),
         warped=temp(
-            bids(
+                bids(
                 root=root,
                 datatype="warps",
                 space="{template}",
@@ -148,7 +150,7 @@ rule rigid_greedy_reg_mri_to_template:
 
 rule all_tune_mri_mask:
     input:
-        expand(
+        inputs["T2w"].expand(
             bids(
                 root=root,
                 datatype="anat",
@@ -164,7 +166,6 @@ rule all_tune_mri_mask:
             gradsigma=range(3, 6),
             warpsigma=range(3, 6),
             radius=[f"{i}x{i}x{i}" for i in range(2, 5)],
-            subject="o21",
         ),
     group:
         "subj"
@@ -293,7 +294,7 @@ rule rigid_greedy_reg_mri_to_spim:
             stain=stain_for_reg,
             level=config["registration_level"],
             desc=config["templatereg"]["desc"],
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -409,7 +410,7 @@ rule rigid_greedy_reg_mri_to_spim:
 
 rule all_tune_mri_spim_reg:
     input:
-        expand(
+        inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="warps",
@@ -428,9 +429,6 @@ rule all_tune_mri_spim_reg:
             warpsigma=range(2, 4),
             dof=[12],
             radius=[f"{i}x{i}x{i}" for i in range(2, 4)],
-            subject="o21",
-            sample="brain",
-            acq="blaze",
         ),
     group:
         "subj"
@@ -489,7 +487,7 @@ rule warp_mri_to_template_via_spim:
             datatype="warps",
             from_="subject",
             to="{template}",
-            suffix="warp.nii",
+            suffix="warp.nii.gz",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -533,7 +531,7 @@ rule warp_mri_brainmask_to_spim:
             stain=stain_for_reg,
             level=config["registration_level"],
             desc=config["templatereg"]["desc"],
-            suffix="SPIM.nii",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
         affine_mri_to_spim=bids(
