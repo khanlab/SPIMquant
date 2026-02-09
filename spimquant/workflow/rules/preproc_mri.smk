@@ -1,3 +1,15 @@
+def select_single_t2w(wildcards):
+    files = inputs["T2w"].expand(
+            bids(
+                root=root, datatype="anat", suffix="T2w.nii.gz", **inputs["T2w"].wildcards
+        ))
+    if len(files) > 1:
+        print(f"More than 1 T2w found, selecting first: {files}")
+    else:
+        print("Only 1 T2w image found")
+
+    return files[0]
+
 rule import_subj_T2w:
     #    """ TODO: this sets orientation too, testing out L-R flip.."""
     input:
@@ -19,11 +31,7 @@ rule import_subj_T2w:
 
 rule n4_mri:
     input:
-        nii=inputs["T2w"].expand(
-            bids(
-                root=root, datatype="anat", suffix="T2w.nii.gz", **inputs["T2w"].wildcards
-        )
-        )[0],
+        nii=select_single_t2w,
     output:
         nii=bids(
             root=root,
