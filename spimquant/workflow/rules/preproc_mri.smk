@@ -23,7 +23,7 @@ rule n4_mri:
             bids(
                 root=root, datatype="anat", suffix="T2w.nii.gz", **inputs["T2w"].wildcards
         )
-        ),
+        )[0],
     output:
         nii=bids(
             root=root,
