@@ -1,14 +1,14 @@
 def select_single_t2w(wildcards):
     files = inputs["T2w"].expand(
-            bids(
-                root=root, datatype="anat", suffix="T2w.nii.gz", **inputs["T2w"].wildcards
-        ))
+        bids(root=root, datatype="anat", suffix="T2w.nii.gz", **inputs["T2w"].wildcards)
+    )
     if len(files) > 1:
         print(f"More than 1 T2w found, selecting first: {files}")
     else:
         print("Only 1 T2w image found")
 
     return files[0]
+
 
 rule import_subj_T2w:
     #    """ TODO: this sets orientation too, testing out L-R flip.."""
@@ -71,7 +71,7 @@ rule rigid_greedy_reg_mri_to_template:
         sigma2="{warpsigma}vox",  #2
     output:
         xfm_ras=temp(
-                bids(
+            bids(
                 root=root,
                 datatype="warps",
                 from_="mri",
@@ -84,10 +84,10 @@ rule rigid_greedy_reg_mri_to_template:
                 gradsigma="{gradsigma}",
                 warpsigma="{warpsigma}",
                 **inputs["T2w"].wildcards,
-        )
-            ),
+            )
+        ),
         warp=temp(
-                bids(
+            bids(
                 root=root,
                 datatype="warps",
                 from_="mri",
@@ -101,7 +101,7 @@ rule rigid_greedy_reg_mri_to_template:
             )
         ),
         invwarp=temp(
-                bids(
+            bids(
                 root=root,
                 datatype="warps",
                 from_="{template}",
@@ -115,7 +115,7 @@ rule rigid_greedy_reg_mri_to_template:
             )
         ),
         warped=temp(
-                bids(
+            bids(
                 root=root,
                 datatype="warps",
                 space="{template}",
