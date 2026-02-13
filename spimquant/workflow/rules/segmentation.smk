@@ -871,59 +871,13 @@ rule merge_into_colocsegstats_tsv:
         "../scripts/merge_into_segstats_tsv.py"
 
 
-if len(stains_for_seg) == 1:
-
-    rule cp_indiv_segstats_tsv:
-        input:
-            indiv_tsv=bids(
-                root=root,
-                datatype="micr",
-                seg="{seg}",
-                from_="{template}",
-                stain=stains_for_seg[0],
-                level=config["registration_level"],
-                desc="{desc}",
-                suffix="segstats.tsv",
-                **inputs["spim"].wildcards,
-            ),
-        output:
-            merged_tsv=bids(
-                root=root,
-                datatype="micr",
-                seg="{seg}",
-                from_="{template}",
-                desc="{desc}",
-                suffix="mergedsegstats.tsv",
-                **inputs["spim"].wildcards,
-            ),
-        group:
-            "subj"
-        threads: 1
-        resources:
-            runtime=5,
-        shell:
-            "cp {input} {output}"
-
-else:
-
-    rule merge_indiv_and_coloc_segstats_tsv:
-        input:
-            indiv_tsvs=expand(
-                bids(
-                    root=root,
-                    datatype="micr",
-                    seg="{seg}",
-                    from_="{template}",
-                    stain="{stain}",
-                    level=config["registration_level"],
-                    desc="{desc}",
-                    suffix="segstats.tsv",
-                    **inputs["spim"].wildcards,
-                ),
-                stain=stains_for_seg,
-                allow_missing=True,
-            ),
-            coloc_tsv=bids(
+def get_coloc_tsv_input_kwargs():
+    """return coloc_tsv only if we have multiple stains to segment"""
+    if len(stains_for_seg) == 1:
+        return {}
+    else:
+        return {
+            "coloc_tsv": bids(
                 root=root,
                 datatype="micr",
                 seg="{seg}",
@@ -931,27 +885,48 @@ else:
                 desc="{desc}",
                 suffix="colocsegstats.tsv",
                 **inputs["spim"].wildcards,
-            ),
-        params:
-            stains=stains_for_seg,
-        output:
-            merged_tsv=bids(
+            )
+        }
+
+
+rule merge_indiv_and_coloc_segstats_tsv:
+    input:
+        **get_coloc_tsv_input_kwargs(),
+        indiv_tsvs=expand(
+            bids(
                 root=root,
                 datatype="micr",
                 seg="{seg}",
                 from_="{template}",
+                stain="{stain}",
+                level=config["registration_level"],
                 desc="{desc}",
-                suffix="mergedsegstats.tsv",
+                suffix="segstats.tsv",
                 **inputs["spim"].wildcards,
             ),
-        group:
-            "subj"
-        threads: 1
-        resources:
-            mem_mb=16000,
-            runtime=5,
-        script:
-            "../scripts/merge_indiv_and_coloc_segstats_tsv.py"
+            stain=stains_for_seg,
+            allow_missing=True,
+        ),
+    params:
+        stains=stains_for_seg,
+    output:
+        merged_tsv=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            from_="{template}",
+            desc="{desc}",
+            suffix="mergedsegstats.tsv",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
+    script:
+        "../scripts/merge_indiv_and_coloc_segstats_tsv.py"
 
 
 rule map_segstats_tsv_dseg_to_template_nii:
