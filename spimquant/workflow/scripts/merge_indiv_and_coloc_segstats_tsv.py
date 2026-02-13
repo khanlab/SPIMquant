@@ -10,7 +10,11 @@ This is a Snakemake script that expects the `snakemake` object to be available.
 import pandas as pd
 
 indiv_files = snakemake.input.indiv_tsvs
-coloc_file = snakemake.input.coloc_tsv
+if "coloc_tsv" in snakemake.input:
+    coloc_file = snakemake.input.coloc_tsv
+else:
+    coloc_file = None
+
 output_file = snakemake.output.merged_tsv
 stains = snakemake.params.stains  # list aligned to indiv_files
 
@@ -38,9 +42,10 @@ for stain, file in zip(stains, indiv_files):
         merged = merged.merge(df, on=["index", "name"], how="outer")
 
 
-# Load coloc + merge with prefix
-coloc_df = load_and_prefix(coloc_file, "coloc")
-merged = merged.merge(coloc_df, on=["index", "name"], how="outer")
+if coloc_file is not None:
+    # Load coloc + merge with prefix
+    coloc_df = load_and_prefix(coloc_file, "coloc")
+    merged = merged.merge(coloc_df, on=["index", "name"], how="outer")
 
 
 # Save output
