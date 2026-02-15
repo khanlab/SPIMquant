@@ -22,7 +22,7 @@ rule pre_atropos:
                 stain="{stain}",
                 level="{level}",
                 desc="preAtropos",
-                suffix="SPIM.nii",
+                suffix="SPIM.nii.gz",
                 **inputs["spim"].wildcards,
             )
         ),
@@ -171,7 +171,7 @@ rule init_affine_reg:
                 datatype="warps",
                 space="{template}",
                 desc="initaffinewarped",
-                suffix="SPIM.nii",
+                suffix="SPIM.nii.gz",
                 **inputs["spim"].wildcards,
             )
         ),

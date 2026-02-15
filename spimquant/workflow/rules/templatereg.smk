@@ -247,7 +247,7 @@ rule deform_reg:
                 space="{template}",
                 stain=stain_for_reg,
                 desc="deformwarped",
-                suffix="SPIM.nii",
+                suffix="SPIM.nii.gz",
                 **inputs["spim"].wildcards,
             )
         ),
