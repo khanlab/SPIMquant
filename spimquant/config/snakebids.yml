@@ -125,6 +125,11 @@ parse_args:
     help: "Downsampling level to use for segmentation (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
     default: 0
 
+  --no_segmentation:
+    help: "Skip segmentation and quantification of stains, i.e. perform registration only (default: %(default)s)"
+    action: store_true
+    default: False
+
   --correction_method:
     help: "Method to use for intensity non-uniformity correction, prior to performing segmentation (default: %(default)s)"
     choices: 

@@ -47,7 +47,12 @@ if stain_for_reg is None:
 
 stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
 
-do_coloc = len(stains_for_seg) > 1
+if len(stains_for_seg) == 0 or config["no_segmentation"]:
+    do_seg = False
+    do_coloc = False
+else:
+    do_seg = True
+    do_coloc = len(stains_for_seg) > 1
 
 # atlas segmentations to use
 all_atlas_segs = config["templates"][config["template"]]["atlases"].keys()
@@ -168,6 +173,36 @@ rule all_fieldfrac_tune:
         ),
 
 
+rule all_register:
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                space="{template}",
+                suffix="SPIM.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            stain=[stain_for_reg],
+            level=config["registration_level"],
+            template=config["template"],
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                space="{template}",
+                suffix="regqc.html",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stain_for_reg,
+            template=config["template"],
+        ),
+
+
 rule all_segment:
     input:
         inputs["spim"].expand(
@@ -196,7 +231,7 @@ rule all_segment:
                 suffix="SPIM.nii.gz",
                 **inputs["spim"].wildcards,
             ),
-            stain=stains_for_seg + [stain_for_reg],
+            stain=stains_for_seg,
             level=config["registration_level"],
             template=config["template"],
         ),
@@ -261,18 +296,6 @@ rule all_segment:
             stain=stains_for_seg,
             template=config["template"],
             desc=config["seg_method"],
-        ),
-        inputs["spim"].expand(
-            bids(
-                root=root,
-                datatype="micr",
-                stain="{stain}",
-                space="{template}",
-                suffix="regqc.html",
-                **inputs["spim"].wildcards,
-            ),
-            stain=stain_for_reg,
-            template=config["template"],
         ),
 
 
@@ -539,24 +562,29 @@ rule all_group_stats_coloc:
 rule all_participant:
     default_target: True
     input:
-        rules.all_segment.input,
-        rules.all_spim_patches.input,
+        rules.all_register.input,
+        rules.all_segment.input if do_seg else [],
+        rules.all_spim_patches.input if do_seg else [],
         rules.all_mri_reg.input if config["register_to_mri"] else [],
         rules.all_segment_coloc.input if do_coloc else [],
 
 
 rule all_group:
     input:
-        rules.all_group_stats.input,
+        rules.all_group_stats.input if do_seg else [],
         rules.all_group_stats_coloc.input if do_coloc else [],
 
 
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
-include: "rules/segmentation.smk"
-include: "rules/patches.smk"
-include: "rules/groupstats.smk"
+
+
+if config["no_segmentation"] == False:
+
+    include: "rules/segmentation.smk"
+    include: "rules/patches.smk"
+    include: "rules/groupstats.smk"
 
 
 if config["register_to_mri"]:

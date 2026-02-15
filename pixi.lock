@@ -571,7 +571,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/87/4a/60e234147570e21bbab4ac70ab79dd794a5ef9a4945d36c34c1914a73205/tensorstore-0.1.79-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e6/5e/56c751afab61336cf0e7aa671b134255a30f15f59cd9e04f59c598a37ff5/tifffile-2025.10.16-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/ca/eaa71d487fe87d342d26de5186587a31fc978ed42d8c44087cf45351b528/wasmtime-39.0.0-py3-none-manylinux1_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/a3/6b/b47b47e2edcc1df859ef467ff8622d3882d3ba91c6b7789ef3deead23768/zarrnii-0.14.1a1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/d4/ca/bfdedabc9f9d37cc16879a487a09ec172726b55af87e7746279ca2e3f86e/zarrnii-0.15.0-py3-none-any.whl
       - pypi: ./
   dev:
     channels:
@@ -1356,7 +1356,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e8/ae/fa6cd331b364ad2bbc31652d025f5747d89cbb75576733dfdf8efe3e4d62/slicerator-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/87/4a/60e234147570e21bbab4ac70ab79dd794a5ef9a4945d36c34c1914a73205/tensorstore-0.1.79-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/52/ca/eaa71d487fe87d342d26de5186587a31fc978ed42d8c44087cf45351b528/wasmtime-39.0.0-py3-none-manylinux1_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/a3/6b/b47b47e2edcc1df859ef467ff8622d3882d3ba91c6b7789ef3deead23768/zarrnii-0.14.1a1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/d4/ca/bfdedabc9f9d37cc16879a487a09ec172726b55af87e7746279ca2e3f86e/zarrnii-0.15.0-py3-none-any.whl
       - pypi: ./
   dev-only:
     channels:
@@ -1584,7 +1584,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/0c/37/6faf15cfa41bf1f3dba80cd3f5ccc6622dfccb660ab26ed79f0178c7497f/wrapt-1.17.3-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/11/c9/cd8538dc2e7727095e0c1d867bad1e40c98f37763e6d995c1939f5fdc7b1/yarl-1.22.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/44/15/bb13b4913ef95ad5448490821eee4671d0e67673342e4d4070854e5fe081/zarr-3.1.5-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a3/6b/b47b47e2edcc1df859ef467ff8622d3882d3ba91c6b7789ef3deead23768/zarrnii-0.14.1a1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/d4/ca/bfdedabc9f9d37cc16879a487a09ec172726b55af87e7746279ca2e3f86e/zarrnii-0.15.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/ab/11a76c1e2126084fde2639514f24e6111b789b0bfa4fc6264a8975c7e1f1/zict-3.0.0-py2.py3-none-any.whl
       - pypi: ./
 packages:
@@ -12626,7 +12626,7 @@ packages:
 - pypi: ./
   name: spimquant
   version: 0.1.0
-  sha256: dfaefc388c5ef0ce9d1cfdc153b35af57e91ed4b1c456cf153ee7058c44baf94
+  sha256: 62abd9296b734809ffd62177533a8c208050fbe4b235775f9650a9ed9b122f34
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/spirv-tools-2025.4-hb700be7_0.conda
@@ -14204,10 +14204,10 @@ packages:
   - pkg:pypi/zarr?source=hash-mapping
   size: 305998
   timestamp: 1763742695201
-- pypi: https://files.pythonhosted.org/packages/a3/6b/b47b47e2edcc1df859ef467ff8622d3882d3ba91c6b7789ef3deead23768/zarrnii-0.14.1a1-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/d4/ca/bfdedabc9f9d37cc16879a487a09ec172726b55af87e7746279ca2e3f86e/zarrnii-0.15.0-py3-none-any.whl
   name: zarrnii
-  version: 0.14.1a1
-  sha256: 7d21a2678ed23c64707a098f770d6607a8f95bbc5e1cde5cdf143a8c19a46cd3
+  version: 0.15.0
+  sha256: d48642a95d821660d2f7555782ff67148fba3365f067401ea4063c914cd370a1
   requires_dist:
   - dask>=2025.5.1
   - h5py>=3.14.0
