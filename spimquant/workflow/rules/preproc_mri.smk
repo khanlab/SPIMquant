@@ -1,12 +1,14 @@
 def select_single_t2w(wildcards):
 
     files = inputs["T2w"].filter(subject=wildcards.subject).expand()
-    if len(files) > 1:
-        print(f"More than 1 T2w found, selecting first: {files}")
+    if len(files) == 1:
+        return files[0]
+    elif len(files) == 0:
+        raise ValueError(f"No T2w images found for f{wildcards}")
     else:
-        print("Only 1 T2w image found")
-
-    return files[0]
+        raise ValueError(
+            f"Multiple T2w images found for f{wildcards}, use --filter-T2w to select a single image"
+        )
 
 
 rule n4_mri:
