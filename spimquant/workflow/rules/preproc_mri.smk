@@ -263,6 +263,8 @@ rule apply_mri_brain_mask:
     resources:
         mem_mb=16000,
         runtime=15,
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input.nii} {input.mask} -multiply -resample 300% -o {output.nii}"
 
