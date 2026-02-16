@@ -1,0 +1,69 @@
+---
+title: Import and setup templates, masks, and atlases
+---
+flowchart TB
+	id0[all_participant]
+	id1[deform_spim_nii_to_template_nii]
+	id12[affine_transform_template_mask_to_subject]
+	id13[import_mask]
+	id14[init_affine_reg]
+	id15[deform_reg]
+	id16[registration_qc_report]
+	id17[import_dseg]
+	id18[map_segstats_tsv_dseg_to_template_nii]
+	id21[map_regionprops_to_atlas_rois]
+	id25[deform_template_dseg_to_subject_nii]
+	id26[import_lut_tsv]
+	id27[map_img_to_roi_tsv]
+	id3[import_template_anat]
+	id30[deform_fieldfrac_nii_to_template_nii]
+	id31[copy_template_dseg_tsv]
+	id32[generic_lut_bids_to_itksnap]
+	id34[counts_per_voxel_template]
+	id37[create_spim_patches]
+	id38[create_corrected_spim_patches]
+	id39[create_mask_patches]
+	id5[affine_reg]
+	style id0 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id1 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id12 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id13 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id14 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id15 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id16 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id17 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id18 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id21 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id25 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id26 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id27 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id3 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id30 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id31 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id32 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id34 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id37 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id38 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id39 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id5 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	id31 --> id0
+	id32 --> id0
+	id3 --> id1
+	id3 --> id5
+	id13 --> id12
+	id3 --> id14
+	id3 --> id15
+	id17 --> id16
+	id3 --> id16
+	id26 --> id18
+	id17 --> id18
+	id26 --> id21
+	id17 --> id25
+	id26 --> id27
+	id3 --> id30
+	id26 --> id31
+	id31 --> id32
+	id3 --> id34
+	id26 --> id37
+	id26 --> id38
+	id26 --> id39

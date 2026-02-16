@@ -1,0 +1,30 @@
+---
+title: Image preprocessing and downsampling
+---
+flowchart TB
+	id1[deform_spim_nii_to_template_nii]
+	id10[atropos_seg]
+	id11[pre_atropos]
+	id12[affine_transform_template_mask_to_subject]
+	id14[init_affine_reg]
+	id2[get_downsampled_nii]
+	id25[deform_template_dseg_to_subject_nii]
+	id7[n4]
+	id9[post_atropos]
+	style id1 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id10 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id11 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id12 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id14 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id2 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id25 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id7 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id9 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	id2 --> id1
+	id2 --> id7
+	id2 --> id9
+	id11 --> id10
+	id2 --> id11
+	id2 --> id12
+	id2 --> id14
+	id2 --> id25

@@ -1,0 +1,42 @@
+---
+title: Segmentation of pathology (threshold, multi-otsu)
+---
+flowchart TB
+	id0[all_participant]
+	id15[deform_reg]
+	id22[compute_filtered_regionprops]
+	id23[multiotsu]
+	id24[n4_biasfield]
+	id27[map_img_to_roi_tsv]
+	id28[fieldfrac]
+	id29[threshold]
+	id3[import_template_anat]
+	id30[deform_fieldfrac_nii_to_template_nii]
+	id39[create_mask_patches]
+	id4[convert_ras_to_itk]
+	style id0 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id15 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id22 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id23 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id24 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id27 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id28 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id29 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id3 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id30 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id39 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id4 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	id30 --> id0
+	id23 --> id22
+	id29 --> id22
+	id24 --> id23
+	id28 --> id27
+	id23 --> id28
+	id29 --> id28
+	id24 --> id29
+	id4 --> id30
+	id28 --> id30
+	id15 --> id30
+	id3 --> id30
+	id23 --> id39
+	id29 --> id39

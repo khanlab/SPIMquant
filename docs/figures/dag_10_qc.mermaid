@@ -1,0 +1,27 @@
+---
+title: Quality control and reporting
+---
+flowchart TB
+	id0[all_participant]
+	id1[deform_spim_nii_to_template_nii]
+	id15[deform_reg]
+	id16[registration_qc_report]
+	id17[import_dseg]
+	id3[import_template_anat]
+	id5[affine_reg]
+	id6[apply_mask_to_corrected]
+	style id0 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id1 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id15 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id16 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id17 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id3 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id5 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id6 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	id16 --> id0
+	id15 --> id16
+	id17 --> id16
+	id1 --> id16
+	id6 --> id16
+	id5 --> id16
+	id3 --> id16
