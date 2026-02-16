@@ -1,4 +1,29 @@
+"""
+Brain masking workflow for SPIMquant.
+
+This module creates brain tissue masks using Gaussian mixture modeling (Atropos)
+combined with template-derived priors. The masks separate brain tissue from 
+background and are used in subsequent intensity correction and registration steps.
+
+Key workflow stages:
+1. Downsampling and preprocessing for GMM segmentation
+2. Atropos tissue classification (k-class GMM with MRF smoothing)
+3. Initial affine registration to template
+4. Transform template brain mask to subject space as prior
+5. Combine GMM classes with template prior to create final brain mask
+
+The workflow uses iterative registration to align a template-based prior with
+tissue classification results, improving mask quality especially at brain boundaries.
+"""
+
+
 rule pre_atropos:
+    """Prepare image for Atropos segmentation.
+    
+    Downsamples and preprocesses the SPIM image for efficient tissue classification.
+    Applies log transformation and intensity normalization to improve GMM convergence.
+    Also creates an initial foreground mask to restrict computation to brain regions.
+    """
     input:
         nii=bids(
             root=root,
@@ -50,6 +75,12 @@ rule pre_atropos:
 
 
 rule atropos_seg:
+    """Perform tissue classification using Atropos (k-class GMM).
+    
+    Uses ANTs Atropos to classify tissue into k intensity classes via Gaussian
+    mixture modeling with Markov random field (MRF) spatial smoothing. Outputs
+    a discrete segmentation and posterior probability maps for each class.
+    """
     input:
         downsampled=rules.pre_atropos.output.downsampled,
         mask=rules.pre_atropos.output.mask,
@@ -139,6 +170,12 @@ rule post_atropos:
 
 
 rule init_affine_reg:
+    """Perform initial affine registration for obtaining mask priors.
+    
+    Registers subject SPIM to template using 12-DOF affine transformation.
+    This initial alignment enables template brain masks to be warped to subject
+    space as priors for brain masking, even before final registration.
+    """
     """initial affine registration used to obtain priors for brainmasking"""
     input:
         template=get_template_for_reg,
@@ -234,6 +271,12 @@ rule affine_transform_template_mask_to_subject:
 
 
 rule create_mask_from_gmm_and_prior:
+    """Create final brain mask by combining GMM classes with template prior.
+    
+    Combines tissue classification results from Atropos with the template-derived
+    brain mask to create a refined brain mask. Uses both intensity-based tissue
+    classification and spatial prior information for improved accuracy.
+    """
     input:
         tissue_dseg=bids(
             root=root,

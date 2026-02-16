@@ -1,3 +1,24 @@
+"""
+Patch extraction workflow for SPIMquant.
+
+This module extracts fixed-size 3D patches from SPIM data and segmentation masks
+based on atlas regions. Patches are useful for:
+- Training machine learning models
+- Visual quality control of segmentation
+- Creating datasets for downstream analysis
+- Extracting high-resolution regions of interest
+
+Key features:
+1. Atlas-guided sampling (extract patches from specific brain regions)
+2. Supports raw SPIM data, corrected data, and segmentation masks
+3. Fixed patch size (configurable, default 256^3)
+4. Random sampling with reproducible seeds
+5. Output as collections of NIfTI files
+6. Imaris dataset export for high-resolution visualization
+
+Patches are named with atlas abbreviation and patch number for easy identification.
+"""
+
 
 rule create_spim_patches:
     """Create patches from SPIM zarr data based on atlas regions.

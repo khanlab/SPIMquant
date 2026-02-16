@@ -1,3 +1,27 @@
+"""
+Segmentation and quantification workflow for SPIMquant.
+
+This module performs intensity correction, segmentation, and quantitative analysis of 
+pathology markers from SPIM microscopy data. It handles multi-channel data with different
+stains (e.g., beta-amyloid, alpha-synuclein, Iba1) and produces per-region statistics.
+
+Key workflow stages:
+1. Intensity correction (Gaussian or N4 bias field correction)
+2. Segmentation (threshold-based or multi-Otsu clustering)
+3. Segmentation cleaning (remove edge artifacts and small objects)
+4. Region properties computation (size, intensity, location of detected objects)
+5. Coordinate transformation to template space
+6. Colocalization analysis across channels
+7. Atlas-based quantification (counts, density, field fraction per region)
+8. Group-level statistical maps
+
+Outputs include:
+- Binary segmentation masks (OME-Zarr format)
+- Region properties tables (Parquet format)
+- Atlas-based statistics (TSV format)
+- Volumetric density maps (NIfTI format)
+"""
+
 
 rule gaussian_biasfield:
     """simple bias field correction with gaussian"""
@@ -90,6 +114,13 @@ rule n4_biasfield:
 
 
 rule multiotsu:
+    """Perform multi-Otsu thresholding for segmentation.
+    
+    Applies multi-level Otsu thresholding to identify intensity classes in the
+    corrected image. The k parameter determines number of classes, and the i parameter
+    selects which threshold index to use for creating the binary mask. Outputs a
+    histogram visualization of the threshold selection.
+    """
     input:
         corrected=bids(
             root=work,
@@ -157,6 +188,11 @@ rule convert_zarr_to_ozx:
 
 
 rule threshold:
+    """Apply simple intensity threshold for segmentation.
+    
+    Creates binary mask by thresholding the corrected image at a specified intensity value.
+    Simpler alternative to multi-Otsu for cases where the threshold is known a priori.
+    """
     input:
         corrected=bids(
             root=work,
@@ -195,6 +231,12 @@ rule threshold:
 
 
 rule clean_segmentation:
+    """Clean segmentation mask by removing edge artifacts and small objects.
+    
+    Performs connected component analysis to identify and exclude objects that
+    extend too close to the image boundaries (likely artifacts). Creates both
+    a cleaned mask and an exclusion mask showing what was removed.
+    """
     input:
         mask=bids(
             root=work,
@@ -521,6 +563,13 @@ rule coloc_per_voxel_template:
 
 
 rule fieldfrac:
+    """Calculate field fraction from binary mask.
+    
+    Computes the fraction of brain tissue occupied by the segmented pathology at each
+    voxel by downsampling the high-resolution mask. The output resolution (level) can
+    differ from the input mask resolution, with the downsampling factor calculated
+    automatically. Field fraction values range from 0-100.
+    """
     """ Calculates fieldfrac from a binary mask via downsampling, assuming mask intensity is 100.
         The level in the input corresponds to the level of the input mask, and the level in the 
         output image is the level of the downsampled fieldfrac map. Internally we calculate 

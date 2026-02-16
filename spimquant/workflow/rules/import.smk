@@ -1,3 +1,19 @@
+"""
+Data import and format conversion workflow for SPIMquant.
+
+This module handles importing reference data (templates, atlases, masks) and converting
+SPIM data from OME-Zarr format to NIfTI format at various resolution levels.
+
+Key components:
+1. Template anatomy import (from resources directory or remote URLs)
+2. Brain mask import
+3. Atlas segmentation (dseg) and label table (TSV) import
+4. OME-Zarr to NIfTI conversion at specified downsampling levels
+5. Label lookup table conversion for visualization tools
+
+All imported files are organized following BIDS conventions with template-specific
+subdirectories (tpl-{template}/).
+"""
 
 
 wildcard_constraints:
@@ -6,6 +22,13 @@ wildcard_constraints:
 
 
 rule get_downsampled_nii:
+    """Convert OME-Zarr to NIfTI at specified resolution level.
+    
+    Extracts a single resolution level from the multi-scale OME-Zarr data and
+    converts it to NIfTI format. The level parameter determines which pyramid
+    level to extract (0=highest resolution). Handles orientation conversion
+    based on configuration.
+    """
     input:
         spim=inputs["spim"].path,
     params:
@@ -39,6 +62,12 @@ localrules:
 
 
 rule import_template_anat:
+    """Import template anatomical image.
+    
+    Copies or downloads the template reference image specified in the configuration.
+    Supports both local paths (relative to resources/) and remote URLs.
+    Templates can include ABAv3, gubra, MBMv3, turone, and MouseIn.
+    """
     input:
         anat=lambda wildcards: storage(
             ancient(resources_path(config["templates"][wildcards.template]["anat"]))
@@ -98,6 +127,12 @@ rule generic_lut_bids_to_itksnap:
 
 
 rule import_dseg:
+    """Import atlas segmentation (dseg) file.
+    
+    Copies or downloads the atlas parcellation file for the specified template
+    and segmentation scheme. The dseg file contains discrete labels corresponding
+    to anatomical regions defined in the companion TSV file.
+    """
     input:
         dseg=lambda wildcards: storage(
             ancient(
