@@ -250,9 +250,9 @@ if len(warp_data.shape) == 5 and warp_data.shape[-1] == 3:
     fig, axes = plt.subplots(1, 3, figsize=(20, 5))
     fig.suptitle(f"Deformation Field Components (MRI to SPIM)", fontsize=16)
 
-    component_names = ["X", "Y", "Z"]
+    axis_labels = ["X", "Y", "Z"]
     
-    for i, (ax, comp_name) in enumerate(zip(axes, component_names)):
+    for i, (ax, axis_label) in enumerate(zip(axes, axis_labels)):
         # Create NIfTI image for each component
         comp_img = nib.Nifti1Image(
             warp_data[..., 0, i], warp_img.affine, warp_img.header
@@ -261,7 +261,7 @@ if len(warp_data.shape) == 5 and warp_data.shape[-1] == 3:
         display = plotting.plot_stat_map(
             comp_img,
             bg_img=spim_img,
-            title=comp_name,
+            title=axis_label,
             display_mode="z",
             cut_coords=[0],
             cmap="RdBu_r",
