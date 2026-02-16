@@ -635,6 +635,8 @@ rule mri_spim_registration_qc_report:
             warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
             **inputs["spim"].wildcards,
         ),
+    params:
+        stain_for_reg=stain_for_reg
     output:
         report_html=bids(
             root=root,

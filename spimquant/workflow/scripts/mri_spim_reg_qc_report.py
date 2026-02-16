@@ -26,7 +26,7 @@ output_html = snakemake.output.report_html
 
 # Get wildcards for report title
 subject = snakemake.wildcards.subject
-stain = snakemake.wildcards.stain
+stain = snakemake.params.stain_for_reg
 
 print(
     f"Processing MRI to SPIM registration QC for subject {subject}, stain {stain}"
