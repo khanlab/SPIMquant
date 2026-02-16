@@ -355,6 +355,15 @@ rule all_mri_reg:
             ),
             template=config["template"],
         ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="anat",
+                space="SPIM",
+                suffix="regqc.html",
+                **inputs["spim"].wildcards,
+            ),
+        ),
 
 
 rule all_spim_patches:
