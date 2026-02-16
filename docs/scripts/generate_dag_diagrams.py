@@ -287,26 +287,6 @@ def create_subgraph(
     return "\n".join(lines)
 
 
-def render_mermaid_to_svg(mermaid_file: Path, output_file: Path):
-    """Render a mermaid file to SVG using mmdc CLI if available."""
-    try:
-        # Check if mmdc (mermaid-cli) is available
-        result = subprocess.run(
-            ["mmdc", "--version"], capture_output=True, text=True
-        )
-        if result.returncode == 0:
-            print(f"  Rendering {mermaid_file.name} to SVG...")
-            subprocess.run(
-                ["mmdc", "-i", str(mermaid_file), "-o", str(output_file), "-t", "neutral"],
-                check=True,
-            )
-            return True
-    except FileNotFoundError:
-        pass
-    
-    return False
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Generate modular Mermaid DAG diagrams for SPIMquant workflow"
@@ -388,7 +368,6 @@ def main():
     
     # Generate subgraphs for each stage
     print("\nGenerating stage-specific diagrams...")
-    rendered_count = 0
     for stage_name, stage_info in WORKFLOW_STAGES.items():
         print(f"\n{stage_name}: {stage_info['description']}")
         
@@ -401,12 +380,6 @@ def main():
             mermaid_file = figures_dir / f"dag_{stage_name}.mermaid"
             mermaid_file.write_text(subgraph)
             print(f"  Saved: {mermaid_file.name}")
-            
-            # Try to render to SVG
-            svg_file = figures_dir / f"dag_{stage_name}.svg"
-            if render_mermaid_to_svg(mermaid_file, svg_file):
-                print(f"  Rendered: {svg_file.name}")
-                rendered_count += 1
         else:
             print(f"  Skipped (no nodes in this stage)")
     
@@ -414,13 +387,6 @@ def main():
     print("Summary:")
     print(f"  Full rulegraph: {full_rulegraph_file}")
     print(f"  Stage diagrams: {len([s for s in WORKFLOW_STAGES if (figures_dir / f'dag_{s}.mermaid').exists()])} created")
-    
-    if rendered_count == 0:
-        print("\nNote: To render diagrams to SVG/PNG, install mermaid-cli:")
-        print("  npm install -g @mermaid-js/mermaid-cli")
-    else:
-        print(f"  SVG renders: {rendered_count} created")
-    
     print("=" * 80)
 
 

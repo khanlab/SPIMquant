@@ -64,18 +64,12 @@ The script categorizes workflow rules into these functional stages:
    - Dependent rules from other stages (shown in light blue)
    - All relevant edges connecting the rules
 5. **Save Diagrams**: Writes Mermaid files to `docs/figures/`
-6. **Optional Rendering**: If `mmdc` (mermaid-cli) is installed, renders diagrams to SVG
 
 **Dependencies:**
 
 Required Python packages:
 - `snakemake` (>=9.0)
 - `snakebids` (>=0.14.0)
-
-Optional for SVG rendering:
-```bash
-npm install -g @mermaid-js/mermaid-cli
-```
 
 **Adding New Stages:**
 
@@ -134,21 +128,11 @@ jobs:
         run: |
           python3 docs/scripts/generate_dag_diagrams.py
       
-      - name: Install mermaid-cli
-        run: npm install -g @mermaid-js/mermaid-cli
-      
-      - name: Render diagrams to SVG
-        run: |
-          cd docs/figures
-          for f in *.mermaid; do
-            mmdc -i "$f" -o "${f%.mermaid}.svg" -t neutral
-          done
-      
       - name: Commit updated diagrams
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add docs/figures/
+          git add docs/figures/*.mermaid
           git commit -m "Update DAG diagrams" || echo "No changes"
           git push
 ```
@@ -166,16 +150,8 @@ jobs:
 - Update regex patterns in `WORKFLOW_STAGES`
 - Rules should follow naming conventions for automatic classification
 
-*Issue: SVG rendering not working*
-- Install mermaid-cli: `npm install -g @mermaid-js/mermaid-cli`
-- Verify installation: `mmdc --version`
-- Alternatively, view Mermaid files online at https://mermaid.live/
+**Viewing Diagrams:**
 
-**Future Enhancements:**
-
-Potential improvements for this script:
-- Add DAG generation (in addition to rulegraph) for job-level granularity
-- Support for custom color schemes
-- Generate HTML page with embedded diagrams
-- Interactive SVG with clickable nodes linking to rule definitions
-- Diff visualization between workflow versions
+Mermaid diagrams can be viewed directly on GitHub thanks to native Mermaid support, or using:
+- [Mermaid Live Editor](https://mermaid.live/)
+- Any Markdown viewer with Mermaid support

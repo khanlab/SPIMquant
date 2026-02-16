@@ -35,26 +35,11 @@ The workflow is broken down into **11 functional stages**, each with its own dia
 
 ## Viewing Diagrams
 
-### Online Viewers
+These Mermaid diagrams can be viewed directly on GitHub thanks to [GitHub's native Mermaid support](https://github.blog/2022-02-14-include-diagrams-markdown-files-mermaid/).
 
-You can view these Mermaid diagrams using:
-- [Mermaid Live Editor](https://mermaid.live/) - Paste the diagram content
-- [GitHub's native Mermaid support](https://github.blog/2022-02-14-include-diagrams-markdown-files-mermaid/) - View directly in GitHub markdown
-
-### Local Rendering
-
-To render diagrams to SVG/PNG locally:
-
-```bash
-# Install mermaid-cli
-npm install -g @mermaid-js/mermaid-cli
-
-# Render a single diagram
-mmdc -i dag_05_registration.mermaid -o dag_05_registration.svg
-
-# Render all diagrams
-for f in *.mermaid; do mmdc -i "$f" -o "${f%.mermaid}.svg"; done
-```
+You can also view them using:
+- [Mermaid Live Editor](https://mermaid.live/) - Paste the diagram content for interactive viewing
+- Any Markdown viewer with Mermaid support
 
 ## Regenerating Diagrams
 
@@ -69,7 +54,6 @@ This will:
 1. Run SPIMquant on the `tests/bids_ds` dataset to generate the complete DAG
 2. Parse the DAG and classify rules into functional stages
 3. Create individual Mermaid diagrams for each stage
-4. Optionally render to SVG if mermaid-cli is installed
 
 ### Advanced Options
 
@@ -102,16 +86,13 @@ The diagram generation script can be integrated into CI/CD pipelines:
   run: |
     python3 docs/scripts/generate_dag_diagrams.py
     
-# Optional: Render to SVG
-- name: Install mermaid-cli
-  run: npm install -g @mermaid-js/mermaid-cli
-  
-- name: Render diagrams
+- name: Commit updated diagrams
   run: |
-    cd docs/figures
-    for f in *.mermaid; do 
-      mmdc -i "$f" -o "${f%.mermaid}.svg" -t neutral
-    done
+    git config user.name "GitHub Actions"
+    git config user.email "actions@github.com"
+    git add docs/figures/*.mermaid
+    git commit -m "Update DAG diagrams" || echo "No changes"
+    git push
 ```
 
 ## Workflow Stages Details
