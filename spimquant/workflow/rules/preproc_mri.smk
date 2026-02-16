@@ -1,26 +1,26 @@
-def select_single_t2w(wildcards):
+def select_single_mri(wildcards):
 
-    files = inputs["T2w"].filter(subject=wildcards.subject).expand()
+    files = inputs["mri"].filter(subject=wildcards.subject).expand()
     if len(files) == 1:
         return files[0]
     elif len(files) == 0:
-        raise ValueError(f"No T2w images found for f{wildcards}")
+        raise ValueError(f"No MRI images found for f{wildcards}")
     else:
         raise ValueError(
-            f"Multiple T2w images found for f{wildcards}, use --filter-T2w to select a single image"
+            f"Multiple MRI images found for f{wildcards}, use --filter-mri to select a single image"
         )
 
 
 rule n4_mri:
     input:
-        nii=select_single_t2w,
+        nii=select_single_mri,
     output:
         nii=bids(
             root=root,
             datatype="anat",
             desc="N4",
-            suffix="T2w.nii.gz",
-            **inputs["T2w"].wildcards,
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
         ),
     group:
         "subj"
@@ -43,8 +43,8 @@ rule rigid_greedy_reg_mri_to_template:
             root=root,
             datatype="anat",
             desc="N4",
-            suffix="T2w.nii.gz",
-            **inputs["T2w"].wildcards,
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
         ),
     params:
         iters="{iters}",  #"100x50x50",
@@ -56,7 +56,7 @@ rule rigid_greedy_reg_mri_to_template:
             bids(
                 root=root,
                 datatype="warps",
-                from_="mri",
+                from_=f"{mri_suffix}",
                 to="{template}",
                 type_="ras",
                 desc="rigid",
@@ -65,21 +65,21 @@ rule rigid_greedy_reg_mri_to_template:
                 radius="{radius}",
                 gradsigma="{gradsigma}",
                 warpsigma="{warpsigma}",
-                **inputs["T2w"].wildcards,
+                **inputs.subj_wildcards,
             )
         ),
         warp=temp(
             bids(
                 root=root,
                 datatype="warps",
-                from_="mri",
+                from_=f"{mri_suffix}",
                 to="{template}",
                 suffix="warp.nii.gz",
                 iters="{iters}",
                 radius="{radius}",
                 gradsigma="{gradsigma}",
                 warpsigma="{warpsigma}",
-                **inputs["T2w"].wildcards,
+                **inputs.subj_wildcards,
             )
         ),
         invwarp=temp(
@@ -87,13 +87,13 @@ rule rigid_greedy_reg_mri_to_template:
                 root=root,
                 datatype="warps",
                 from_="{template}",
-                to="mri",
+                to=f"{mri_suffix}",
                 suffix="warp.nii.gz",
                 iters="{iters}",
                 radius="{radius}",
                 gradsigma="{gradsigma}",
                 warpsigma="{warpsigma}",
-                **inputs["T2w"].wildcards,
+                **inputs.subj_wildcards,
             )
         ),
         warped=temp(
@@ -102,12 +102,12 @@ rule rigid_greedy_reg_mri_to_template:
                 datatype="warps",
                 space="{template}",
                 desc="deformwarped",
-                suffix="T2w.nii.gz",
+                suffix=f"{mri_suffix}.nii.gz",
                 iters="{iters}",
                 radius="{radius}",
                 gradsigma="{gradsigma}",
                 warpsigma="{warpsigma}",
-                **inputs["T2w"].wildcards,
+                **inputs.subj_wildcards,
             )
         ),
     group:
@@ -128,19 +128,9 @@ rule rigid_greedy_reg_mri_to_template:
         "  -r {output.warp} {output.xfm_ras} "
 
 
-#    log:
-#        bids(
-#            root="logs",
-#            datatype="mri_rigid_greedy",
-#            space="{template}",
-#            suffix="log.txt",
-#            **inputs["T2w"].wildcards,
-#        ),
-
-
 rule all_tune_mri_mask:
     input:
-        inputs["T2w"].expand(
+        inputs["mri"].expand(
             bids(
                 root=root,
                 datatype="anat",
@@ -150,7 +140,7 @@ rule all_tune_mri_mask:
                 radius="{radius}",
                 gradsigma="{gradsigma}",
                 warpsigma="{warpsigma}",
-                **inputs["T2w"].wildcards,
+                **inputs.subj_wildcards,
             ),
             iters="100x50x50",
             gradsigma=range(3, 6),
@@ -173,13 +163,13 @@ rule transform_template_mask_to_mri:
             root=root,
             datatype="anat",
             desc="N4",
-            suffix="T2w.nii.gz",
-            **inputs["T2w"].wildcards,
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
         ),
         xfm_ras=bids(
             root=root,
             datatype="warps",
-            from_="mri",
+            from_=f"{mri_suffix}",
             to=config["template_mri"],
             type_="ras",
             desc="rigid",
@@ -188,19 +178,19 @@ rule transform_template_mask_to_mri:
             radius="{radius}",
             gradsigma="{gradsigma}",
             warpsigma="{warpsigma}",
-            **inputs["T2w"].wildcards,
+            **inputs.subj_wildcards,
         ),
         invwarp=bids(
             root=root,
             datatype="warps",
             from_=config["template_mri"],
-            to="mri",
+            to=f"{mri_suffix}",
             suffix="warp.nii.gz",
             iters="{iters}",
             radius="{radius}",
             gradsigma="{gradsigma}",
             warpsigma="{warpsigma}",
-            **inputs["T2w"].wildcards,
+            **inputs.subj_wildcards,
         ),
     output:
         mask=bids(
@@ -212,7 +202,7 @@ rule transform_template_mask_to_mri:
             radius="{radius}",
             gradsigma="{gradsigma}",
             warpsigma="{warpsigma}",
-            **inputs["T2w"].wildcards,
+            **inputs.subj_wildcards,
         ),
     shadow:
         "minimal"
@@ -237,27 +227,27 @@ rule apply_mri_brain_mask:
             root=root,
             datatype="anat",
             desc="N4",
-            suffix="T2w.nii.gz",
-            **inputs["T2w"].wildcards,
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
         ),
         mask=bids(
             root=root,
             datatype="anat",
             desc="brain",
             suffix="mask.nii.gz",
-            iters="100x100x50",
-            radius="2x2x2",
-            gradsigma="3",
-            warpsigma="3",
-            **inputs["T2w"].wildcards,
+            iters=config["reg_mri"]["rigidgreedy"]["iters"],
+            radius=config["reg_mri"]["rigidgreedy"]["radius"],
+            gradsigma=config["reg_mri"]["rigidgreedy"]["gradsigma"],
+            warpsigma=config["reg_mri"]["rigidgreedy"]["warpsigma"],
+            **inputs.subj_wildcards,
         ),
     output:
         nii=bids(
             root=root,
             datatype="anat",
             desc="N4brain",
-            suffix="T2w.nii.gz",
-            **inputs["T2w"].wildcards,
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
         ),
     group:
         "subj"
@@ -271,14 +261,14 @@ rule apply_mri_brain_mask:
         "c3d {input.nii} {input.mask} -multiply -resample 300% -o {output.nii}"
 
 
-rule rigid_greedy_reg_mri_to_spim:
+rule greedy_reg_mri_to_spim:
     input:
         mri=bids(
             root=root,
             datatype="anat",
             desc="N4brain",
-            suffix="T2w.nii.gz",
-            **inputs["T2w"].wildcards,
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
         ),
         spim=bids(
             root=root,
@@ -301,13 +291,13 @@ rule rigid_greedy_reg_mri_to_spim:
             bids(
                 root=root,
                 datatype="warps",
-                from_="mri",
-                to="spim",
+                from_=f"{mri_suffix}",
+                to="SPIM",
                 type_="ras",
                 desc="rigid",
                 suffix="xfm.txt",
-                iters="{iters}",
                 dof="{dof}",
+                iters="{iters}",
                 radius="{radius}",
                 gradsigma="{gradsigma}",
                 warpsigma="{warpsigma}",
@@ -318,11 +308,11 @@ rule rigid_greedy_reg_mri_to_spim:
             bids(
                 root=root,
                 datatype="warps",
-                from_="mri",
-                to="spim",
+                from_=f"{mri_suffix}",
+                to="SPIM",
                 suffix="warp.nii.gz",
-                iters="{iters}",
                 dof="{dof}",
+                iters="{iters}",
                 radius="{radius}",
                 gradsigma="{gradsigma}",
                 warpsigma="{warpsigma}",
@@ -333,42 +323,46 @@ rule rigid_greedy_reg_mri_to_spim:
             bids(
                 root=root,
                 datatype="warps",
-                from_="spim",
-                to="mri",
+                from_="SPIM",
+                to=f"{mri_suffix}",
                 suffix="warp.nii.gz",
-                iters="{iters}",
                 dof="{dof}",
+                iters="{iters}",
                 radius="{radius}",
                 gradsigma="{gradsigma}",
                 warpsigma="{warpsigma}",
                 **inputs["spim"].wildcards,
             )
         ),
-        linwarped=bids(
-            root=root,
-            datatype="warps",
-            space="SPIM",
-            desc="linearwarped",
-            suffix="T2w.nii.gz",
-            iters="{iters}",
-            dof="{dof}",
-            radius="{radius}",
-            gradsigma="{gradsigma}",
-            warpsigma="{warpsigma}",
-            **inputs["spim"].wildcards,
+        linwarped=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                space="SPIM",
+                desc="linearwarped",
+                suffix=f"{mri_suffix}.nii.gz",
+                dof="{dof}",
+                iters="{iters}",
+                radius="{radius}",
+                gradsigma="{gradsigma}",
+                warpsigma="{warpsigma}",
+                **inputs["spim"].wildcards,
+            )
         ),
-        warped=bids(
-            root=root,
-            datatype="warps",
-            space="SPIM",
-            desc="deformwarped",
-            suffix="T2w.nii.gz",
-            iters="{iters}",
-            dof="{dof}",
-            radius="{radius}",
-            gradsigma="{gradsigma}",
-            warpsigma="{warpsigma}",
-            **inputs["spim"].wildcards,
+        warped=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                space="SPIM",
+                desc="deformwarped",
+                suffix=f"{mri_suffix}.nii.gz",
+                dof="{dof}",
+                iters="{iters}",
+                radius="{radius}",
+                gradsigma="{gradsigma}",
+                warpsigma="{warpsigma}",
+                **inputs["spim"].wildcards,
+            )
         ),
     group:
         "subj"
@@ -391,15 +385,6 @@ rule rigid_greedy_reg_mri_to_spim:
         "  -r {output.xfm_ras} "
 
 
-#   log:
-#       bids(
-#           root="logs",
-#           datatype="mri_spim_rigid_greedy",
-#           suffix="log.txt",
-#           **inputs["spim"].wildcards
-#       ),
-
-
 rule all_tune_mri_spim_reg:
     input:
         inputs["spim"].expand(
@@ -408,9 +393,9 @@ rule all_tune_mri_spim_reg:
                 datatype="warps",
                 space="SPIM",
                 desc="deformwarped",
-                suffix="T2w.nii.gz",
-                iters="{iters}",
+                suffix=f"{mri_suffix}.nii.gz",
                 dof="{dof}",
+                iters="{iters}",
                 radius="{radius}",
                 gradsigma="{gradsigma}",
                 warpsigma="{warpsigma}",
@@ -432,36 +417,36 @@ rule warp_mri_to_template_via_spim:
             root=root,
             datatype="anat",
             desc="N4",
-            suffix="T2w.nii.gz",
-            **inputs["T2w"].wildcards,
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
         ),
         ref=rules.import_template_anat.output.anat,
         affine_mri_to_spim=bids(
             root=root,
             datatype="warps",
-            from_="mri",
-            to="spim",
+            from_=f"{mri_suffix}",
+            to="SPIM",
             type_="ras",
             desc="rigid",
             suffix="xfm.txt",
-            iters="100x100x50x0",
-            dof="12",
-            radius="2x2x2",
-            gradsigma="3",
-            warpsigma="3",
+            dof=config["reg_mri"]["greedy"]["dof"],
+            iters=config["reg_mri"]["greedy"]["iters"],
+            radius=config["reg_mri"]["greedy"]["radius"],
+            gradsigma=config["reg_mri"]["greedy"]["gradsigma"],
+            warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
             **inputs["spim"].wildcards,
         ),
         warp_mri_to_spim=bids(
             root=root,
             datatype="warps",
-            from_="mri",
-            to="spim",
+            from_=f"{mri_suffix}",
+            to="SPIM",
             suffix="warp.nii.gz",
-            iters="100x100x50x0",
-            dof="12",
-            radius="2x2x2",
-            gradsigma="3",
-            warpsigma="3",
+            dof=config["reg_mri"]["greedy"]["dof"],
+            iters=config["reg_mri"]["greedy"]["iters"],
+            radius=config["reg_mri"]["greedy"]["radius"],
+            gradsigma=config["reg_mri"]["greedy"]["gradsigma"],
+            warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
             **inputs["spim"].wildcards,
         ),
         affine_spim_to_template=bids(
@@ -487,8 +472,9 @@ rule warp_mri_to_template_via_spim:
             root=root,
             datatype="anat",
             space="{template}",
+            via="SPIM",
             desc="N4",
-            suffix="T2w.nii.gz",
+            suffix=f"{mri_suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
@@ -515,7 +501,7 @@ rule warp_mri_brainmask_to_spim:
             radius="2x2x2",
             gradsigma="3",
             warpsigma="3",
-            **inputs["T2w"].wildcards,
+            **inputs.subj_wildcards,
         ),
         ref=bids(
             root=root,
@@ -529,8 +515,8 @@ rule warp_mri_brainmask_to_spim:
         affine_mri_to_spim=bids(
             root=root,
             datatype="warps",
-            from_="mri",
-            to="spim",
+            from_=f"{mri_suffix}",
+            to="SPIM",
             type_="ras",
             desc="rigid",
             suffix="xfm.txt",
@@ -544,8 +530,8 @@ rule warp_mri_brainmask_to_spim:
         warp_mri_to_spim=bids(
             root=root,
             datatype="warps",
-            from_="mri",
-            to="spim",
+            from_=f"{mri_suffix}",
+            to="SPIM",
             suffix="warp.nii.gz",
             iters="100x100x50x0",
             dof="12",
@@ -558,7 +544,7 @@ rule warp_mri_brainmask_to_spim:
         mask=bids(
             root=root,
             datatype="anat",
-            space="spim",
+            space="SPIM",
             desc="brain",
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
@@ -566,9 +552,17 @@ rule warp_mri_brainmask_to_spim:
         jacobian=bids(
             root=root,
             datatype="anat",
-            space="spim",
+            space="SPIM",
             desc="brain",
             suffix="jacobian.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        composed_warp=bids(
+            root=root,
+            datatype="anat",
+            from_=f"{mri_suffix}",
+            to="SPIM",
+            suffix="warp.nii.gz",
             **inputs["spim"].wildcards,
         ),
     group:
