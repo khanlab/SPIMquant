@@ -24,20 +24,3 @@ getting_started/installation
 
 usage/cli
 ```
-
-```{toctree}
-:caption: Workflows
-:name: workflows
-:hidden:
-:maxdepth: 1
-
-workflows/index
-workflows/import
-workflows/masking
-workflows/templatereg
-workflows/segmentation
-workflows/groupstats
-workflows/patches
-workflows/preproc_mri
-workflows/common
-```
