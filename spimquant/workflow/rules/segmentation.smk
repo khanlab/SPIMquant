@@ -570,11 +570,6 @@ rule fieldfrac:
     differ from the input mask resolution, with the downsampling factor calculated
     automatically. Field fraction values range from 0-100.
     """
-    """ Calculates fieldfrac from a binary mask via downsampling, assuming mask intensity is 100.
-        The level in the input corresponds to the level of the input mask, and the level in the 
-        output image is the level of the downsampled fieldfrac map. Internally we calculate 
-        what downsampling factor to use to achieve the desired level
-        """
     input:
         mask=bids(
             root=work,

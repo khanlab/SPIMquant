@@ -546,7 +546,6 @@ rule warp_mri_brainmask_to_spim:
     Jacobian determinant to quantify local tissue deformation due to fixation
     and clearing processes.
     """
-    """ to assess effect of perfusion fixation and clearing"""
     input:
         mask=bids(
             root=root,

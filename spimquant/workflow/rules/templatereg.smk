@@ -563,7 +563,6 @@ rule deform_template_dseg_to_subject_nii:
     Uses nearest-neighbor interpolation to preserve discrete label values.
     This enables atlas-based analysis in native subject space.
     """
-    """ use this to interpolate labels for each blob, and to calculate volumes"""
     input:
         ref=bids(
             root=root,

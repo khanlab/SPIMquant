@@ -176,7 +176,6 @@ rule init_affine_reg:
     This initial alignment enables template brain masks to be warped to subject
     space as priors for brain masking, even before final registration.
     """
-    """initial affine registration used to obtain priors for brainmasking"""
     input:
         template=get_template_for_reg,
         subject=bids(
