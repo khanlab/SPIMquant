@@ -33,6 +33,7 @@ nav:
       - API Documentation: reference/api.md
       - Configuration Options: reference/config.md
       - Workflow Rules: reference/rules.md
+      - Workflow Visualization: workflow_visualization.md
       - Output Files: reference/outputs.md
   - Examples:
       - Sample Datasets: examples/datasets.md
@@ -75,7 +76,11 @@ markdown_extensions:
       permalink: true
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
