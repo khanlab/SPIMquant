@@ -1,0 +1,36 @@
+---
+title: Intensity correction and normalization
+---
+flowchart TB
+	id15[deform_reg]
+	id16[registration_qc_report]
+	id2[get_downsampled_nii]
+	id23[multiotsu]
+	id24[n4_biasfield]
+	id29[threshold]
+	id38[create_corrected_spim_patches]
+	id5[affine_reg]
+	id6[apply_mask_to_corrected]
+	id7[n4]
+	id8[create_mask_from_gmm_and_prior]
+	style id15 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id16 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id2 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id23 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id24 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id29 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id38 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id5 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id6 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id7 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id8 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	id6 --> id5
+	id7 --> id6
+	id8 --> id6
+	id2 --> id7
+	id8 --> id7
+	id6 --> id15
+	id6 --> id16
+	id24 --> id23
+	id24 --> id29
+	id24 --> id38

@@ -1,0 +1,23 @@
+---
+title: Extract image patches for analysis
+---
+flowchart TB
+	id0[all_participant]
+	id24[n4_biasfield]
+	id25[deform_template_dseg_to_subject_nii]
+	id26[import_lut_tsv]
+	id37[create_spim_patches]
+	id38[create_corrected_spim_patches]
+	style id0 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id24 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id25 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id26 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id37 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id38 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	id38 --> id0
+	id37 --> id0
+	id25 --> id37
+	id26 --> id37
+	id25 --> id38
+	id24 --> id38
+	id26 --> id38

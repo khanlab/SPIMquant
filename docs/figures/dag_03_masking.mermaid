@@ -1,0 +1,51 @@
+---
+title: Brain masking using atropos segmentation
+---
+flowchart TB
+	id0[all_participant]
+	id10[atropos_seg]
+	id11[pre_atropos]
+	id12[affine_transform_template_mask_to_subject]
+	id13[import_mask]
+	id14[init_affine_reg]
+	id2[get_downsampled_nii]
+	id23[multiotsu]
+	id25[deform_template_dseg_to_subject_nii]
+	id26[import_lut_tsv]
+	id29[threshold]
+	id39[create_mask_patches]
+	id6[apply_mask_to_corrected]
+	id7[n4]
+	id8[create_mask_from_gmm_and_prior]
+	id9[post_atropos]
+	style id0 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id10 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id11 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id12 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id13 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id14 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id2 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id23 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id25 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id26 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id29 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id39 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id6 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id7 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id8 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id9 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	id39 --> id0
+	id8 --> id6
+	id8 --> id7
+	id12 --> id8
+	id9 --> id8
+	id2 --> id9
+	id10 --> id9
+	id11 --> id10
+	id2 --> id12
+	id13 --> id12
+	id14 --> id12
+	id25 --> id39
+	id26 --> id39
+	id23 --> id39
+	id29 --> id39

@@ -1,0 +1,34 @@
+---
+title: Statistical analysis and atlas mapping
+---
+flowchart TB
+	id0[all_participant]
+	id17[import_dseg]
+	id18[map_segstats_tsv_dseg_to_template_nii]
+	id19[merge_indiv_and_coloc_segstats_tsv]
+	id20[merge_into_segstats_tsv]
+	id21[map_regionprops_to_atlas_rois]
+	id25[deform_template_dseg_to_subject_nii]
+	id26[import_lut_tsv]
+	id27[map_img_to_roi_tsv]
+	id28[fieldfrac]
+	style id0 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id17 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id18 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id19 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id20 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id21 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id25 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id26 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id27 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id28 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	id18 --> id0
+	id19 --> id18
+	id26 --> id18
+	id17 --> id18
+	id20 --> id19
+	id21 --> id20
+	id27 --> id20
+	id25 --> id27
+	id26 --> id27
+	id28 --> id27
