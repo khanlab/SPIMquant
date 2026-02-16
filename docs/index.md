@@ -23,5 +23,4 @@ getting_started/installation
 :maxdepth: 1
 
 usage/cli
-workflow_visualization
 ```
