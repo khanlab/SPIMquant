@@ -37,6 +37,8 @@ if "mri" in inputs:
         raise ValueError(
             f"More than one MRI suffix found, use --filter-mri to narrow your search: {suffixes}"
         )
+else:
+    mri_suffix = "T2w"
 
 
 include: "rules/common.smk"
