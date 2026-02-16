@@ -1,5 +1,30 @@
+"""
+Template registration workflow for SPIMquant.
+
+This module handles the complete registration pipeline from subject SPIM data to template space.
+It includes intensity correction, affine and deformable registration, transformation of labels,
+and quality control reporting.
+
+Key workflow stages:
+1. Intensity correction (N4 bias field correction)
+2. Brain masking and cropping
+3. Affine registration to template
+4. Deformable registration refinement
+5. Forward/inverse transformations
+6. Label resampling and warping
+7. Quality control report generation
+
+The workflow supports multiple templates (ABAv3, gubra, MBMv3, turone, MouseIn) and handles
+both NIfTI and OME-Zarr formats for different resolution levels.
+"""
+
 
 rule n4:
+    """Apply N4 bias field correction to SPIM images.
+    
+    Uses ANTs N4BiasFieldCorrection to correct intensity inhomogeneities within
+    the brain mask. Outputs both the corrected image and the estimated bias field.
+    """
     input:
         nii=bids(
             root=root,
@@ -53,6 +78,11 @@ rule n4:
 
 
 rule apply_mask_to_corrected:
+    """Apply brain mask to N4-corrected image.
+    
+    Multiplies the N4-corrected image with the brain mask to extract brain tissue,
+    removing background and non-brain regions.
+    """
     input:
         corrected=bids(
             root=root,
@@ -95,6 +125,11 @@ rule apply_mask_to_corrected:
 
 
 rule crop_template:
+    """Crop template to hemisphere for registration.
+    
+    Allows registration to left or right hemisphere only by cropping the template
+    to the specified hemisphere region.
+    """
     input:
         template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     output:
@@ -115,6 +150,12 @@ rule crop_template:
 
 
 rule affine_reg:
+    """Perform affine registration to template using greedy.
+    
+    Registers subject SPIM to template space using 12-DOF affine transformation.
+    Uses normalized mutual information (NMI) as the similarity metric and outputs
+    both the transformation matrix and warped image for QC.
+    """
     input:
         template=get_template_for_reg,
         subject=bids(
@@ -171,6 +212,11 @@ rule affine_reg:
 
 
 rule convert_ras_to_itk:
+    """Convert RAS affine transform to ITK format.
+    
+    Converts greedy's RAS affine format to ITK format for compatibility with
+    ANTs tools (used for applying transforms).
+    """
     input:
         xfm_ras=bids(
             root=root,
@@ -206,6 +252,12 @@ rule convert_ras_to_itk:
 
 
 rule deform_reg:
+    """Perform deformable registration to template using greedy.
+    
+    Refines affine registration with deformable (non-linear) registration.
+    Outputs forward warp, inverse warp, and warped image. The deformation field
+    captures local anatomical variations not handled by affine transformation.
+    """
     input:
         template=get_template_for_reg,
         subject=bids(
@@ -505,7 +557,12 @@ rule deform_spim_nii_to_template_nii:
 
 
 rule deform_template_dseg_to_subject_nii:
-    """ use this to interpolate labels for each blob, and to calculate volumes"""
+    """Transform template atlas labels to subject space.
+    
+    Applies inverse warp to bring template segmentation labels into subject space.
+    Uses nearest-neighbor interpolation to preserve discrete label values.
+    This enables atlas-based analysis in native subject space.
+    """
     input:
         ref=bids(
             root=root,

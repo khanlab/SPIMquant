@@ -1,3 +1,18 @@
+"""
+Common utility functions for SPIMquant workflows.
+
+This module provides shared helper functions used across multiple workflow rules:
+
+- bids_tpl(): BIDS path constructor for template-specific files
+- resources_path(): Path resolver for resources directory
+- get_template_path(): Template file locator with optional cropping
+- get_template_for_reg(): Registration-specific template selector
+- get_stains_all_subjects(): Stain consistency validator across subjects
+
+These functions abstract away path complexity and ensure consistent file
+organization following BIDS conventions.
+"""
+
 from pathlib import Path
 from snakebids import bids
 
