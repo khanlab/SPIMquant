@@ -6,3 +6,4 @@ spimquant/workflow/scripts/experiment/
 # pixi environments
 .pixi
 *.egg-info
+site/
