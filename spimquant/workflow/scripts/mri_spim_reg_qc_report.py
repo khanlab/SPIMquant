@@ -46,10 +46,10 @@ def fig_to_base64(fig):
     return f"data:image/png;base64,{img_base64}"
 
 
-def add_figure_to_html(fig, caption=""):
+def add_figure_to_html(fig, caption="", section=None):
     """Add a matplotlib figure to the HTML report."""
     img_data = fig_to_base64(fig)
-    html_figures.append({"image": img_data, "caption": caption})
+    html_figures.append({"image": img_data, "caption": caption, "section": section})
 
 
 # Load NIfTI images
@@ -101,6 +101,7 @@ plt.tight_layout()
 add_figure_to_html(
     fig,
     "Affine registration comparison: SPIM reference (top) vs. affine-transformed MRI (bottom)",
+    section=1,
 )
 
 print("Generating affine overlay...")
@@ -112,7 +113,7 @@ display = plotting.plot_anat(
 )
 display.add_overlay(warped_affine_img, cmap="viridis", transparency=0.5)
 add_figure_to_html(
-    fig, "Affine registration overlay showing SPIM with affine-transformed MRI"
+    fig, "Affine registration overlay showing SPIM with affine-transformed MRI", section=1
 )
 
 
@@ -143,6 +144,7 @@ plt.tight_layout()
 add_figure_to_html(
     fig,
     "Deformable registration comparison: SPIM reference (top) vs. deformably-transformed MRI (bottom)",
+    section=2,
 )
 
 print("Generating deformable overlay...")
@@ -156,6 +158,7 @@ display.add_overlay(warped_deform_img, cmap="viridis", transparency=0.5)
 add_figure_to_html(
     fig,
     "Deformable registration overlay showing SPIM with deformably-transformed MRI",
+    section=2,
 )
 
 
@@ -176,7 +179,7 @@ display.add_contours(
     spim_img, levels=[100, 1000, 2000], colors="r", transparency=0.7
 )
 add_figure_to_html(
-    fig, "Affine-transformed MRI with SPIM contours overlaid in red"
+    fig, "Affine-transformed MRI with SPIM contours overlaid in red", section=3
 )
 
 print("Generating deformable contours...")
@@ -195,7 +198,7 @@ display.add_contours(
     spim_img, levels=[100, 1000, 2000], colors="r", transparency=0.7
 )
 add_figure_to_html(
-    fig, "Deformably-transformed MRI with SPIM contours overlaid in red"
+    fig, "Deformably-transformed MRI with SPIM contours overlaid in red", section=3
 )
 
 
@@ -239,6 +242,7 @@ if len(warp_data.shape) == 5 and warp_data.shape[-1] == 3:
     add_figure_to_html(
         fig,
         f"Deformation field magnitude (mean: {warp_stats['mean']:.2f}, std: {warp_stats['std']:.2f}, max: {warp_stats['max']:.2f})",
+        section=4,
     )
 
     # Visualize individual displacement components
@@ -246,7 +250,7 @@ if len(warp_data.shape) == 5 and warp_data.shape[-1] == 3:
     fig, axes = plt.subplots(1, 3, figsize=(20, 5))
     fig.suptitle(f"Deformation Field Components (MRI to SPIM)", fontsize=16)
 
-    component_names = ["X (Left-Right)", "Y (Anterior-Posterior)", "Z (Superior-Inferior)"]
+    component_names = ["X", "Y", "Z"]
     
     for i, (ax, comp_name) in enumerate(zip(axes, component_names)):
         # Create NIfTI image for each component
@@ -266,7 +270,7 @@ if len(warp_data.shape) == 5 and warp_data.shape[-1] == 3:
     
     plt.tight_layout()
     add_figure_to_html(
-        fig, "Directional components of the deformation field showing displacement in each axis"
+        fig, "Directional components of the deformation field (X, Y, Z axes)", section=4
     )
 
 else:
@@ -450,16 +454,18 @@ sections = [
     ),
 ]
 
-section_idx = 0
+# Group figures by section and generate HTML
+current_section = None
 for i, fig_data in enumerate(html_figures):
-    # Add section header before the first figure of each section
-    if i in [0, 2, 4, 6]:  # Indices where new sections start
-        if section_idx < len(sections):
+    # Add section header when section changes
+    if fig_data.get("section") != current_section:
+        current_section = fig_data.get("section")
+        if current_section is not None and current_section <= len(sections):
+            section_info = sections[current_section - 1]
             html_content += f"""
-        <h2>{sections[section_idx][0]}</h2>
-        <p>{sections[section_idx][1]}</p>
+        <h2>{section_info[0]}</h2>
+        <p>{section_info[1]}</p>
 """
-            section_idx += 1
 
     html_content += f"""
         <div class="figure">
