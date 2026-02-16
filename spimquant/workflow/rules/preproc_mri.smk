@@ -575,3 +575,81 @@ rule warp_mri_brainmask_to_spim:
         " greedy -threads {threads} -d 3 -rf {input.ref} -ri NN"
         "  -rm {input.mask} {output.mask} "
         "  -r {input.warp_mri_to_spim} {input.affine_mri_to_spim} -rj {output.jacobian}"
+
+
+rule mri_spim_registration_qc_report:
+    """Generate MRI to SPIM registration quality control report with visualizations"""
+    input:
+        spim=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level=config["registration_level"],
+            desc=config["templatereg"]["desc"],
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        mri=bids(
+            root=root,
+            datatype="anat",
+            desc="N4brain",
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
+        ),
+        warped_affine=bids(
+            root=root,
+            datatype="warps",
+            space="SPIM",
+            desc="linearwarped",
+            suffix=f"{mri_suffix}.nii.gz",
+            dof=config["reg_mri"]["greedy"]["dof"],
+            iters=config["reg_mri"]["greedy"]["iters"],
+            radius=config["reg_mri"]["greedy"]["radius"],
+            gradsigma=config["reg_mri"]["greedy"]["gradsigma"],
+            warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
+            **inputs["spim"].wildcards,
+        ),
+        warped_deform=bids(
+            root=root,
+            datatype="warps",
+            space="SPIM",
+            desc="deformwarped",
+            suffix=f"{mri_suffix}.nii.gz",
+            dof=config["reg_mri"]["greedy"]["dof"],
+            iters=config["reg_mri"]["greedy"]["iters"],
+            radius=config["reg_mri"]["greedy"]["radius"],
+            gradsigma=config["reg_mri"]["greedy"]["gradsigma"],
+            warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
+            **inputs["spim"].wildcards,
+        ),
+        warp=bids(
+            root=root,
+            datatype="warps",
+            from_=f"{mri_suffix}",
+            to="SPIM",
+            suffix="warp.nii.gz",
+            dof=config["reg_mri"]["greedy"]["dof"],
+            iters=config["reg_mri"]["greedy"]["iters"],
+            radius=config["reg_mri"]["greedy"]["radius"],
+            gradsigma=config["reg_mri"]["greedy"]["gradsigma"],
+            warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        stain_for_reg=stain_for_reg,
+    output:
+        report_html=bids(
+            root=root,
+            datatype="anat",
+            space="SPIM",
+            suffix="regqc.html",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=8000,
+        runtime=10,
+    script:
+        "../scripts/mri_spim_reg_qc_report.py"
