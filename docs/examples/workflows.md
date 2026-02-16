@@ -30,5 +30,5 @@ End-to-end examples of SPIMquant workflows.
 
 ## Next Steps
 
-- [Jupyter Notebooks](notebooks.md)
+- [Sample Datasets](datasets.md)
 - [Tutorials](../tutorials/basic_registration.md)

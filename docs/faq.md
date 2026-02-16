@@ -1,5 +1,7 @@
 # Frequently Asked Questions
 
+<!-- TODO: Review this section for accuracy - some content needs revision and verification -->
+
 ## General Questions
 
 ### What is SPIMquant?

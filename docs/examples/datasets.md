@@ -30,4 +30,4 @@ Use [SPIMprep](https://github.com/khanlab/SPIMprep) to prepare your own BIDS dat
 ## Next Steps
 
 - [Complete Workflows](workflows.md)
-- [Jupyter Notebooks](notebooks.md)
+- [Tutorials](../tutorials/basic_registration.md)

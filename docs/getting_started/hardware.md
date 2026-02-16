@@ -1,5 +1,7 @@
 # Hardware Requirements
 
+<!-- TODO: This section needs careful editing - some specific constraints and benchmarks may need verification -->
+
 SPIMquant processes large-scale microscopy datasets and requires substantial computational resources. This guide helps you plan your hardware setup.
 
 ## Minimum Requirements
