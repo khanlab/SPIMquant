@@ -28,9 +28,7 @@ output_html = snakemake.output.report_html
 subject = snakemake.wildcards.subject
 stain = snakemake.params.stain_for_reg
 
-print(
-    f"Processing MRI to SPIM registration QC for subject {subject}, stain {stain}"
-)
+print(f"Processing MRI to SPIM registration QC for subject {subject}, stain {stain}")
 
 # HTML components storage
 html_figures = []
@@ -113,7 +111,9 @@ display = plotting.plot_anat(
 )
 display.add_overlay(warped_affine_img, cmap="viridis", transparency=0.5)
 add_figure_to_html(
-    fig, "Affine registration overlay showing SPIM with affine-transformed MRI", section=1
+    fig,
+    "Affine registration overlay showing SPIM with affine-transformed MRI",
+    section=1,
 )
 
 
@@ -175,9 +175,7 @@ display = plotting.plot_anat(
     figure=fig,
     dim=-1,
 )
-display.add_contours(
-    spim_img, levels=[100, 1000, 2000], colors="r", transparency=0.7
-)
+display.add_contours(spim_img, levels=[100, 1000, 2000], colors="r", transparency=0.7)
 add_figure_to_html(
     fig, "Affine-transformed MRI with SPIM contours overlaid in red", section=3
 )
@@ -194,9 +192,7 @@ display = plotting.plot_anat(
     figure=fig,
     dim=-1,
 )
-display.add_contours(
-    spim_img, levels=[100, 1000, 2000], colors="r", transparency=0.7
-)
+display.add_contours(spim_img, levels=[100, 1000, 2000], colors="r", transparency=0.7)
 add_figure_to_html(
     fig, "Deformably-transformed MRI with SPIM contours overlaid in red", section=3
 )
@@ -251,13 +247,13 @@ if len(warp_data.shape) == 5 and warp_data.shape[-1] == 3:
     fig.suptitle(f"Deformation Field Components (MRI to SPIM)", fontsize=16)
 
     axis_labels = ["X", "Y", "Z"]
-    
+
     for i, (ax, axis_label) in enumerate(zip(axes, axis_labels)):
         # Create NIfTI image for each component
         comp_img = nib.Nifti1Image(
             warp_data[..., 0, i], warp_img.affine, warp_img.header
         )
-        
+
         display = plotting.plot_stat_map(
             comp_img,
             bg_img=spim_img,
@@ -267,7 +263,7 @@ if len(warp_data.shape) == 5 and warp_data.shape[-1] == 3:
             cmap="RdBu_r",
             axes=ax,
         )
-    
+
     plt.tight_layout()
     add_figure_to_html(
         fig, "Directional components of the deformation field (X, Y, Z axes)", section=4
