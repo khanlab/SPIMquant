@@ -13,12 +13,21 @@ Usage:
 """
 
 import argparse
+import logging
 import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
+
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 # Define workflow stages based on rule naming patterns and dependencies
@@ -302,10 +311,15 @@ def main():
     parser = argparse.ArgumentParser(
         description="Generate modular Mermaid DAG diagrams for SPIMquant workflow"
     )
+    
+    # Get repository root for better default path display
+    repo_root = Path(__file__).parent.parent.parent
+    default_bids = repo_root / "tests" / "bids_ds"
+    
     parser.add_argument(
         "--bids-dir",
         type=Path,
-        help="Path to BIDS dataset (default: tests/bids_ds)",
+        help=f"Path to BIDS dataset (default: {{repo_root}}/tests/bids_ds, resolved to: {default_bids})",
     )
     parser.add_argument(
         "--output-dir",
@@ -320,11 +334,8 @@ def main():
     )
     args = parser.parse_args()
     
-    # Get repository root
-    repo_root = Path(__file__).parent.parent.parent
-    
     # Set defaults
-    bids_dir = args.bids_dir or repo_root / "tests" / "bids_ds"
+    bids_dir = args.bids_dir or default_bids
     output_dir = args.output_dir or Path("/tmp/spimquant_output")
     
     # Create output directories
@@ -355,11 +366,18 @@ def main():
     # Classify all nodes
     print("Classifying nodes into workflow stages...")
     classifications = {}
+    unclassified_nodes = []
     for node_id, label in nodes.items():
         stage = classify_node(label, WORKFLOW_STAGES)
         classifications[node_id] = stage
         if stage == "other":
-            print(f"  Warning: Node '{label}' not classified into any stage")
+            unclassified_nodes.append(label)
+    
+    # Log warnings about unclassified nodes
+    if unclassified_nodes:
+        logger.warning("The following nodes were not classified into any stage:")
+        for label in unclassified_nodes:
+            logger.warning(f"  - {label}")
     
     # Print classification summary
     print("\nClassification summary:")

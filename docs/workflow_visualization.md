@@ -7,7 +7,7 @@ SPIMquant's complex workflow is broken down into functional stages for easier un
 The full workflow contains **40 rules** organized into **11 functional stages**:
 
 ```mermaid
-graph LR
+flowchart TB
     A[01_import] --> B[02_preprocessing]
     B --> C[03_masking]
     C --> D[04_correction]

@@ -6,7 +6,7 @@ This script renders all .mermaid files in docs/figures/ to SVG and optionally PN
 It handles the puppeteer sandbox configuration needed for CI environments.
 
 Usage:
-    python3 render_diagrams.py [--format svg|png|both]
+    python3 render_diagrams.py [--format svg|png|both] [--theme neutral]
 """
 
 import argparse
@@ -27,13 +27,14 @@ def check_mmdc_available():
         return False
 
 
-def render_diagram(mermaid_file: Path, output_format: str = "svg"):
+def render_diagram(mermaid_file: Path, output_format: str = "svg", theme: str = "neutral"):
     """
     Render a single mermaid diagram to the specified format.
     
     Args:
         mermaid_file: Path to .mermaid file
         output_format: Output format ('svg' or 'png')
+        theme: Mermaid theme to use ('neutral', 'default', 'dark', 'forest', etc.)
     
     Returns:
         True if successful, False otherwise
@@ -51,7 +52,7 @@ def render_diagram(mermaid_file: Path, output_format: str = "svg"):
                 "mmdc",
                 "-i", str(mermaid_file),
                 "-o", str(output_file),
-                "-t", "neutral",
+                "-t", theme,
                 "--puppeteerConfigFile", "/dev/stdin",
             ],
             input=puppeteer_config,
@@ -79,6 +80,11 @@ def main():
         choices=["svg", "png", "both"],
         default="svg",
         help="Output format (default: svg)",
+    )
+    parser.add_argument(
+        "--theme",
+        default="neutral",
+        help="Mermaid theme to use for rendering (default: neutral). The 'neutral' theme provides clean, professional diagrams suitable for documentation.",
     )
     args = parser.parse_args()
     
@@ -108,6 +114,7 @@ def main():
     print("=" * 80)
     print(f"Figures directory: {figures_dir}")
     print(f"Output format: {args.format}")
+    print(f"Theme: {args.theme}")
     print(f"Found {len(mermaid_files)} diagram(s) to render")
     print()
     
@@ -121,7 +128,7 @@ def main():
     for mermaid_file in mermaid_files:
         for fmt in formats:
             print(f"Rendering {mermaid_file.name} to {fmt.upper()}...", end=" ")
-            if render_diagram(mermaid_file, fmt):
+            if render_diagram(mermaid_file, fmt, args.theme):
                 print("✓")
                 success_count += 1
             else:
