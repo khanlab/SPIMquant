@@ -166,6 +166,11 @@ parse_args:
     action: store_true
     default: False
 
+  --mri_upsample_factor:
+    help: "Upsampling factor for multi-MRI averaging to create super-resolved images (default: %(default)s). Use 1 for no upsampling, 2 for 2x super-resolution, etc."
+    type: float
+    default: 1.0
+
   --orientation:
     help: "Forcefully set the orientation of the input OME Zarr. Only use this if the orientation in the zarr metadata is incorrect and not easily changed. Note, this orientation string is defined in XYZ, with the letter of the increasing direction. Blaze data stitched with SPIMprep should be RPI, Imaris stitched data should be RAI, and Lifecanvas stitched data should be RAS. "
     default: null

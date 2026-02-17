@@ -34,14 +34,184 @@ def select_single_mri(wildcards):
         )
 
 
+def get_all_mri(wildcards):
+    """Get all MRI files for a subject (for multi-MRI averaging)."""
+    return inputs["mri"].filter(subject=wildcards.subject).expand()
+
+
+def get_mri_indices(wildcards):
+    """Get list of indices for MRI files for a subject."""
+    files = inputs["mri"].filter(subject=wildcards.subject).expand()
+    return list(range(len(files)))
+
+
+rule n4_mri_individual:
+    """Apply N4 bias field correction to individual T2w MRI images.
+    
+    Uses ANTs N4BiasFieldCorrection to correct intensity inhomogeneities in
+    each MRI image before registration and averaging.
+    """
+    input:
+        nii=lambda wildcards: get_all_mri(wildcards)[int(wildcards.mriidx)],
+    output:
+        nii=bids(
+            root=root,
+            datatype="anat",
+            desc="N4",
+            mriidx="{mriidx}",
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
+    conda:
+        "../envs/ants.yaml"
+    shell:
+        "N4BiasFieldCorrection -i {input.nii}"
+        " -o {output.nii}"
+        " -d 3 -v "
+
+
+rule register_mri_to_first:
+    """Rigidly register each MRI to the first MRI using greedy.
+    
+    This aligns multiple MRI acquisitions to enable super-resolved averaging.
+    Only runs when multiple MRI images are present.
+    """
+    input:
+        fixed=bids(
+            root=root,
+            datatype="anat",
+            desc="N4",
+            mriidx="0",
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
+        ),
+        moving=bids(
+            root=root,
+            datatype="anat",
+            desc="N4",
+            mriidx="{mriidx}",
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
+        ),
+    output:
+        xfm_ras=bids(
+            root=root,
+            datatype="warps",
+            from_=f"{mri_suffix}",
+            to=f"{mri_suffix}ref",
+            type_="ras",
+            desc="rigid",
+            mriidx="{mriidx}",
+            suffix="xfm.txt",
+            **inputs.subj_wildcards,
+        ),
+    group:
+        "subj"
+    threads: 8
+    resources:
+        mem_mb=8000,
+        runtime=10,
+    shell:
+        "if [ {wildcards.mriidx} -eq 0 ]; then "
+        "  echo '1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1' > {output.xfm_ras}; "
+        "else "
+        "  greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} "
+        "  -a -dof 6 -ia-image-centers -m NMI -o {output.xfm_ras}; "
+        "fi"
+
+
+rule average_mri:
+    """Average all registered and N4-corrected MRI images.
+    
+    Optionally upsamples images during transformation for super-resolution.
+    Produces a final preprocessed MRI with desc-preproc.
+    """
+    input:
+        ref=bids(
+            root=root,
+            datatype="anat",
+            desc="N4",
+            mriidx="0",
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
+        ),
+        mri=lambda wildcards: expand(
+            bids(
+                root=root,
+                datatype="anat",
+                desc="N4",
+                mriidx="{mriidx}",
+                suffix=f"{mri_suffix}.nii.gz",
+                **inputs.subj_wildcards,
+            ),
+            mriidx=get_mri_indices(wildcards),
+            allow_missing=True,
+        ),
+        xfm=lambda wildcards: expand(
+            bids(
+                root=root,
+                datatype="warps",
+                from_=f"{mri_suffix}",
+                to=f"{mri_suffix}ref",
+                type_="ras",
+                desc="rigid",
+                mriidx="{mriidx}",
+                suffix="xfm.txt",
+                **inputs.subj_wildcards,
+            ),
+            mriidx=get_mri_indices(wildcards),
+            allow_missing=True,
+        ),
+    params:
+        upsample_factor=lambda wildcards: config.get("mri_upsample_factor", 1),
+    output:
+        nii=bids(
+            root=root,
+            datatype="anat",
+            desc="preproc",
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
+        ),
+    group:
+        "subj"
+    threads: 8
+    resources:
+        mem_mb=16000,
+        runtime=15,
+    conda:
+        "../envs/c3d.yaml"
+    script:
+        "../scripts/average_registered_mri.py"
+
+
 rule n4_mri:
     """Apply N4 bias field correction to T2w MRI.
     
     Uses ANTs N4BiasFieldCorrection to correct intensity inhomogeneities in
     the MRI image, improving subsequent registration performance.
+    
+    This rule handles both single and multiple MRI cases by using the
+    preprocessed (averaged) output when multiple MRIs exist, or directly
+    applying N4 when only a single MRI exists.
     """
     input:
-        nii=select_single_mri,
+        nii=lambda wildcards: (
+            bids(
+                root=root,
+                datatype="anat",
+                desc="preproc",
+                suffix=f"{mri_suffix}.nii.gz",
+                **inputs.subj_wildcards,
+            )
+            if len(get_all_mri(wildcards)) > 1
+            else select_single_mri(wildcards)
+        ),
     output:
         nii=bids(
             root=root,
@@ -59,9 +229,11 @@ rule n4_mri:
     conda:
         "../envs/ants.yaml"
     shell:
-        "N4BiasFieldCorrection -i {input.nii}"
-        " -o {output.nii}"
-        " -d 3 -v "
+        "if echo {input.nii} | grep -q 'desc-preproc'; then "
+        "  cp {input.nii} {output.nii}; "
+        "else "
+        "  N4BiasFieldCorrection -i {input.nii} -o {output.nii} -d 3 -v; "
+        "fi"
 
 
 rule rigid_nlin_reg_mri_to_template:
