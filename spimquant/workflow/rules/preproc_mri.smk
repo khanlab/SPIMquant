@@ -1,3 +1,26 @@
+"""
+MRI preprocessing and cross-modality registration workflow for SPIMquant.
+
+This module handles co-registration of in-vivo MRI (T2w) with ex-vivo SPIM data,
+enabling multi-modal analysis and assessment of tissue changes due to perfusion
+fixation and optical clearing.
+
+Key workflow stages:
+1. N4 bias field correction of MRI
+2. MRI to template registration (for brain masking)
+3. Template brain mask to MRI transformation
+4. MRI brain extraction
+5. MRI to SPIM rigid+deformable registration
+6. Parameter tuning rules for optimization
+7. Concatenated transformations (MRI -> SPIM -> Template)
+8. Jacobian determinant calculation (tissue deformation quantification)
+9. Registration QC report generation
+
+This workflow is optional and used when both MRI and SPIM data are available
+for the same subject. 
+"""
+
+
 def select_single_mri(wildcards):
 
     files = inputs["mri"].filter(subject=wildcards.subject).expand()
@@ -12,6 +35,11 @@ def select_single_mri(wildcards):
 
 
 rule n4_mri:
+    """Apply N4 bias field correction to T2w MRI.
+    
+    Uses ANTs N4BiasFieldCorrection to correct intensity inhomogeneities in
+    the MRI image, improving subsequent registration performance.
+    """
     input:
         nii=select_single_mri,
     output:
@@ -36,7 +64,16 @@ rule n4_mri:
         " -d 3 -v "
 
 
-rule rigid_greedy_reg_mri_to_template:
+rule rigid_nlin_reg_mri_to_template:
+    """Initial unmasked MRI to unmasked template MRI using rigid + 
+    deformable registration.
+    
+    Performs initial rigid (6 DOF) alignment followed by deformable
+    registration to align non-brain-masked  MRI with similarly
+    non-brain-masked MRI, so that the template brain mask can be
+    propagated. Note: this step could be replaced by a ML-based 
+    brain-masking if a suitable model is found/trained.
+    """
     input:
         template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
         subject=bids(
@@ -261,7 +298,13 @@ rule apply_mri_brain_mask:
         "c3d {input.nii} {input.mask} -multiply -resample 300% -o {output.nii}"
 
 
-rule greedy_reg_mri_to_spim:
+
+rule affine_nlin_reg_mri_to_spim:
+    """Register MRI to SPIM space using affine + deformable registration.
+    
+    Performs initial affine (6 or 12 DOF) alignment followed by deformable
+    registration to align brain-masked MRI with SPIM data. 
+    """
     input:
         mri=bids(
             root=root,
@@ -490,7 +533,13 @@ rule warp_mri_to_template_via_spim:
 
 
 rule warp_mri_brainmask_to_spim:
-    """ to assess effect of perfusion fixation and clearing"""
+    """Warp MRI brain mask to SPIM space for tissue comparison.
+    
+    Applies the MRI->SPIM transformation to the MRI brain mask to enable
+    direct comparison of brain tissue extent between modalities. Also computes
+    Jacobian determinant to quantify local tissue deformation due to fixation
+    and clearing processes.
+    """
     input:
         mask=bids(
             root=root,

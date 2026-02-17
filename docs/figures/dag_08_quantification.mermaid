@@ -1,0 +1,43 @@
+---
+title: Region properties and quantification
+---
+flowchart TB
+	id0[all_participant]
+	id20[merge_into_segstats_tsv]
+	id21[map_regionprops_to_atlas_rois]
+	id22[compute_filtered_regionprops]
+	id23[multiotsu]
+	id25[deform_template_dseg_to_subject_nii]
+	id26[import_lut_tsv]
+	id29[threshold]
+	id3[import_template_anat]
+	id33[counts_per_voxel]
+	id34[counts_per_voxel_template]
+	id35[aggregate_regionprops_across_stains]
+	id36[transform_regionprops_to_template]
+	style id0 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id20 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id21 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id22 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id23 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id25 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id26 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id29 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id3 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id33 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id34 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id35 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id36 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	id33 --> id0
+	id34 --> id0
+	id21 --> id20
+	id25 --> id21
+	id22 --> id21
+	id26 --> id21
+	id23 --> id22
+	id29 --> id22
+	id22 --> id33
+	id35 --> id34
+	id3 --> id34
+	id36 --> id35
+	id22 --> id36

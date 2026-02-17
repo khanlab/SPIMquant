@@ -1,0 +1,59 @@
+---
+title: Apply transformations to images and atlases
+---
+flowchart TB
+	id0[all_participant]
+	id1[deform_spim_nii_to_template_nii]
+	id15[deform_reg]
+	id16[registration_qc_report]
+	id17[import_dseg]
+	id2[get_downsampled_nii]
+	id21[map_regionprops_to_atlas_rois]
+	id22[compute_filtered_regionprops]
+	id25[deform_template_dseg_to_subject_nii]
+	id27[map_img_to_roi_tsv]
+	id3[import_template_anat]
+	id35[aggregate_regionprops_across_stains]
+	id36[transform_regionprops_to_template]
+	id37[create_spim_patches]
+	id38[create_corrected_spim_patches]
+	id39[create_mask_patches]
+	id4[convert_ras_to_itk]
+	id5[affine_reg]
+	style id0 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id1 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id15 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id16 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id17 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id2 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id21 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id22 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id25 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id27 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id3 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id35 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id36 fill:#57D996,stroke:#2D8659,stroke-width:3px
+	style id37 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id38 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id39 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id4 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	style id5 fill:#E8F4F8,stroke:#AAA,stroke-width:1px
+	id1 --> id0
+	id2 --> id1
+	id4 --> id1
+	id15 --> id1
+	id3 --> id1
+	id1 --> id16
+	id25 --> id21
+	id15 --> id25
+	id2 --> id25
+	id4 --> id25
+	id17 --> id25
+	id25 --> id27
+	id36 --> id35
+	id22 --> id36
+	id5 --> id36
+	id15 --> id36
+	id25 --> id37
+	id25 --> id38
+	id25 --> id39
