@@ -42,6 +42,7 @@ def apply_transform_with_upsample(
             "-r",
             xfm_ras,
         ]
+        subprocess.run(cmd, check=True)
     else:
         # Create upsampled reference grid
         ref_img = nib.load(ref_nii)
@@ -77,9 +78,6 @@ def apply_transform_with_upsample(
             subprocess.run(cmd, check=True)
         finally:
             Path(tmp_ref_path).unlink(missing_ok=True)
-            return
-
-    subprocess.run(cmd, check=True)
 
 
 def main():

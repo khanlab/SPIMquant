@@ -194,9 +194,9 @@ rule n4_mri:
     Uses ANTs N4BiasFieldCorrection to correct intensity inhomogeneities in
     the MRI image, improving subsequent registration performance.
     
-    This rule handles both single and multiple MRI cases by using the
-    preprocessed (averaged) output when multiple MRIs exist, or directly
-    applying N4 when only a single MRI exists.
+    This rule handles both single and multiple MRI cases. For multiple MRIs,
+    it uses the preprocessed (averaged) output which is already N4-corrected.
+    For single MRIs, it applies N4 directly.
     """
     input:
         nii=lambda wildcards: (
@@ -210,6 +210,8 @@ rule n4_mri:
             if len(get_all_mri(wildcards)) > 1
             else select_single_mri(wildcards)
         ),
+    params:
+        is_multi_mri=lambda wildcards: len(get_all_mri(wildcards)) > 1,
     output:
         nii=bids(
             root=root,
@@ -226,12 +228,8 @@ rule n4_mri:
         runtime=15,
     conda:
         "../envs/ants.yaml"
-    shell:
-        "if echo {input.nii} | grep -q 'desc-preproc'; then "
-        "  cp {input.nii} {output.nii}; "
-        "else "
-        "  N4BiasFieldCorrection -i {input.nii} -o {output.nii} -d 3 -v; "
-        "fi"
+    script:
+        "../scripts/copy_or_n4.py"
 
 
 rule rigid_nlin_reg_mri_to_template:
