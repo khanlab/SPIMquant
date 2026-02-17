@@ -184,8 +184,6 @@ rule average_mri:
     resources:
         mem_mb=16000,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
     script:
         "../scripts/average_registered_mri.py"
 
