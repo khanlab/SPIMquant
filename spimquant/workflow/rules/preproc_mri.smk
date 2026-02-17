@@ -48,6 +48,7 @@ def get_mri_indices(wildcards):
 rule n4_mri_individual:
     """Apply N4 bias field correction to individual T2w MRI images.
     
+    This rule only runs when multiple MRI images are present for a subject.
     Uses ANTs N4BiasFieldCorrection to correct intensity inhomogeneities in
     each MRI image before registration and averaging.
     """
@@ -189,14 +190,15 @@ rule average_mri:
 
 
 rule n4_mri:
-    """Apply N4 bias field correction to T2w MRI.
+    """Produce final N4-corrected MRI for downstream processing.
     
-    Uses ANTs N4BiasFieldCorrection to correct intensity inhomogeneities in
-    the MRI image, improving subsequent registration performance.
+    This rule produces the final N4-corrected output used by downstream rules
+    in the workflow. The processing depends on the number of input MRIs:
     
-    This rule handles both single and multiple MRI cases. For multiple MRIs,
-    it uses the preprocessed (averaged) output which is already N4-corrected.
-    For single MRIs, it applies N4 directly.
+    - Single MRI: Applies N4BiasFieldCorrection to correct intensity 
+      inhomogeneities, improving subsequent registration performance.
+    - Multiple MRIs: Uses the preprocessed (averaged) output which has already
+      been N4-corrected at the individual image level before averaging.
     """
     input:
         nii=lambda wildcards: (

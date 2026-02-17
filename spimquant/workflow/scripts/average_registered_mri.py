@@ -47,9 +47,16 @@ def apply_transform_with_upsample(
         # Create upsampled reference grid
         ref_img = nib.load(ref_nii)
         new_shape = tuple(int(s * upsample_factor) for s in ref_img.shape)
-        new_affine = ref_img.affine.copy()
-        # Adjust affine for new voxel size
-        new_affine[:3, :3] = new_affine[:3, :3] / upsample_factor
+
+        # Create new affine with scaled voxel sizes
+        # Get original voxel sizes (magnitude of each affine column)
+        orig_affine = ref_img.affine
+        new_affine = orig_affine.copy()
+
+        # Scale each spatial dimension by dividing voxel size
+        # This is done by dividing each column vector by the upsample factor
+        for i in range(3):
+            new_affine[:3, i] = orig_affine[:3, i] / upsample_factor
 
         # Create temporary upsampled reference
         with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as tmp_ref:
@@ -122,9 +129,15 @@ def main():
 
     finally:
         # Clean up temporary files
+        import shutil
+
         for f in transformed_files:
             Path(f).unlink(missing_ok=True)
-        temp_dir.rmdir()
+        try:
+            temp_dir.rmdir()
+        except OSError:
+            # Directory may not be empty, use shutil
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":
