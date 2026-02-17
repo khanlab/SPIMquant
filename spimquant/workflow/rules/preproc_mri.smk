@@ -7,10 +7,10 @@ fixation and optical clearing.
 
 Key workflow stages:
 1. N4 bias field correction of MRI
-2. MRI to template registration (for brain masking)
+2. MRI to MRI-template rigid+nlin registration (for brain masking)
 3. Template brain mask to MRI transformation
 4. MRI brain extraction
-5. MRI to SPIM rigid+deformable registration
+5. MRI to SPIM affine+nlin registration
 6. Parameter tuning rules for optimization
 7. Concatenated transformations (MRI -> SPIM -> Template)
 8. Jacobian determinant calculation (tissue deformation quantification)
