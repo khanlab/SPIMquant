@@ -298,7 +298,6 @@ rule apply_mri_brain_mask:
         "c3d {input.nii} {input.mask} -multiply -resample 300% -o {output.nii}"
 
 
-
 rule affine_nlin_reg_mri_to_spim:
     """Register MRI to SPIM space using affine + deformable registration.
     
