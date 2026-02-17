@@ -14,8 +14,6 @@ configfile: "config/snakebids.yml"
 root = os.path.expandvars(config["root"])
 work = os.path.expandvars(config["work"]) if config["work"] is not None else root
 
-if not config["register_to_mri"]:
-    del config["pybids_inputs"]["T2w"]
 
 # Get input wildcards
 inputs = generate_inputs(
@@ -27,7 +25,20 @@ inputs = generate_inputs(
     participant_label=config.get("participant_label", None),
     exclude_participant_label=config.get("exclude_participant_label", None),
     validate=not config.get("plugins.validator.skip", False),
+    limit_to=["spim", "mri"] if config["register_to_mri"] else ["spim"],
 )
+
+
+if "mri" in inputs:
+    suffixes = inputs["mri"].entities["suffix"]
+    if len(suffixes) == 1:
+        mri_suffix = suffixes[0]
+    else:
+        raise ValueError(
+            f"More than one MRI suffix found, use --filter-mri to narrow your search: {suffixes}"
+        )
+else:
+    mri_suffix = "T2w"
 
 
 include: "rules/common.smk"
@@ -337,11 +348,21 @@ rule all_mri_reg:
                 root=root,
                 datatype="anat",
                 space="{template}",
+                via="SPIM",
                 desc="N4",
-                suffix="T2w.nii.gz",
+                suffix=f"{mri_suffix}.nii.gz",
                 **inputs["spim"].wildcards,
             ),
             template=config["template"],
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="anat",
+                space="SPIM",
+                suffix="regqc.html",
+                **inputs["spim"].wildcards,
+            ),
         ),
 
 
