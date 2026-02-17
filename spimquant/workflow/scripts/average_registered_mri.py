@@ -5,6 +5,7 @@ to a common reference, applies their transformations with optional upsampling,
 and averages them to create a super-resolved or higher SNR final image.
 """
 
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -99,8 +100,6 @@ def main():
     # Handle single MRI case
     if len(mri_files) == 1:
         # Just copy the single MRI to output (it's already N4 corrected)
-        import shutil
-
         shutil.copy(mri_files[0], output_nii)
         return
 
@@ -129,8 +128,6 @@ def main():
 
     finally:
         # Clean up temporary files
-        import shutil
-
         for f in transformed_files:
             Path(f).unlink(missing_ok=True)
         try:
