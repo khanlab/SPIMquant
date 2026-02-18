@@ -33,7 +33,7 @@ Level of the analysis that will be performed.
 
 ## Optional Arguments
 
-### `--work_dir`, `--work-dir`
+### `--work-dir`, `--work_dir`
 
 Local path to use for temporary files
  (str)
@@ -47,7 +47,7 @@ Template to use for SPIM registration
  (default: ABAv3)
 
 
-### `--template-mri`, `--template_mri`
+### `--template_mri`, `--template-mri`
 
 Template to use for MRI registration to obtain brain mask
  (str)
@@ -55,14 +55,14 @@ Template to use for MRI registration to obtain brain mask
  (default: MouseIn)
 
 
-### `--atlas_segs`, `--atlas-segs`
+### `--atlas-segs`, `--atlas_segs`
 
 Atlas segmentations to use with the chosen template (default: use them all)
  (str)
  (accepts one or more values)
 
 
-### `--patch-atlas-segs`, `--patch_atlas_segs`
+### `--patch_atlas_segs`, `--patch-atlas-segs`
 
 Atlas segmentations to use for extracting patches (default: roi22)
  (str)
@@ -70,14 +70,14 @@ Atlas segmentations to use for extracting patches (default: roi22)
  (accepts one or more values)
 
 
-### `--template-negative-mask`, `--template_negative_mask`
+### `--template_negative_mask`, `--template-negative-mask`
 
 Negative mask, in the template space, to highlight regions to avoid
  (Path)
  (default: placeholder)
 
 
-### `--template-crop`, `--template_crop`
+### `--template_crop`, `--template-crop`
 
 Crop template along X-axis to retain specific hemisphere for registration (default: None)
  (str)
@@ -92,7 +92,7 @@ Possible stains to use for registration (will choose first available, in order) 
  (accepts one or more values)
 
 
-### `--stains_for_seg`, `--stains-for-seg`
+### `--stains-for-seg`, `--stains_for_seg`
 
 List of stains to use for segmentation and quantification  (default: ['abeta', 'Abeta', 'BetaAmyloid', 'AlphaSynuclein', 'Iba1', 'ChAT'])
  (str)
@@ -107,21 +107,21 @@ Downsampling level to use for registration (level 0 is full res, level 1 is 50% 
  (default: 5)
 
 
-### `--segmentation-level`, `--segmentation_level`
+### `--segmentation_level`, `--segmentation-level`
 
 Downsampling level to use for segmentation (level 0 is full res, level 1 is 50% size, ...) (default: 0)
  (str)
  (default: 0)
 
 
-### `--no-segmentation`, `--no_segmentation`
+### `--no_segmentation`, `--no-segmentation`
 
 Skip segmentation and quantification of stains, i.e. perform registration only (default: False)
  (default: False)
  (flag)
 
 
-### `--correction_method`, `--correction-method`
+### `--correction-method`, `--correction_method`
 
 Method to use for intensity non-uniformity correction, prior to performing segmentation (default: n4)
  (str)
@@ -145,14 +145,14 @@ Range of intensities to use for histogram calculation in multiotsu segmentation.
  (accepts 2 values)
 
 
-### `--seg_hist_bins`, `--seg-hist-bins`
+### `--seg-hist-bins`, `--seg_hist_bins`
 
 Number of bins to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. (default: 1000)
  (str)
  (default: 1000)
 
 
-### `--register_to_mri`, `--register-to-mri`
+### `--register-to-mri`, `--register_to_mri`
 
 Register the lightsheet data directly to a corresponding MRI (from the BIDS dataset)
  (default: False)
@@ -172,7 +172,7 @@ Use low-quality parameters for speed (USE FOR TESTING ONLY)
  (flag)
 
 
-### `--skip_bids_validation`, `--skip-bids-validation`
+### `--skip-bids-validation`, `--skip_bids_validation`
 
 Skip validation of BIDS dataset. BIDS validation is performed by default using the bids-validator plugin (if installed/enabled) or with the pybids validator implementation (if bids-validator is not installed/enabled).
  (default: False)
@@ -187,14 +187,14 @@ Size of patches to extract in voxels (x, y, z) (default: [256, 256, 256])
  (accepts 3 values)
 
 
-### `--n-patches-per-label`, `--n_patches_per_label`
+### `--n_patches_per_label`, `--n-patches-per-label`
 
 Number of patches to extract per atlas label (default: 5)
  (int)
  (default: 5)
 
 
-### `--patch_labels`, `--patch-labels`
+### `--patch-labels`, `--patch_labels`
 
 List of atlas label names, abbreviations, or indices to extract patches from. If not specified, patches are extracted from all labels.
  (str)
@@ -215,7 +215,7 @@ List of atlas label names, abbreviations, or indices to extract as Imaris crops.
  (accepts one or more values)
 
 
-### `--crop-atlas-segs`, `--crop_atlas_segs`
+### `--crop_atlas_segs`, `--crop-atlas-segs`
 
 Atlas segmentations to use for extracting Imaris crops (default: roi22)
  (str)
@@ -223,13 +223,13 @@ Atlas segmentations to use for extracting Imaris crops (default: roi22)
  (accepts one or more values)
 
 
-### `--contrast-column`, `--contrast_column`
+### `--contrast_column`, `--contrast-column`
 
 Column name in participants.tsv to use for defining group contrasts (e.g., 'treatment', 'genotype'). Required for group-level statistical analysis.
  (str)
 
 
-### `--contrast-values`, `--contrast_values`
+### `--contrast_values`, `--contrast-values`
 
 Two group values for contrast comparison (e.g., 'control' 'drug'). Used with --contrast_column for statistical testing. Provide exactly 2 values.
  (str)
@@ -302,13 +302,6 @@ Optional path to directory of SQLite databasefile for PyBIDS. If directory is pa
 ### `--pybidsdb-reset`, `--pybidsdb_reset`
 
 Reindex existing PyBIDS SQLite database
- (default: False)
- (flag)
-
-
-### `--reset-db`, `--reset_db`
-
-==SUPPRESS==
  (default: False)
  (flag)
 

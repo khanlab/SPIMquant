@@ -99,12 +99,15 @@ def generate_cli_docs(parser, output_file):
         for action in optionals:
             if action.dest == "==SUPPRESS==":
                 continue
+            # Skip if help is SUPPRESS (used for internal/deprecated options)
+            if action.help is argparse.SUPPRESS:
+                continue
 
             # Format option strings
             opts = ", ".join(f"`{opt}`" for opt in action.option_strings)
             output.append(f"### {opts}\n")
 
-            if action.help:
+            if action.help and action.help != "==SUPPRESS==":
                 help_text = action.help.replace("%(default)s", str(action.default))
                 help_text = help_text.replace("\n", " ").strip()
                 output.append(f"{help_text}")
