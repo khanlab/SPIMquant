@@ -33,7 +33,7 @@ Level of the analysis that will be performed.
 
 ## Optional Arguments
 
-### `--work-dir`, `--work_dir`
+### `--work_dir`, `--work-dir`
 
 Local path to use for temporary files
  (str)
@@ -47,7 +47,7 @@ Template to use for SPIM registration
  (default: ABAv3)
 
 
-### `--template_mri`, `--template-mri`
+### `--template-mri`, `--template_mri`
 
 Template to use for MRI registration to obtain brain mask
  (str)
@@ -62,7 +62,7 @@ Atlas segmentations to use with the chosen template (default: use them all)
  (accepts one or more values)
 
 
-### `--patch_atlas_segs`, `--patch-atlas-segs`
+### `--patch-atlas-segs`, `--patch_atlas_segs`
 
 Atlas segmentations to use for extracting patches (default: roi22)
  (str)
@@ -77,7 +77,7 @@ Negative mask, in the template space, to highlight regions to avoid
  (default: placeholder)
 
 
-### `--template_crop`, `--template-crop`
+### `--template-crop`, `--template_crop`
 
 Crop template along X-axis to retain specific hemisphere for registration (default: None)
  (str)
@@ -92,7 +92,7 @@ Possible stains to use for registration (will choose first available, in order) 
  (accepts one or more values)
 
 
-### `--stains-for-seg`, `--stains_for_seg`
+### `--stains_for_seg`, `--stains-for-seg`
 
 List of stains to use for segmentation and quantification  (default: ['abeta', 'Abeta', 'BetaAmyloid', 'AlphaSynuclein', 'Iba1', 'ChAT'])
  (str)
@@ -100,7 +100,7 @@ List of stains to use for segmentation and quantification  (default: ['abeta', '
  (accepts one or more values)
 
 
-### `--registration-level`, `--registration_level`
+### `--registration_level`, `--registration-level`
 
 Downsampling level to use for registration (level 0 is full res, level 1 is 50% size, ...) (default: 5)
  (str)
@@ -121,7 +121,7 @@ Skip segmentation and quantification of stains, i.e. perform registration only (
  (flag)
 
 
-### `--correction-method`, `--correction_method`
+### `--correction_method`, `--correction-method`
 
 Method to use for intensity non-uniformity correction, prior to performing segmentation (default: n4)
  (str)
@@ -129,7 +129,7 @@ Method to use for intensity non-uniformity correction, prior to performing segme
  (default: n4)
 
 
-### `--seg_method`, `--seg-method`
+### `--seg-method`, `--seg_method`
 
 Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions.
  (str)
@@ -137,7 +137,7 @@ Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells
  (accepts one or more values)
 
 
-### `--seg_hist_range`, `--seg-hist-range`
+### `--seg-hist-range`, `--seg_hist_range`
 
 Range of intensities to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. Specify 2 numbers, for min and max values. (default: [0, 1000])
  (str)
@@ -187,14 +187,14 @@ Size of patches to extract in voxels (x, y, z) (default: [256, 256, 256])
  (accepts 3 values)
 
 
-### `--n_patches_per_label`, `--n-patches-per-label`
+### `--n-patches-per-label`, `--n_patches_per_label`
 
 Number of patches to extract per atlas label (default: 5)
  (int)
  (default: 5)
 
 
-### `--patch-labels`, `--patch_labels`
+### `--patch_labels`, `--patch-labels`
 
 List of atlas label names, abbreviations, or indices to extract patches from. If not specified, patches are extracted from all labels.
  (str)
@@ -208,7 +208,7 @@ Random seed for reproducible patch sampling (default: 42)
  (default: 42)
 
 
-### `--crop_labels`, `--crop-labels`
+### `--crop-labels`, `--crop_labels`
 
 List of atlas label names, abbreviations, or indices to extract as Imaris crops. If not specified, all labels are cropped.
  (str)
@@ -223,7 +223,7 @@ Atlas segmentations to use for extracting Imaris crops (default: roi22)
  (accepts one or more values)
 
 
-### `--contrast_column`, `--contrast-column`
+### `--contrast-column`, `--contrast_column`
 
 Column name in participants.tsv to use for defining group contrasts (e.g., 'treatment', 'genotype'). Required for group-level statistical analysis.
  (str)
