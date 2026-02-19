@@ -36,13 +36,28 @@ def select_single_mri(wildcards):
 
 def get_all_mri(wildcards):
     """Get all MRI files for a subject (for multi-MRI averaging)."""
-    return inputs["mri"].filter(subject=wildcards.subject).expand()
+    return sorted(
+        inputs["mri"]
+        .filter(subject=wildcards.subject)
+        .expand(bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards))
+    )
+
+
+def get_ref_mri(wildcards):
+    return get_all_mri(wildcards)[0]
+
+
+def get_flo_mri(wildcards):
+    return get_all_mri(wildcards)[1:]
 
 
 def get_mri_indices(wildcards):
     """Get list of indices for MRI files for a subject."""
-    files = inputs["mri"].filter(subject=wildcards.subject).expand()
-    return list(range(len(files)))
+    return list(range(len(get_all_mri(wildcards))))
+
+
+def get_mri_by_index(wildcards):
+    return get_all_mri(wildcards)[int(wildcards.mrindex)]
 
 
 rule n4_mri_individual:
@@ -53,16 +68,9 @@ rule n4_mri_individual:
     each MRI image before registration and averaging.
     """
     input:
-        nii=lambda wildcards: get_all_mri(wildcards)[int(wildcards.mriidx)],
+        nii=inputs["mri"].path,
     output:
-        nii=bids(
-            root=root,
-            datatype="anat",
-            desc="N4",
-            mriidx="{mriidx}",
-            suffix=f"{mri_suffix}.nii.gz",
-            **inputs.subj_wildcards,
-        ),
+        nii=bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards),
     group:
         "subj"
     threads: 1
@@ -84,22 +92,8 @@ rule register_mri_to_first:
     Only runs when multiple MRI images are present.
     """
     input:
-        fixed=bids(
-            root=root,
-            datatype="anat",
-            desc="N4",
-            mriidx="0",
-            suffix=f"{mri_suffix}.nii.gz",
-            **inputs.subj_wildcards,
-        ),
-        moving=bids(
-            root=root,
-            datatype="anat",
-            desc="N4",
-            mriidx="{mriidx}",
-            suffix=f"{mri_suffix}.nii.gz",
-            **inputs.subj_wildcards,
-        ),
+        fixed=get_ref_mri,
+        moving=get_mri_by_index,
     output:
         xfm_ras=bids(
             root=root,
@@ -108,7 +102,7 @@ rule register_mri_to_first:
             to=f"{mri_suffix}ref",
             type_="ras",
             desc="rigid",
-            mriidx="{mriidx}",
+            mrindex="{mrindex}",
             suffix="xfm.txt",
             **inputs.subj_wildcards,
         ),
@@ -119,7 +113,7 @@ rule register_mri_to_first:
         mem_mb=8000,
         runtime=10,
     shell:
-        "if [ {wildcards.mriidx} -eq 0 ]; then "
+        "if [ {wildcards.mrindex} -eq 0 ]; then "
         "  echo '1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1' > {output.xfm_ras}; "
         "else "
         "  greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} "
@@ -134,26 +128,8 @@ rule average_mri:
     Produces a final preprocessed MRI with desc-preproc.
     """
     input:
-        ref=bids(
-            root=root,
-            datatype="anat",
-            desc="N4",
-            mriidx="0",
-            suffix=f"{mri_suffix}.nii.gz",
-            **inputs.subj_wildcards,
-        ),
-        mri=lambda wildcards: expand(
-            bids(
-                root=root,
-                datatype="anat",
-                desc="N4",
-                mriidx="{mriidx}",
-                suffix=f"{mri_suffix}.nii.gz",
-                **inputs.subj_wildcards,
-            ),
-            mriidx=get_mri_indices(wildcards),
-            allow_missing=True,
-        ),
+        ref=get_ref_mri,
+        mri=get_flo_mri,
         xfm=lambda wildcards: expand(
             bids(
                 root=root,
@@ -162,11 +138,11 @@ rule average_mri:
                 to=f"{mri_suffix}ref",
                 type_="ras",
                 desc="rigid",
-                mriidx="{mriidx}",
+                mrindex="{mrindex}",
                 suffix="xfm.txt",
                 **inputs.subj_wildcards,
             ),
-            mriidx=get_mri_indices(wildcards),
+            mrindex=get_mri_indices(wildcards),
             allow_missing=True,
         ),
     params:

@@ -25,6 +25,7 @@ pybids_inputs:
       sample: brain
     wildcards:
       - subject
+      - session
       - sample
       - acquisition
       - staining
@@ -40,6 +41,7 @@ pybids_inputs:
       - run
       - reconstruction
       - suffix
+      - extension
 
 
 #configuration for the command-line parameters to make available
