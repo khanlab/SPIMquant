@@ -6,20 +6,20 @@
 
 ### What is SPIMquant?
 
-SPIMquant is a Snakemake-based BIDS app for quantitative analysis of SPIM (lightsheet) brain microscopy data. It performs automated registration to brain templates and atlas-based quantification of pathology.
+SPIMquant is a Snakemake-based BIDS app for quantitative analysis of SPIM (lightsheet) brain microscopy data. It performs automated registration to brain templates and MRI, and atlas-based quantification of pathology.
 
 ### What data formats does SPIMquant support?
 
-SPIMquant works with BIDS-formatted datasets containing OME-Zarr files. We recommend using [SPIMprep](https://github.com/khanlab/SPIMprep) to convert your raw microscopy data to BIDS format.
+SPIMquant works with BIDS-formatted datasets containing OME-Zarr files for lightsheet data, and nifti for MRI. We recommend using [SPIMprep](https://github.com/khanlab/SPIMprep) to convert your raw microscopy data to BIDS format.
 
 ### What templates are supported?
 
-SPIMquant supports:
+SPIMquant support includes:
 - ABAv3 (Allen Brain Atlas v3)
 - gubra
 - MBMv3 (Marmoset Brain Maps v3)
 - turone
-- MouseIn (for MRI registration)
+- MouseIn (for MRI brain masking)
 
 ### Can I use custom templates?
 
@@ -33,7 +33,7 @@ SPIMquant currently supports Linux (64-bit). Windows and macOS support may be ad
 
 ### How much memory do I need?
 
-Minimum 32 GB RAM is recommended. The `greedy` registration step can require 16-32 GB for a single job. See [Hardware Requirements](getting_started/hardware.md) for details.
+Minimum 32 GB RAM is recommended. The `greedy` registration step can require 16-32 GB for a single job. See [Hardware Requirements](getting_started/hardware.md) for details. Segmentation of lightsheet data at the full resolution (eg `--segmentation-level > 0`) requires more memory and cores to run efficiently.
 
 ### Do I need a GPU?
 
@@ -49,6 +49,7 @@ Dependencies are managed automatically through pixi. Simply run `pixi install` a
 
 Processing time varies significantly based on:
 - Dataset size and resolution
+- Downsampling level used for segmentation 
 - Available compute resources
 - Number of subjects
 - Specific workflow steps
@@ -71,8 +72,7 @@ Yes, use `--cores all` to utilize all available cores. Snakemake will automatica
 
 - Use fewer cores: `--cores 4` instead of `--cores all`
 - Process subjects sequentially
-- Use lower resolution pyramid levels
-- Reduce concurrent jobs
+- Use lower resolution pyramid levels (--segmentation-level > 0)
 
 ## Data and Formats
 
@@ -93,10 +93,12 @@ Yes, SPIMquant supports Zarr zipstores (`.ome.zarr.zip`). Use the filter option:
 
 ### What stains are supported for registration?
 
-Common registration stains include:
+The stain used for registration is based on a priority list, and includes the 
 - PI (Propidium Iodide)
-- YOPRO
+- YoPro
 - AutoF (Autofluorescence)
+
+Additional stains can be used with --stains-for-reg option.
 
 ### What stains can be segmented?
 
@@ -105,7 +107,8 @@ Segmentation is supported for:
 - AlphaSynuclein
 - Iba1
 - ChAT
-- Custom stains
+
+Additional stains with --stains-for-seg
 
 ## Registration and Segmentation
 
@@ -122,7 +125,9 @@ Check input data quality and ensure sufficient memory is available.
 ### How do I choose segmentation methods?
 
 - **threshold**: Simple intensity thresholding, fast
-- **otsu+k3i2**: Otsu + k-means, more robust
+- **otsu+k{k}i{i}**: Multi-otsu segmentation, selecting number of levels (k) and the index to use for thresholding. 
+
+Note: these global methods are mainly effective because non-uniformities are removed first with N4.
 
 <!-- TODO: Add link to segmentation guide --> See [Segmentation Methods](howto/segmentation.md) for details.
 
@@ -201,9 +206,11 @@ Common bottlenecks:
 - Network storage latency
 - Large dataset size
 
+If you fast local disk on a different path, use this with the --work-dir argument
+
 ### How much disk space do I need?
 
-Plan for 5-10x input data size for intermediate files. Use `--delete-temp-output` to clean up after completion.
+Plan for 5-10x input data size for intermediate files.  
 
 ## Troubleshooting
 
@@ -223,17 +230,13 @@ Plan for 5-10x input data size for intermediate files. Use `--delete-temp-output
 
 ### "Lock directory exists" errors
 
-Previous run was interrupted. Remove locks:
-```bash
-rm -rf /output/.snakemake/locks/
-```
+Previous run was interrupted. Remove locks by running with the --unlock option
 
 ### Snakemake errors
 
 - Run with `-n` for dry run to identify issues
-- Use `--verbose` for detailed output
-- Check `.snakemake/log/` for error logs
-- Ensure all dependencies are installed
+- Use `--verbose` for detailed snakemake output
+- Temporary files are automatically cleaned up as the workflow runs but you can use the --notemp option to retain them for debugging 
 
 ## Getting Help
 
@@ -249,7 +252,7 @@ rm -rf /output/.snakemake/locks/
 Include:
 - SPIMquant version
 - Operating system and version
-- Full error message and stack trace
+- Full error message 
 - Command used
 - Relevant log files
 - Steps to reproduce
@@ -268,7 +271,6 @@ Planned features include:
 - Additional statistical methods
 - More segmentation algorithms
 - Enhanced visualization tools
-- Improved cloud integration
 - Multi-modal registration
 
 ### Can I request features?
