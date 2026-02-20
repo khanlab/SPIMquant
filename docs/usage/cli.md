@@ -2,6 +2,9 @@
 
 The SPIMquant command-line interface is built on Snakemake and follows the BIDS App specification.
 
+!!! info "Complete CLI Reference"
+    For a complete auto-generated reference of all command-line options, see the [CLI Reference](../reference/cli_reference.md) page.
+
 ## Basic Usage
 
 ```bash

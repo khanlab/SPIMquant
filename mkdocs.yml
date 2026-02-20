@@ -31,6 +31,7 @@ nav:
       - Visualization: howto/visualization.md
   - Reference:
       - API Documentation: reference/api.md
+      - CLI Reference: reference/cli_reference.md
       - Configuration Options: reference/config.md
       - Workflow Rules: reference/rules.md
       - Workflow Visualization: workflow_visualization.md
@@ -100,3 +101,6 @@ plugins:
             show_source: true
             merge_init_into_class: true
             docstring_style: numpy
+
+hooks:
+  - docs/hooks.py
