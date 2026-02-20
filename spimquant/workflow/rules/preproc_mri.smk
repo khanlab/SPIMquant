@@ -44,7 +44,19 @@ def get_all_mri(wildcards):
 
 
 def get_ref_mri(wildcards):
-    return get_all_mri(wildcards)[0]
+    """gets a N4resampled reference"""
+    return sorted(
+        inputs["mri"]
+        .filter(subject=wildcards.subject)
+        .expand(
+            bids(
+                root=root,
+                datatype="anat",
+                desc="N4resampled",
+                **inputs["mri"].wildcards,
+            )
+        )
+    )[0]
 
 
 def get_flo_mri(wildcards):
@@ -85,6 +97,28 @@ rule n4_mri_individual:
         " -d 3 -v "
 
 
+rule resample_mri_ref:
+    """apply resampling by mri_resample_percent"""
+    input:
+        nii=bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards),
+    params:
+        resample_percent=config["mri_resample_percent"],
+    output:
+        nii=bids(
+            root=root, datatype="anat", desc="N4resampled", **inputs["mri"].wildcards
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
+    conda:
+        "../envs/c3d.yaml"
+    shell:
+        "c3d {input} -interpolation Cubic -resample {params.resample_percent}% -o {output}"
+
+
 rule register_mri_to_first:
     """Rigidly register each MRI to the first MRI using greedy.
     
@@ -112,13 +146,52 @@ rule register_mri_to_first:
     resources:
         mem_mb=8000,
         runtime=10,
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "if [ {wildcards.mrindex} -eq 0 ]; then "
         "  echo '1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1' > {output.xfm_ras}; "
         "else "
         "  greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} "
-        "  -a -dof 6 -ia-image-centers -m NMI -o {output.xfm_ras}; "
+        "  -a -dof 6 -ia-image-centers -m SSD -o {output.xfm_ras}; "
         "fi"
+
+
+rule resample_mri_to_first:
+    """Apply transformation to resample mri to first"""
+    input:
+        fixed=get_ref_mri,
+        moving=get_mri_by_index,
+        xfm_ras=bids(
+            root=root,
+            datatype="warps",
+            from_=f"{mri_suffix}",
+            to=f"{mri_suffix}ref",
+            type_="ras",
+            desc="rigid",
+            mrindex="{mrindex}",
+            suffix="xfm.txt",
+            **inputs.subj_wildcards,
+        ),
+    output:
+        resampled=bids(
+            root=root,
+            datatype="anat",
+            desc="resampled",
+            mrindex="{mrindex}",
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
+        ),
+    group:
+        "subj"
+    threads: 8
+    conda:
+        "../envs/c3d.yaml"
+    resources:
+        mem_mb=8000,
+        runtime=10,
+    shell:
+        "c3d -interpolation Cubic {input.fixed} {input.moving} -reslice-matrix {input.xfm_ras} -o {output.resampled}"
 
 
 rule average_mri:
@@ -128,25 +201,18 @@ rule average_mri:
     Produces a final preprocessed MRI with desc-preproc.
     """
     input:
-        ref=get_ref_mri,
-        mri=get_flo_mri,
-        xfm=lambda wildcards: expand(
+        resampled_images=lambda wildcards: expand(
             bids(
                 root=root,
-                datatype="warps",
-                from_=f"{mri_suffix}",
-                to=f"{mri_suffix}ref",
-                type_="ras",
-                desc="rigid",
+                datatype="anat",
+                desc="resampled",
                 mrindex="{mrindex}",
-                suffix="xfm.txt",
+                suffix=f"{mri_suffix}.nii.gz",
                 **inputs.subj_wildcards,
             ),
             mrindex=get_mri_indices(wildcards),
             allow_missing=True,
         ),
-    params:
-        upsample_factor=lambda wildcards: config.get("mri_upsample_factor", 1),
     output:
         nii=bids(
             root=root,
@@ -161,53 +227,10 @@ rule average_mri:
     resources:
         mem_mb=16000,
         runtime=15,
-    script:
-        "../scripts/average_registered_mri.py"
-
-
-rule n4_mri:
-    """Produce final N4-corrected MRI for downstream processing.
-    
-    This rule produces the final N4-corrected output used by downstream rules
-    in the workflow. The processing depends on the number of input MRIs:
-    
-    - Single MRI: Applies N4BiasFieldCorrection to correct intensity 
-      inhomogeneities, improving subsequent registration performance.
-    - Multiple MRIs: Uses the preprocessed (averaged) output which has already
-      been N4-corrected at the individual image level before averaging.
-    """
-    input:
-        nii=lambda wildcards: (
-            bids(
-                root=root,
-                datatype="anat",
-                desc="preproc",
-                suffix=f"{mri_suffix}.nii.gz",
-                **inputs.subj_wildcards,
-            )
-            if len(get_all_mri(wildcards)) > 1
-            else select_single_mri(wildcards)
-        ),
-    params:
-        is_multi_mri=lambda wildcards: len(get_all_mri(wildcards)) > 1,
-    output:
-        nii=bids(
-            root=root,
-            datatype="anat",
-            desc="N4",
-            suffix=f"{mri_suffix}.nii.gz",
-            **inputs.subj_wildcards,
-        ),
     group:
         "subj"
-    threads: 1
-    resources:
-        mem_mb=16000,
-        runtime=15,
-    conda:
-        "../envs/ants.yaml"
-    script:
-        "../scripts/copy_or_n4.py"
+    shell:
+        "c3d {input.resampled_images} -accum -add -endaccum -o {output.nii}"
 
 
 rule rigid_nlin_reg_mri_to_template:
@@ -225,7 +248,7 @@ rule rigid_nlin_reg_mri_to_template:
         subject=bids(
             root=root,
             datatype="anat",
-            desc="N4",
+            desc="preproc",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
@@ -345,7 +368,7 @@ rule transform_template_mask_to_mri:
         ref=bids(
             root=root,
             datatype="anat",
-            desc="N4",
+            desc="preproc",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
@@ -409,7 +432,7 @@ rule apply_mri_brain_mask:
         nii=bids(
             root=root,
             datatype="anat",
-            desc="N4",
+            desc="preproc",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
@@ -428,7 +451,7 @@ rule apply_mri_brain_mask:
         nii=bids(
             root=root,
             datatype="anat",
-            desc="N4brain",
+            desc="brain",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
@@ -441,7 +464,7 @@ rule apply_mri_brain_mask:
     conda:
         "../envs/c3d.yaml"
     shell:
-        "c3d {input.nii} {input.mask} -multiply -resample 300% -o {output.nii}"
+        "c3d {input.nii} {input.mask} -multiply -o {output.nii}"
 
 
 rule affine_nlin_reg_mri_to_spim:
@@ -454,7 +477,7 @@ rule affine_nlin_reg_mri_to_spim:
         mri=bids(
             root=root,
             datatype="anat",
-            desc="N4brain",
+            desc="brain",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
@@ -604,7 +627,7 @@ rule warp_mri_to_template_via_spim:
         mri=bids(
             root=root,
             datatype="anat",
-            desc="N4",
+            desc="preproc",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
@@ -786,7 +809,7 @@ rule mri_spim_registration_qc_report:
         mri=bids(
             root=root,
             datatype="anat",
-            desc="N4brain",
+            desc="brain",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
