@@ -21,7 +21,6 @@ for the same subject.
 """
 
 
-
 def get_all_mri(wildcards):
     """Get all MRI files for a subject (for multi-MRI averaging)."""
     return sorted(
@@ -92,9 +91,14 @@ rule resample_mri_ref:
     params:
         resample_percent=config["mri_resample_percent"],
     output:
-        nii=temp(bids(
-            root=root, datatype="anat", desc="N4resampled", **inputs["mri"].wildcards
-        )),
+        nii=temp(
+            bids(
+                root=root,
+                datatype="anat",
+                desc="N4resampled",
+                **inputs["mri"].wildcards,
+            )
+        ),
     group:
         "subj"
     threads: 1
@@ -117,17 +121,19 @@ rule register_mri_to_first:
         fixed=get_ref_mri,
         moving=get_mri_by_index,
     output:
-        xfm_ras=temp(bids(
-            root=root,
-            datatype="warps",
-            from_=f"{mri_suffix}",
-            to=f"{mri_suffix}ref",
-            type_="ras",
-            desc="rigid",
-            mrindex="{mrindex}",
-            suffix="xfm.txt",
-            **inputs.subj_wildcards,
-        )),
+        xfm_ras=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                from_=f"{mri_suffix}",
+                to=f"{mri_suffix}ref",
+                type_="ras",
+                desc="rigid",
+                mrindex="{mrindex}",
+                suffix="xfm.txt",
+                **inputs.subj_wildcards,
+            )
+        ),
     group:
         "subj"
     threads: 8
@@ -162,14 +168,16 @@ rule resample_mri_to_first:
             **inputs.subj_wildcards,
         ),
     output:
-        resampled=temp(bids(
-            root=root,
-            datatype="anat",
-            desc="resampled",
-            mrindex="{mrindex}",
-            suffix=f"{mri_suffix}.nii.gz",
-            **inputs.subj_wildcards,
-        )),
+        resampled=temp(
+            bids(
+                root=root,
+                datatype="anat",
+                desc="resampled",
+                mrindex="{mrindex}",
+                suffix=f"{mri_suffix}.nii.gz",
+                **inputs.subj_wildcards,
+            )
+        ),
     group:
         "subj"
     threads: 8
@@ -387,17 +395,19 @@ rule transform_template_mask_to_mri:
             **inputs.subj_wildcards,
         ),
     output:
-        mask=temp(bids(
-            root=root,
-            datatype="anat",
-            desc="brain",
-            suffix="mask.nii.gz",
-            iters="{iters}",
-            radius="{radius}",
-            gradsigma="{gradsigma}",
-            warpsigma="{warpsigma}",
-            **inputs.subj_wildcards,
-        )),
+        mask=temp(
+            bids(
+                root=root,
+                datatype="anat",
+                desc="brain",
+                suffix="mask.nii.gz",
+                iters="{iters}",
+                radius="{radius}",
+                gradsigma="{gradsigma}",
+                warpsigma="{warpsigma}",
+                **inputs.subj_wildcards,
+            )
+        ),
     shadow:
         "minimal"
     group:
