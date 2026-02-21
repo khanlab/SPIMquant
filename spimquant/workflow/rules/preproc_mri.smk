@@ -1,7 +1,7 @@
 """
 MRI preprocessing and cross-modality registration workflow for SPIMquant.
 
-This module handles co-registration of in-vivo MRI (T2w) with ex-vivo SPIM data,
+This module handles co-registration of in-vivo MRI (T2w, or other) with ex-vivo SPIM data,
 enabling multi-modal analysis and assessment of tissue changes due to perfusion
 fixation and optical clearing.
 
@@ -20,18 +20,6 @@ This workflow is optional and used when both MRI and SPIM data are available
 for the same subject. 
 """
 
-
-def select_single_mri(wildcards):
-
-    files = inputs["mri"].filter(subject=wildcards.subject).expand()
-    if len(files) == 1:
-        return files[0]
-    elif len(files) == 0:
-        raise ValueError(f"No MRI images found for f{wildcards}")
-    else:
-        raise ValueError(
-            f"Multiple MRI images found for f{wildcards}, use --filter-mri to select a single image"
-        )
 
 
 def get_all_mri(wildcards):
@@ -82,7 +70,7 @@ rule n4_mri_individual:
     input:
         nii=inputs["mri"].path,
     output:
-        nii=bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards),
+        nii=temp(bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards)),
     group:
         "subj"
     threads: 1
@@ -104,9 +92,9 @@ rule resample_mri_ref:
     params:
         resample_percent=config["mri_resample_percent"],
     output:
-        nii=bids(
+        nii=temp(bids(
             root=root, datatype="anat", desc="N4resampled", **inputs["mri"].wildcards
-        ),
+        )),
     group:
         "subj"
     threads: 1
@@ -129,7 +117,7 @@ rule register_mri_to_first:
         fixed=get_ref_mri,
         moving=get_mri_by_index,
     output:
-        xfm_ras=bids(
+        xfm_ras=temp(bids(
             root=root,
             datatype="warps",
             from_=f"{mri_suffix}",
@@ -139,7 +127,7 @@ rule register_mri_to_first:
             mrindex="{mrindex}",
             suffix="xfm.txt",
             **inputs.subj_wildcards,
-        ),
+        )),
     group:
         "subj"
     threads: 8
@@ -174,14 +162,14 @@ rule resample_mri_to_first:
             **inputs.subj_wildcards,
         ),
     output:
-        resampled=bids(
+        resampled=temp(bids(
             root=root,
             datatype="anat",
             desc="resampled",
             mrindex="{mrindex}",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
-        ),
+        )),
     group:
         "subj"
     threads: 8
@@ -399,7 +387,7 @@ rule transform_template_mask_to_mri:
             **inputs.subj_wildcards,
         ),
     output:
-        mask=bids(
+        mask=temp(bids(
             root=root,
             datatype="anat",
             desc="brain",
@@ -409,7 +397,7 @@ rule transform_template_mask_to_mri:
             gradsigma="{gradsigma}",
             warpsigma="{warpsigma}",
             **inputs.subj_wildcards,
-        ),
+        )),
     shadow:
         "minimal"
     group:
@@ -684,7 +672,7 @@ rule warp_mri_to_template_via_spim:
             datatype="anat",
             space="{template}",
             via="SPIM",
-            desc="N4",
+            desc="preproc",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
