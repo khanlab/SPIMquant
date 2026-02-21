@@ -25,6 +25,7 @@ pybids_inputs:
       sample: brain
     wildcards:
       - subject
+      - session
       - sample
       - acquisition
       - staining
@@ -40,6 +41,7 @@ pybids_inputs:
       - run
       - reconstruction
       - suffix
+      - extension
 
 
 #configuration for the command-line parameters to make available
@@ -165,6 +167,10 @@ parse_args:
     help: "Register the lightsheet data directly to a corresponding MRI (from the BIDS dataset)"
     action: store_true
     default: False
+
+  --mri_resample_percent:
+    help: "Resampling factor for multi-MRI averaging to create super-resolved images, as a percent (default: %(default)s). Use 200 for upsampling to twice the resolution"
+    default: 100
 
   --orientation:
     help: "Forcefully set the orientation of the input OME Zarr. Only use this if the orientation in the zarr metadata is incorrect and not easily changed. Note, this orientation string is defined in XYZ, with the letter of the increasing direction. Blaze data stitched with SPIMprep should be RPI, Imaris stitched data should be RAI, and Lifecanvas stitched data should be RAS. "

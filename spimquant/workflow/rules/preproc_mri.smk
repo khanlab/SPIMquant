@@ -1,7 +1,7 @@
 """
 MRI preprocessing and cross-modality registration workflow for SPIMquant.
 
-This module handles co-registration of in-vivo MRI (T2w) with ex-vivo SPIM data,
+This module handles co-registration of in-vivo MRI (T2w, or other) with ex-vivo SPIM data,
 enabling multi-modal analysis and assessment of tissue changes due to perfusion
 fixation and optical clearing.
 
@@ -21,35 +21,55 @@ for the same subject.
 """
 
 
-def select_single_mri(wildcards):
+def get_all_mri(wildcards):
+    """Get all MRI files for a subject (for multi-MRI averaging)."""
+    return sorted(
+        inputs["mri"]
+        .filter(subject=wildcards.subject)
+        .expand(bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards))
+    )
 
-    files = inputs["mri"].filter(subject=wildcards.subject).expand()
-    if len(files) == 1:
-        return files[0]
-    elif len(files) == 0:
-        raise ValueError(f"No MRI images found for f{wildcards}")
-    else:
-        raise ValueError(
-            f"Multiple MRI images found for f{wildcards}, use --filter-mri to select a single image"
+
+def get_ref_mri(wildcards):
+    """gets a N4resampled reference"""
+    return sorted(
+        inputs["mri"]
+        .filter(subject=wildcards.subject)
+        .expand(
+            bids(
+                root=root,
+                datatype="anat",
+                desc="N4resampled",
+                **inputs["mri"].wildcards,
+            )
         )
+    )[0]
 
 
-rule n4_mri:
-    """Apply N4 bias field correction to T2w MRI.
+def get_flo_mri(wildcards):
+    return get_all_mri(wildcards)[1:]
+
+
+def get_mri_indices(wildcards):
+    """Get list of indices for MRI files for a subject."""
+    return list(range(len(get_all_mri(wildcards))))
+
+
+def get_mri_by_index(wildcards):
+    return get_all_mri(wildcards)[int(wildcards.mrindex)]
+
+
+rule n4_mri_individual:
+    """Apply N4 bias field correction to individual T2w MRI images.
     
+    This rule only runs when multiple MRI images are present for a subject.
     Uses ANTs N4BiasFieldCorrection to correct intensity inhomogeneities in
-    the MRI image, improving subsequent registration performance.
+    each MRI image before registration and averaging.
     """
     input:
-        nii=select_single_mri,
+        nii=inputs["mri"].path,
     output:
-        nii=bids(
-            root=root,
-            datatype="anat",
-            desc="N4",
-            suffix=f"{mri_suffix}.nii.gz",
-            **inputs.subj_wildcards,
-        ),
+        nii=temp(bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards)),
     group:
         "subj"
     threads: 1
@@ -62,6 +82,151 @@ rule n4_mri:
         "N4BiasFieldCorrection -i {input.nii}"
         " -o {output.nii}"
         " -d 3 -v "
+
+
+rule resample_mri_ref:
+    """apply resampling by mri_resample_percent"""
+    input:
+        nii=bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards),
+    params:
+        resample_percent=config["mri_resample_percent"],
+    output:
+        nii=temp(
+            bids(
+                root=root,
+                datatype="anat",
+                desc="N4resampled",
+                **inputs["mri"].wildcards,
+            )
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=15,
+    conda:
+        "../envs/c3d.yaml"
+    shell:
+        "c3d {input} -interpolation Cubic -resample {params.resample_percent}% -o {output}"
+
+
+rule register_mri_to_first:
+    """Rigidly register each MRI to the first MRI using greedy.
+    
+    This aligns multiple MRI acquisitions to enable super-resolved averaging.
+    Only runs when multiple MRI images are present.
+    """
+    input:
+        fixed=get_ref_mri,
+        moving=get_mri_by_index,
+    output:
+        xfm_ras=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                from_=f"{mri_suffix}",
+                to=f"{mri_suffix}ref",
+                type_="ras",
+                desc="rigid",
+                mrindex="{mrindex}",
+                suffix="xfm.txt",
+                **inputs.subj_wildcards,
+            )
+        ),
+    group:
+        "subj"
+    threads: 8
+    resources:
+        mem_mb=8000,
+        runtime=10,
+    conda:
+        "../envs/c3d.yaml"
+    shell:
+        "if [ {wildcards.mrindex} -eq 0 ]; then "
+        "  echo '1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1' > {output.xfm_ras}; "
+        "else "
+        "  greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} "
+        "  -a -dof 6 -ia-image-centers -m SSD -o {output.xfm_ras}; "
+        "fi"
+
+
+rule resample_mri_to_first:
+    """Apply transformation to resample mri to first"""
+    input:
+        fixed=get_ref_mri,
+        moving=get_mri_by_index,
+        xfm_ras=bids(
+            root=root,
+            datatype="warps",
+            from_=f"{mri_suffix}",
+            to=f"{mri_suffix}ref",
+            type_="ras",
+            desc="rigid",
+            mrindex="{mrindex}",
+            suffix="xfm.txt",
+            **inputs.subj_wildcards,
+        ),
+    output:
+        resampled=temp(
+            bids(
+                root=root,
+                datatype="anat",
+                desc="resampled",
+                mrindex="{mrindex}",
+                suffix=f"{mri_suffix}.nii.gz",
+                **inputs.subj_wildcards,
+            )
+        ),
+    group:
+        "subj"
+    threads: 8
+    conda:
+        "../envs/c3d.yaml"
+    resources:
+        mem_mb=8000,
+        runtime=10,
+    shell:
+        "c3d -interpolation Cubic {input.fixed} {input.moving} -reslice-matrix {input.xfm_ras} -o {output.resampled}"
+
+
+rule average_mri:
+    """Average all registered and N4-corrected MRI images.
+    
+    Optionally upsamples images during transformation for super-resolution.
+    Produces a final preprocessed MRI with desc-preproc.
+    """
+    input:
+        resampled_images=lambda wildcards: expand(
+            bids(
+                root=root,
+                datatype="anat",
+                desc="resampled",
+                mrindex="{mrindex}",
+                suffix=f"{mri_suffix}.nii.gz",
+                **inputs.subj_wildcards,
+            ),
+            mrindex=get_mri_indices(wildcards),
+            allow_missing=True,
+        ),
+    output:
+        nii=bids(
+            root=root,
+            datatype="anat",
+            desc="preproc",
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
+        ),
+    group:
+        "subj"
+    threads: 8
+    resources:
+        mem_mb=16000,
+        runtime=15,
+    group:
+        "subj"
+    shell:
+        "c3d {input.resampled_images} -accum -add -endaccum -o {output.nii}"
 
 
 rule rigid_nlin_reg_mri_to_template:
@@ -79,7 +244,7 @@ rule rigid_nlin_reg_mri_to_template:
         subject=bids(
             root=root,
             datatype="anat",
-            desc="N4",
+            desc="preproc",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
@@ -199,7 +364,7 @@ rule transform_template_mask_to_mri:
         ref=bids(
             root=root,
             datatype="anat",
-            desc="N4",
+            desc="preproc",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
@@ -230,16 +395,18 @@ rule transform_template_mask_to_mri:
             **inputs.subj_wildcards,
         ),
     output:
-        mask=bids(
-            root=root,
-            datatype="anat",
-            desc="brain",
-            suffix="mask.nii.gz",
-            iters="{iters}",
-            radius="{radius}",
-            gradsigma="{gradsigma}",
-            warpsigma="{warpsigma}",
-            **inputs.subj_wildcards,
+        mask=temp(
+            bids(
+                root=root,
+                datatype="anat",
+                desc="brain",
+                suffix="mask.nii.gz",
+                iters="{iters}",
+                radius="{radius}",
+                gradsigma="{gradsigma}",
+                warpsigma="{warpsigma}",
+                **inputs.subj_wildcards,
+            )
         ),
     shadow:
         "minimal"
@@ -263,7 +430,7 @@ rule apply_mri_brain_mask:
         nii=bids(
             root=root,
             datatype="anat",
-            desc="N4",
+            desc="preproc",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
@@ -282,7 +449,7 @@ rule apply_mri_brain_mask:
         nii=bids(
             root=root,
             datatype="anat",
-            desc="N4brain",
+            desc="brain",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
@@ -295,7 +462,7 @@ rule apply_mri_brain_mask:
     conda:
         "../envs/c3d.yaml"
     shell:
-        "c3d {input.nii} {input.mask} -multiply -resample 300% -o {output.nii}"
+        "c3d {input.nii} {input.mask} -multiply -o {output.nii}"
 
 
 rule affine_nlin_reg_mri_to_spim:
@@ -308,7 +475,7 @@ rule affine_nlin_reg_mri_to_spim:
         mri=bids(
             root=root,
             datatype="anat",
-            desc="N4brain",
+            desc="brain",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
@@ -458,7 +625,7 @@ rule warp_mri_to_template_via_spim:
         mri=bids(
             root=root,
             datatype="anat",
-            desc="N4",
+            desc="preproc",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
@@ -515,7 +682,7 @@ rule warp_mri_to_template_via_spim:
             datatype="anat",
             space="{template}",
             via="SPIM",
-            desc="N4",
+            desc="preproc",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
@@ -640,7 +807,7 @@ rule mri_spim_registration_qc_report:
         mri=bids(
             root=root,
             datatype="anat",
-            desc="N4brain",
+            desc="brain",
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),

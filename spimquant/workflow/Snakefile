@@ -349,7 +349,7 @@ rule all_mri_reg:
                 datatype="anat",
                 space="{template}",
                 via="SPIM",
-                desc="N4",
+                desc="preproc",
                 suffix=f"{mri_suffix}.nii.gz",
                 **inputs["spim"].wildcards,
             ),
