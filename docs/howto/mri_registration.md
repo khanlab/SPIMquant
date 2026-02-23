@@ -22,7 +22,7 @@ By default, the snakebids filter to locate MRI images looks for a `T2w` suffix, 
       - suffix
       - extension
 ```
-This can be overidden with the `--filter-mri` CLI option, e.g. with `--filter-mri suffix=T1w` to get T1w images. 
+This can be overridden with the `--filter-mri` CLI option, e.g. with `--filter-mri suffix=T1w` to get T1w images. 
 
 Depending on what is in your BIDS dataset, you may also need to specify additional filters, e.g. to point to the right session, acquisition  etc..
 
