@@ -45,3 +45,11 @@ jobs:
       - name: Dry-run Test
         run: |
           ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out participant -np
+
+      - name: Dry-run Test with MRI reg
+        run: |
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds_withmri test_out participant -np --register-to-mri
+
+      - name: Dry-run Test with MRI reg, no segmentation
+        run: |
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds_withmri test_out participant -np --register-to-mri --no-segmentation
