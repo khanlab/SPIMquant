@@ -14,7 +14,7 @@ SPIMquant works with BIDS-formatted datasets containing OME-Zarr files for light
 
 ### What templates are supported?
 
-SPIMquant support includes:
+SPIMquant supports:
 - ABAv3 (Allen Brain Atlas v3)
 - gubra
 - MBMv3 (Marmoset Brain Maps v3)
