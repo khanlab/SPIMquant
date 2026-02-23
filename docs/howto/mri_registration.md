@@ -97,8 +97,8 @@ In this case we would want to import the rec=avgecho runs, from ses=14m (closest
 to the exvivo session where the microscopy lives). This is done with the following CLI call:
 
 ```
-pixi run spimquant /nfs/trident3/mri/prado/ki3/bids output_dir participant \
-   --register-to-mri --no-segmentation
+pixi run spimquant /nfs/trident3/mri/prado/ki3/bids output_dir participant
+   --register-to-mri --no-segmentation \
    --filter-mri suffix=T2starw reconstruction=avgecho session=14m \
    -c all  --mri-resample-percent 200
 ```
