@@ -206,7 +206,7 @@ Common bottlenecks:
 - Network storage latency
 - Large dataset size
 
-If you fast local disk on a different path, use this with the --work-dir argument
+If you have fast local disk available on a different path, use it with the `--work-dir` argument.
 
 ### How much disk space do I need?
 
