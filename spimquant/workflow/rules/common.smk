@@ -32,23 +32,35 @@ def resources_path(path):
 
 def get_template_path(root, template, template_crop=None):
     """Get template path, optionally cropped based on hemisphere"""
+    if use_spim_template:
+        suffix = stain_for_reg
+    else:
+        suffix = "anat"
+
     if template_crop is not None:
         return bids_tpl(
             root=root,
             template=template,
             desc=f"{template_crop}crop",
-            suffix="anat.nii.gz",
+            suffix=f"{suffix}.nii.gz",
         )
     else:
-        return bids_tpl(root=root, template=template, suffix="anat.nii.gz")
+        return bids_tpl(root=root, template=template, suffix=f"{suffix}.nii.gz")
 
 
 def get_template_for_reg(wildcards):
     """Get the appropriate template file for registration, cropped if specified"""
+    if use_spim_template:
+        suffix = stain_for_reg
+    else:
+        suffix = "anat"
+
     if config.get("template_crop") is not None:
         return get_template_path(root, wildcards.template, config["template_crop"])
     else:
-        return bids_tpl(root=root, template=wildcards.template, suffix="anat.nii.gz")
+        return bids_tpl(
+            root=root, template=wildcards.template, suffix=f"{suffix}.nii.gz"
+        )
 
 
 def get_stains_all_subjects():

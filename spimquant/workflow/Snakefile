@@ -47,10 +47,24 @@ include: "rules/common.smk"
 stains = get_stains_all_subjects()
 
 stain_for_reg = None
-for stain in config["stains_for_reg"]:
-    if stain in stains:
-        stain_for_reg = stain
-        break
+
+# first, check if there are any SPIM templates defined
+# for the stains we have
+use_spim_template = False
+spim_templates = config["templates"][config["template"]].get("spim_templates", None)
+
+if spim_templates is not None:
+    for stain in spim_templates.keys():
+        if stain in stains:
+            stain_for_reg = stain
+            use_spim_template = True
+            break
+
+else:
+    for stain in config["stains_for_reg"]:
+        if stain in stains:
+            stain_for_reg = stain
+            break
 
 if stain_for_reg is None:
     raise ValueError(f"a stain for registration was not found in {stains}")

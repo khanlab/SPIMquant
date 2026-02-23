@@ -253,6 +253,9 @@ templates:
   ABAv3:
     anat: 'tpl-ABAv3/tpl-ABAv3_anat.nii.gz'
     mask: 'tpl-ABAv3/tpl-ABAv3_desc-brain_mask.nii.gz'
+    spim_templates:
+      YoPro: https://www.dropbox.com/scl/fi/4t027oezauoh74a0qqwfp/tpl-ABAv3_YoPro.nii.gz?rlkey=eje63qevprxcalpf7vcl4zzxs&dl=1
+      Iba1: https://www.dropbox.com/scl/fi/nlztownfa1smxm8qsgl2g/tpl-ABAv3_Iba1.nii.gz?rlkey=170093tw52a11x408a9jp43tg&dl=1
     atlases:
       all: 
         dseg: 'tpl-ABAv3/tpl-ABAv3_seg-all_dseg.nii.gz'
