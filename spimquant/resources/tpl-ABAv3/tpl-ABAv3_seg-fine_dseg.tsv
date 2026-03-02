@@ -1,0 +1,633 @@
+name	abbreviation	index
+"L_Frontal pole	 cerebral cortex"	L_FRP	1
+"R_Frontal pole	 cerebral cortex"	R_FRP	2
+L_Primary motor area	L_MOp	3
+R_Primary motor area	R_MOp	4
+L_Secondary motor area	L_MOs	5
+R_Secondary motor area	R_MOs	6
+"L_Primary somatosensory area	 nose"	L_SSp-n	7
+"R_Primary somatosensory area	 nose"	R_SSp-n	8
+"L_Primary somatosensory area	 barrel field"	L_SSp-bfd	9
+"R_Primary somatosensory area	 barrel field"	R_SSp-bfd	10
+"L_Primary somatosensory area	 lower limb"	L_SSp-ll	11
+"R_Primary somatosensory area	 lower limb"	R_SSp-ll	12
+"L_Primary somatosensory area	 mouth"	L_SSp-m	13
+"R_Primary somatosensory area	 mouth"	R_SSp-m	14
+"L_Primary somatosensory area	 upper limb"	L_SSp-ul	15
+"R_Primary somatosensory area	 upper limb"	R_SSp-ul	16
+"L_Primary somatosensory area	 trunk"	L_SSp-tr	17
+"R_Primary somatosensory area	 trunk"	R_SSp-tr	18
+"L_Primary somatosensory area	 unassigned"	L_SSp-un	19
+"R_Primary somatosensory area	 unassigned"	R_SSp-un	20
+L_Supplemental somatosensory area	L_SSs	21
+R_Supplemental somatosensory area	R_SSs	22
+L_Gustatory areas	L_GU	23
+R_Gustatory areas	R_GU	24
+L_Visceral area	L_VISC	25
+R_Visceral area	R_VISC	26
+L_Dorsal auditory area	L_AUDd	27
+R_Dorsal auditory area	R_AUDd	28
+L_Primary auditory area	L_AUDp	29
+R_Primary auditory area	R_AUDp	30
+L_Posterior auditory area	L_AUDpo	31
+R_Posterior auditory area	R_AUDpo	32
+L_Ventral auditory area	L_AUDv	33
+R_Ventral auditory area	R_AUDv	34
+L_Anterolateral visual area	L_VISal	35
+R_Anterolateral visual area	R_VISal	36
+L_Anteromedial visual area	L_VISam	37
+R_Anteromedial visual area	R_VISam	38
+L_Lateral visual area	L_VISl	39
+R_Lateral visual area	R_VISl	40
+L_Primary visual area	L_VISp	41
+R_Primary visual area	R_VISp	42
+L_Posterolateral visual area	L_VISpl	43
+R_Posterolateral visual area	R_VISpl	44
+L_posteromedial visual area	L_VISpm	45
+R_posteromedial visual area	R_VISpm	46
+L_Laterointermediate area	L_VISli	47
+R_Laterointermediate area	R_VISli	48
+L_Postrhinal area	L_VISpor	49
+R_Postrhinal area	R_VISpor	50
+"L_Anterior cingulate area	 dorsal part"	L_ACAd	51
+"R_Anterior cingulate area	 dorsal part"	R_ACAd	52
+"L_Anterior cingulate area	 ventral part"	L_ACAv	53
+"R_Anterior cingulate area	 ventral part"	R_ACAv	54
+L_Prelimbic area	L_PL	55
+R_Prelimbic area	R_PL	56
+L_Infralimbic area	L_ILA	57
+R_Infralimbic area	R_ILA	58
+"L_Orbital area	 lateral part"	L_ORBl	59
+"R_Orbital area	 lateral part"	R_ORBl	60
+"L_Orbital area	 medial part"	L_ORBm	61
+"R_Orbital area	 medial part"	R_ORBm	62
+"L_Orbital area	 ventrolateral part"	L_ORBvl	63
+"R_Orbital area	 ventrolateral part"	R_ORBvl	64
+"L_Agranular insular area	 dorsal part"	L_AId	65
+"R_Agranular insular area	 dorsal part"	R_AId	66
+"L_Agranular insular area	 posterior part"	L_AIp	67
+"R_Agranular insular area	 posterior part"	R_AIp	68
+"L_Agranular insular area	 ventral part"	L_AIv	69
+"R_Agranular insular area	 ventral part"	R_AIv	70
+"L_Retrosplenial area	 lateral agranular part"	L_RSPagl	71
+"R_Retrosplenial area	 lateral agranular part"	R_RSPagl	72
+"L_Retrosplenial area	 dorsal part"	L_RSPd	73
+"R_Retrosplenial area	 dorsal part"	R_RSPd	74
+"L_Retrosplenial area	 ventral part"	L_RSPv	75
+"R_Retrosplenial area	 ventral part"	R_RSPv	76
+L_Anterior area	L_VISa	77
+R_Anterior area	R_VISa	78
+L_Rostrolateral visual area	L_VISrl	79
+R_Rostrolateral visual area	R_VISrl	80
+L_Temporal association areas	L_TEa	81
+R_Temporal association areas	R_TEa	82
+L_Perirhinal area	L_PERI	83
+R_Perirhinal area	R_PERI	84
+L_Ectorhinal area	L_ECT	85
+R_Ectorhinal area	R_ECT	86
+L_Main olfactory bulb	L_MOB	87
+R_Main olfactory bulb	R_MOB	88
+L_Accessory olfactory bulb	L_AOB	89
+R_Accessory olfactory bulb	R_AOB	90
+L_Anterior olfactory nucleus	L_AON	91
+R_Anterior olfactory nucleus	R_AON	92
+L_Taenia tecta	L_TT	93
+R_Taenia tecta	R_TT	94
+L_Dorsal peduncular area	L_DP	95
+R_Dorsal peduncular area	R_DP	96
+L_Piriform area	L_PIR	97
+R_Piriform area	R_PIR	98
+L_Nucleus of the lateral olfactory tract	L_NLOT	99
+R_Nucleus of the lateral olfactory tract	R_NLOT	100
+"L_Cortical amygdalar area	 anterior part"	L_COAa	101
+"R_Cortical amygdalar area	 anterior part"	R_COAa	102
+"L_Cortical amygdalar area	 posterior part"	L_COAp	103
+"R_Cortical amygdalar area	 posterior part"	R_COAp	104
+L_Piriform-amygdalar area	L_PAA	105
+R_Piriform-amygdalar area	R_PAA	106
+L_Postpiriform transition area	L_TR	107
+R_Postpiriform transition area	R_TR	108
+L_Field CA1	L_CA1	109
+R_Field CA1	R_CA1	110
+L_Field CA2	L_CA2	111
+R_Field CA2	R_CA2	112
+L_Field CA3	L_CA3	113
+R_Field CA3	R_CA3	114
+L_Dentate gyrus	L_DG	115
+R_Dentate gyrus	R_DG	116
+L_Fasciola cinerea	L_FC	117
+R_Fasciola cinerea	R_FC	118
+L_Induseum griseum	L_IG	119
+R_Induseum griseum	R_IG	120
+"L_Entorhinal area	 lateral part"	L_ENTl	121
+"R_Entorhinal area	 lateral part"	R_ENTl	122
+"L_Entorhinal area	 medial part	 dorsal zone"	L_ENTm	123
+"R_Entorhinal area	 medial part	 dorsal zone"	R_ENTm	124
+L_Parasubiculum	L_PAR	125
+R_Parasubiculum	R_PAR	126
+L_Postsubiculum	L_POST	127
+R_Postsubiculum	R_POST	128
+L_Presubiculum	L_PRE	129
+R_Presubiculum	R_PRE	130
+L_Subiculum	L_SUB	131
+R_Subiculum	R_SUB	132
+L_Prosubiculum	L_ProS	133
+R_Prosubiculum	R_ProS	134
+L_Hippocampo-amygdalar transition area	L_HATA	135
+R_Hippocampo-amygdalar transition area	R_HATA	136
+L_Area prostriata	L_APr	137
+R_Area prostriata	R_APr	138
+L_Claustrum	L_CLA	139
+R_Claustrum	R_CLA	140
+"L_Endopiriform nucleus	 dorsal part"	L_EPd	141
+"R_Endopiriform nucleus	 dorsal part"	R_EPd	142
+"L_Endopiriform nucleus	 ventral part"	L_EPv	143
+"R_Endopiriform nucleus	 ventral part"	R_EPv	144
+L_Lateral amygdalar nucleus	L_LA	145
+R_Lateral amygdalar nucleus	R_LA	146
+L_Basolateral amygdalar nucleus	L_BLA	147
+R_Basolateral amygdalar nucleus	R_BLA	148
+L_Basomedial amygdalar nucleus	L_BMA	149
+R_Basomedial amygdalar nucleus	R_BMA	150
+L_Posterior amygdalar nucleus	L_PA	151
+R_Posterior amygdalar nucleus	R_PA	152
+L_Caudoputamen	L_CP	153
+R_Caudoputamen	R_CP	154
+L_Nucleus accumbens	L_ACB	155
+R_Nucleus accumbens	R_ACB	156
+L_Fundus of striatum	L_FS	157
+R_Fundus of striatum	R_FS	158
+L_Olfactory tubercle	L_OT	159
+R_Olfactory tubercle	R_OT	160
+"L_Lateral septal nucleus	 caudal (caudodorsal) part"	L_LSc	161
+"R_Lateral septal nucleus	 caudal (caudodorsal) part"	R_LSc	162
+"L_Lateral septal nucleus	 rostral (rostroventral) part"	L_LSr	163
+"R_Lateral septal nucleus	 rostral (rostroventral) part"	R_LSr	164
+"L_Lateral septal nucleus	 ventral part"	L_LSv	165
+"R_Lateral septal nucleus	 ventral part"	R_LSv	166
+L_Septofimbrial nucleus	L_SF	167
+R_Septofimbrial nucleus	R_SF	168
+L_Septohippocampal nucleus	L_SH	169
+R_Septohippocampal nucleus	R_SH	170
+L_Anterior amygdalar area	L_AAA	171
+R_Anterior amygdalar area	R_AAA	172
+L_Bed nucleus of the accessory olfactory tract	L_BA	173
+R_Bed nucleus of the accessory olfactory tract	R_BA	174
+L_Central amygdalar nucleus	L_CEA	175
+R_Central amygdalar nucleus	R_CEA	176
+L_Intercalated amygdalar nucleus	L_IA	177
+R_Intercalated amygdalar nucleus	R_IA	178
+L_Medial amygdalar nucleus	L_MEA	179
+R_Medial amygdalar nucleus	R_MEA	180
+"L_Globus pallidus	 external segment"	L_GPe	181
+"R_Globus pallidus	 external segment"	R_GPe	182
+"L_Globus pallidus	 internal segment"	L_GPi	183
+"R_Globus pallidus	 internal segment"	R_GPi	184
+L_Substantia innominata	L_SI	185
+R_Substantia innominata	R_SI	186
+L_Magnocellular nucleus	L_MA	187
+R_Magnocellular nucleus	R_MA	188
+L_Medial septal nucleus	L_MS	189
+R_Medial septal nucleus	R_MS	190
+L_Diagonal band nucleus	L_NDB	191
+R_Diagonal band nucleus	R_NDB	192
+L_Triangular nucleus of septum	L_TRS	193
+R_Triangular nucleus of septum	R_TRS	194
+L_Bed nuclei of the stria terminalis	L_BST	195
+R_Bed nuclei of the stria terminalis	R_BST	196
+L_Bed nucleus of the anterior commissure	L_BAC	197
+R_Bed nucleus of the anterior commissure	R_BAC	198
+L_Ventral anterior-lateral complex of the thalamus	L_VAL	199
+R_Ventral anterior-lateral complex of the thalamus	R_VAL	200
+L_Ventral medial nucleus of the thalamus	L_VM	201
+R_Ventral medial nucleus of the thalamus	R_VM	202
+L_Ventral posterolateral nucleus of the thalamus	L_VPL	203
+R_Ventral posterolateral nucleus of the thalamus	R_VPL	204
+"L_Ventral posterolateral nucleus of the thalamus	 parvicellular part"	L_VPLpc	205
+"R_Ventral posterolateral nucleus of the thalamus	 parvicellular part"	R_VPLpc	206
+L_Ventral posteromedial nucleus of the thalamus	L_VPM	207
+R_Ventral posteromedial nucleus of the thalamus	R_VPM	208
+"L_Ventral posteromedial nucleus of the thalamus	 parvicellular part"	L_VPMpc	209
+"R_Ventral posteromedial nucleus of the thalamus	 parvicellular part"	R_VPMpc	210
+L_Posterior triangular thalamic nucleus	L_PoT	211
+R_Posterior triangular thalamic nucleus	R_PoT	212
+"L_Subparafascicular nucleus	 magnocellular part"	L_SPFm	213
+"R_Subparafascicular nucleus	 magnocellular part"	R_SPFm	214
+"L_Subparafascicular nucleus	 parvicellular part"	L_SPFp	215
+"R_Subparafascicular nucleus	 parvicellular part"	R_SPFp	216
+L_Subparafascicular area	L_SPA	217
+R_Subparafascicular area	R_SPA	218
+L_Peripeduncular nucleus	L_PP	219
+R_Peripeduncular nucleus	R_PP	220
+L_Medial geniculate complex	L_MG	221
+R_Medial geniculate complex	R_MG	222
+L_Dorsal part of the lateral geniculate complex	L_LGd	223
+R_Dorsal part of the lateral geniculate complex	R_LGd	224
+L_Lateral posterior nucleus of the thalamus	L_LP	225
+R_Lateral posterior nucleus of the thalamus	R_LP	226
+L_Posterior complex of the thalamus	L_PO	227
+R_Posterior complex of the thalamus	R_PO	228
+L_Posterior limiting nucleus of the thalamus	L_POL	229
+R_Posterior limiting nucleus of the thalamus	R_POL	230
+L_Suprageniculate nucleus	L_SGN	231
+R_Suprageniculate nucleus	R_SGN	232
+L_Anteroventral nucleus of thalamus	L_AV	233
+R_Anteroventral nucleus of thalamus	R_AV	234
+L_Anteromedial nucleus	L_AM	235
+R_Anteromedial nucleus	R_AM	236
+L_Anterodorsal nucleus	L_AD	237
+R_Anterodorsal nucleus	R_AD	238
+L_Interanteromedial nucleus of the thalamus	L_IAM	239
+R_Interanteromedial nucleus of the thalamus	R_IAM	240
+L_Interanterodorsal nucleus of the thalamus	L_IAD	241
+R_Interanterodorsal nucleus of the thalamus	R_IAD	242
+L_Lateral dorsal nucleus of thalamus	L_LD	243
+R_Lateral dorsal nucleus of thalamus	R_LD	244
+L_Intermediodorsal nucleus of the thalamus	L_IMD	245
+R_Intermediodorsal nucleus of the thalamus	R_IMD	246
+L_Mediodorsal nucleus of thalamus	L_MD	247
+R_Mediodorsal nucleus of thalamus	R_MD	248
+L_Submedial nucleus of the thalamus	L_SMT	249
+R_Submedial nucleus of the thalamus	R_SMT	250
+L_Perireunensis nucleus	L_PR	251
+R_Perireunensis nucleus	R_PR	252
+L_Paraventricular nucleus of the thalamus	L_PVT	253
+R_Paraventricular nucleus of the thalamus	R_PVT	254
+L_Parataenial nucleus	L_PT	255
+R_Parataenial nucleus	R_PT	256
+L_Nucleus of reuniens	L_RE	257
+R_Nucleus of reuniens	R_RE	258
+L_Xiphoid thalamic nucleus	L_Xi	259
+R_Xiphoid thalamic nucleus	R_Xi	260
+L_Rhomboid nucleus	L_RH	261
+R_Rhomboid nucleus	R_RH	262
+L_Central medial nucleus of the thalamus	L_CM	263
+R_Central medial nucleus of the thalamus	R_CM	264
+L_Paracentral nucleus	L_PCN	265
+R_Paracentral nucleus	R_PCN	266
+L_Central lateral nucleus of the thalamus	L_CL	267
+R_Central lateral nucleus of the thalamus	R_CL	268
+L_Parafascicular nucleus	L_PF	269
+R_Parafascicular nucleus	R_PF	270
+L_Posterior intralaminar thalamic nucleus	L_PIL	271
+R_Posterior intralaminar thalamic nucleus	R_PIL	272
+L_Reticular nucleus of the thalamus	L_RT	273
+R_Reticular nucleus of the thalamus	R_RT	274
+L_Intergeniculate leaflet of the lateral geniculate complex	L_IGL	275
+R_Intergeniculate leaflet of the lateral geniculate complex	R_IGL	276
+L_Intermediate geniculate nucleus	L_IntG	277
+R_Intermediate geniculate nucleus	R_IntG	278
+L_Ventral part of the lateral geniculate complex	L_LGv	279
+R_Ventral part of the lateral geniculate complex	R_LGv	280
+L_Subgeniculate nucleus	L_SubG	281
+R_Subgeniculate nucleus	R_SubG	282
+L_Medial habenula	L_MH	283
+R_Medial habenula	R_MH	284
+L_Lateral habenula	L_LH	285
+R_Lateral habenula	R_LH	286
+L_Supraoptic nucleus	L_SO	287
+R_Supraoptic nucleus	R_SO	288
+L_Accessory supraoptic group	L_ASO	289
+R_Accessory supraoptic group	R_ASO	290
+L_Paraventricular hypothalamic nucleus	L_PVH	291
+R_Paraventricular hypothalamic nucleus	R_PVH	292
+"L_Periventricular hypothalamic nucleus	 anterior part"	L_PVa	293
+"R_Periventricular hypothalamic nucleus	 anterior part"	R_PVa	294
+"L_Periventricular hypothalamic nucleus	 intermediate part"	L_PVi	295
+"R_Periventricular hypothalamic nucleus	 intermediate part"	R_PVi	296
+L_Arcuate hypothalamic nucleus	L_ARH	297
+R_Arcuate hypothalamic nucleus	R_ARH	298
+L_Anterodorsal preoptic nucleus	L_ADP	299
+R_Anterodorsal preoptic nucleus	R_ADP	300
+L_Anteroventral preoptic nucleus	L_AVP	301
+R_Anteroventral preoptic nucleus	R_AVP	302
+L_Anteroventral periventricular nucleus	L_AVPV	303
+R_Anteroventral periventricular nucleus	R_AVPV	304
+L_Dorsomedial nucleus of the hypothalamus	L_DMH	305
+R_Dorsomedial nucleus of the hypothalamus	R_DMH	306
+L_Median preoptic nucleus	L_MEPO	307
+R_Median preoptic nucleus	R_MEPO	308
+L_Medial preoptic area	L_MPO	309
+R_Medial preoptic area	R_MPO	310
+L_Vascular organ of the lamina terminalis	L_OV	311
+R_Vascular organ of the lamina terminalis	R_OV	312
+L_Posterodorsal preoptic nucleus	L_PD	313
+R_Posterodorsal preoptic nucleus	R_PD	314
+L_Parastrial nucleus	L_PS	315
+R_Parastrial nucleus	R_PS	316
+"L_Periventricular hypothalamic nucleus	 posterior part"	L_PVp	317
+"R_Periventricular hypothalamic nucleus	 posterior part"	R_PVp	318
+"L_Periventricular hypothalamic nucleus	 preoptic part"	L_PVpo	319
+"R_Periventricular hypothalamic nucleus	 preoptic part"	R_PVpo	320
+L_Subparaventricular zone	L_SBPV	321
+R_Subparaventricular zone	R_SBPV	322
+L_Suprachiasmatic nucleus	L_SCH	323
+R_Suprachiasmatic nucleus	R_SCH	324
+L_Subfornical organ	L_SFO	325
+R_Subfornical organ	R_SFO	326
+L_Ventromedial preoptic nucleus	L_VMPO	327
+R_Ventromedial preoptic nucleus	R_VMPO	328
+L_Ventrolateral preoptic nucleus	L_VLPO	329
+R_Ventrolateral preoptic nucleus	R_VLPO	330
+L_Anterior hypothalamic nucleus	L_AHN	331
+R_Anterior hypothalamic nucleus	R_AHN	332
+L_Lateral mammillary nucleus	L_LM	333
+R_Lateral mammillary nucleus	R_LM	334
+L_Medial mammillary nucleus	L_MM	335
+R_Medial mammillary nucleus	R_MM	336
+L_Supramammillary nucleus	L_SUM	337
+R_Supramammillary nucleus	R_SUM	338
+"L_Tuberomammillary nucleus	 dorsal part"	L_TMd	339
+"R_Tuberomammillary nucleus	 dorsal part"	R_TMd	340
+"L_Tuberomammillary nucleus	 ventral part"	L_TMv	341
+"R_Tuberomammillary nucleus	 ventral part"	R_TMv	342
+L_Medial preoptic nucleus	L_MPN	343
+R_Medial preoptic nucleus	R_MPN	344
+L_Dorsal premammillary nucleus	L_PMd	345
+R_Dorsal premammillary nucleus	R_PMd	346
+L_Ventral premammillary nucleus	L_PMv	347
+R_Ventral premammillary nucleus	R_PMv	348
+"L_Paraventricular hypothalamic nucleus	 descending division"	L_PVHd	349
+"R_Paraventricular hypothalamic nucleus	 descending division"	R_PVHd	350
+L_Ventromedial hypothalamic nucleus	L_VMH	351
+R_Ventromedial hypothalamic nucleus	R_VMH	352
+L_Posterior hypothalamic nucleus	L_PH	353
+R_Posterior hypothalamic nucleus	R_PH	354
+L_Lateral hypothalamic area	L_LHA	355
+R_Lateral hypothalamic area	R_LHA	356
+L_Lateral preoptic area	L_LPO	357
+R_Lateral preoptic area	R_LPO	358
+L_Preparasubthalamic nucleus	L_PST	359
+R_Preparasubthalamic nucleus	R_PST	360
+L_Parasubthalamic nucleus	L_PSTN	361
+R_Parasubthalamic nucleus	R_PSTN	362
+L_Perifornical nucleus	L_PeF	363
+R_Perifornical nucleus	R_PeF	364
+L_Retrochiasmatic area	L_RCH	365
+R_Retrochiasmatic area	R_RCH	366
+L_Subthalamic nucleus	L_STN	367
+R_Subthalamic nucleus	R_STN	368
+L_Tuberal nucleus	L_TU	369
+R_Tuberal nucleus	R_TU	370
+L_Zona incerta	L_ZI	371
+R_Zona incerta	R_ZI	372
+L_Median eminence	L_ME	373
+R_Median eminence	R_ME	374
+"L_Superior colliculus	 sensory related"	L_SCs	375
+"R_Superior colliculus	 sensory related"	R_SCs	376
+L_Inferior colliculus	L_IC	377
+R_Inferior colliculus	R_IC	378
+L_Nucleus of the brachium of the inferior colliculus	L_NB	379
+R_Nucleus of the brachium of the inferior colliculus	R_NB	380
+L_Nucleus sagulum	L_SAG	381
+R_Nucleus sagulum	R_SAG	382
+L_Parabigeminal nucleus	L_PBG	383
+R_Parabigeminal nucleus	R_PBG	384
+L_Midbrain trigeminal nucleus	L_MEV	385
+R_Midbrain trigeminal nucleus	R_MEV	386
+L_Subcommissural organ	L_SCO	387
+R_Subcommissural organ	R_SCO	388
+"L_Substantia nigra	 reticular part"	L_SNr	389
+"R_Substantia nigra	 reticular part"	R_SNr	390
+L_Ventral tegmental area	L_VTA	391
+R_Ventral tegmental area	R_VTA	392
+L_Paranigral nucleus	L_PN	393
+R_Paranigral nucleus	R_PN	394
+"L_Midbrain reticular nucleus	 retrorubral area"	L_RR	395
+"R_Midbrain reticular nucleus	 retrorubral area"	R_RR	396
+L_Midbrain reticular nucleus	L_MRN	397
+R_Midbrain reticular nucleus	R_MRN	398
+"L_Superior colliculus	 motor related"	L_SCm	399
+"R_Superior colliculus	 motor related"	R_SCm	400
+L_Periaqueductal gray	L_PAG	401
+R_Periaqueductal gray	R_PAG	402
+L_Anterior pretectal nucleus	L_APN	403
+R_Anterior pretectal nucleus	R_APN	404
+L_Medial pretectal area	L_MPT	405
+R_Medial pretectal area	R_MPT	406
+L_Nucleus of the optic tract	L_NOT	407
+R_Nucleus of the optic tract	R_NOT	408
+L_Nucleus of the posterior commissure	L_NPC	409
+R_Nucleus of the posterior commissure	R_NPC	410
+L_Olivary pretectal nucleus	L_OP	411
+R_Olivary pretectal nucleus	R_OP	412
+L_Posterior pretectal nucleus	L_PPT	413
+R_Posterior pretectal nucleus	R_PPT	414
+L_Cuneiform nucleus	L_CUN	415
+R_Cuneiform nucleus	R_CUN	416
+L_Red nucleus	L_RN	417
+R_Red nucleus	R_RN	418
+L_Oculomotor nucleus	L_III	419
+R_Oculomotor nucleus	R_III	420
+L_Medial accesory oculomotor nucleus	L_MA3	421
+R_Medial accesory oculomotor nucleus	R_MA3	422
+L_Edinger-Westphal nucleus	L_EW	423
+R_Edinger-Westphal nucleus	R_EW	424
+L_Trochlear nucleus	L_IV	425
+R_Trochlear nucleus	R_IV	426
+L_Paratrochlear nucleus	L_Pa4	427
+R_Paratrochlear nucleus	R_Pa4	428
+L_Ventral tegmental nucleus	L_VTN	429
+R_Ventral tegmental nucleus	R_VTN	430
+L_Anterior tegmental nucleus	L_AT	431
+R_Anterior tegmental nucleus	R_AT	432
+L_Lateral terminal nucleus of the accessory optic tract	L_LT	433
+R_Lateral terminal nucleus of the accessory optic tract	R_LT	434
+L_Dorsal terminal nucleus of the accessory optic tract	L_DT	435
+R_Dorsal terminal nucleus of the accessory optic tract	R_DT	436
+L_Medial terminal nucleus of the accessory optic tract	L_MT	437
+R_Medial terminal nucleus of the accessory optic tract	R_MT	438
+"L_Substantia nigra	 compact part"	L_SNc	439
+"R_Substantia nigra	 compact part"	R_SNc	440
+L_Pedunculopontine nucleus	L_PPN	441
+R_Pedunculopontine nucleus	R_PPN	442
+L_Interfascicular nucleus raphe	L_IF	443
+R_Interfascicular nucleus raphe	R_IF	444
+L_Interpeduncular nucleus	L_IPN	445
+R_Interpeduncular nucleus	R_IPN	446
+L_Rostral linear nucleus raphe	L_RL	447
+R_Rostral linear nucleus raphe	R_RL	448
+L_Central linear nucleus raphe	L_CLI	449
+R_Central linear nucleus raphe	R_CLI	450
+L_Dorsal nucleus raphe	L_DR	451
+R_Dorsal nucleus raphe	R_DR	452
+L_Nucleus of the lateral lemniscus	L_NLL	453
+R_Nucleus of the lateral lemniscus	R_NLL	454
+L_Principal sensory nucleus of the trigeminal	L_PSV	455
+R_Principal sensory nucleus of the trigeminal	R_PSV	456
+L_Parabrachial nucleus	L_PB	457
+R_Parabrachial nucleus	R_PB	458
+L_Superior olivary complex	L_SOC	459
+R_Superior olivary complex	R_SOC	460
+L_Barrington's nucleus	L_B	461
+R_Barrington's nucleus	R_B	462
+L_Dorsal tegmental nucleus	L_DTN	463
+R_Dorsal tegmental nucleus	R_DTN	464
+L_Posterodorsal tegmental nucleus	L_PDTg	465
+R_Posterodorsal tegmental nucleus	R_PDTg	466
+L_Pontine central gray	L_PCG	467
+R_Pontine central gray	R_PCG	468
+L_Pontine gray	L_PG	469
+R_Pontine gray	R_PG	470
+"L_Pontine reticular nucleus	 caudal part"	L_PRNc	471
+"R_Pontine reticular nucleus	 caudal part"	R_PRNc	472
+L_Supragenual nucleus	L_SG	473
+R_Supragenual nucleus	R_SG	474
+L_Supratrigeminal nucleus	L_SUT	475
+R_Supratrigeminal nucleus	R_SUT	476
+L_Tegmental reticular nucleus	L_TRN	477
+R_Tegmental reticular nucleus	R_TRN	478
+L_Motor nucleus of trigeminal	L_V	479
+R_Motor nucleus of trigeminal	R_V	480
+L_Peritrigeminal zone	L_P5	481
+R_Peritrigeminal zone	R_P5	482
+L_Accessory trigeminal nucleus	L_Acs5	483
+R_Accessory trigeminal nucleus	R_Acs5	484
+L_Parvicellular motor 5 nucleus	L_PC5	485
+R_Parvicellular motor 5 nucleus	R_PC5	486
+L_Intertrigeminal nucleus	L_I5	487
+R_Intertrigeminal nucleus	R_I5	488
+L_Superior central nucleus raphe	L_CS	489
+R_Superior central nucleus raphe	R_CS	490
+L_Locus ceruleus	L_LC	491
+R_Locus ceruleus	R_LC	492
+L_Laterodorsal tegmental nucleus	L_LDT	493
+R_Laterodorsal tegmental nucleus	R_LDT	494
+L_Nucleus incertus	L_NI	495
+R_Nucleus incertus	R_NI	496
+L_Pontine reticular nucleus	L_PRNr	497
+R_Pontine reticular nucleus	R_PRNr	498
+L_Nucleus raphe pontis	L_RPO	499
+R_Nucleus raphe pontis	R_RPO	500
+L_Subceruleus nucleus	L_SLC	501
+R_Subceruleus nucleus	R_SLC	502
+L_Sublaterodorsal nucleus	L_SLD	503
+R_Sublaterodorsal nucleus	R_SLD	504
+L_Area postrema	L_AP	505
+R_Area postrema	R_AP	506
+L_Dorsal cochlear nucleus	L_DCO	507
+R_Dorsal cochlear nucleus	R_DCO	508
+L_Ventral cochlear nucleus	L_VCO	509
+R_Ventral cochlear nucleus	R_VCO	510
+L_Cuneate nucleus	L_CU	511
+R_Cuneate nucleus	R_CU	512
+L_Gracile nucleus	L_GR	513
+R_Gracile nucleus	R_GR	514
+L_External cuneate nucleus	L_ECU	515
+R_External cuneate nucleus	R_ECU	516
+L_Nucleus of the trapezoid body	L_NTB	517
+R_Nucleus of the trapezoid body	R_NTB	518
+L_Nucleus of the solitary tract	L_NTS	519
+R_Nucleus of the solitary tract	R_NTS	520
+"L_Spinal nucleus of the trigeminal	 caudal part"	L_SPVC	521
+"R_Spinal nucleus of the trigeminal	 caudal part"	R_SPVC	522
+"L_Spinal nucleus of the trigeminal	 interpolar part"	L_SPVI	523
+"R_Spinal nucleus of the trigeminal	 interpolar part"	R_SPVI	524
+"L_Spinal nucleus of the trigeminal	 oral part"	L_SPVO	525
+"R_Spinal nucleus of the trigeminal	 oral part"	R_SPVO	526
+L_Paratrigeminal nucleus	L_Pa5	527
+R_Paratrigeminal nucleus	R_Pa5	528
+L_Abducens nucleus	L_VI	529
+R_Abducens nucleus	R_VI	530
+L_Facial motor nucleus	L_VII	531
+R_Facial motor nucleus	R_VII	532
+L_Accessory facial motor nucleus	L_ACVII	533
+R_Accessory facial motor nucleus	R_ACVII	534
+L_Nucleus ambiguus	L_AMB	535
+R_Nucleus ambiguus	R_AMB	536
+L_Dorsal motor nucleus of the vagus nerve	L_DMX	537
+R_Dorsal motor nucleus of the vagus nerve	R_DMX	538
+L_Gigantocellular reticular nucleus	L_GRN	539
+R_Gigantocellular reticular nucleus	R_GRN	540
+L_Infracerebellar nucleus	L_ICB	541
+R_Infracerebellar nucleus	R_ICB	542
+L_Inferior olivary complex	L_IO	543
+R_Inferior olivary complex	R_IO	544
+L_Intermediate reticular nucleus	L_IRN	545
+R_Intermediate reticular nucleus	R_IRN	546
+L_Inferior salivatory nucleus	L_ISN	547
+R_Inferior salivatory nucleus	R_ISN	548
+L_Linear nucleus of the medulla	L_LIN	549
+R_Linear nucleus of the medulla	R_LIN	550
+L_Lateral reticular nucleus	L_LRN	551
+R_Lateral reticular nucleus	R_LRN	552
+L_Magnocellular reticular nucleus	L_MARN	553
+R_Magnocellular reticular nucleus	R_MARN	554
+L_Medullary reticular nucleus	L_MDRN	555
+R_Medullary reticular nucleus	R_MDRN	556
+"L_Medullary reticular nucleus	 dorsal part"	L_MDRNd	557
+"R_Medullary reticular nucleus	 dorsal part"	R_MDRNd	558
+"L_Medullary reticular nucleus	 ventral part"	L_MDRNv	559
+"R_Medullary reticular nucleus	 ventral part"	R_MDRNv	560
+L_Parvicellular reticular nucleus	L_PARN	561
+R_Parvicellular reticular nucleus	R_PARN	562
+L_Parasolitary nucleus	L_PAS	563
+R_Parasolitary nucleus	R_PAS	564
+"L_Paragigantocellular reticular nucleus	 dorsal part"	L_PGRNd	565
+"R_Paragigantocellular reticular nucleus	 dorsal part"	R_PGRNd	566
+"L_Paragigantocellular reticular nucleus	 lateral part"	L_PGRNl	567
+"R_Paragigantocellular reticular nucleus	 lateral part"	R_PGRNl	568
+L_Nucleus of Roller	L_NR	569
+R_Nucleus of Roller	R_NR	570
+L_Nucleus prepositus	L_PRP	571
+R_Nucleus prepositus	R_PRP	572
+L_Parapyramidal nucleus	L_PPY	573
+R_Parapyramidal nucleus	R_PPY	574
+L_Lateral vestibular nucleus	L_LAV	575
+R_Lateral vestibular nucleus	R_LAV	576
+L_Medial vestibular nucleus	L_MV	577
+R_Medial vestibular nucleus	R_MV	578
+L_Spinal vestibular nucleus	L_SPIV	579
+R_Spinal vestibular nucleus	R_SPIV	580
+L_Superior vestibular nucleus	L_SUV	581
+R_Superior vestibular nucleus	R_SUV	582
+L_Nucleus x	L_x	583
+R_Nucleus x	R_x	584
+L_Hypoglossal nucleus	L_XII	585
+R_Hypoglossal nucleus	R_XII	586
+L_Nucleus y	L_y	587
+R_Nucleus y	R_y	588
+L_Nucleus raphe magnus	L_RM	589
+R_Nucleus raphe magnus	R_RM	590
+L_Nucleus raphe pallidus	L_RPA	591
+R_Nucleus raphe pallidus	R_RPA	592
+L_Nucleus raphe obscurus	L_RO	593
+R_Nucleus raphe obscurus	R_RO	594
+L_Lingula (I)	L_LING	595
+R_Lingula (I)	R_LING	596
+L_Central lobule	L_CENT	597
+R_Central lobule	R_CENT	598
+L_Culmen	L_CUL	599
+R_Culmen	R_CUL	600
+L_Declive (VI)	L_DEC	601
+R_Declive (VI)	R_DEC	602
+L_Folium-tuber vermis (VII)	L_FOTU	603
+R_Folium-tuber vermis (VII)	R_FOTU	604
+L_Pyramus (VIII)	L_PYR	605
+R_Pyramus (VIII)	R_PYR	606
+L_Uvula (IX)	L_UVU	607
+R_Uvula (IX)	R_UVU	608
+L_Nodulus (X)	L_NOD	609
+R_Nodulus (X)	R_NOD	610
+L_Simple lobule	L_SIM	611
+R_Simple lobule	R_SIM	612
+L_Ansiform lobule	L_AN	613
+R_Ansiform lobule	R_AN	614
+L_Paramedian lobule	L_PRM	615
+R_Paramedian lobule	R_PRM	616
+L_Copula pyramidis	L_COPY	617
+R_Copula pyramidis	R_COPY	618
+L_Paraflocculus	L_PFL	619
+R_Paraflocculus	R_PFL	620
+L_Flocculus	L_FL	621
+R_Flocculus	R_FL	622
+L_Fastigial nucleus	L_FN	623
+R_Fastigial nucleus	R_FN	624
+L_Interposed nucleus	L_IP	625
+R_Interposed nucleus	R_IP	626
+L_Dentate nucleus	L_DN	627
+R_Dentate nucleus	R_DN	628
+L_Vestibulocerebellar nucleus	L_VeCB	629
+R_Vestibulocerebellar nucleus	R_VeCB	630
+L_fiber tracts	L_fiber tracts	631
+R_fiber tracts	R_fiber tracts	632

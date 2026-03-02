@@ -1,0 +1,25 @@
+name	abbreviation	index
+L_Isocortex	L_Isocortex	1
+R_Isocortex	R_Isocortex	2
+L_Olfactory areas	L_OLF	3
+R_Olfactory areas	R_OLF	4
+L_Hippocampal formation	L_HPF	5
+R_Hippocampal formation	R_HPF	6
+L_Cortical subplate	L_CTXsp	7
+R_Cortical subplate	R_CTXsp	8
+L_Striatum	L_STR	9
+R_Striatum	R_STR	10
+L_Pallidum	L_PAL	11
+R_Pallidum	R_PAL	12
+L_Thalamus	L_TH	13
+R_Thalamus	R_TH	14
+L_Hypothalamus	L_HY	15
+R_Hypothalamus	R_HY	16
+L_Midbrain	L_MB	17
+R_Midbrain	R_MB	18
+L_Pons	L_P	19
+R_Pons	R_P	20
+L_Medulla	L_MY	21
+R_Medulla	R_MY	22
+L_Cerebellum	L_CB	23
+R_Cerebellum	R_CB	24

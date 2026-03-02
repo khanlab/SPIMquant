@@ -1,0 +1,103 @@
+name	abbreviation	index
+"L_Frontal pole	 cerebral cortex"	L_FRP	1
+"R_Frontal pole	 cerebral cortex"	R_FRP	2
+L_Somatomotor areas	L_MO	3
+R_Somatomotor areas	R_MO	4
+L_Somatosensory areas	L_SS	5
+R_Somatosensory areas	R_SS	6
+L_Gustatory areas	L_GU	7
+R_Gustatory areas	R_GU	8
+L_Visceral area	L_VISC	9
+R_Visceral area	R_VISC	10
+L_Auditory areas	L_AUD	11
+R_Auditory areas	R_AUD	12
+L_Visual areas	L_VIS	13
+R_Visual areas	R_VIS	14
+L_Anterior cingulate area	L_ACA	15
+R_Anterior cingulate area	R_ACA	16
+L_Prelimbic area	L_PL	17
+R_Prelimbic area	R_PL	18
+L_Infralimbic area	L_ILA	19
+R_Infralimbic area	R_ILA	20
+L_Orbital area	L_ORB	21
+R_Orbital area	R_ORB	22
+L_Agranular insular area	L_AI	23
+R_Agranular insular area	R_AI	24
+L_Retrosplenial area	L_RSP	25
+R_Retrosplenial area	R_RSP	26
+L_Posterior parietal association areas	L_PTLp	27
+R_Posterior parietal association areas	R_PTLp	28
+L_Temporal association areas	L_TEa	29
+R_Temporal association areas	R_TEa	30
+L_Perirhinal area	L_PERI	31
+R_Perirhinal area	R_PERI	32
+L_Ectorhinal area	L_ECT	33
+R_Ectorhinal area	R_ECT	34
+L_Olfactory areas	L_OLF	35
+R_Olfactory areas	R_OLF	36
+L_Ammon's horn	L_CA	37
+R_Ammon's horn	R_CA	38
+L_Dentate gyrus	L_DG	39
+R_Dentate gyrus	R_DG	40
+L_Fasciola cinerea	L_FC	41
+R_Fasciola cinerea	R_FC	42
+L_Induseum griseum	L_IG	43
+R_Induseum griseum	R_IG	44
+L_Retrohippocampal region	L_RHP	45
+R_Retrohippocampal region	R_RHP	46
+L_Cortical subplate	L_CTXsp	47
+R_Cortical subplate	R_CTXsp	48
+L_Striatum dorsal region	L_STRd	49
+R_Striatum dorsal region	R_STRd	50
+L_Striatum ventral region	L_STRv	51
+R_Striatum ventral region	R_STRv	52
+L_Lateral septal complex	L_LSX	53
+R_Lateral septal complex	R_LSX	54
+L_Striatum-like amygdalar nuclei	L_sAMY	55
+R_Striatum-like amygdalar nuclei	R_sAMY	56
+"L_Pallidum	 dorsal region"	L_PALd	57
+"R_Pallidum	 dorsal region"	R_PALd	58
+"L_Pallidum	 ventral region"	L_PALv	59
+"R_Pallidum	 ventral region"	R_PALv	60
+"L_Pallidum	 medial region"	L_PALm	61
+"R_Pallidum	 medial region"	R_PALm	62
+"L_Pallidum	 caudal region"	L_PALc	63
+"R_Pallidum	 caudal region"	R_PALc	64
+"L_Thalamus	 sensory-motor cortex related"	L_DORsm	65
+"R_Thalamus	 sensory-motor cortex related"	R_DORsm	66
+"L_Thalamus	 polymodal association cortex related"	L_DORpm	67
+"R_Thalamus	 polymodal association cortex related"	R_DORpm	68
+L_Periventricular zone	L_PVZ	69
+R_Periventricular zone	R_PVZ	70
+L_Periventricular region	L_PVR	71
+R_Periventricular region	R_PVR	72
+L_Hypothalamic medial zone	L_MEZ	73
+R_Hypothalamic medial zone	R_MEZ	74
+L_Hypothalamic lateral zone	L_LZ	75
+R_Hypothalamic lateral zone	R_LZ	76
+L_Median eminence	L_ME	77
+R_Median eminence	R_ME	78
+"L_Midbrain	 sensory related"	L_MBsen	79
+"R_Midbrain	 sensory related"	R_MBsen	80
+"L_Midbrain	 motor related"	L_MBmot	81
+"R_Midbrain	 motor related"	R_MBmot	82
+"L_Midbrain	 behavioral state related"	L_MBsta	83
+"R_Midbrain	 behavioral state related"	R_MBsta	84
+"L_Pons	 sensory related"	L_P-sen	85
+"R_Pons	 sensory related"	R_P-sen	86
+"L_Pons	 motor related"	L_P-mot	87
+"R_Pons	 motor related"	R_P-mot	88
+"L_Pons	 behavioral state related"	L_P-sat	89
+"R_Pons	 behavioral state related"	R_P-sat	90
+"L_Medulla	 sensory related"	L_MY-sen	91
+"R_Medulla	 sensory related"	R_MY-sen	92
+"L_Medulla	 motor related"	L_MY-mot	93
+"R_Medulla	 motor related"	R_MY-mot	94
+"L_Medulla	 behavioral state related"	L_MY-sat	95
+"R_Medulla	 behavioral state related"	R_MY-sat	96
+L_Vermal regions	L_VERM	97
+R_Vermal regions	R_VERM	98
+L_Hemispheric regions	L_HEM	99
+R_Hemispheric regions	R_HEM	100
+L_Cerebellar nuclei	L_CBN	101
+R_Cerebellar nuclei	R_CBN	102
