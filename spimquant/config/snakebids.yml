@@ -266,6 +266,15 @@ templates:
       roi198:
         dseg: 'tpl-ABAv3/tpl-ABAv3_seg-roi198_dseg.nii.gz'
         tsv: 'tpl-ABAv3/tpl-ABAv3_seg-roi198_dseg.tsv'
+      coarse:
+        dseg: 'tpl-ABAv3/tpl-ABAv3_seg-coarse_dseg.nii.gz'
+        tsv: 'tpl-ABAv3/tpl-ABAv3_seg-coarse_dseg.tsv'
+      mid:
+        dseg: 'tpl-ABAv3/tpl-ABAv3_seg-mid_dseg.nii.gz'
+        tsv: 'tpl-ABAv3/tpl-ABAv3_seg-mid_dseg.tsv'
+      fine:
+        dseg: 'tpl-ABAv3/tpl-ABAv3_seg-fine_dseg.nii.gz'
+        tsv: 'tpl-ABAv3/tpl-ABAv3_seg-fine_dseg.tsv'
   MouseIn:
     # MP2RAGE inv1 chosen since its most similar to the MT GRE I had on hand.. better to create a 
     # new template later..
