@@ -1,0 +1,13 @@
+name: vesselfm
+channels:
+  - khanlab
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - vesselfm==0.1.0
+  - pip:
+    - zarrnii==0.15.3a1
+    - h5py >=3.14.0
+    - simpleitk >=2.4.0
+    - pylibtiff >=0.7.0
