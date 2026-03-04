@@ -6,6 +6,7 @@ channels:
 dependencies:
   - python=3.11
   - vesselfm==0.1.0
+  - pip
   - pip:
     - zarrnii==0.15.3a1
     - h5py >=3.14.0
