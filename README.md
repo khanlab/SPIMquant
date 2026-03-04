@@ -1,4 +1,5 @@
 # SPIMquant
+[![Documentation Status](https://readthedocs.org/projects/spimquant/badge/?version=latest)](https://spimquant.readthedocs.io/en/latest/?badge=latest)
 
 SPIMquant is a Snakebids app for quantitative analysis of SPIM (lightsheet) brain data. It performs automated nonlinear template registration and quantification of pathology from SPIM microscopy datasets.
 
