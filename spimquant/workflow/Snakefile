@@ -60,7 +60,7 @@ if spim_templates is not None:
             use_spim_template = True
             break
 
-else:
+if not use_spim_template:
     for stain in config["stains_for_reg"]:
         if stain in stains:
             stain_for_reg = stain
