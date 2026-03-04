@@ -237,6 +237,11 @@ parse_args:
     default: null
     nargs: 2
 
+  --vesselfm:
+    help: "Run vesselfm"
+    action: store_true
+    default: False
+
 #--- workflow specific configuration -- 
 
 
