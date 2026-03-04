@@ -54,6 +54,7 @@ rule get_downsampled_nii:
 
 localrules:
     import_template_anat,
+    import_template_spim,
     import_mask,
     generic_lut_bids_to_itksnap,
     import_dseg,
