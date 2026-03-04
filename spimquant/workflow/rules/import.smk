@@ -114,7 +114,7 @@ rule import_template_spim:
     log:
         bids_tpl(
             root="logs",
-            datatype="import_anat",
+            datatype=f"import_template_spim_{stain_for_reg}",
             template="{template}",
             suffix="log.txt",
         ),
