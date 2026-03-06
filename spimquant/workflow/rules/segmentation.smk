@@ -458,6 +458,118 @@ rule colocalize_regionprops:
         "../scripts/compute_colocalization.py"
 
 
+rule colocalize_instance_with_mask:
+    """Perform colocalization of instance segmentation objects with a binary mask.
+
+    For each object from the instance segmentation stains (regionprops), this rule
+    determines whether the object's centroid falls inside the binary mask of a
+    mask segmentation stain (e.g. a vessel mask).
+
+    The output is an annotated regionprops parquet with an additional 'in_mask'
+    column (1 = inside mask, 0 = outside mask) and template coordinates for
+    downstream atlas-based quantification.
+    """
+    input:
+        regionprops_parquet=bids(
+            root=root,
+            datatype="micr",
+            desc="{desc}",
+            space="{template}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+        mask=bids(
+            root=work,
+            datatype="micr",
+            stain="{mask_stain}",
+            level=config["segmentation_level"],
+            desc="{desc}",
+            suffix="mask.ome.zarr",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        coord_column_names=config["coord_column_names"],
+        template_coord_column_names=config["template_coord_column_names"],
+        mask_stain="{mask_stain}",
+        zarrnii_kwargs={"orientation": config["orientation"]},
+    output:
+        maskcoloc_parquet=bids(
+            root=root,
+            datatype="micr",
+            stain="{mask_stain}",
+            desc="{desc}",
+            space="{template}",
+            suffix="maskcoloc.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=32000,
+        runtime=10,
+    script:
+        "../scripts/compute_colocalization_with_mask.py"
+
+
+rule map_mask_coloc_to_atlas_rois:
+    """Map mask colocalization results to atlas regions.
+
+    Takes the mask colocalization parquet (instance objects annotated with
+    in_mask=0/1) and maps objects that are inside the mask (in_mask=1) to
+    atlas regions using template-space coordinates.
+    """
+    input:
+        maskcoloc_parquet=bids(
+            root=root,
+            datatype="micr",
+            stain="{mask_stain}",
+            desc="{desc}",
+            space="{template}",
+            suffix="maskcoloc.parquet",
+            **inputs["spim"].wildcards,
+        ),
+        dseg=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
+        ),
+        label_tsv=bids_tpl(
+            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
+        ),
+    params:
+        coord_column_names=config["template_coord_column_names"],
+    output:
+        maskcoloc_tsv=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            from_="{template}",
+            stain="{mask_stain}",
+            desc="{desc}",
+            suffix="maskcolocstats.tsv",
+            **inputs["spim"].wildcards,
+        ),
+        counts_tsv=temp(
+            bids(
+                root=root,
+                datatype="micr",
+                seg="{seg}",
+                from_="{template}",
+                stain="{mask_stain}",
+                desc="{desc}",
+                suffix="maskcoloccountstats.tsv",
+                **inputs["spim"].wildcards,
+            )
+        ),
+    group:
+        "subj"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
+    script:
+        "../scripts/map_atlas_to_mask_coloc.py"
+
+
 rule counts_per_voxel:
     """Calculate counts per voxel based on points"""
     input:

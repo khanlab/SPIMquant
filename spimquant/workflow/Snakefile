@@ -57,13 +57,16 @@ if stain_for_reg is None:
 
 
 stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
+stains_for_seg_mask = list(set(config["stains_for_seg_mask"]).intersection(set(stains)))
 
 if len(stains_for_seg) == 0 or config["no_segmentation"]:
     do_seg = False
     do_coloc = False
+    do_coloc_with_mask = False
 else:
     do_seg = True
     do_coloc = len(stains_for_seg) > 1
+    do_coloc_with_mask = len(stains_for_seg) > 0 and len(stains_for_seg_mask) > 0
 
 # atlas segmentations to use
 all_atlas_segs = config["templates"][config["template"]]["atlases"].keys()
@@ -110,6 +113,7 @@ if config.get("analysis_level") == "group":
 
 wildcard_constraints:
     stain="[a-zA-Z0-9]+",
+    mask_stain="[a-zA-Z0-9]+",
     contrast_column="[a-zA-Z0-9_]+",
     contrast_value="[a-zA-Z0-9_]+",
 
@@ -338,6 +342,46 @@ rule all_segment_coloc:
             ),
             desc=config["seg_method"],
             template=config["template"],
+        ),
+
+
+rule all_segment_mask:
+    """Target rule for mask-only stain segmentation outputs (fieldfrac, no regionprops)."""
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}",
+                suffix="fieldfrac.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg_mask,
+            level=config["registration_level"],
+            desc=config["seg_method"],
+        ),
+
+
+rule all_segment_coloc_with_mask:
+    """Target rule for instance+mask colocalization outputs."""
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                seg="{seg}",
+                from_="{template}",
+                stain="{mask_stain}",
+                desc="{desc}",
+                suffix="maskcolocstats.tsv",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            mask_stain=stains_for_seg_mask,
         ),
 
 
@@ -585,9 +629,11 @@ rule all_participant:
     input:
         rules.all_register.input,
         rules.all_segment.input if do_seg else [],
+        rules.all_segment_mask.input if (do_seg and len(stains_for_seg_mask) > 0) else [],
         rules.all_spim_patches.input if do_seg else [],
         rules.all_mri_reg.input if config["register_to_mri"] else [],
         rules.all_segment_coloc.input if do_coloc else [],
+        rules.all_segment_coloc_with_mask.input if do_coloc_with_mask else [],
 
 
 rule all_group:
