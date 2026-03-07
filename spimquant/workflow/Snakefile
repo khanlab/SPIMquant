@@ -42,7 +42,7 @@ else:
 
 
 include: "rules/common.smk"
-include: "rules/vesselfm.smk"
+
 
 stains = get_stains_all_subjects()
 
@@ -64,6 +64,16 @@ if len(stains_for_seg) == 0 or config["no_segmentation"]:
 else:
     do_seg = True
     do_coloc = len(stains_for_seg) > 1
+
+
+stains_for_vessels = list(set(config["stains_for_vessels"]).intersection(set(stains)))
+
+if len(stains_for_vessels) == 0:
+    do_vessels = False
+else:
+    do_vessels = True
+    print("enabling vessel segmentation")
+
 
 # atlas segmentations to use
 all_atlas_segs = config["templates"][config["template"]]["atlases"].keys()
@@ -113,20 +123,6 @@ wildcard_constraints:
     contrast_column="[a-zA-Z0-9_]+",
     contrast_value="[a-zA-Z0-9_]+",
 
-rule all_vesselfm:
-    input:
-        spim_new_res=inputs["spim"].expand(
-            bids(
-                root=root,
-                datatype="new_res",
-                stain="{stain}",
-                level="{level}",
-                suffix="SPIM.ome.zarr",
-                **inputs["spim"].wildcards,
-            ),
-            stain='CD31',
-            level=config["registration_level"],
-        ),
 
 rule all_templatereg_deform_zooms:
     input:
@@ -225,6 +221,42 @@ rule all_register:
             ),
             stain=stain_for_reg,
             template=config["template"],
+        ),
+
+
+rule all_vessels:
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                seg="{seg}",
+                space="{template}",
+                desc="{desc}",
+                suffix="{stain}+{suffix}.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+            desc=config["vessel_seg_method"],
+            suffix=config["vessel_metrics"],
+            stain=stains_for_vessels,
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}",
+                space="{template}",
+                suffix="fieldfrac.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["registration_level"],
+            template=config["template"],
+            desc=config["vessel_seg_method"],
+            stain=stains_for_vessels,
         ),
 
 
@@ -598,7 +630,7 @@ rule all_participant:
     default_target: True
     input:
         rules.all_register.input,
-        rules.all_vesselfm.input if config["vesselfm"] else [],
+        rules.all_vessels.input if do_vessels else [],
         rules.all_segment.input if do_seg else [],
         rules.all_spim_patches.input if do_seg else [],
         rules.all_mri_reg.input if config["register_to_mri"] else [],
@@ -614,6 +646,7 @@ rule all_group:
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
+include: "rules/vessels.smk"
 
 
 if config["no_segmentation"] == False:
