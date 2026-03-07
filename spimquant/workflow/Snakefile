@@ -68,7 +68,7 @@ else:
 
 stains_for_vessels = list(set(config["stains_for_vessels"]).intersection(set(stains)))
 
-if len(stains_for_vessels) == 0:
+if len(stains_for_vessels) == 0 or config["no_segmentation"]:
     do_vessels = False
 else:
     do_vessels = True
