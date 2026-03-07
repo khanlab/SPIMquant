@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
         # Apply bias field correction
         znimg_corrected = znimg.apply_scaled_processing(
-            N4BiasFieldCorrection(sigma=5.0),
+            N4BiasFieldCorrection(),
             downsample_factor=adjusted_downsample_factor,
             upsampled_ome_zarr_path=snakemake.output.biasfield,
         )

@@ -29,8 +29,8 @@ For optimal performance:
 Memory requirements depend on:
 
 1. **Dataset Resolution**: Higher resolution requires more memory
-2. **Registration Method**: `greedy` deformable registration is memory-intensive
-3. **Parallel Processing**: More concurrent jobs = more memory needed
+2. **Downsampling Level**: Setting a higher downsampling level for registration or segmentation will reduce memory requirements significantly
+3. **Parallel Processing**: More CPU's available to Dask = more memory needed, can use --set-threads to customize per rule
 
 **Memory Guidelines:**
 
@@ -40,8 +40,6 @@ Memory requirements depend on:
 | High-res processing | 4-8 GB | 8 cores = 32-64 GB |
 | Template registration | 16-32 GB | Single job |
 
-!!! warning "Out of Memory"
-    The `greedy` registration step can require 16-32 GB for a single job. Ensure sufficient memory is available or reduce concurrent jobs.
 
 ### CPU Cores
 
@@ -64,18 +62,15 @@ Storage needs vary by dataset size:
 
 | Component | Space Needed | Notes |
 |-----------|-------------|-------|
-| Input data | 1-100 GB/subject | Depends on resolution |
-| Intermediate files | 2-5x input | Temporary registrations |
-| Output results | 0.5-2x input | Registered data + stats |
+| Input data | 1-2000 GB/subject | Depends on resolution |
+| Intermediate files | 2-3x input | Temporary images |
+| Output results | 0.1x input | Registered data + stats |
 
 **Storage Recommendations:**
 
 - **SSD**: Strongly recommended for temp files
 - **Network Storage**: Possible but slower
-- **Cleanup**: Intermediate files can be deleted
-
-!!! tip "Storage Management"
-    Use `--delete-temp-output` to automatically clean intermediate files after successful completion.
+- **Cleanup**: Intermediate files are automatically deleted
 
 ### Disk I/O
 
@@ -83,7 +78,7 @@ Fast storage improves performance:
 
 - **SSD**: 5-10x faster than HDD
 - **NVMe**: Best performance for intensive workflows
-- **Network**: Can bottleneck on large files
+- **Network**: Can bottleneck if many chunks
 
 Consider local storage for:
 
@@ -99,7 +94,7 @@ For local processing:
 
 ```bash
 # Use all cores, but control memory
-pixi run spimquant ... --cores 16 --resources mem_mb=64000
+pixi run spimquant ... --cores all --resources mem_mb=64000
 ```
 
 ### HPC Cluster
@@ -107,43 +102,21 @@ pixi run spimquant ... --cores 16 --resources mem_mb=64000
 For SLURM or other clusters:
 
 ```bash
-# Submit jobs to cluster
+# Submit jobs to cluster each job using 32 cores, 100 jobs submitted at a time
 pixi run spimquant ... \
   --profile cluster \
   --jobs 100 \
-  --cores all
+  --cores 32
 ```
 
 See [Cluster Configuration](../usage/workflows.md#cluster-execution) for details.
 
 ### Cloud Processing
 
-For cloud-based processing:
-
-```bash
-# Use Coiled for cloud execution
-pixi run spimquant ... \
-  --cloud \
-  --cores all
-```
-
-See [Cloud Processing Guide](../usage/cloud.md) for setup.
+For cloud-based processing see [Cloud Processing Guide](../usage/cloud.md) for setup.
 
 ## Performance Tuning
 
-### Optimize for Your Hardware
-
-**High Memory, Few Cores:**
-```bash
-# Run fewer jobs in parallel, but use more threads per job
-pixi run spimquant ... --cores 4 --threads 8
-```
-
-**Many Cores, Limited Memory:**
-```bash
-# Run many light jobs in parallel
-pixi run spimquant ... --cores all --threads 2
-```
 
 ### Monitor Resource Usage
 
@@ -162,51 +135,28 @@ df -h
 
 ### Memory Management Tips
 
-1. **Process in batches**: Run subset of subjects if memory-limited
-2. **Reduce resolution**: Use lower-resolution pyramids for initial testing
+1. **Process in batches**: Run subset of subjects if memory-limited, can use --particiant-label or --filter-spim
+2. **Reduce resolution**: Use lower-resolution pyramids for initial testing (--registration-level, --segmentation-level)
 3. **Limit concurrent jobs**: Use `--cores` to control parallelism
 4. **Close other applications**: Free up memory for SPIMquant
+5. **Skip segmentation if you only need atlas registration**: use --no-segmentation flag
+
 
 ## Benchmarks
 
 Typical processing times on different configurations:
 
+(placeholder)
+
 | Configuration | Dataset | Time |
 |--------------|---------|------|
-| 8 cores, 32 GB | 1 subject, 10 GB | 2-4 hours |
-| 16 cores, 64 GB | 5 subjects, 50 GB | 6-10 hours |
-| 32 cores, 128 GB | 20 subjects, 200 GB | 12-24 hours |
+| 8 cores, 32 GB | 1 subject |  _ hours |
+| 16 cores, 64 GB | 5 subjects  | _ hours |
+| 32 cores, 128 GB | 20 subjects | _ hours |
 
 !!! note "Benchmarks"
     Times vary significantly based on dataset resolution, template choice, and specific workflow steps enabled.
 
-## Cloud vs. Local Processing
-
-### Local Processing
-
-**Pros:**
-- No data transfer costs
-- Full control over resources
-- No cloud setup required
-
-**Cons:**
-- Limited by local hardware
-- Requires significant upfront hardware investment
-- Manual resource management
-
-### Cloud Processing
-
-**Pros:**
-- Scalable resources on-demand
-- No hardware maintenance
-- Pay only for what you use
-
-**Cons:**
-- Data transfer time and costs
-- Cloud setup complexity
-- Ongoing operational costs
-
-See [Cloud Processing Guide](../usage/cloud.md) for cloud deployment details.
 
 ## Getting Help
 
