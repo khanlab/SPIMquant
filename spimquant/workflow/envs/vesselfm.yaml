@@ -6,9 +6,3 @@ channels:
 dependencies:
   - python=3.11
   - vesselfm==0.1.0
-  - pip
-  - pip:
-    - git+https://github.com/khanlab/zarrnii.git@93e0194fbaebc5324736f9c8d18e367efc9245f8
-    - h5py >=3.14.0
-    - simpleitk >=2.4.0
-    - pylibtiff >=0.7.0
