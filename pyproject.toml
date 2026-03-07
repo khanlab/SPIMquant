@@ -35,6 +35,19 @@ scipy = ">=1.11.0,<2"
 matplotlib = ">=3.7.0,<4"
 seaborn = ">=0.12.0,<1"
 nilearn = ">=0.12.1,<0.13"
+monai = ">=1.5.2,<2"
+hydra-core = ">=1.3.2,<2"
+scikit-image = ">=0.26.0,<0.27"
+scikit-learn = ">=1.8.0,<2"
+simpleitk = ">=2.4.0,<3"
+tqdm = ">=4.67.2,<5"
+lightning = ">=2.6.0,<3"
+wandb = ">=0.24.1,<0.25"
+tensorboard = ">=2.20.0,<3"
+huggingface_hub = ">=1.3.7,<2"
+nibabel = ">=5.3.2,<6"
+gpustat = ">=1.1.1,<2"
+omegaconf = ">=2.3.0,<3"
 
 [tool.pixi.pypi-dependencies]
 spimquant = { path = ".", editable = true }
@@ -42,6 +55,12 @@ ngff-zarr = { version = ">=0.19.1", extras = ["cli","dask-image","itk","tensorst
 zarrnii = ">=0.15.4-alpha1,<0.16.0"
 #zarrnii = { git = "https://github.com/khanlab/zarrnii", rev = "main",  editable = true }
 #zarrnii = { path = "./zarrnii", editable = true }
+zarrnii_plugin_api = ">=0.16.1a2-dev"
+vesselfm = { git = "https://github.com/khanlab/vesselfm", rev = "main" }
+h5py = ">=3.14.0"
+simpleitk = ">=2.4.0"
+pylibtiff = ">=0.7.0"
+
 
 [tool.pixi.feature.dev.dependencies]
 black   = ">=24.0.0, <25.0.0"
@@ -59,6 +78,18 @@ micro_sam = ">=1.6.2,<2"
 
 [tool.pixi.environments.default]
 features = ["runtime"]
+
+[tool.pixi.environments.gpu]
+features = ["runtime", "gpu"]
+
+[tool.pixi.feature.gpu.system-requirements]
+cuda = "12.0"
+
+[tool.pixi.feature.gpu.dependencies]
+cuda-version = "12.6.*"
+pytorch-gpu = "*"
+
+
 
 [tool.pixi.environments.dev]
 features = ["runtime", "dev", "vis"]

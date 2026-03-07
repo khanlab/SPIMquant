@@ -11,7 +11,5 @@ rule run_vesselfm:
             suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
-    conda:
-        "../envs/vesselfm.yaml"
     script:
         "../scripts/vesselfm.py"
