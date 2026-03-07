@@ -1,9 +1,9 @@
 """Compute signed distance transform from a binary mask using dask map_overlap.
 
 The signed distance transform assigns:
-- Positive values to interior voxels (inside the mask), proportional to distance
+- Negative values to interior voxels (inside the mask), proportional to distance
   to the nearest background voxel.
-- Negative values to exterior voxels (outside the mask), proportional to distance
+- Positive values to exterior voxels (outside the mask), proportional to distance
   to the nearest foreground voxel.
 
 Uses scipy.ndimage.distance_transform_cdt via dask.array.map_overlap for chunked,
@@ -44,15 +44,15 @@ if __name__ == "__main__":
               - dt_outside: distance from each background voxel to the nearest
                 foreground voxel (positive contribution outside the mask).
 
-            The signed distance transform is dt_inside - dt_outside, giving
-            positive values inside the mask and negative values outside.
+            The signed distance transform is dt_outside - dt_inside, giving
+            negative values inside the mask and positive values outside.
             """
             result = np.zeros(block.shape, dtype=np.float32)
             for c in range(block.shape[0]):
                 binary = block[c] > 0
                 dt_inside = distance_transform_cdt(binary).astype(np.float32)
                 dt_outside = distance_transform_cdt(~binary).astype(np.float32)
-                result[c] = dt_inside - dt_outside
+                result[c] = dt_outside - dt_inside
             return result
 
         # depth=0 for the channel dimension, overlap_depth for spatial dims
