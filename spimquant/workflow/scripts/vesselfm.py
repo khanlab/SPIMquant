@@ -2,6 +2,7 @@ from zarrnii import ZarrNii
 from vesselfm.zarrnii_plugin import VesselFMPlugin
 
 import dask
+
 dask.config.set(scheduler="threads", num_workers=snakemake.threads)
 
 from dask.diagnostics import ProgressBar
