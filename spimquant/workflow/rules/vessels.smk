@@ -1,6 +1,8 @@
 rule run_vesselfm:
     input:
         spim=inputs["spim"].path,
+    params:
+        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         mask=directory(
             bids(
