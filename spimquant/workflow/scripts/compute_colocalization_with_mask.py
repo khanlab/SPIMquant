@@ -141,11 +141,13 @@ else:
     )
 
     # -----------------------------------------------------------------------
-    # Compute equivalent sphere radius from nvoxels
-    # Volume = (4/3) π r³  →  r = ∛( 3V / (4π) )
+    # Compute equivalent sphere radius from nvoxels.
+    # Sphere volume:  V = (4/3) π r³
+    # Solving for r:  r = ∛( 3V / (4π) )
     # -----------------------------------------------------------------------
+    _SPHERE_COEFF = 3.0 / (4.0 * np.pi)  # coefficient in r = ∛(3V / (4π))
     nvoxels = df["nvoxels"].values.astype(float)
-    radius = np.cbrt((3.0 * nvoxels * voxel_volume) / (4.0 * np.pi))
+    radius = np.cbrt(_SPHERE_COEFF * nvoxels * voxel_volume)
 
     # -----------------------------------------------------------------------
     # Colocalization score: sdt_value - radius

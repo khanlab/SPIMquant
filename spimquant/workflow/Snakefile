@@ -95,7 +95,7 @@ else:
 # Only pairs whose both stains are available in the dataset are kept.
 _raw_pairs = config.get("coloc_stain_pairs", [])
 maskcoloc_pairs = [
-    (pair[0], pair[1])
+    tuple(pair)
     for pair in _raw_pairs
     if len(pair) == 2 and pair[0] in stains_for_seg and pair[1] in stains_for_vessels
 ]
