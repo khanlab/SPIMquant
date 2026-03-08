@@ -72,7 +72,6 @@ if len(stains_for_vessels) == 0 or config["no_segmentation"]:
     do_vessels = False
 else:
     do_vessels = True
-    print("enabling vessel segmentation")
 
 
 # atlas segmentations to use

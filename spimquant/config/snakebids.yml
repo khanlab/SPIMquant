@@ -306,8 +306,7 @@ templates:
 
 
 models:
-  vesselfm: 
-    base: https://huggingface.co/bwittmann/vesselFM/resolve/main/vesselFM_base.pt
+  vesselfm: https://huggingface.co/bwittmann/vesselFM/resolve/main/vesselFM_base.pt
 
 
   

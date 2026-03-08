@@ -1,14 +1,21 @@
+rule import_vesselfm_model:
+    input:
+        model=storage(config["models"]["vesselfm"]),
+    output:
+        "resources/models/vesselfm.pt",
+    shell:
+        "cp {input} {output}"
+
+
 rule run_vesselfm:
     input:
         spim=inputs["spim"].path,
-        model=remote(
-            "https://huggingface.co/bwittmann/vesselFM/resolve/main/vesselFM_base.pt"
-        ),
+        model_path="resources/models/vesselfm.pt",
     params:
         zarrnii_kwargs={"orientation": config["orientation"]},
         vesselfm_kwargs=lambda wildcards, input: {
             "chunk_size": (1, 128, 128, 128),
-            "model": input.model,
+            "model_path": input.model_path,
         },
     output:
         mask=directory(
