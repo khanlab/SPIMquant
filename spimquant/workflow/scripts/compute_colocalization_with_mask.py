@@ -87,58 +87,14 @@ else:
     spacing = np.array([scale.get(d, 1.0) for d in spatial_dims], dtype=float)
     voxel_volume = float(np.prod(spacing))
 
-    # -----------------------------------------------------------------------
-    # Convert physical centroid coordinates → voxel indices
-    # The affine matrix (4×4) maps voxel indices to physical (X, Y, Z) coords.
-    # We invert it to go from physical coords to voxel indices.
-    # -----------------------------------------------------------------------
-    affine_matrix = znimg.affine.matrix  # 4×4, maps voxel → physical
-    affine_inv = np.linalg.inv(affine_matrix)
-
     # Physical centroid coordinates from the regionprops table (N × 3, XYZ order)
     coords_xyz = df[coord_cols].values.astype(float)
     n_points = len(coords_xyz)
 
-    # Homogeneous coordinates (N × 4)
-    coords_homog = np.column_stack([coords_xyz, np.ones(n_points, dtype=float)])
-
-    # Apply inverse affine: (N × 4) @ (4 × 4).T → (N × 4); take first 3 cols
-    voxel_coords = (coords_homog @ affine_inv.T)[:, :3]
-
-    # -----------------------------------------------------------------------
-    # Load and prepare the SDT data array
-    # -----------------------------------------------------------------------
-    sdt_data = znimg.darr.compute()
-
-    # ZarrNii stores data as (C, Z, Y, X). Remove the channel dimension when
-    # it is a singleton so that interpn receives a 3-D grid.
-    if sdt_data.ndim == 4:
-        if sdt_data.shape[0] != 1:
-            raise ValueError(
-                f"Expected singleton channel dimension in SDT, "
-                f"got shape {sdt_data.shape}."
-            )
-        sdt_data = sdt_data[0]  # → (Z, Y, X)
-    elif sdt_data.ndim == 5:
-        if sdt_data.shape[0] != 1 or sdt_data.shape[1] != 1:
-            raise ValueError(
-                f"Expected singleton time and channel dimensions in SDT, "
-                f"got shape {sdt_data.shape}."
-            )
-        sdt_data = sdt_data[0, 0]  # → (Z, Y, X)
-
     # -----------------------------------------------------------------------
     # Sample SDT values at voxel coordinates via linear interpolation
     # -----------------------------------------------------------------------
-    grid = tuple(np.arange(s) for s in sdt_data.shape)
-    sdt_values = interpn(
-        grid,
-        sdt_data,
-        voxel_coords,
-        method="linear",
-        bounds_error=False,
-        fill_value=np.nan,  # points outside the SDT array → NaN
-    )
+    sdt_values = znimg.sample_at_points(coords_xyz)
 
     # -----------------------------------------------------------------------
     # Compute equivalent sphere radius from nvoxels.
