@@ -515,13 +515,13 @@ def get_mask_seg_desc(stain):
         if not config.get("vessel_seg_method"):
             raise ValueError(
                 f"Config 'vessel_seg_method' must be a non-empty list, "
-                f"got: {config.get('vessel_seg_method')! r}"
+                f"got: {config.get('vessel_seg_method')}"
             )
         return config["vessel_seg_method"][0]
     if not config.get("seg_method"):
         raise ValueError(
             f"Config 'seg_method' must be a non-empty list, "
-            f"got: {config.get('seg_method')! r}"
+            f"got: {config.get('seg_method')}"
         )
     return config["seg_method"][0]
 
