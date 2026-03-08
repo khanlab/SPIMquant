@@ -51,7 +51,7 @@ omegaconf = ">=2.3.0,<3"
 [tool.pixi.pypi-dependencies]
 spimquant = { path = ".", editable = true }
 ngff-zarr = { version = ">=0.19.1", extras = ["cli","dask-image","itk","tensorstore","validate"] }
-zarrnii = ">=0.16.2-alpha2-dev0,<0.16.3"
+zarrnii = ">=0.16.3-alpha2-dev0,<0.16.4"
 #zarrnii = { git = "https://github.com/khanlab/zarrnii", rev = "main",  editable = true }
 #zarrnii = { path = "./zarrnii", editable = true }
 zarrnii_plugin_api = ">=0.16.1a2-dev"
