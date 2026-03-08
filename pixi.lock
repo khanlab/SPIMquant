@@ -481,7 +481,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/shaderc-2025.3-h3e344bc_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/shellingham-1.5.4-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/simdjson-4.0.7-hb700be7_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/simpleitk-2.5.3-py312h9d66c9f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/simplejson-3.20.2-py312h4c3975b_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhe01879c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/slack-sdk-3.40.1-pyhd8ed1ab_0.conda
@@ -615,9 +614,10 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b8/02/5bf3639f5b77e9b183011c08541c5039ba3d04f5316c70312b48a8e003a9/pims-0.7.tar.gz
       - pypi: https://files.pythonhosted.org/packages/f6/17/7468d6cb45b0c537b235bb910812bb248c581a50ffc5eeaeba342f6fdf2d/pylibtiff-0.7.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/04/80/97b6f357ac458d9ad9872cc3183ca09ef7439ac89e030ea43053ba1294b6/rich_argparse-1.7.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/21/0d/002bed1d46df8397e3a1a89b28073080eadfc145f043e3cdcb5bc6044b5c/simpleitk-2.5.3-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e8/ae/fa6cd331b364ad2bbc31652d025f5747d89cbb75576733dfdf8efe3e4d62/slicerator-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/31/6c/d8c8508a9f4a83dc910d2365c484ba0debf5e531782065e3657fc8fc9b54/tensorstore-0.1.81-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: git+https://github.com/khanlab/vesselfm?rev=main#8a1981edcd967878abe5924a19251cf29dd743f5
+      - pypi: git+https://github.com/khanlab/vesselfm?rev=main#b78470ad2e8321dabbae419084fed3a007d9acbe
       - pypi: https://files.pythonhosted.org/packages/44/54/a774313c19c1c0ae2c1897af697c12178904d67911f42c4a9bdddba68640/wasmtime-42.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e5/d5/77bc87bc5f0b48d0bd829bfa4c21667d62c15346c317ad2e2ad1f1ecd919/zarrnii-0.16.2a2.dev0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ba/2b/9483d932cd22ec43c6250b6c05c1d9efa9bfad79a00a9a6360585225f57b/zarrnii_plugin_api-0.16.1a2.dev1-py3-none-any.whl
@@ -1251,7 +1251,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/shaderc-2025.3-h3e344bc_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/shellingham-1.5.4-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/simdjson-4.0.7-hb700be7_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/simpleitk-2.5.3-py312h9d66c9f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/simplejson-3.20.2-py312h4c3975b_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/sip-6.10.0-py312h1289d80_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhe01879c_1.conda
@@ -1416,9 +1415,10 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b8/02/5bf3639f5b77e9b183011c08541c5039ba3d04f5316c70312b48a8e003a9/pims-0.7.tar.gz
       - pypi: https://files.pythonhosted.org/packages/f6/17/7468d6cb45b0c537b235bb910812bb248c581a50ffc5eeaeba342f6fdf2d/pylibtiff-0.7.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/04/80/97b6f357ac458d9ad9872cc3183ca09ef7439ac89e030ea43053ba1294b6/rich_argparse-1.7.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/21/0d/002bed1d46df8397e3a1a89b28073080eadfc145f043e3cdcb5bc6044b5c/simpleitk-2.5.3-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e8/ae/fa6cd331b364ad2bbc31652d025f5747d89cbb75576733dfdf8efe3e4d62/slicerator-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/31/6c/d8c8508a9f4a83dc910d2365c484ba0debf5e531782065e3657fc8fc9b54/tensorstore-0.1.81-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: git+https://github.com/khanlab/vesselfm?rev=main#8a1981edcd967878abe5924a19251cf29dd743f5
+      - pypi: git+https://github.com/khanlab/vesselfm?rev=main#b78470ad2e8321dabbae419084fed3a007d9acbe
       - pypi: https://files.pythonhosted.org/packages/44/54/a774313c19c1c0ae2c1897af697c12178904d67911f42c4a9bdddba68640/wasmtime-42.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e5/d5/77bc87bc5f0b48d0bd829bfa4c21667d62c15346c317ad2e2ad1f1ecd919/zarrnii-0.16.2a2.dev0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ba/2b/9483d932cd22ec43c6250b6c05c1d9efa9bfad79a00a9a6360585225f57b/zarrnii_plugin_api-0.16.1a2.dev1-py3-none-any.whl
@@ -1645,7 +1645,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/2c/ea/fe0f14a1da96d6e0aa6c24d6c31f3ce4b203f8e8a1a2e359489e52b33400/tensorstore-0.1.81-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/1a/e4/e804505f87627cd8cdae9c010c47c4485fd8c1ce31a7dd0ab7fcc4707377/tifffile-2026.3.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/12/5911ae3eeec47800503a238d971e51722ccea5feb8569b735184d5fcdbc0/toolz-1.1.0-py3-none-any.whl
-      - pypi: git+https://github.com/khanlab/vesselfm?rev=main#8a1981edcd967878abe5924a19251cf29dd743f5
+      - pypi: git+https://github.com/khanlab/vesselfm?rev=main#b78470ad2e8321dabbae419084fed3a007d9acbe
       - pypi: https://files.pythonhosted.org/packages/44/54/a774313c19c1c0ae2c1897af697c12178904d67911f42c4a9bdddba68640/wasmtime-42.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/03/a9/5b7d6a16fd6533fed2756900fc8fc923f678179aea62ada6d65c92718c00/wrapt-2.1.2-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/66/fe/b1e10b08d287f518994f1e2ff9b6d26f0adeecd8dd7d533b01bab29a3eda/yarl-1.23.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
@@ -2162,7 +2162,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/shaderc-2025.3-h3e344bc_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/shellingham-1.5.4-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/simdjson-4.0.7-hb700be7_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/simpleitk-2.5.3-py312h9d66c9f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/simplejson-3.20.2-py312h4c3975b_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhe01879c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/slack-sdk-3.40.1-pyhd8ed1ab_0.conda
@@ -2297,9 +2296,10 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b8/02/5bf3639f5b77e9b183011c08541c5039ba3d04f5316c70312b48a8e003a9/pims-0.7.tar.gz
       - pypi: https://files.pythonhosted.org/packages/f6/17/7468d6cb45b0c537b235bb910812bb248c581a50ffc5eeaeba342f6fdf2d/pylibtiff-0.7.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/04/80/97b6f357ac458d9ad9872cc3183ca09ef7439ac89e030ea43053ba1294b6/rich_argparse-1.7.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/21/0d/002bed1d46df8397e3a1a89b28073080eadfc145f043e3cdcb5bc6044b5c/simpleitk-2.5.3-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e8/ae/fa6cd331b364ad2bbc31652d025f5747d89cbb75576733dfdf8efe3e4d62/slicerator-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/31/6c/d8c8508a9f4a83dc910d2365c484ba0debf5e531782065e3657fc8fc9b54/tensorstore-0.1.81-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: git+https://github.com/khanlab/vesselfm?rev=main#8a1981edcd967878abe5924a19251cf29dd743f5
+      - pypi: git+https://github.com/khanlab/vesselfm?rev=main#b78470ad2e8321dabbae419084fed3a007d9acbe
       - pypi: https://files.pythonhosted.org/packages/44/54/a774313c19c1c0ae2c1897af697c12178904d67911f42c4a9bdddba68640/wasmtime-42.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e5/d5/77bc87bc5f0b48d0bd829bfa4c21667d62c15346c317ad2e2ad1f1ecd919/zarrnii-0.16.2a2.dev0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ba/2b/9483d932cd22ec43c6250b6c05c1d9efa9bfad79a00a9a6360585225f57b/zarrnii_plugin_api-0.16.1a2.dev1-py3-none-any.whl
@@ -13592,22 +13592,6 @@ packages:
   name: simpleitk
   version: 2.5.3
   sha256: b615a96826815471965899d50d089fb67381a4d59b65750eafe58a6a980ecce2
-- conda: https://conda.anaconda.org/conda-forge/linux-64/simpleitk-2.5.3-py312h9d66c9f_0.conda
-  sha256: 5bdbb9a6b83bf405c9beb4608958743706b7206924e9ab1778ff7d593026370e
-  md5: d51287fc92fd0906a9349b4433a75dc7
-  depends:
-  - __glibc >=2.17,<3.0.a0
-  - libgcc >=14
-  - libitk >=5.4.5,<5.5.0a0
-  - libstdcxx >=14
-  - python >=3.12,<3.13.0a0
-  - python_abi 3.12.* *_cp312
-  license: Apache-2.0
-  license_family: APACHE
-  purls:
-  - pkg:pypi/simpleitk?source=hash-mapping
-  size: 27641792
-  timestamp: 1764094665212
 - conda: https://conda.anaconda.org/conda-forge/linux-64/simplejson-3.20.2-py312h4c3975b_1.conda
   sha256: 0b5e7ab14199d240c39093aa3bd5463bf43b729ee4f2b5c95cbc1c6836d93e38
   md5: 31e17e9462c0de4da6a1274153a85187
@@ -14164,7 +14148,7 @@ packages:
 - pypi: ./
   name: spimquant
   version: 0.1.0
-  sha256: 1aba98fda1e3148843370c1f460b29763171795268feb80d7cb6758d6c7fe682
+  sha256: 72fb573e7aac8e7f5f76690ff06b0359dec697fb20d8a7f2a67ac8f6650162dd
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/spirv-tools-2025.5-hb700be7_0.conda
@@ -14962,7 +14946,7 @@ packages:
   purls: []
   size: 14226
   timestamp: 1767012219987
-- pypi: git+https://github.com/khanlab/vesselfm?rev=main#8a1981edcd967878abe5924a19251cf29dd743f5
+- pypi: git+https://github.com/khanlab/vesselfm?rev=main#b78470ad2e8321dabbae419084fed3a007d9acbe
   name: vesselfm
   version: 0.1.0
   requires_python: '>=3.11'

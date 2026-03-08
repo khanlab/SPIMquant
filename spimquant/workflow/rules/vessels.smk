@@ -1,8 +1,15 @@
 rule run_vesselfm:
     input:
         spim=inputs["spim"].path,
+        model=remote(
+            "https://huggingface.co/bwittmann/vesselFM/resolve/main/vesselFM_base.pt"
+        ),
     params:
         zarrnii_kwargs={"orientation": config["orientation"]},
+        vesselfm_kwargs=lambda wildcards, input: {
+            "chunk_size": (1, 128, 128, 128),
+            "model": input.model,
+        },
     output:
         mask=directory(
             bids(
@@ -16,6 +23,8 @@ rule run_vesselfm:
             )
         ),
     threads: 32
+    group:
+        "subj"
     resources:
         mem_mb=32000,
         runtime=lambda wildcards: max(1, int(200.0 / (3.0 ** float(wildcards.level)))),  # rough estimate, clamped to >=1

@@ -13,7 +13,7 @@ znimg = ZarrNii.from_ome_zarr(
     channel_labels=[snakemake.wildcards.stain],
     **snakemake.params.zarrnii_kwargs,
 )
-znimg_mask = znimg.segment(VesselFMPlugin, chunk_size=(1, 128, 128, 128))
+znimg_mask = znimg.segment(VesselFMPlugin, **snakemake.params.vesselfm_kwargs)
 
 znimg_mask = znimg_mask * 100
 

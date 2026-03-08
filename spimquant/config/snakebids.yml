@@ -305,6 +305,11 @@ templates:
         tsv: tpl-DSURQE/seg-all_tpl-DSURQE_dseg.tsv
 
 
+models:
+  vesselfm: 
+    base: https://huggingface.co/bwittmann/vesselFM/resolve/main/vesselFM_base.pt
+
+
   
 templatereg:
   desc: N4brain
