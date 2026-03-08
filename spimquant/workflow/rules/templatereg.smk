@@ -131,13 +131,13 @@ rule crop_template:
     to the specified hemisphere region.
     """
     input:
-        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        template=bids_tpl(root=root, template="{template}", suffix="{suffix}.nii.gz"),
     output:
         cropped=bids_tpl(
             root=root,
             template="{template}",
             desc="{hemisphere}crop",
-            suffix="anat.nii.gz",
+            suffix="{suffix}.nii.gz",
         ),
     params:
         hemisphere="{hemisphere}",

@@ -54,6 +54,7 @@ rule get_downsampled_nii:
 
 localrules:
     import_template_anat,
+    import_template_spim,
     import_mask,
     generic_lut_bids_to_itksnap,
     import_dseg,
@@ -82,6 +83,38 @@ rule import_template_anat:
         bids_tpl(
             root="logs",
             datatype="import_anat",
+            template="{template}",
+            suffix="log.txt",
+        ),
+    script:
+        "../scripts/copy_nii.py"
+
+
+rule import_template_spim:
+    """Import template spim channel.
+    """
+    input:
+        anat=lambda wildcards: storage(
+            ancient(
+                resources_path(
+                    config["templates"][wildcards.template]["spim_templates"][
+                        stain_for_reg
+                    ]
+                )
+            )
+        ),
+    output:
+        anat=bids_tpl(
+            root=root, template="{template}", suffix=f"{stain_for_reg}.nii.gz"
+        ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=5,
+    log:
+        bids_tpl(
+            root="logs",
+            datatype=f"import_template_spim_{stain_for_reg}",
             template="{template}",
             suffix="log.txt",
         ),
