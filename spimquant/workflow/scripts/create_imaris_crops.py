@@ -14,8 +14,8 @@ import re
 from pathlib import Path
 import numpy as np
 
-import dask
 from dask.diagnostics import ProgressBar
+from dask_setup import get_dask_client
 from zarrnii import ZarrNii, ZarrNiiAtlas
 
 # Set up logging for snakemake scripts
@@ -45,100 +45,97 @@ if downsampling_level < 0:
         "Target level for create_imaris_crops is smaller than the input level!"
     )
 
-
-# Set up dask for parallel processing
-dask.config.set(scheduler="threads", num_workers=snakemake.threads)
-
 # Create output directory
 Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-# Load the atlas with labels
-atlas = ZarrNiiAtlas.from_files(
-    input_dseg,
-    input_tsv,
-    **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
-)
+with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
+    # Load the atlas with labels
+    atlas = ZarrNiiAtlas.from_files(
+        input_dseg,
+        input_tsv,
+        **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
+    )
 
-# Load the image data
-image = ZarrNii.from_ome_zarr(
-    input_zarr,
-    level=downsampling_level,
-    **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
-)
+    # Load the image data
+    image = ZarrNii.from_ome_zarr(
+        input_zarr,
+        level=downsampling_level,
+        **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
+    )
 
-# Determine which labels to use for crops
-if crop_labels is None:
-    # Use all non-background labels from the atlas
-    labels_to_use = atlas.labels_df[atlas.labels_df[atlas.label_column] > 0][
-        [atlas.label_column, atlas.abbrev_column]
-    ].values.tolist()
-else:
-    # Use specified labels - can be indices or names/abbreviations
-    labels_to_use = []
-    for label in crop_labels:
-        if isinstance(label, int):
-            # Label index provided
-            row = atlas.labels_df[atlas.labels_df[atlas.label_column] == label]
-            if not row.empty:
-                labels_to_use.append([label, row[atlas.abbrev_column].values[0]])
-        else:
-            # Label name or abbreviation provided
-            row = atlas.labels_df[
-                (atlas.labels_df[atlas.name_column] == label)
-                | (atlas.labels_df[atlas.abbrev_column] == label)
-            ]
-            if not row.empty:
-                labels_to_use.append(
-                    [
-                        row[atlas.label_column].values[0],
-                        row[atlas.abbrev_column].values[0],
-                    ]
+    # Determine which labels to use for crops
+    if crop_labels is None:
+        # Use all non-background labels from the atlas
+        labels_to_use = atlas.labels_df[atlas.labels_df[atlas.label_column] > 0][
+            [atlas.label_column, atlas.abbrev_column]
+        ].values.tolist()
+    else:
+        # Use specified labels - can be indices or names/abbreviations
+        labels_to_use = []
+        for label in crop_labels:
+            if isinstance(label, int):
+                # Label index provided
+                row = atlas.labels_df[atlas.labels_df[atlas.label_column] == label]
+                if not row.empty:
+                    labels_to_use.append([label, row[atlas.abbrev_column].values[0]])
+            else:
+                # Label name or abbreviation provided
+                row = atlas.labels_df[
+                    (atlas.labels_df[atlas.name_column] == label)
+                    | (atlas.labels_df[atlas.abbrev_column] == label)
+                ]
+                if not row.empty:
+                    labels_to_use.append(
+                        [
+                            row[atlas.label_column].values[0],
+                            row[atlas.abbrev_column].values[0],
+                        ]
+                    )
+
+    # Extract crops for each label
+    with ProgressBar():
+        for label_idx, label_abbrev in labels_to_use:
+            try:
+                # Get bounding box for this region
+                bbox_min, bbox_max = atlas.get_region_bounding_box(
+                    region_ids=int(label_idx)
+                )
+                # Crop the image using the bounding box
+                cropped = image.crop(bbox_min, bbox_max, physical_coords=True)
+
+                logging.info(f"cropped shape for {label_abbrev} is {cropped.shape}")
+                if any(d > 5000 for d in cropped.shape):
+                    raise ValueError(
+                        f"Cropped image too large, shape={cropped.shape}, skipping"
+                    )
+
+                # Clean label name for filename: remove non-alphanumeric chars
+                clean_abbrev = re.sub(r"[^a-zA-Z0-9]+", "", str(label_abbrev))
+                # Fallback to label index if name would be empty
+                if not clean_abbrev:
+                    clean_abbrev = f"idx{label_idx}"
+                subject = snakemake.wildcards.subject
+                out_file = Path(output_dir) / (
+                    f"sub-{subject}_seg-{atlas_seg}_label-{clean_abbrev}_SPIM.ims"
                 )
 
-# Extract crops for each label
-with ProgressBar():
-    for label_idx, label_abbrev in labels_to_use:
-        try:
-            # Get bounding box for this region
-            bbox_min, bbox_max = atlas.get_region_bounding_box(
-                region_ids=int(label_idx)
-            )
-            # Crop the image using the bounding box
-            cropped = image.crop(bbox_min, bbox_max, physical_coords=True)
+                # Save as Imaris dataset
+                cropped.to_imaris(str(out_file))
 
-            logging.info(f"cropped shape for {label_abbrev} is {cropped.shape}")
-            if any(d > 5000 for d in cropped.shape):
-                raise ValueError(
-                    f"Cropped image too large, shape={cropped.shape}, skipping"
+                logging.info(
+                    f"Created Imaris crop for label {label_abbrev} (index {label_idx}): {out_file}"
                 )
 
-            # Clean label namn for filename: remove non-alphanumeric chars
-            clean_abbrev = re.sub(r"[^a-zA-Z0-9]+", "", str(label_abbrev))
-            # Fallback to label index if name would be empty
-            if not clean_abbrev:
-                clean_abbrev = f"idx{label_idx}"
-            subject = snakemake.wildcards.subject
-            out_file = Path(output_dir) / (
-                f"sub-{subject}_seg-{atlas_seg}_label-{clean_abbrev}_SPIM.ims"
-            )
-
-            # Save as Imaris dataset
-            cropped.to_imaris(str(out_file))
-
-            logging.info(
-                f"Created Imaris crop for label {label_abbrev} (index {label_idx}): {out_file}"
-            )
-
-        except ValueError as e:
-            # ValueError from get_region_bounding_box when region has no voxels
-            logging.warning(
-                f"Skipping label {label_abbrev} (index {label_idx}): "
-                f"no voxels in region - {e}"
-            )
-            continue
-        except Exception as e:
-            # Catch any other errors
-            logging.error(
-                f"Error processing label {label_abbrev} (index {label_idx}): {e}"
-            )
-            continue
+            except ValueError as e:
+                # ValueError from get_region_bounding_box when region has no voxels
+                logging.warning(
+                    f"Skipping label {label_abbrev} (index {label_idx}): "
+                    f"no voxels in region - {e}"
+                )
+                continue
+            except Exception as e:
+                # Catch any other errors
+                logging.error(
+                    f"Error processing label {label_abbrev} (index {label_idx}): {e}"
+                )
+                continue
