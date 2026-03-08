@@ -125,9 +125,9 @@ with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
                 for i, patch in enumerate(patches):
                     # Clean label abbreviation for filename: replace non-alphanumeric
                     # chars with underscore, collapse multiple underscores, strip edges
-                    clean_abbrev = re.sub(r"[^a-zA-Z0-9]+", "_", str(label_abbrev)).strip(
-                        "_"
-                    )
+                    clean_abbrev = re.sub(
+                        r"[^a-zA-Z0-9]+", "_", str(label_abbrev)
+                    ).strip("_")
                     # Fallback to label index if abbreviation would be empty
                     if not clean_abbrev:
                         clean_abbrev = f"idx{label_idx}"

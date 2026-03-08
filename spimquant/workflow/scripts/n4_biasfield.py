@@ -1,6 +1,7 @@
 from dask_setup import get_dask_client
 from zarrnii import ZarrNii
 from zarrnii.plugins import N4BiasFieldCorrection
+from dask.diagnostics import ProgressBar
 
 with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
 
@@ -20,12 +21,13 @@ with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
 
     print("compute bias field correction")
 
-    # Apply bias field correction
-    znimg_corrected = znimg.apply_scaled_processing(
-        N4BiasFieldCorrection(),
-        downsample_factor=adjusted_downsample_factor,
-        upsampled_ome_zarr_path=snakemake.output.biasfield,
-    )
+    with ProgressBar():
+        # Apply bias field correction
+        znimg_corrected = znimg.apply_scaled_processing(
+            N4BiasFieldCorrection(),
+            downsample_factor=adjusted_downsample_factor,
+            upsampled_ome_zarr_path=snakemake.output.biasfield,
+        )
 
-    # write to ome_zarr
-    znimg_corrected.to_ome_zarr(snakemake.output.corrected, max_layer=5)
+        # write to ome_zarr
+        znimg_corrected.to_ome_zarr(snakemake.output.corrected, max_layer=5)
