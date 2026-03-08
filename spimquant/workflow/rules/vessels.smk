@@ -16,6 +16,6 @@ rule run_vesselfm:
     threads: 32
     resources:
         mem_mb=32000,
-        runtime=lambda wildcards: int(200.0 / (3.0 ** float(wildcards.level))),  #rough estimate
+        runtime=lambda wildcards: max(1, int(200.0 / (3.0 ** float(wildcards.level)))),  # rough estimate, clamped to >=1
     script:
         "../scripts/vesselfm.py"
