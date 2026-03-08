@@ -79,6 +79,15 @@ else:
     do_seg = True
     do_coloc = len(stains_for_seg) > 1
 
+
+stains_for_vessels = list(set(config["stains_for_vessels"]).intersection(set(stains)))
+
+if len(stains_for_vessels) == 0 or config["no_segmentation"]:
+    do_vessels = False
+else:
+    do_vessels = True
+
+
 # atlas segmentations to use
 all_atlas_segs = config["templates"][config["template"]]["atlases"].keys()
 
@@ -225,6 +234,26 @@ rule all_register:
             ),
             stain=stain_for_reg,
             template=config["template"],
+        ),
+
+
+rule all_vessels:
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}",
+                space="{template}",
+                suffix="fieldfrac.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["registration_level"],
+            template=config["template"],
+            desc=config["vessel_seg_method"],
+            stain=stains_for_vessels,
         ),
 
 
@@ -598,6 +627,7 @@ rule all_participant:
     default_target: True
     input:
         rules.all_register.input,
+        rules.all_vessels.input if do_vessels else [],
         rules.all_segment.input if do_seg else [],
         rules.all_spim_patches.input if do_seg else [],
         rules.all_mri_reg.input if config["register_to_mri"] else [],
@@ -613,6 +643,7 @@ rule all_group:
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
+include: "rules/vessels.smk"
 
 
 if config["no_segmentation"] == False:
