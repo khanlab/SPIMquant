@@ -94,7 +94,7 @@ else:
     # -----------------------------------------------------------------------
     # Sample SDT values at voxel coordinates via linear interpolation
     # -----------------------------------------------------------------------
-    sdt_values = znimg.sample_at_points(coords_xyz)
+    sdt_values = znimg.sample_at_points(coords_xyz).reshape((n_points))
 
     # -----------------------------------------------------------------------
     # Compute equivalent sphere radius from nvoxels.
