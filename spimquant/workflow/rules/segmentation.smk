@@ -75,6 +75,7 @@ rule n4_biasfield:
     params:
         proc_level=5,
         zarrnii_kwargs={"orientation": config["orientation"]},
+        shrink_factor=16 if config["sloppy"] else 1,
     output:
         corrected=temp(
             directory(

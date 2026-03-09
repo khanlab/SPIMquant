@@ -9,6 +9,7 @@ with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
         snakemake.input.spim,
         level=int(snakemake.wildcards.level),
         channel_labels=[snakemake.wildcards.stain],
+        downsample_near_isotropic=True,
         **snakemake.params.zarrnii_kwargs,
     )
     znimg_mask = znimg.segment(VesselFMPlugin, **snakemake.params.vesselfm_kwargs)
