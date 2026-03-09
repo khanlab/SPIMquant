@@ -184,6 +184,13 @@ parse_args:
     default: null
     
 
+  --dask_scheduler:
+    help: "Dask scheduler to use for parallel processing in workflow scripts (default: %(default)s)"
+    choices:
+      - threads
+      - distributed
+    default: threads
+
   --sloppy:
     help: "Use low-quality parameters for speed (USE FOR TESTING ONLY)"
     action: store_true

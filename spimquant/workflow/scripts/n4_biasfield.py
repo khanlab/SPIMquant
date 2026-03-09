@@ -1,37 +1,27 @@
-if __name__ == "__main__":
+from dask_setup import get_dask_client
+from zarrnii import ZarrNii
+from zarrnii.plugins import N4BiasFieldCorrection
+from dask.diagnostics import ProgressBar
 
-    from dask.distributed import Client, LocalCluster
+with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
 
-    cluster = LocalCluster(
-        n_workers=int(snakemake.threads / 2),  # or 32, depending on workload
-        threads_per_worker=2,  # isolate GIL
-        memory_limit="auto",  # or tune to your RAM
-        dashboard_address=":8788",
+    hires_level = int(snakemake.wildcards.level)
+    proc_level = int(snakemake.params.proc_level)
+
+    unadjusted_downsample_factor = 2**proc_level
+    adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
+
+    znimg = ZarrNii.from_ome_zarr(
+        snakemake.input.spim,
+        channel_labels=[snakemake.wildcards.stain],
+        level=hires_level,
+        downsample_near_isotropic=True,
+        **snakemake.params.zarrnii_kwargs,
     )
-    client = Client(cluster)
-    print(cluster.dashboard_link)
 
-    try:
+    print("compute bias field correction")
 
-        from zarrnii import ZarrNii
-        from zarrnii.plugins import N4BiasFieldCorrection
-
-        hires_level = int(snakemake.wildcards.level)
-        proc_level = int(snakemake.params.proc_level)
-
-        unadjusted_downsample_factor = 2**proc_level
-        adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
-
-        znimg = ZarrNii.from_ome_zarr(
-            snakemake.input.spim,
-            channel_labels=[snakemake.wildcards.stain],
-            level=hires_level,
-            downsample_near_isotropic=True,
-            **snakemake.params.zarrnii_kwargs,
-        )
-
-        print("compute bias field correction")
-
+    with ProgressBar():
         # Apply bias field correction
         znimg_corrected = znimg.apply_scaled_processing(
             N4BiasFieldCorrection(),
@@ -41,7 +31,3 @@ if __name__ == "__main__":
 
         # write to ome_zarr
         znimg_corrected.to_ome_zarr(snakemake.output.corrected, max_layer=5)
-
-    finally:
-        client.close()
-        cluster.close()
