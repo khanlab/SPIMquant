@@ -3,6 +3,7 @@ rule import_vesselfm_model:
         model=storage(config["models"]["vesselfm"]),
     output:
         "resources/models/vesselfm.pt",
+    localrule: True
     shell:
         "cp {input} {output}"
 
@@ -33,6 +34,8 @@ rule run_vesselfm:
     group:
         "subj"
     resources:
+        gpu=1,
+        cpus_per_gpu=32,
         mem_mb=32000,
         runtime=lambda wildcards: max(1, int(200.0 / (3.0 ** float(wildcards.level)))),  # rough estimate, clamped to >=1
     script:
