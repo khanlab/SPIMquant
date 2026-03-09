@@ -31,8 +31,6 @@ rule run_vesselfm:
             )
         ),
     threads: 32
-    group:
-        "subj"
     resources:
         gpu=1,
         cpus_per_gpu=32,

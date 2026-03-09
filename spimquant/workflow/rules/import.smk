@@ -42,8 +42,6 @@ rule get_downsampled_nii:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,

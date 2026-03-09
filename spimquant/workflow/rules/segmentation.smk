@@ -57,9 +57,7 @@ rule gaussian_biasfield:
                 )
             )
         ),
-    group:
-        "subj"
-    threads: 128
+    threads: 128 if config['dask_scheduler'] == 'distributed' else 32
     resources:
         mem_mb=256000,
         disk_mb=2097152,
@@ -103,13 +101,10 @@ rule n4_biasfield:
                 )
             )
         ),
-    group:
-        "subj"
-    threads: 128
+    threads: 128 if config['dask_scheduler'] == 'distributed' else 32
     resources:
-        mem_mb=500000,
-        disk_mb=2097152,
-        runtime=60,
+        mem_mb=500000 if config['dask_scheduler'] == 'distributed' else 250000,
+        runtime=180,
     script:
         "../scripts/n4_biasfield.py"
 
@@ -161,8 +156,6 @@ rule multiotsu:
             suffix="thresholds.png",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 128
     resources:
         mem_mb=500000,
@@ -182,8 +175,6 @@ rule convert_zarr_to_ozx:
     resources:
         mem_mb=32000,
         runtime=60,
-    group:
-        "subj"
     script:
         "../scripts/convert_zarr_to_ozx.py"
 
@@ -221,8 +212,6 @@ rule threshold:
                 )
             )
         ),
-    group:
-        "subj"
     threads: 128
     resources:
         mem_mb=256000,
@@ -279,8 +268,6 @@ rule clean_segmentation:
                 )
             )
         ),
-    group:
-        "subj"
     threads: 128
     resources:
         mem_mb=256000,
@@ -325,8 +312,6 @@ rule signed_distance_transform:
                 )
             )
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=64000,
@@ -365,8 +350,6 @@ rule compute_filtered_regionprops:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 128
     resources:
         mem_mb=256000,
@@ -418,8 +401,6 @@ rule transform_regionprops_to_template:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -455,8 +436,6 @@ rule aggregate_regionprops_across_stains:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -495,8 +474,6 @@ rule colocalize_regionprops:
             suffix="coloc.parquet",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -576,8 +553,6 @@ rule colocalize_regionprops_with_mask:
     wildcard_constraints:
         stain_a="[a-zA-Z0-9]+",
         stain_b="[a-zA-Z0-9]+",
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=32000,
@@ -634,8 +609,6 @@ rule transform_maskcoloc_to_template:
     wildcard_constraints:
         stain_a="[a-zA-Z0-9]+",
         stain_b="[a-zA-Z0-9]+",
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -704,8 +677,6 @@ rule map_maskcoloc_to_atlas_rois:
     wildcard_constraints:
         stain_a="[a-zA-Z0-9]+",
         stain_b="[a-zA-Z0-9]+",
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -739,8 +710,6 @@ rule counts_per_voxel:
             suffix="counts.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 16
     resources:
         mem_mb=15000,
@@ -774,8 +743,6 @@ rule counts_per_voxel_template:
             suffix="counts.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 16
     resources:
         mem_mb=15000,
@@ -808,8 +775,6 @@ rule coloc_per_voxel_template:
             suffix="coloccounts.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 16
     resources:
         mem_mb=15000,
@@ -849,8 +814,6 @@ rule fieldfrac:
             suffix="fieldfrac.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -882,8 +845,6 @@ rule deform_negative_mask_to_subject_nii:
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -933,8 +894,6 @@ rule map_img_to_roi_tsv:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -995,8 +954,6 @@ rule map_regionprops_to_atlas_rois:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -1046,8 +1003,6 @@ rule map_coloc_to_atlas_rois:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -1105,8 +1060,6 @@ rule merge_into_segstats_tsv:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -1161,8 +1114,6 @@ rule merge_into_colocsegstats_tsv:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -1219,8 +1170,6 @@ rule merge_indiv_and_coloc_segstats_tsv:
             suffix="mergedsegstats.tsv",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -1260,8 +1209,6 @@ rule map_segstats_tsv_dseg_to_template_nii:
             suffix="{suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -1309,8 +1256,6 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             suffix="{suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -1360,8 +1305,6 @@ rule deform_fieldfrac_nii_to_template_nii:
             suffix="fieldfrac.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,

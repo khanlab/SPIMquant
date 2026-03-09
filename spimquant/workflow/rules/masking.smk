@@ -62,8 +62,6 @@ rule pre_atropos:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -114,16 +112,14 @@ rule atropos_seg:
                 )
             )
         ),
-    group:
-        "subj"
     conda:
         "../envs/ants.yaml"
     shadow:
         "minimal"
-    threads: 1
+    threads: 16
     resources:
-        mem_mb=8000,
-        runtime=15,
+        mem_mb=32000,
+        runtime=45,
     shell:
         "mkdir -p {output.posteriors_dir} && "
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
@@ -157,8 +153,6 @@ rule post_atropos:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -211,8 +205,6 @@ rule init_affine_reg:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     log:
         bids(
             root="logs",
@@ -256,8 +248,6 @@ rule affine_transform_template_mask_to_subject:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -307,8 +297,6 @@ rule create_mask_from_gmm_and_prior:
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -341,8 +329,6 @@ rule create_mask_from_gmm:
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,

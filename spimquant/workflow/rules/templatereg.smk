@@ -62,8 +62,6 @@ rule n4:
             suffix="biasfield.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -112,8 +110,6 @@ rule apply_mask_to_corrected:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -189,8 +185,6 @@ rule affine_reg:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     log:
         bids(
             root="logs",
@@ -239,8 +233,6 @@ rule convert_ras_to_itk:
             suffix="xfm.txt",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -303,8 +295,6 @@ rule deform_reg:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     log:
         bids(
             root="logs",
@@ -354,8 +344,6 @@ rule resample_labels_to_zarr:
                 )
             )
         ),
-    group:
-        "subj"
     threads: 10
     resources:
         mem_mb=16000,
@@ -390,8 +378,6 @@ rule affine_zarr_to_template_nii:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -421,8 +407,6 @@ rule affine_zarr_to_template_ome_zarr:
                 )
             )
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -453,8 +437,6 @@ rule deform_zarr_to_template_nii:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -492,8 +474,6 @@ rule deform_to_template_nii_zoomed:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 4
     resources:
         mem_mb=15000,
@@ -541,8 +521,6 @@ rule deform_spim_nii_to_template_nii:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -597,8 +575,6 @@ rule deform_template_dseg_to_subject_nii:
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -627,8 +603,6 @@ rule copy_template_dseg_tsv:
             suffix="dseg.tsv",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -657,8 +631,6 @@ rule deform_transform_labels_to_subj:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 32
     script:  #TODO this script doesn't exist??
         "../scripts/deform_transform_channel_to_template_nii.py"
@@ -685,8 +657,6 @@ rule transform_labels_to_zoomed_template:
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     conda:
         "../envs/ants.yaml"
@@ -752,8 +722,6 @@ rule registration_qc_report:
             suffix="regqc.html",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=8000,

@@ -70,8 +70,6 @@ rule n4_mri_individual:
         nii=inputs["mri"].path,
     output:
         nii=temp(bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards)),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -99,8 +97,6 @@ rule resample_mri_ref:
                 **inputs["mri"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -134,8 +130,6 @@ rule register_mri_to_first:
                 **inputs.subj_wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 8
     resources:
         mem_mb=8000,
@@ -178,8 +172,6 @@ rule resample_mri_to_first:
                 **inputs.subj_wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 8
     conda:
         "../envs/c3d.yaml"
@@ -217,14 +209,10 @@ rule average_mri:
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
-    group:
-        "subj"
     threads: 8
     resources:
         mem_mb=16000,
         runtime=15,
-    group:
-        "subj"
     shell:
         "c3d {input.resampled_images} -accum -add -endaccum -o {output.nii}"
 
@@ -312,8 +300,6 @@ rule rigid_nlin_reg_mri_to_template:
                 **inputs.subj_wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -349,8 +335,6 @@ rule all_tune_mri_mask:
             warpsigma=range(3, 6),
             radius=[f"{i}x{i}x{i}" for i in range(2, 5)],
         ),
-    group:
-        "subj"
 
 
 rule transform_template_mask_to_mri:
@@ -410,8 +394,6 @@ rule transform_template_mask_to_mri:
         ),
     shadow:
         "minimal"
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -453,8 +435,6 @@ rule apply_mri_brain_mask:
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
@@ -573,8 +553,6 @@ rule affine_nlin_reg_mri_to_spim:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -616,8 +594,6 @@ rule all_tune_mri_spim_reg:
             dof=[12],
             radius=[f"{i}x{i}x{i}" for i in range(2, 4)],
         ),
-    group:
-        "subj"
 
 
 rule warp_mri_to_template_via_spim:
@@ -686,8 +662,6 @@ rule warp_mri_to_template_via_spim:
             suffix=f"{mri_suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -780,8 +754,6 @@ rule warp_mri_brainmask_to_spim:
             suffix="warp.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -860,8 +832,6 @@ rule mri_spim_registration_qc_report:
             suffix="regqc.html",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=8000,

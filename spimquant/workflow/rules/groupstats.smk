@@ -196,8 +196,6 @@ rule group_counts_per_voxel:
             desc="{desc}",
             suffix="{stain}+count.nii.gz",
         ),
-    group:
-        "subj"
     threads: 16
     resources:
         mem_mb=15000,
@@ -229,8 +227,6 @@ rule group_coloc_counts_per_voxel:
             desc="{desc}",
             suffix="coloccount.nii.gz",
         ),
-    group:
-        "subj"
     threads: 16
     resources:
         mem_mb=15000,
@@ -306,8 +302,6 @@ rule group_counts_per_voxel_contrast:
             contrast="{contrast_column}+{contrast_value}",
             suffix="{stain}+count.nii.gz",
         ),
-    group:
-        "subj"
     threads: 16
     resources:
         mem_mb=15000,
@@ -341,8 +335,6 @@ rule group_coloc_counts_per_voxel_contrast:
             contrast="{contrast_column}+{contrast_value}",
             suffix="coloccount.nii.gz",
         ),
-    group:
-        "subj"
     threads: 16
     resources:
         mem_mb=15000,
