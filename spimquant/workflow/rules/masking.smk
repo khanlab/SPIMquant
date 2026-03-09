@@ -49,7 +49,8 @@ rule pre_atropos:
                 desc="preAtropos",
                 suffix="SPIM.nii.gz",
                 **inputs["spim"].wildcards,
-            )
+            ),
+            group_jobs=True,
         ),
         mask=temp(
             bids(
@@ -60,7 +61,8 @@ rule pre_atropos:
                 desc="preAtropos",
                 suffix="mask.nii",
                 **inputs["spim"].wildcards,
-            )
+            ),
+            group_jobs=True,
         ),
     threads: 1
     resources:
@@ -96,7 +98,8 @@ rule atropos_seg:
                 k="{k}",
                 suffix="dseg.nii",
                 **inputs["spim"].wildcards,
-            )
+            ),
+            group_jobs=True,
         ),
         posteriors_dir=temp(
             directory(
@@ -110,7 +113,8 @@ rule atropos_seg:
                     suffix="posteriors",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
     conda:
         "../envs/ants.yaml"
@@ -151,7 +155,8 @@ rule post_atropos:
                 k="{k}",
                 suffix="dseg.nii",
                 **inputs["spim"].wildcards,
-            )
+            ),
+            group_jobs=True,
         ),
     threads: 1
     resources:
@@ -193,7 +198,8 @@ rule init_affine_reg:
                 desc="initaffine",
                 suffix="xfm.txt",
                 **inputs["spim"].wildcards,
-            )
+            ),
+            group_jobs=True,
         ),
         warped=temp(
             bids(
@@ -203,7 +209,8 @@ rule init_affine_reg:
                 desc="initaffinewarped",
                 suffix="SPIM.nii.gz",
                 **inputs["spim"].wildcards,
-            )
+            ),
+            group_jobs=True,
         ),
     log:
         bids(
@@ -246,7 +253,8 @@ rule affine_transform_template_mask_to_subject:
                 from_="{template}",
                 suffix="mask.nii.gz",
                 **inputs["spim"].wildcards,
-            )
+            ),
+            group_jobs=True,
         ),
     threads: 32
     resources:

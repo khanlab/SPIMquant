@@ -306,7 +306,7 @@ rule deform_reg:
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=5 if config["sloppy"] else 30,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -it {input.xfm_ras} -m {params.metric} "
@@ -342,7 +342,8 @@ rule resample_labels_to_zarr:
                     suffix="dseg.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
     threads: 10
     resources:
@@ -405,7 +406,8 @@ rule affine_zarr_to_template_ome_zarr:
                     suffix="spim.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
     threads: 32
     resources:

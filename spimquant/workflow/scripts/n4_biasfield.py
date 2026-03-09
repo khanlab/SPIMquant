@@ -29,7 +29,6 @@ with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
             N4BiasFieldCorrection(shrink_factor=snakemake.params.shrink_factor),
             downsample_factor=adjusted_downsample_factor,
             upsampled_ome_zarr_path=snakemake.output.biasfield,
-            chunk_size=(adjusted_chunk, adjusted_chunk, adjusted_chunk),
         )
 
         # write to ome_zarr

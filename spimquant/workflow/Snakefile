@@ -271,6 +271,20 @@ rule all_vessels:
         ),
 
 
+#        inputs["spim"].expand(
+#            bids(
+#                root=root,
+#                datatype="micr",
+#                stain="{stain}",
+#                desc="{desc}",
+#                suffix="mask.ozx",
+#                **inputs["spim"].wildcards,
+#            ),
+#            desc=config["vessel_seg_method"],
+#            stain=stains_for_vessels,
+#        )
+
+
 rule all_segment:
     input:
         inputs["spim"].expand(

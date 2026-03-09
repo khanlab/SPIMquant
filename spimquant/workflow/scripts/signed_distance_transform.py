@@ -21,6 +21,7 @@ import dask.array as da
 import numpy as np
 from scipy.ndimage import distance_transform_edt
 from zarrnii import ZarrNii
+from dask.diagnostics import ProgressBar
 
 from dask_setup import get_dask_client
 
@@ -114,4 +115,5 @@ with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
 
     znimg.darr = sdt_darr
 
-    znimg.to_ome_zarr(snakemake.output.dist, max_layer=5)
+    with ProgressBar():
+        znimg.to_ome_zarr(snakemake.output.dist, max_layer=5)

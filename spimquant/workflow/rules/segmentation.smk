@@ -42,7 +42,8 @@ rule gaussian_biasfield:
                     suffix="SPIM.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
         biasfield=temp(
             directory(
@@ -55,9 +56,10 @@ rule gaussian_biasfield:
                     suffix="biasfield.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
-    threads: 128 if config['dask_scheduler'] == 'distributed' else 32
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
         disk_mb=2097152,
@@ -86,7 +88,8 @@ rule n4_biasfield:
                     suffix="SPIM.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
         biasfield=temp(
             directory(
@@ -99,11 +102,12 @@ rule n4_biasfield:
                     suffix="biasfield.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
-    threads: 128 if config['dask_scheduler'] == 'distributed' else 32
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=500000 if config['dask_scheduler'] == 'distributed' else 250000,
+        mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
         runtime=180,
     script:
         "../scripts/n4_biasfield.py"
@@ -145,7 +149,8 @@ rule multiotsu:
                     suffix="mask.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
         thresholds_png=bids(
             root=root,
@@ -210,7 +215,8 @@ rule threshold:
                     suffix="mask.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
     threads: 128
     resources:
@@ -253,7 +259,8 @@ rule clean_segmentation:
                     suffix="excludemask.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
         cleaned_mask=temp(
             directory(
@@ -266,7 +273,8 @@ rule clean_segmentation:
                     suffix="mask.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
     threads: 128
     resources:
@@ -275,50 +283,6 @@ rule clean_segmentation:
         runtime=30,
     script:
         "../scripts/clean_segmentation.py"
-
-
-rule signed_distance_transform:
-    """Compute signed distance transform from a binary mask.
-
-    Applies the chamfer distance transform (distance_transform_cdt from scipy)
-    to a binary mask using dask map_overlap for chunked, parallel processing.
-    The output is a signed distance transform where positive values indicate
-    the interior and negative values indicate the exterior of the mask.
-    """
-    input:
-        mask=bids(
-            root=work,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            desc="{desc}",
-            suffix="mask.ome.zarr",
-            **inputs["spim"].wildcards,
-        ),
-    params:
-        overlap_depth=32,
-        zarrnii_kwargs={"orientation": config["orientation"]},
-    output:
-        dist=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="{desc}",
-                    suffix="dist.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            )
-        ),
-    threads: 32
-    resources:
-        mem_mb=64000,
-        disk_mb=2097152,
-        runtime=30,
-    script:
-        "../scripts/signed_distance_transform.py"
 
 
 rule compute_filtered_regionprops:
