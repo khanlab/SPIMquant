@@ -58,7 +58,6 @@ rule gaussian_biasfield:
                 )
             ),
             group_jobs=True,
-        ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
@@ -161,11 +160,11 @@ rule multiotsu:
             suffix="thresholds.png",
             **inputs["spim"].wildcards,
         ),
-    threads: 128
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=500000,
+        mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
         disk_mb=2097152,
-        runtime=15,
+        runtime=60,
     script:
         "../scripts/multiotsu.py"
 
@@ -218,10 +217,10 @@ rule threshold:
             ),
             group_jobs=True,
         ),
-    threads: 128
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=256000,
-        runtime=15,
+        mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
+        runtime=60,
     script:
         "../scripts/threshold.py"
 
@@ -276,7 +275,7 @@ rule clean_segmentation:
             ),
             group_jobs=True,
         ),
-    threads: 128
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
         disk_mb=2097152,
@@ -314,10 +313,10 @@ rule compute_filtered_regionprops:
                 **inputs["spim"].wildcards,
             )
         ),
-    threads: 128
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
-        runtime=30,
+        runtime=60,
     script:
         "../scripts/compute_filtered_regionprops.py"
 
@@ -746,6 +745,8 @@ rule coloc_per_voxel_template:
     script:
         "../scripts/coloc_per_voxel_template.py"
 
+#to avoid wildcard conflicts:
+ruleorder: fieldfrac > fieldfrac_vessels
 
 rule fieldfrac:
     """Calculate field fraction from binary mask.

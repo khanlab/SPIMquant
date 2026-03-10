@@ -50,7 +50,6 @@ rule pre_atropos:
                 suffix="SPIM.nii.gz",
                 **inputs["spim"].wildcards,
             ),
-            group_jobs=True,
         ),
         mask=temp(
             bids(
@@ -62,7 +61,6 @@ rule pre_atropos:
                 suffix="mask.nii",
                 **inputs["spim"].wildcards,
             ),
-            group_jobs=True,
         ),
     threads: 1
     resources:
@@ -99,7 +97,6 @@ rule atropos_seg:
                 suffix="dseg.nii",
                 **inputs["spim"].wildcards,
             ),
-            group_jobs=True,
         ),
         posteriors_dir=temp(
             directory(
@@ -114,7 +111,6 @@ rule atropos_seg:
                     **inputs["spim"].wildcards,
                 )
             ),
-            group_jobs=True,
         ),
     conda:
         "../envs/ants.yaml"
@@ -156,7 +152,6 @@ rule post_atropos:
                 suffix="dseg.nii",
                 **inputs["spim"].wildcards,
             ),
-            group_jobs=True,
         ),
     threads: 1
     resources:
@@ -199,7 +194,6 @@ rule init_affine_reg:
                 suffix="xfm.txt",
                 **inputs["spim"].wildcards,
             ),
-            group_jobs=True,
         ),
         warped=temp(
             bids(
@@ -210,7 +204,6 @@ rule init_affine_reg:
                 suffix="SPIM.nii.gz",
                 **inputs["spim"].wildcards,
             ),
-            group_jobs=True,
         ),
     log:
         bids(
@@ -254,7 +247,6 @@ rule affine_transform_template_mask_to_subject:
                 suffix="mask.nii.gz",
                 **inputs["spim"].wildcards,
             ),
-            group_jobs=True,
         ),
     threads: 32
     resources:
