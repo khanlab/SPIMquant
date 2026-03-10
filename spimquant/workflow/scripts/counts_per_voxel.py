@@ -13,9 +13,9 @@ with get_dask_client("threads", snakemake.threads):
         channel_labels=[stain],
         downsample_near_isotropic=True,
     )
-    
+
     df = pd.read_parquet(snakemake.input.regionprops_parquet)
-    
+
     points = df[snakemake.params.coord_column_names].values
 
 # Create counts map (zarrnii is calling this density right now)..

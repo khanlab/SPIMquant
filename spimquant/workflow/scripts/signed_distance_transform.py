@@ -63,7 +63,9 @@ if __name__ == "__main__":
         # the others (when the array size is not divisible by the chunk size); the
         # largest chunk determines the worst-case block diagonal.
         spatial_chunk_indices = [znimg.dims.index(d) for d in spatial_dims]
-        block_size = np.array([max(znimg.darr.chunks[i]) for i in spatial_chunk_indices])
+        block_size = np.array(
+            [max(znimg.darr.chunks[i]) for i in spatial_chunk_indices]
+        )
         max_dist = float(np.sqrt(np.sum((block_size * spacing) ** 2)))
 
         def signed_dt_block(block):
@@ -97,9 +99,9 @@ if __name__ == "__main__":
                     dt_inside = distance_transform_edt(binary, sampling=spacing).astype(
                         np.float32
                     )
-                    dt_outside = distance_transform_edt(~binary, sampling=spacing).astype(
-                        np.float32
-                    )
+                    dt_outside = distance_transform_edt(
+                        ~binary, sampling=spacing
+                    ).astype(np.float32)
                     result[c] = dt_outside - dt_inside
             return result
 
