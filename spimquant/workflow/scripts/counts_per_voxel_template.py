@@ -1,7 +1,6 @@
 import numpy as np
 from zarrnii import ZarrNii, density_from_points
 from dask.diagnostics import ProgressBar
-from dask_setup import get_dask_client
 import pandas as pd
 
 stain = snakemake.wildcards.stain
@@ -13,7 +12,7 @@ img = ZarrNii.from_nifti(
 if hasattr(snakemake.wildcards, "level"):
     img = img.downsample(level=int(snakemake.wildcards.level))
 
-with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
+with get_dask_client("threads", snakemake.threads):
     df = pd.read_parquet(snakemake.input.regionprops_parquet)
 
     df = df[df["stain"] == snakemake.wildcards.stain]
