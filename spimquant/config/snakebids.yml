@@ -189,6 +189,7 @@ parse_args:
     choices:
       - threads
       - distributed
+      - cuda
     default: threads
 
   --sloppy:
@@ -391,6 +392,18 @@ vessel_seg_method:
 
 vessel_metrics:
   - fieldfrac
+
+# Configuration for benchmarking VesselFM with different resources.
+# Used by the `all_benchmark_vesselfm` rule.
+vesselfm_benchmark:
+  chunk_sizes:
+    - 64
+    - 128
+    - 256
+  thread_counts:
+    - 8
+    - 16
+    - 32
 
 
 # Pairs of stains for mask-based colocalization analysis.

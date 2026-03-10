@@ -4,7 +4,7 @@ from vesselfm.zarrnii_plugin import VesselFMPlugin
 from dask.diagnostics import ProgressBar
 from dask_setup import get_dask_client
 
-with get_dask_client("threads", snakemake.threads):
+with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
     znimg = ZarrNii.from_ome_zarr(
         snakemake.input.spim,
         level=int(snakemake.wildcards.level),

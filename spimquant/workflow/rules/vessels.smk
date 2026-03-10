@@ -33,6 +33,16 @@ rule run_vesselfm:
             ),
             group_jobs=True,
         ),
+    benchmark:
+        bids(
+            root=work,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="vesselfm",
+            suffix="benchmark.tsv",
+            **inputs["spim"].wildcards,
+        )
     threads: 32
     resources:
         gpu=1,
@@ -41,6 +51,89 @@ rule run_vesselfm:
         runtime=lambda wildcards: max(1, int(200.0 / (3.0 ** float(wildcards.level)))),  # rough estimate, clamped to >=1
     script:
         "../scripts/vesselfm.py"
+
+
+rule benchmark_run_vesselfm:
+    """Benchmark VesselFM with different chunk sizes and thread counts.
+
+    Runs VesselFM inference with varying chunk_size and threads to help
+    identify optimal resource configurations. Results are written to a
+    benchmark TSV file with timing and memory usage information.
+    """
+    input:
+        spim=inputs["spim"].path,
+        model_path="resources/models/vesselfm.pt",
+    params:
+        zarrnii_kwargs={"orientation": config["orientation"]},
+        vesselfm_kwargs=lambda wildcards, input: {
+            "chunk_size": (
+                1,
+                int(wildcards.chunk_size),
+                int(wildcards.chunk_size),
+                int(wildcards.chunk_size),
+            ),
+            "model_path": input.model_path,
+        },
+    output:
+        mask=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    level="{level}",
+                    desc="vesselfmBench",
+                    res="{chunk_size}",
+                    suffix="mask.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
+            )
+        ),
+    benchmark:
+        repeat(
+            bids(
+                root=work,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="vesselfmBench",
+                res="{chunk_size}",
+                nthreads="{thread_count}",
+                suffix="benchmark.tsv",
+                **inputs["spim"].wildcards,
+            ),
+            3,
+        )
+    threads: lambda wildcards: int(wildcards.thread_count)
+    resources:
+        gpu=1,
+        cpus_per_gpu=lambda wildcards: int(wildcards.thread_count),
+        mem_mb=32000,
+        runtime=lambda wildcards: max(1, int(200.0 / (3.0 ** float(wildcards.level)))),
+    script:
+        "../scripts/vesselfm.py"
+
+
+rule all_benchmark_vesselfm:
+    """Aggregate benchmarks of VesselFM across chunk sizes and thread counts."""
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=work,
+                datatype="micr",
+                stain="{stain}",
+                level="{level}",
+                desc="vesselfmBench",
+                res="{chunk_size}",
+                nthreads="{thread_count}",
+                suffix="benchmark.tsv",
+                **inputs["spim"].wildcards,
+            ),
+            stain=config["stains_for_vessels"],
+            level=[config["segmentation_level"]],
+            chunk_size=config["vesselfm_benchmark"]["chunk_sizes"],
+            thread_count=config["vesselfm_benchmark"]["thread_counts"],
+        ),
 
 
 rule fieldfrac_vessels:
