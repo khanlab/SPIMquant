@@ -58,6 +58,7 @@ rule gaussian_biasfield:
                 )
             ),
             group_jobs=True,
+        ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
@@ -745,8 +746,10 @@ rule coloc_per_voxel_template:
     script:
         "../scripts/coloc_per_voxel_template.py"
 
-#to avoid wildcard conflicts:
+
+# to avoid wildcard conflicts:
 ruleorder: fieldfrac > fieldfrac_vessels
+
 
 rule fieldfrac:
     """Calculate field fraction from binary mask.

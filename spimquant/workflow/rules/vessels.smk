@@ -19,7 +19,9 @@ rule run_vesselfm:
             "model_path": input.model_path,
         },
     output:
-        mask=temp(directory(bids(
+        mask=temp(
+            directory(
+                bids(
                     root=work,
                     datatype="micr",
                     stain="{stain}",
@@ -39,6 +41,7 @@ rule run_vesselfm:
         runtime=lambda wildcards: max(1, int(200.0 / (3.0 ** float(wildcards.level)))),  # rough estimate, clamped to >=1
     script:
         "../scripts/vesselfm.py"
+
 
 rule fieldfrac_vessels:
     """Calculate field fraction from binary mask.
