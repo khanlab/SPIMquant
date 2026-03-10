@@ -1,6 +1,7 @@
 import numpy as np
 from zarrnii import ZarrNii, density_from_points
 from dask.diagnostics import ProgressBar
+from dask_setup import get_dask_client
 import pandas as pd
 
 level = int(snakemake.wildcards.level)

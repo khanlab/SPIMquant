@@ -1,5 +1,6 @@
 import numpy as np
 from zarrnii import ZarrNii, density_from_points
+from dask_setup import get_dask_client
 from dask.diagnostics import ProgressBar
 import pandas as pd
 
