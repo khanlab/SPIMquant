@@ -1,26 +1,24 @@
 import numpy as np
 from zarrnii import ZarrNii, density_from_points
 from dask.diagnostics import ProgressBar
-from dask_setup import get_dask_client
 import pandas as pd
 
-if __name__ == "__main__":
-    stain = snakemake.wildcards.stain
+stain = snakemake.wildcards.stain
 
-    img = ZarrNii.from_nifti(
-        snakemake.input.template,
-    )
+img = ZarrNii.from_nifti(
+    snakemake.input.template,
+)
 
-    if hasattr(snakemake.wildcards, "level"):
-        img = img.downsample(level=int(snakemake.wildcards.level))
+if hasattr(snakemake.wildcards, "level"):
+    img = img.downsample(level=int(snakemake.wildcards.level))
 
-    with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
-        df = pd.read_parquet(snakemake.input.regionprops_parquet)
+with get_dask_client('threads', snakemake.threads):
+    df = pd.read_parquet(snakemake.input.regionprops_parquet)
 
-        df = df[df["stain"] == snakemake.wildcards.stain]
-        points = df[snakemake.params.coord_column_names].values
+    df = df[df["stain"] == snakemake.wildcards.stain]
+    points = df[snakemake.params.coord_column_names].values
 
-        # Create counts map (zarrnii is calling this density right now)..
-        counts = density_from_points(points, img, in_physical_space=True)
-        with ProgressBar():
-            counts.to_nifti(snakemake.output.counts_nii)
+    # Create counts map (zarrnii is calling this density right now)..
+    counts = density_from_points(points, img, in_physical_space=True)
+    with ProgressBar():
+        counts.to_nifti(snakemake.output.counts_nii)
