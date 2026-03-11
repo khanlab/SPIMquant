@@ -368,7 +368,7 @@ rule transform_regionprops_to_template:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/transform_regionprops_to_template.py"
 
@@ -403,7 +403,7 @@ rule aggregate_regionprops_across_stains:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/aggregate_regionprops_across_stains.py"
 
@@ -441,7 +441,7 @@ rule colocalize_regionprops:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=10,
+        runtime=30,
     script:
         "../scripts/compute_colocalization.py"
 
@@ -520,7 +520,7 @@ rule colocalize_regionprops_with_mask:
     threads: 1
     resources:
         mem_mb=32000,
-        runtime=10,
+        runtime=30,
     script:
         "../scripts/compute_colocalization_with_mask.py"
 
@@ -576,7 +576,7 @@ rule transform_maskcoloc_to_template:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=30,
     script:
         "../scripts/transform_regionprops_to_template.py"
 
@@ -644,7 +644,7 @@ rule map_maskcoloc_to_atlas_rois:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=30,
     script:
         "../scripts/map_atlas_to_regionprops.py"
 
@@ -710,7 +710,7 @@ rule counts_per_voxel_template:
     threads: 16
     resources:
         mem_mb=15000,
-        runtime=10,
+        runtime=30,
     script:
         "../scripts/counts_per_voxel_template.py"
 
@@ -742,7 +742,7 @@ rule coloc_per_voxel_template:
     threads: 16
     resources:
         mem_mb=15000,
-        runtime=10,
+        runtime=30,
     script:
         "../scripts/coloc_per_voxel_template.py"
 
@@ -785,7 +785,7 @@ rule fieldfrac:
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=10,
     script:
         "../scripts/fieldfrac.py"
 
@@ -865,7 +865,7 @@ rule map_img_to_roi_tsv:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/map_img_to_roi_tsv.py"
 
@@ -925,7 +925,7 @@ rule map_regionprops_to_atlas_rois:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/map_atlas_to_regionprops.py"
 
@@ -1180,7 +1180,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
