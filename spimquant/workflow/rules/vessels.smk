@@ -83,7 +83,9 @@ rule benchmark_run_vesselfm:
                     stain="{stain}",
                     level="{level}",
                     desc="vesselfmBench",
-                    res="{chunk_size}",
+                    chunksize="{chunk_size}",
+                    nthreads="{thread_count}",
+                    gpus="{gpus}",
                     suffix="mask.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
@@ -97,8 +99,9 @@ rule benchmark_run_vesselfm:
                 stain="{stain}",
                 level="{level}",
                 desc="vesselfmBench",
-                res="{chunk_size}",
+                chunksize="{chunk_size}",
                 nthreads="{thread_count}",
+                gpus="{gpus}",
                 suffix="benchmark.tsv",
                 **inputs["spim"].wildcards,
             ),
@@ -106,7 +109,7 @@ rule benchmark_run_vesselfm:
         )
     threads: lambda wildcards: int(wildcards.thread_count)
     resources:
-        gpu=1,
+        gpu=lambda wildcards: int(wildcards.gpus),
         cpus_per_gpu=lambda wildcards: int(wildcards.thread_count),
         mem_mb=32000,
         runtime=lambda wildcards: max(1, int(200.0 / (3.0 ** float(wildcards.level)))),
@@ -124,8 +127,9 @@ rule all_benchmark_vesselfm:
                 stain="{stain}",
                 level="{level}",
                 desc="vesselfmBench",
-                res="{chunk_size}",
+                chunksize="{chunk_size}",
                 nthreads="{thread_count}",
+                gpus="{gpus}",
                 suffix="benchmark.tsv",
                 **inputs["spim"].wildcards,
             ),
@@ -133,6 +137,7 @@ rule all_benchmark_vesselfm:
             level=[config["segmentation_level"]],
             chunk_size=config["vesselfm_benchmark"]["chunk_sizes"],
             thread_count=config["vesselfm_benchmark"]["thread_counts"],
+            gpus=config["vesselfm_benchmark"]["gpus"],
         ),
 
 
