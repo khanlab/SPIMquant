@@ -401,10 +401,13 @@ vesselfm_benchmark:
     - 128
     - 256
   thread_counts:
-    - 8
     - 16
     - 32
-
+    - 64
+    - 128
+  gpus:
+    - 1
+    - 2
 
 # Pairs of stains for mask-based colocalization analysis.
 # Each pair is [instance_stain, mask_stain], where:
