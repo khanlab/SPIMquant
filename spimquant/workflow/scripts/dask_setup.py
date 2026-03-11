@@ -10,19 +10,20 @@ def get_dask_client(scheduler, threads, threads_per_worker=2):
     Parameters
     ----------
     scheduler : str
-        Scheduler type: ``"threads"`` for the built-in threaded scheduler, or
-        ``"distributed"`` for a ``dask.distributed.LocalCluster``.
+        Scheduler type: ``"threads"`` for the built-in threaded scheduler,
+        ``"distributed"`` for a ``dask.distributed.LocalCluster``, or
+        ``"cuda"`` for a ``dask_cuda.LocalCUDACluster`` (requires dask-cuda).
     threads : int
         Total number of threads/cores available (from ``snakemake.threads``).
     threads_per_worker : int, optional
-        Number of threads per worker when using the distributed scheduler.
-        Ignored when *scheduler* is ``"threads"``.  Default is 2.
+        Number of threads per worker when using the distributed or cuda
+        scheduler.  Ignored when *scheduler* is ``"threads"``.  Default is 2.
 
     Yields
     ------
     client : dask.distributed.Client or None
-        The distributed ``Client`` when *scheduler* is ``"distributed"``,
-        otherwise ``None``.
+        The distributed ``Client`` when *scheduler* is ``"distributed"`` or
+        ``"cuda"``, otherwise ``None``.
     """
     if scheduler == "distributed":
         from dask.distributed import Client, LocalCluster
@@ -34,6 +35,18 @@ def get_dask_client(scheduler, threads, threads_per_worker=2):
             memory_limit="auto",
             dashboard_address=":8788",
         )
+        client = Client(cluster)
+        print(cluster.dashboard_link)
+        try:
+            yield client
+        finally:
+            client.close()
+            cluster.close()
+    elif scheduler == "cuda":
+        from dask.distributed import Client
+        from dask_cuda import LocalCUDACluster
+
+        cluster = LocalCUDACluster(threads_per_worker=threads_per_worker)
         client = Client(cluster)
         print(cluster.dashboard_link)
         try:
