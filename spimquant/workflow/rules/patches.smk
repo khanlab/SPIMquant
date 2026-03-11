@@ -83,12 +83,12 @@ rule create_mask_patches:
     """
     input:
         mask=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
         dseg=bids(
@@ -142,12 +142,12 @@ rule create_corrected_spim_patches:
     """
     input:
         corrected=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="corrected{corrmethod}",
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.ozx",
             **inputs["spim"].wildcards,
         ),
         dseg=bids(

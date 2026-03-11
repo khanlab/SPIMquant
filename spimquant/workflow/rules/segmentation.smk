@@ -77,19 +77,14 @@ rule n4_biasfield:
         zarrnii_kwargs={"orientation": config["orientation"]},
         shrink_factor=16 if config["sloppy"] else 1,
     output:
-        corrected=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="correctedn4",
-                    suffix="SPIM.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            ),
-            group_jobs=True,
+        corrected=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="correctedn4",
+            suffix="SPIM.ozx",
+            **inputs["spim"].wildcards,
         ),
         biasfield=temp(
             directory(
@@ -103,7 +98,6 @@ rule n4_biasfield:
                     **inputs["spim"].wildcards,
                 )
             ),
-            group_jobs=True,
         ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
@@ -123,12 +117,12 @@ rule multiotsu:
     """
     input:
         corrected=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -138,19 +132,14 @@ rule multiotsu:
         otsu_threshold_index=lambda wildcards: int(wildcards.i),
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        mask=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
-                    suffix="mask.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            ),
-            group_jobs=True,
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
         ),
         thresholds_png=bids(
             root=root,
@@ -170,20 +159,6 @@ rule multiotsu:
         "../scripts/multiotsu.py"
 
 
-rule convert_zarr_to_ozx:
-    """generic rule to convert ome zarr to zip (.ozx)"""
-    input:
-        zarr=str(Path(work) / "{prefix}.ome.zarr"),
-    output:
-        ozx=str(Path(root) / "{prefix}.ozx"),
-    threads: 4
-    resources:
-        mem_mb=32000,
-        runtime=60,
-    script:
-        "../scripts/convert_zarr_to_ozx.py"
-
-
 rule threshold:
     """Apply simple intensity threshold for segmentation.
     
@@ -192,31 +167,26 @@ rule threshold:
     """
     input:
         corrected=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
         threshold=lambda wildcards: int(wildcards.threshold),
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        mask=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="th{threshold,[0-9]+}",
-                    suffix="mask.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            ),
-            group_jobs=True,
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="th{threshold,[0-9]+}",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
         ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
@@ -235,12 +205,12 @@ rule clean_segmentation:
     """
     input:
         mask=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -248,33 +218,23 @@ rule clean_segmentation:
         proc_level=2,  #level at which to calculate conncomp
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        exclude_mask=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="{desc}+cleaned",
-                    suffix="excludemask.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            ),
-            group_jobs=True,
+        exclude_mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+cleaned",
+            suffix="excludemask.ozx",
+            **inputs["spim"].wildcards,
         ),
-        cleaned_mask=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="{desc}+cleaned",
-                    suffix="mask.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            ),
-            group_jobs=True,
+        cleaned_mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+cleaned",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
         ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
@@ -289,12 +249,12 @@ rule compute_filtered_regionprops:
     """Calculate region props from filtered objects of segmentation."""
     input:
         mask=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -492,12 +452,12 @@ rule colocalize_regionprops_with_mask:
             **inputs["spim"].wildcards,
         ),
         dist=lambda wildcards: bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain=wildcards.stain_b,
             level=config["segmentation_level"],
             desc=get_mask_seg_desc(wildcards.stain_b),
-            suffix="dist.ome.zarr",
+            suffix="dist.ozx",
             **{k: getattr(wildcards, k) for k in inputs["spim"].wildcards},
         ),
     params:
@@ -761,12 +721,12 @@ rule fieldfrac:
     """
     input:
         mask=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
     params:

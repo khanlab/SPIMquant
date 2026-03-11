@@ -19,19 +19,14 @@ rule run_vesselfm:
             "model_path": input.model_path,
         },
     output:
-        mask=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="vesselfm",
-                    suffix="mask.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            ),
-            group_jobs=True,
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="vesselfm",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     resources:
@@ -53,12 +48,12 @@ rule fieldfrac_vessels:
     """
     input:
         mask=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -92,31 +87,26 @@ rule signed_distance_transform:
     """
     input:
         mask=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
             desc="vesselfm",
-            suffix="mask.ome.zarr",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
         overlap_depth=32,
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        dist=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="{desc}",
-                    suffix="dist.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            ),
-            group_jobs=True,
+        dist=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}",
+            suffix="dist.ozx",
+            **inputs["spim"].wildcards,
         ),
     threads: 32
     resources:
