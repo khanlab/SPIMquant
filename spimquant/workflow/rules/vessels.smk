@@ -72,7 +72,7 @@ rule fieldfrac_vessels:
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/fieldfrac.py"
 

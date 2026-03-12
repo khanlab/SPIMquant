@@ -934,7 +934,7 @@ rule map_coloc_to_atlas_rois:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/map_atlas_to_coloc.py"
 
@@ -991,7 +991,7 @@ rule merge_into_segstats_tsv:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/merge_into_segstats_tsv.py"
 
@@ -1045,7 +1045,7 @@ rule merge_into_colocsegstats_tsv:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/merge_into_segstats_tsv.py"
 
@@ -1101,7 +1101,7 @@ rule merge_indiv_and_coloc_segstats_tsv:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/merge_indiv_and_coloc_segstats_tsv.py"
 
@@ -1236,7 +1236,7 @@ rule deform_fieldfrac_nii_to_template_nii:
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     conda:
         "../envs/ants.yaml"
     shell:

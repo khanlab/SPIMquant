@@ -65,7 +65,7 @@ rule pre_atropos:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -156,7 +156,7 @@ rule post_atropos:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -216,7 +216,7 @@ rule init_affine_reg:
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
@@ -251,7 +251,7 @@ rule affine_transform_template_mask_to_subject:
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         " -ri NN"
@@ -300,7 +300,7 @@ rule create_mask_from_gmm_and_prior:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/create_mask_from_gmm_and_prior.py"
 
@@ -332,7 +332,7 @@ rule create_mask_from_gmm:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     conda:
         "../envs/c3d.yaml"
     shell:

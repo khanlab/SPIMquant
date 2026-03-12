@@ -89,7 +89,7 @@ rule create_stats_heatmap:
     threads: 1
     resources:
         mem_mb=8000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/create_stats_heatmap.py"
 
@@ -131,7 +131,7 @@ rule map_groupstats_to_template_nii:
     threads: 8
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
@@ -433,6 +433,6 @@ rule map_groupavg_segstats_to_template_nii:
     threads: 8
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"

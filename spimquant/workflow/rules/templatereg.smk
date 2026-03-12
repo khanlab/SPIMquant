@@ -65,7 +65,7 @@ rule n4:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     conda:
         "../envs/ants.yaml"
     shell:
@@ -113,7 +113,7 @@ rule apply_mask_to_corrected:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -196,7 +196,7 @@ rule affine_reg:
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
@@ -236,7 +236,7 @@ rule convert_ras_to_itk:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -516,7 +516,7 @@ rule deform_spim_nii_to_template_nii:
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     conda:
         "../envs/ants.yaml"
     shell:
@@ -570,7 +570,7 @@ rule deform_template_dseg_to_subject_nii:
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     conda:
         "../envs/ants.yaml"
     shell:
@@ -598,7 +598,7 @@ rule copy_template_dseg_tsv:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     shell:
         "cp {input} {output}"
 
