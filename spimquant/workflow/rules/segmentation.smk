@@ -77,28 +77,15 @@ rule n4_biasfield:
         zarrnii_kwargs={"orientation": config["orientation"]},
         shrink_factor=16 if config["sloppy"] else 1,
     output:
-        corrected=bids(
-            root=root,
+        corrected=temp(directory(bids(
+            root=work,
             datatype="micr",
             stain="{stain}",
             level="{level}",
             desc="correctedn4",
-            suffix="SPIM.ozx",
+            suffix="SPIM.ome.zarr",
             **inputs["spim"].wildcards,
-        ),
-        biasfield=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="n4",
-                    suffix="biasfield.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            ),
-        ),
+        )),group_jobs=True)
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
@@ -117,12 +104,12 @@ rule multiotsu:
     """
     input:
         corrected=bids(
-            root=root,
+            root=work,
             datatype="micr",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ozx",
+            suffix="SPIM.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -154,7 +141,7 @@ rule multiotsu:
     resources:
         mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
         disk_mb=2097152,
-        runtime=60,
+        runtime=180,
     script:
         "../scripts/multiotsu.py"
 
@@ -167,12 +154,12 @@ rule threshold:
     """
     input:
         corrected=bids(
-            root=root,
+            root=work,
             datatype="micr",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ozx",
+            suffix="SPIM.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -191,7 +178,7 @@ rule threshold:
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
-        runtime=60,
+        runtime=180,
     script:
         "../scripts/threshold.py"
 
@@ -277,7 +264,7 @@ rule compute_filtered_regionprops:
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
-        runtime=60,
+        runtime=180,
     script:
         "../scripts/compute_filtered_regionprops.py"
 
@@ -327,7 +314,7 @@ rule transform_regionprops_to_template:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/transform_regionprops_to_template.py"
@@ -362,7 +349,7 @@ rule aggregate_regionprops_across_stains:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/aggregate_regionprops_across_stains.py"
@@ -400,7 +387,7 @@ rule colocalize_regionprops:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=30,
     script:
         "../scripts/compute_colocalization.py"
@@ -535,7 +522,7 @@ rule transform_maskcoloc_to_template:
         stain_b="[a-zA-Z0-9]+",
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=30,
     script:
         "../scripts/transform_regionprops_to_template.py"
@@ -603,7 +590,7 @@ rule map_maskcoloc_to_atlas_rois:
         stain_b="[a-zA-Z0-9]+",
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=30,
     script:
         "../scripts/map_atlas_to_regionprops.py"
@@ -637,7 +624,7 @@ rule counts_per_voxel:
     threads: 16
     resources:
         mem_mb=15000,
-        runtime=10,
+        runtime=20,
     script:
         "../scripts/counts_per_voxel.py"
 
@@ -669,7 +656,7 @@ rule counts_per_voxel_template:
         ),
     threads: 16
     resources:
-        mem_mb=15000,
+        mem_mb=64000,
         runtime=30,
     script:
         "../scripts/counts_per_voxel_template.py"
@@ -744,7 +731,7 @@ rule fieldfrac:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=10,
     script:
         "../scripts/fieldfrac.py"
@@ -775,7 +762,7 @@ rule deform_negative_mask_to_subject_nii:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
@@ -824,7 +811,7 @@ rule map_img_to_roi_tsv:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/map_img_to_roi_tsv.py"
@@ -884,7 +871,7 @@ rule map_regionprops_to_atlas_rois:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/map_atlas_to_regionprops.py"
@@ -933,7 +920,7 @@ rule map_coloc_to_atlas_rois:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/map_atlas_to_coloc.py"
@@ -990,7 +977,7 @@ rule merge_into_segstats_tsv:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/merge_into_segstats_tsv.py"
@@ -1044,7 +1031,7 @@ rule merge_into_colocsegstats_tsv:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/merge_into_segstats_tsv.py"
@@ -1100,7 +1087,7 @@ rule merge_indiv_and_coloc_segstats_tsv:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/merge_indiv_and_coloc_segstats_tsv.py"
@@ -1139,7 +1126,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
@@ -1186,7 +1173,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
@@ -1235,7 +1222,7 @@ rule deform_fieldfrac_nii_to_template_nii:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/ants.yaml"

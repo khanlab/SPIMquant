@@ -72,7 +72,7 @@ rule n4_mri_individual:
         nii=temp(bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards)),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/ants.yaml"
@@ -99,7 +99,7 @@ rule resample_mri_ref:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/c3d.yaml"
@@ -211,7 +211,7 @@ rule average_mri:
         ),
     threads: 8
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     shell:
         "c3d {input.resampled_images} -accum -add -endaccum -o {output.nii}"
@@ -302,7 +302,7 @@ rule rigid_nlin_reg_mri_to_template:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
@@ -396,7 +396,7 @@ rule transform_template_mask_to_mri:
         "minimal"
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/c3d.yaml"
@@ -437,7 +437,7 @@ rule apply_mri_brain_mask:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/c3d.yaml"
@@ -555,7 +555,7 @@ rule affine_nlin_reg_mri_to_spim:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     shell:
         "greedy -threads {threads} -d 3 -i {input.spim} {input.mri} "
@@ -664,7 +664,7 @@ rule warp_mri_to_template_via_spim:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
@@ -756,7 +756,7 @@ rule warp_mri_brainmask_to_spim:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} -ri NN"

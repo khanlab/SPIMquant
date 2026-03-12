@@ -71,7 +71,7 @@ rule fieldfrac_vessels:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/fieldfrac.py"
@@ -108,10 +108,10 @@ rule signed_distance_transform:
             suffix="dist.ozx",
             **inputs["spim"].wildcards,
         ),
-    threads: 32
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=64000,
+        mem_mb=256000,
         disk_mb=2097152,
-        runtime=180,
+        runtime=360,
     script:
         "../scripts/signed_distance_transform.py"

@@ -64,7 +64,7 @@ rule n4:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/ants.yaml"
@@ -112,7 +112,7 @@ rule apply_mask_to_corrected:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/c3d.yaml"
@@ -139,7 +139,7 @@ rule crop_template:
         hemisphere="{hemisphere}",
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/crop_template.py"
@@ -195,7 +195,7 @@ rule affine_reg:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
@@ -235,7 +235,7 @@ rule convert_ras_to_itk:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/c3d.yaml"
@@ -305,7 +305,7 @@ rule deform_reg:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=5 if config["sloppy"] else 30,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
@@ -342,7 +342,7 @@ rule resample_labels_to_zarr:
         ),
     threads: 10
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         disk_mb=2097152,
         runtime=15,
     log:
@@ -376,7 +376,7 @@ rule affine_zarr_to_template_nii:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/affine_to_template_nii.py"
@@ -401,7 +401,7 @@ rule affine_zarr_to_template_ome_zarr:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         disk_mb=2097152,
         runtime=15,
     script:
@@ -431,7 +431,7 @@ rule deform_zarr_to_template_nii:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/deform_to_template_nii.py"
@@ -515,7 +515,7 @@ rule deform_spim_nii_to_template_nii:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/ants.yaml"
@@ -569,7 +569,7 @@ rule deform_template_dseg_to_subject_nii:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/ants.yaml"
@@ -597,7 +597,7 @@ rule copy_template_dseg_tsv:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     shell:
         "cp {input} {output}"
