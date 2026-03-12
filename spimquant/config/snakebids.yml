@@ -155,7 +155,6 @@ parse_args:
     help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions. "
     default: 
       - otsu+k3i2
-      - th900
     nargs: '+'
 
   --seg_hist_range:
