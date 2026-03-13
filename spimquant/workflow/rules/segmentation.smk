@@ -315,7 +315,7 @@ rule transform_regionprops_to_template:
         ),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=16000,
         runtime=15,
     script:
         "../scripts/transform_regionprops_to_template.py"
