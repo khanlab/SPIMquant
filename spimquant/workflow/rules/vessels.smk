@@ -32,7 +32,7 @@ rule run_vesselfm:
     resources:
         gpu=1,
         cpus_per_gpu=32,
-        mem_mb=32000,
+        mem_mb=64000,
         runtime=lambda wildcards: max(1, int(200.0 / (3.0 ** float(wildcards.level)))),  # rough estimate, clamped to >=1
     script:
         "../scripts/vesselfm.py"

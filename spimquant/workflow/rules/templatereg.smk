@@ -715,6 +715,6 @@ rule registration_qc_report:
     threads: 1
     resources:
         mem_mb=8000,
-        runtime=10,
+        runtime=30,
     script:
         "../scripts/reg_qc_report.py"
