@@ -142,12 +142,12 @@ rule create_corrected_spim_patches:
     """
     input:
         corrected=bids(
-            root=root,
+            root=work,
             datatype="micr",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="corrected{corrmethod}",
-            suffix="SPIM.ozx",
+            suffix="SPIM.ome.zarr",
             **inputs["spim"].wildcards,
         ),
         dseg=bids(

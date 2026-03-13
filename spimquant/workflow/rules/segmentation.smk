@@ -76,6 +76,7 @@ rule n4_biasfield:
         proc_level=5,
         zarrnii_kwargs={"orientation": config["orientation"]},
         shrink_factor=16 if config["sloppy"] else 1,
+        target_chunk_size=512 #this sets the chunk size for this and downstream masks
     output:
         corrected=temp(directory(bids(
             root=work,
@@ -1126,7 +1127,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
         ),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=16000,
         runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
@@ -1173,7 +1174,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
         ),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=16000,
         runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
@@ -1222,7 +1223,7 @@ rule deform_fieldfrac_nii_to_template_nii:
         ),
     threads: 32
     resources:
-        mem_mb=1500,
+        mem_mb=16000,
         runtime=15,
     conda:
         "../envs/ants.yaml"

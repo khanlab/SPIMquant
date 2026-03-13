@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
         print("compute bias field correction")
 
-        adjusted_chunk = int(320 / (2**adjusted_downsample_factor))
+        adjusted_chunk = int(snakemake.params.target_chunk_size / (2**adjusted_downsample_factor))
 
         # Apply bias field correction
         znimg_corrected = znimg.apply_scaled_processing(
