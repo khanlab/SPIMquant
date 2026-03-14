@@ -130,7 +130,7 @@ rule map_groupstats_to_template_nii:
         ),
     threads: 8
     resources:
-        mem_mb=1500,
+        mem_mb=16000,
         runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
@@ -198,8 +198,8 @@ rule group_counts_per_voxel:
         ),
     threads: 16
     resources:
-        mem_mb=15000,
-        runtime=10,
+        mem_mb=200000,
+        runtime=30,
     script:
         "../scripts/counts_per_voxel_template.py"
 
@@ -304,8 +304,8 @@ rule group_counts_per_voxel_contrast:
         ),
     threads: 16
     resources:
-        mem_mb=15000,
-        runtime=10,
+        mem_mb=200000,
+        runtime=30,
     script:
         "../scripts/counts_per_voxel_template.py"
 
@@ -432,7 +432,7 @@ rule map_groupavg_segstats_to_template_nii:
         ),
     threads: 8
     resources:
-        mem_mb=1500,
+        mem_mb=16000,
         runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
