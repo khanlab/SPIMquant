@@ -16,5 +16,9 @@ points = df[snakemake.params.coord_column_names].values
 
 # Create counts map (zarrnii is calling this density right now)..
 counts = density_from_points(points, img, in_physical_space=True)
+
+#force atlas units (until zarrnii issue #203 fixed):
+counts.ngff_image.axes_units = {'x': 'millimeter', 'y': 'millimeter', 'z': 'millimeter'}
+
 with ProgressBar():
     counts.to_nifti(snakemake.output.counts_nii)
