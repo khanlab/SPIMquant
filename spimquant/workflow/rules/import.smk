@@ -44,7 +44,7 @@ rule get_downsampled_nii:
         ),
     threads: 32
     resources:
-        mem_mb=1500,
+        mem_mb=16000,
         runtime=15,
     script:
         "../scripts/ome_zarr_to_nii.py"

@@ -188,7 +188,7 @@ parse_args:
     choices:
       - threads
       - distributed
-    default: threads
+    default: distributed
 
   --sloppy:
     help: "Use low-quality parameters for speed (USE FOR TESTING ONLY)"

@@ -262,7 +262,7 @@ rule compute_filtered_regionprops:
                 **inputs["spim"].wildcards,
             )
         ),
-    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
         runtime=180,
@@ -732,8 +732,8 @@ rule fieldfrac:
         ),
     threads: 32
     resources:
-        mem_mb=1500,
-        runtime=10,
+        mem_mb=16000,
+        runtime=30,
     script:
         "../scripts/fieldfrac.py"
 
@@ -1128,7 +1128,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=15,
+        runtime=30,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
@@ -1175,7 +1175,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=15,
+        runtime=30,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
@@ -1223,8 +1223,8 @@ rule deform_fieldfrac_nii_to_template_nii:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
-        runtime=15,
+        mem_mb=32000,
+        runtime=30,
     conda:
         "../envs/ants.yaml"
     shell:
