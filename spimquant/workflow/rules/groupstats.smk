@@ -46,7 +46,7 @@ rule perform_group_stats:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=10,
     script:
         "../scripts/perform_group_stats.py"
@@ -89,7 +89,7 @@ rule create_stats_heatmap:
     threads: 1
     resources:
         mem_mb=8000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/create_stats_heatmap.py"
 
@@ -131,7 +131,7 @@ rule map_groupstats_to_template_nii:
     threads: 8
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
@@ -167,7 +167,7 @@ rule concat_subj_parquet:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=10,
     script:
         "../scripts/concat_subj_parquet.py"
@@ -196,12 +196,10 @@ rule group_counts_per_voxel:
             desc="{desc}",
             suffix="{stain}+count.nii.gz",
         ),
-    group:
-        "subj"
     threads: 16
     resources:
-        mem_mb=15000,
-        runtime=10,
+        mem_mb=200000,
+        runtime=30,
     script:
         "../scripts/counts_per_voxel_template.py"
 
@@ -229,8 +227,6 @@ rule group_coloc_counts_per_voxel:
             desc="{desc}",
             suffix="coloccount.nii.gz",
         ),
-    group:
-        "subj"
     threads: 16
     resources:
         mem_mb=15000,
@@ -275,7 +271,7 @@ rule concat_subj_parquet_contrast:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=10,
     script:
         "../scripts/concat_subj_parquet_contrast.py"
@@ -306,12 +302,10 @@ rule group_counts_per_voxel_contrast:
             contrast="{contrast_column}+{contrast_value}",
             suffix="{stain}+count.nii.gz",
         ),
-    group:
-        "subj"
     threads: 16
     resources:
-        mem_mb=15000,
-        runtime=10,
+        mem_mb=200000,
+        runtime=30,
     script:
         "../scripts/counts_per_voxel_template.py"
 
@@ -341,8 +335,6 @@ rule group_coloc_counts_per_voxel_contrast:
             contrast="{contrast_column}+{contrast_value}",
             suffix="coloccount.nii.gz",
         ),
-    group:
-        "subj"
     threads: 16
     resources:
         mem_mb=15000,
@@ -395,7 +387,7 @@ rule concat_subj_segstats_contrast:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=10,
     script:
         "../scripts/concat_subj_segstats_contrast.py"
@@ -441,6 +433,6 @@ rule map_groupavg_segstats_to_template_nii:
     threads: 8
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"

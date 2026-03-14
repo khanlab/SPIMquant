@@ -1,7 +1,7 @@
 import numpy as np
 from zarrnii import ZarrNii, density_from_points
-from dask.diagnostics import ProgressBar
 from dask_setup import get_dask_client
+from dask.diagnostics import ProgressBar
 import pandas as pd
 
 stain = snakemake.wildcards.stain
@@ -13,7 +13,7 @@ img = ZarrNii.from_nifti(
 if hasattr(snakemake.wildcards, "level"):
     img = img.downsample(level=int(snakemake.wildcards.level))
 
-with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
+with get_dask_client("threads", snakemake.threads):
     df = pd.read_parquet(snakemake.input.regionprops_parquet)
 
     df = df[df["stain"] == snakemake.wildcards.stain]
@@ -21,5 +21,13 @@ with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
 
     # Create counts map (zarrnii is calling this density right now)..
     counts = density_from_points(points, img, in_physical_space=True)
+
+    # force atlas units (until zarrnii issue #203 fixed):
+    counts.ngff_image.axes_units = {
+        "x": "millimeter",
+        "y": "millimeter",
+        "z": "millimeter",
+    }
+
     with ProgressBar():
         counts.to_nifti(snakemake.output.counts_nii)

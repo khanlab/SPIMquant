@@ -1,32 +1,35 @@
-from dask_setup import get_dask_client
-from zarrnii import ZarrNii
-from zarrnii.plugins import N4BiasFieldCorrection
-from dask.diagnostics import ProgressBar
+if __name__ == "__main__":
 
-with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
+    from dask_setup import get_dask_client
+    from zarrnii import ZarrNii
+    from zarrnii.plugins import N4BiasFieldCorrection
 
-    hires_level = int(snakemake.wildcards.level)
-    proc_level = int(snakemake.params.proc_level)
+    with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
 
-    unadjusted_downsample_factor = 2**proc_level
-    adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
+        hires_level = int(snakemake.wildcards.level)
+        proc_level = int(snakemake.params.proc_level)
 
-    znimg = ZarrNii.from_ome_zarr(
-        snakemake.input.spim,
-        channel_labels=[snakemake.wildcards.stain],
-        level=hires_level,
-        downsample_near_isotropic=True,
-        **snakemake.params.zarrnii_kwargs,
-    )
+        unadjusted_downsample_factor = 2**proc_level
+        adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
 
-    print("compute bias field correction")
+        znimg = ZarrNii.from_ome_zarr(
+            snakemake.input.spim,
+            channel_labels=[snakemake.wildcards.stain],
+            level=hires_level,
+            downsample_near_isotropic=True,
+            **snakemake.params.zarrnii_kwargs,
+        )
 
-    with ProgressBar():
+        print("compute bias field correction")
+
+        adjusted_chunk = int(
+            snakemake.params.target_chunk_size / (2**adjusted_downsample_factor)
+        )
+
         # Apply bias field correction
         znimg_corrected = znimg.apply_scaled_processing(
-            N4BiasFieldCorrection(),
+            N4BiasFieldCorrection(shrink_factor=snakemake.params.shrink_factor),
             downsample_factor=adjusted_downsample_factor,
-            upsampled_ome_zarr_path=snakemake.output.biasfield,
         )
 
         # write to ome_zarr

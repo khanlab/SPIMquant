@@ -42,12 +42,10 @@ rule get_downsampled_nii:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/ome_zarr_to_nii.py"
 
@@ -77,8 +75,8 @@ rule import_template_anat:
         anat=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     log:
         bids_tpl(
             root="logs",
@@ -109,8 +107,8 @@ rule import_template_spim:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     log:
         bids_tpl(
             root="logs",
@@ -133,8 +131,8 @@ rule import_mask:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     log:
         bids_tpl(
             root="logs",
@@ -153,8 +151,8 @@ rule generic_lut_bids_to_itksnap:
         lut="{prefix}_dseg.itksnap.txt",
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/lut_bids_to_itksnap.py"
 
@@ -182,8 +180,8 @@ rule import_dseg:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/copy_nii.py"
 
@@ -201,8 +199,8 @@ rule import_lut_tsv:
         tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     shell:
         "cp {input} {output}"
 
@@ -214,7 +212,7 @@ rule import_DSURQE_tsv:
         tsv=bids_tpl(root=root, template="DSURQE", seg="all", suffix="dseg.tsv"),
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/import_DSURQE_dseg_tsv.py"

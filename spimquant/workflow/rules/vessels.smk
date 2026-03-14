@@ -3,6 +3,7 @@ rule import_vesselfm_model:
         model=storage(config["models"]["vesselfm"]),
     output:
         "resources/models/vesselfm.pt",
+    localrule: True
     shell:
         "cp {input} {output}"
 
@@ -18,22 +19,99 @@ rule run_vesselfm:
             "model_path": input.model_path,
         },
     output:
-        mask=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                stain="{stain}",
-                level="{level}",
-                desc="vesselfm",
-                suffix="mask.ome.zarr",
-                **inputs["spim"].wildcards,
-            )
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="vesselfm",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
         ),
     threads: 32
-    group:
-        "subj"
     resources:
-        mem_mb=32000,
+        gpu=1,
+        cpus_per_gpu=32,
+        mem_mb=64000,
         runtime=lambda wildcards: max(1, int(200.0 / (3.0 ** float(wildcards.level)))),  # rough estimate, clamped to >=1
     script:
         "../scripts/vesselfm.py"
+
+
+rule fieldfrac_vessels:
+    """Calculate field fraction from binary mask.
+    
+    Computes the fraction of brain tissue occupied by the vessels.
+    Note: This is a separate rule from `fieldfrac` to allow the 
+    dags groups to be disjoint.
+    
+    """
+    input:
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level=config["segmentation_level"],
+            desc="{desc}",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        hires_level=config["segmentation_level"],
+        zarrnii_kwargs={"orientation": config["orientation"]},
+    output:
+        fieldfrac_nii=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc,vesselfm}",
+            suffix="fieldfrac.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 32
+    resources:
+        mem_mb=1500,
+        runtime=15,
+    script:
+        "../scripts/fieldfrac.py"
+
+
+rule signed_distance_transform:
+    """Compute signed distance transform from a binary mask.
+
+    Applies the chamfer distance transform (distance_transform_cdt from scipy)
+    to a binary mask using dask map_overlap for chunked, parallel processing.
+    The output is a signed distance transform where positive values indicate
+    the interior and negative values indicate the exterior of the mask.
+    """
+    input:
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="vesselfm",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        overlap_depth=32,
+        zarrnii_kwargs={"orientation": config["orientation"]},
+    output:
+        dist=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}",
+            suffix="dist.ozx",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    resources:
+        mem_mb=256000,
+        disk_mb=2097152,
+        runtime=360,
+    script:
+        "../scripts/signed_distance_transform.py"

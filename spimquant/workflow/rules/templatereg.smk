@@ -62,12 +62,10 @@ rule n4:
             suffix="biasfield.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     conda:
         "../envs/ants.yaml"
     shell:
@@ -112,12 +110,10 @@ rule apply_mask_to_corrected:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -143,7 +139,7 @@ rule crop_template:
         hemisphere="{hemisphere}",
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     script:
         "../scripts/crop_template.py"
@@ -189,8 +185,6 @@ rule affine_reg:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     log:
         bids(
             root="logs",
@@ -202,7 +196,7 @@ rule affine_reg:
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
@@ -239,12 +233,10 @@ rule convert_ras_to_itk:
             suffix="xfm.txt",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     conda:
         "../envs/c3d.yaml"
     shell:
@@ -303,8 +295,6 @@ rule deform_reg:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     log:
         bids(
             root="logs",
@@ -316,7 +306,7 @@ rule deform_reg:
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=5 if config["sloppy"] else 30,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -it {input.xfm_ras} -m {params.metric} "
@@ -342,20 +332,14 @@ rule resample_labels_to_zarr:
         label_name="dseg",
         scaling_method="nearest",
     output:
-        zarr=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    desc="resampled",
-                    from_="{template}",
-                    suffix="dseg.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            )
+        zarr=bids(
+            root=root,
+            datatype="micr",
+            desc="resampled",
+            from_="{template}",
+            suffix="dseg.ozx",
+            **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 10
     resources:
         mem_mb=16000,
@@ -390,8 +374,6 @@ rule affine_zarr_to_template_nii:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -408,21 +390,15 @@ rule affine_zarr_to_template_ome_zarr:
     params:
         ref_opts={"chunks": (1, 50, 50, 50)},
     output:
-        ome_zarr=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    desc="affine",
-                    space="{template}",
-                    stain="{stain}",
-                    suffix="spim.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            )
+        ome_zarr=bids(
+            root=root,
+            datatype="micr",
+            desc="affine",
+            space="{template}",
+            stain="{stain}",
+            suffix="spim.ozx",
+            **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -453,8 +429,6 @@ rule deform_zarr_to_template_nii:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
@@ -492,11 +466,9 @@ rule deform_to_template_nii_zoomed:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 4
     resources:
-        mem_mb=15000,
+        mem_mb=16000,
         runtime=15,
     script:
         "../scripts/deform_to_template_nii.py"
@@ -541,12 +513,10 @@ rule deform_spim_nii_to_template_nii:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     conda:
         "../envs/ants.yaml"
     shell:
@@ -597,12 +567,10 @@ rule deform_template_dseg_to_subject_nii:
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     conda:
         "../envs/ants.yaml"
     shell:
@@ -627,12 +595,8 @@ rule copy_template_dseg_tsv:
             suffix="dseg.tsv",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
-    resources:
-        mem_mb=16000,
-        runtime=5,
+    localrule: True
     shell:
         "cp {input} {output}"
 
@@ -657,8 +621,6 @@ rule deform_transform_labels_to_subj:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 32
     script:  #TODO this script doesn't exist??
         "../scripts/deform_transform_channel_to_template_nii.py"
@@ -685,8 +647,6 @@ rule transform_labels_to_zoomed_template:
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     conda:
         "../envs/ants.yaml"
@@ -752,11 +712,9 @@ rule registration_qc_report:
             suffix="regqc.html",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=8000,
-        runtime=10,
+        runtime=30,
     script:
         "../scripts/reg_qc_report.py"

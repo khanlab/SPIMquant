@@ -48,7 +48,7 @@ if downsampling_level < 0:
 # Create output directory
 Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
+with get_dask_client("threads", snakemake.threads):
     # Load the atlas with labels
     atlas = ZarrNiiAtlas.from_files(
         input_dseg,

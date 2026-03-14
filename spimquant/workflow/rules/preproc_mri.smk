@@ -70,11 +70,9 @@ rule n4_mri_individual:
         nii=inputs["mri"].path,
     output:
         nii=temp(bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards)),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/ants.yaml"
@@ -99,11 +97,9 @@ rule resample_mri_ref:
                 **inputs["mri"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/c3d.yaml"
@@ -134,8 +130,6 @@ rule register_mri_to_first:
                 **inputs.subj_wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 8
     resources:
         mem_mb=8000,
@@ -178,8 +172,6 @@ rule resample_mri_to_first:
                 **inputs.subj_wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 8
     conda:
         "../envs/c3d.yaml"
@@ -217,14 +209,12 @@ rule average_mri:
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
-    group:
-        "subj"
     threads: 8
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
-    group:
-        "subj"
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "c3d {input.resampled_images} -accum -add -endaccum -o {output.nii}"
 
@@ -312,12 +302,12 @@ rule rigid_nlin_reg_mri_to_template:
                 **inputs.subj_wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 6 -ia-image-centers -m {params.metric} -o {output.xfm_ras} && "
@@ -349,8 +339,6 @@ rule all_tune_mri_mask:
             warpsigma=range(3, 6),
             radius=[f"{i}x{i}x{i}" for i in range(2, 5)],
         ),
-    group:
-        "subj"
 
 
 rule transform_template_mask_to_mri:
@@ -410,11 +398,9 @@ rule transform_template_mask_to_mri:
         ),
     shadow:
         "minimal"
-    group:
-        "subj"
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/c3d.yaml"
@@ -453,11 +439,9 @@ rule apply_mri_brain_mask:
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     conda:
         "../envs/c3d.yaml"
@@ -573,12 +557,12 @@ rule affine_nlin_reg_mri_to_spim:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 32
     resources:
-        mem_mb=16000,
-        runtime=15,
+        mem_mb=32000,
+        runtime=30,
+    conda:
+        "../envs/c3d.yaml"
     shell:
         "greedy -threads {threads} -d 3 -i {input.spim} {input.mri} "
         " -a -dof {params.dof} -ia-image-centers -m {params.metric_rigid} -o {output.xfm_ras} && "
@@ -616,8 +600,6 @@ rule all_tune_mri_spim_reg:
             dof=[12],
             radius=[f"{i}x{i}x{i}" for i in range(2, 4)],
         ),
-    group:
-        "subj"
 
 
 rule warp_mri_to_template_via_spim:
@@ -686,12 +668,12 @@ rule warp_mri_to_template_via_spim:
             suffix=f"{mri_suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=32000,
         runtime=15,
+    conda:
+        "../envs/c3d.yaml"
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         "  -rm {input.mri} {output.warped} "
@@ -780,12 +762,12 @@ rule warp_mri_brainmask_to_spim:
             suffix="warp.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
+    conda:
+        "../envs/c3d.yaml"
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} -ri NN"
         "  -rm {input.mask} {output.mask} "
@@ -860,8 +842,6 @@ rule mri_spim_registration_qc_report:
             suffix="regqc.html",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=8000,

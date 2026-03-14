@@ -42,7 +42,8 @@ rule gaussian_biasfield:
                     suffix="SPIM.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
         biasfield=temp(
             directory(
@@ -55,11 +56,10 @@ rule gaussian_biasfield:
                     suffix="biasfield.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
-    group:
-        "subj"
-    threads: 128
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
         disk_mb=2097152,
@@ -75,6 +75,8 @@ rule n4_biasfield:
     params:
         proc_level=5,
         zarrnii_kwargs={"orientation": config["orientation"]},
+        shrink_factor=16 if config["sloppy"] else 1,
+        target_chunk_size=512,  #this sets the chunk size for this and downstream masks
     output:
         corrected=temp(
             directory(
@@ -87,28 +89,13 @@ rule n4_biasfield:
                     suffix="SPIM.ome.zarr",
                     **inputs["spim"].wildcards,
                 )
-            )
+            ),
+            group_jobs=True,
         ),
-        biasfield=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="n4",
-                    suffix="biasfield.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            )
-        ),
-    group:
-        "subj"
-    threads: 128
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=500000,
-        disk_mb=2097152,
-        runtime=60,
+        mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
+        runtime=180,
     script:
         "../scripts/n4_biasfield.py"
 
@@ -138,18 +125,14 @@ rule multiotsu:
         otsu_threshold_index=lambda wildcards: int(wildcards.i),
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        mask=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
-                    suffix="mask.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            )
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
         ),
         thresholds_png=bids(
             root=root,
@@ -160,31 +143,13 @@ rule multiotsu:
             suffix="thresholds.png",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
-    threads: 128
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=500000,
+        mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
         disk_mb=2097152,
-        runtime=15,
+        runtime=180,
     script:
         "../scripts/multiotsu.py"
-
-
-rule convert_zarr_to_ozx:
-    """generic rule to convert ome zarr to zip (.ozx)"""
-    input:
-        zarr=str(Path(work) / "{prefix}.ome.zarr"),
-    output:
-        ozx=str(Path(root) / "{prefix}.ozx"),
-    threads: 4
-    resources:
-        mem_mb=32000,
-        runtime=60,
-    group:
-        "subj"
-    script:
-        "../scripts/convert_zarr_to_ozx.py"
 
 
 rule threshold:
@@ -207,25 +172,19 @@ rule threshold:
         threshold=lambda wildcards: int(wildcards.threshold),
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        mask=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="th{threshold,[0-9]+}",
-                    suffix="mask.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            )
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="th{threshold,[0-9]+}",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
-    threads: 128
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=256000,
-        runtime=15,
+        mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
+        runtime=180,
     script:
         "../scripts/threshold.py"
 
@@ -239,12 +198,12 @@ rule clean_segmentation:
     """
     input:
         mask=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level="{level}",
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -252,35 +211,25 @@ rule clean_segmentation:
         proc_level=2,  #level at which to calculate conncomp
         zarrnii_kwargs={"orientation": config["orientation"]},
     output:
-        exclude_mask=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="{desc}+cleaned",
-                    suffix="excludemask.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            )
+        exclude_mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+cleaned",
+            suffix="excludemask.ozx",
+            **inputs["spim"].wildcards,
         ),
-        cleaned_mask=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="{desc}+cleaned",
-                    suffix="mask.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            )
+        cleaned_mask=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+cleaned",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
-    threads: 128
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
         disk_mb=2097152,
@@ -289,62 +238,16 @@ rule clean_segmentation:
         "../scripts/clean_segmentation.py"
 
 
-rule signed_distance_transform:
-    """Compute signed distance transform from a binary mask.
-
-    Applies the chamfer distance transform (distance_transform_cdt from scipy)
-    to a binary mask using dask map_overlap for chunked, parallel processing.
-    The output is a signed distance transform where positive values indicate
-    the interior and negative values indicate the exterior of the mask.
-    """
-    input:
-        mask=bids(
-            root=work,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            desc="{desc}",
-            suffix="mask.ome.zarr",
-            **inputs["spim"].wildcards,
-        ),
-    params:
-        overlap_depth=32,
-        zarrnii_kwargs={"orientation": config["orientation"]},
-    output:
-        dist=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="micr",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="{desc}",
-                    suffix="dist.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
-            )
-        ),
-    group:
-        "subj"
-    threads: 32
-    resources:
-        mem_mb=64000,
-        disk_mb=2097152,
-        runtime=30,
-    script:
-        "../scripts/signed_distance_transform.py"
-
-
 rule compute_filtered_regionprops:
     """Calculate region props from filtered objects of segmentation."""
     input:
         mask=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -364,12 +267,10 @@ rule compute_filtered_regionprops:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
-    threads: 128
+    threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
-        runtime=30,
+        runtime=180,
     script:
         "../scripts/compute_filtered_regionprops.py"
 
@@ -417,12 +318,10 @@ rule transform_regionprops_to_template:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=15,
     script:
         "../scripts/transform_regionprops_to_template.py"
 
@@ -454,12 +353,10 @@ rule aggregate_regionprops_across_stains:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/aggregate_regionprops_across_stains.py"
 
@@ -494,12 +391,10 @@ rule colocalize_regionprops:
             suffix="coloc.parquet",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=10,
+        mem_mb=1500,
+        runtime=30,
     script:
         "../scripts/compute_colocalization.py"
 
@@ -550,12 +445,12 @@ rule colocalize_regionprops_with_mask:
             **inputs["spim"].wildcards,
         ),
         dist=lambda wildcards: bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain=wildcards.stain_b,
             level=config["segmentation_level"],
             desc=get_mask_seg_desc(wildcards.stain_b),
-            suffix="dist.ome.zarr",
+            suffix="dist.ozx",
             **{k: getattr(wildcards, k) for k in inputs["spim"].wildcards},
         ),
     params:
@@ -575,12 +470,10 @@ rule colocalize_regionprops_with_mask:
     wildcard_constraints:
         stain_a="[a-zA-Z0-9]+",
         stain_b="[a-zA-Z0-9]+",
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=32000,
-        runtime=10,
+        runtime=30,
     script:
         "../scripts/compute_colocalization_with_mask.py"
 
@@ -633,12 +526,10 @@ rule transform_maskcoloc_to_template:
     wildcard_constraints:
         stain_a="[a-zA-Z0-9]+",
         stain_b="[a-zA-Z0-9]+",
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=30,
     script:
         "../scripts/transform_regionprops_to_template.py"
 
@@ -703,12 +594,10 @@ rule map_maskcoloc_to_atlas_rois:
     wildcard_constraints:
         stain_a="[a-zA-Z0-9]+",
         stain_b="[a-zA-Z0-9]+",
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=30,
     script:
         "../scripts/map_atlas_to_regionprops.py"
 
@@ -738,12 +627,10 @@ rule counts_per_voxel:
             suffix="counts.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 16
     resources:
         mem_mb=15000,
-        runtime=10,
+        runtime=20,
     script:
         "../scripts/counts_per_voxel.py"
 
@@ -773,12 +660,10 @@ rule counts_per_voxel_template:
             suffix="counts.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 16
     resources:
-        mem_mb=15000,
-        runtime=10,
+        mem_mb=64000,
+        runtime=30,
     script:
         "../scripts/counts_per_voxel_template.py"
 
@@ -807,14 +692,16 @@ rule coloc_per_voxel_template:
             suffix="coloccounts.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 16
     resources:
         mem_mb=15000,
-        runtime=10,
+        runtime=30,
     script:
         "../scripts/coloc_per_voxel_template.py"
+
+
+# to avoid wildcard conflicts:
+ruleorder: fieldfrac > fieldfrac_vessels
 
 
 rule fieldfrac:
@@ -827,12 +714,12 @@ rule fieldfrac:
     """
     input:
         mask=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -848,12 +735,10 @@ rule fieldfrac:
             suffix="fieldfrac.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=30,
     script:
         "../scripts/fieldfrac.py"
 
@@ -881,11 +766,9 @@ rule deform_negative_mask_to_subject_nii:
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=1500,
         runtime=15,
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
@@ -932,12 +815,10 @@ rule map_img_to_roi_tsv:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/map_img_to_roi_tsv.py"
 
@@ -994,12 +875,10 @@ rule map_regionprops_to_atlas_rois:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/map_atlas_to_regionprops.py"
 
@@ -1045,12 +924,10 @@ rule map_coloc_to_atlas_rois:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/map_atlas_to_coloc.py"
 
@@ -1104,12 +981,10 @@ rule merge_into_segstats_tsv:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/merge_into_segstats_tsv.py"
 
@@ -1160,12 +1035,10 @@ rule merge_into_colocsegstats_tsv:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/merge_into_segstats_tsv.py"
 
@@ -1218,12 +1091,10 @@ rule merge_indiv_and_coloc_segstats_tsv:
             suffix="mergedsegstats.tsv",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/merge_indiv_and_coloc_segstats_tsv.py"
 
@@ -1259,12 +1130,10 @@ rule map_segstats_tsv_dseg_to_template_nii:
             suffix="{suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=5,
+        runtime=30,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
@@ -1308,12 +1177,10 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             suffix="{suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 1
     resources:
         mem_mb=16000,
-        runtime=15,
+        runtime=30,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
@@ -1359,12 +1226,10 @@ rule deform_fieldfrac_nii_to_template_nii:
             suffix="fieldfrac.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj"
     threads: 32
     resources:
-        mem_mb=16000,
-        runtime=5,
+        mem_mb=32000,
+        runtime=30,
     conda:
         "../envs/ants.yaml"
     shell:

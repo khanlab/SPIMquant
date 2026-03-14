@@ -66,8 +66,6 @@ rule create_spim_patches:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=32000,
@@ -85,12 +83,12 @@ rule create_mask_patches:
     """
     input:
         mask=bids(
-            root=work,
+            root=root,
             datatype="micr",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
         dseg=bids(
@@ -127,8 +125,6 @@ rule create_mask_patches:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=32000,
@@ -188,8 +184,6 @@ rule create_corrected_spim_patches:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=32000,
@@ -237,8 +231,6 @@ rule create_imaris_crops:
                 **inputs["spim"].wildcards,
             )
         ),
-    group:
-        "subj"
     threads: 32
     resources:
         mem_mb=32000,

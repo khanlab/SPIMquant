@@ -271,6 +271,20 @@ rule all_vessels:
         ),
 
 
+#        inputs["spim"].expand(
+#            bids(
+#                root=root,
+#                datatype="micr",
+#                stain="{stain}",
+#                desc="{desc}",
+#                suffix="mask.ozx",
+#                **inputs["spim"].wildcards,
+#            ),
+#            desc=config["vessel_seg_method"],
+#            stain=stains_for_vessels,
+#        )
+
+
 rule all_segment:
     input:
         inputs["spim"].expand(
@@ -676,7 +690,6 @@ rule all_participant:
         rules.all_register.input,
         rules.all_vessels.input if do_vessels else [],
         rules.all_segment.input if do_seg else [],
-        rules.all_spim_patches.input if do_seg else [],
         rules.all_mri_reg.input if config["register_to_mri"] else [],
         rules.all_segment_coloc.input if do_coloc else [],
         rules.all_segment_maskcoloc.input if do_maskcoloc else [],

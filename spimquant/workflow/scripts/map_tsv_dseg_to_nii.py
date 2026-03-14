@@ -11,4 +11,7 @@ img = atlas.create_feature_map(
     label_column=snakemake.params.label_column,
 )
 
+# force atlas units (until zarrnii issue #203 fixed):
+img.ngff_image.axes_units = {"x": "millimeter", "y": "millimeter", "z": "millimeter"}
+
 img.to_nifti(snakemake.output.nii)
