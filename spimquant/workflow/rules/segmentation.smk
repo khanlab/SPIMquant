@@ -76,17 +76,22 @@ rule n4_biasfield:
         proc_level=5,
         zarrnii_kwargs={"orientation": config["orientation"]},
         shrink_factor=16 if config["sloppy"] else 1,
-        target_chunk_size=512 #this sets the chunk size for this and downstream masks
+        target_chunk_size=512,  #this sets the chunk size for this and downstream masks
     output:
-        corrected=temp(directory(bids(
-            root=work,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            desc="correctedn4",
-            suffix="SPIM.ome.zarr",
-            **inputs["spim"].wildcards,
-        )),group_jobs=True)
+        corrected=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="micr",
+                    stain="{stain}",
+                    level="{level}",
+                    desc="correctedn4",
+                    suffix="SPIM.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
+            ),
+            group_jobs=True,
+        ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
