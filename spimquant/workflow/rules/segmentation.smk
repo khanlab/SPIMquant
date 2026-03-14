@@ -399,207 +399,50 @@ rule colocalize_regionprops:
         "../scripts/compute_colocalization.py"
 
 
-def get_mask_seg_desc(stain):
-    """Return the segmentation method desc for a mask-based (non-instance) stain.
+rule sample_at_vessel_sdt:
+    """Sample sdt at points
+    - < 0 : instance is inside the mask
+    - > 0 : instance is outside the mask
 
-    For vessel stains the desc comes from ``vessel_seg_method``; for regular
-    segmentation stains it comes from ``seg_method``.  The first element of
-    the respective list is used.
-    """
-    if stain in stains_for_vessels:
-        if not config.get("vessel_seg_method"):
-            raise ValueError(
-                f"Config 'vessel_seg_method' must be a non-empty list, "
-                f"got: {config.get('vessel_seg_method')}"
-            )
-        return config["vessel_seg_method"][0]
-    if not config.get("seg_method"):
-        raise ValueError(
-            f"Config 'seg_method' must be a non-empty list, "
-            f"got: {config.get('seg_method')}"
-        )
-    return config["seg_method"][0]
-
-
-rule colocalize_regionprops_with_mask:
-    """Annotate per-instance regionprops with a mask-based colocalization score.
-
-    For each instance in ``stain_a``'s regionprops the signed distance transform
-    (SDT) of ``stain_b``'s mask is sampled at the instance centroid.  The
-    colocalization score added to the table is ``sdt - radius``, where ``radius``
-    is the equivalent sphere radius derived from the instance's ``nvoxels``:
-
-    - ≈ 0 : instance sphere boundary approximately touches the mask boundary
-    - < 0 : instance overlaps with the mask
-    - > 0 : instance is completely outside and away from the mask
-
-    The new column is named ``sdt_{stain_b}`` (e.g. ``sdt_CD31``).
     """
     input:
-        regionprops_parquet=bids(
+        parquet=bids(
             root=root,
             datatype="micr",
-            stain="{stain_a}",
             desc="{desc}",
+            space="{template}",
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-        dist=lambda wildcards: bids(
+        scalar=bids(
             root=root,
             datatype="micr",
-            stain=wildcards.stain_b,
+            stain="{stain}",
             level=config["segmentation_level"],
-            desc=get_mask_seg_desc(wildcards.stain_b),
+            desc=config["vessel_seg_method"],
             suffix="dist.ozx",
-            **{k: getattr(wildcards, k) for k in inputs["spim"].wildcards},
+            **inputs["spim"].wildcards,
         ),
     params:
         coord_column_names=config["coord_column_names"],
-        mask_stain=lambda wildcards: wildcards.stain_b,
-        zarrnii_kwargs={"orientation": config["orientation"]},
+        col_name="sdt_{stain}",
+        zarrnii_kwargs={"orientation": config["orientation"], "level": 0},
     output:
-        maskcoloc_parquet=bids(
+        parquet=bids(
             root=root,
             datatype="micr",
-            stain="{stain_a}",
             desc="{desc}",
-            **{"mask": "{stain_b}"},
-            suffix="maskcoloc.parquet",
+            space="{template}",
+            vessels="{stain}",
+            suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-    wildcard_constraints:
-        stain_a="[a-zA-Z0-9]+",
-        stain_b="[a-zA-Z0-9]+",
     threads: 1
     resources:
         mem_mb=32000,
         runtime=30,
     script:
-        "../scripts/compute_colocalization_with_mask.py"
-
-
-rule transform_maskcoloc_to_template:
-    """Transform mask-coloc regionprops coordinates from subject to template space."""
-    input:
-        regionprops_parquet=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain_a}",
-            desc="{desc}",
-            **{"mask": "{stain_b}"},
-            suffix="maskcoloc.parquet",
-            **inputs["spim"].wildcards,
-        ),
-        xfm_ras=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            type_="ras",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
-        ),
-        invwarp=bids(
-            root=root,
-            datatype="warps",
-            from_="{template}",
-            to="subject",
-            suffix="warp.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-    params:
-        coord_column_names=config["coord_column_names"],
-    output:
-        regionprops_transformed_parquet=temp(
-            bids(
-                root=root,
-                datatype="micr",
-                stain="{stain_a}",
-                desc="{desc}",
-                **{"mask": "{stain_b}"},
-                space="{template}",
-                suffix="maskcoloc.parquet",
-                **inputs["spim"].wildcards,
-            )
-        ),
-    wildcard_constraints:
-        stain_a="[a-zA-Z0-9]+",
-        stain_b="[a-zA-Z0-9]+",
-    threads: 1
-    resources:
-        mem_mb=1500,
-        runtime=30,
-    script:
-        "../scripts/transform_regionprops_to_template.py"
-
-
-rule map_maskcoloc_to_atlas_rois:
-    """Map mask-coloc regionprops to atlas regions for per-ROI statistics."""
-    input:
-        regionprops_parquet=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain_a}",
-            desc="{desc}",
-            **{"mask": "{stain_b}"},
-            space="{template}",
-            suffix="maskcoloc.parquet",
-            **inputs["spim"].wildcards,
-        ),
-        dseg=bids(
-            root=root,
-            datatype="micr",
-            seg="{seg}",
-            desc="deform",
-            level="{level}",
-            from_="{template}",
-            suffix="dseg.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
-    params:
-        coord_column_names=config["coord_column_names"],
-    output:
-        regionprops_tsv=temp(
-            bids(
-                root=root,
-                datatype="micr",
-                seg="{seg}",
-                from_="{template}",
-                stain="{stain_a}",
-                **{"mask": "{stain_b}"},
-                level="{level}",
-                desc="{desc}",
-                suffix="maskcolocstats.tsv",
-                **inputs["spim"].wildcards,
-            )
-        ),
-        counts_tsv=temp(
-            bids(
-                root=root,
-                datatype="micr",
-                seg="{seg}",
-                from_="{template}",
-                stain="{stain_a}",
-                **{"mask": "{stain_b}"},
-                level="{level}",
-                desc="{desc}",
-                suffix="maskcoloccountstats.tsv",
-                **inputs["spim"].wildcards,
-            )
-        ),
-    wildcard_constraints:
-        stain_a="[a-zA-Z0-9]+",
-        stain_b="[a-zA-Z0-9]+",
-    threads: 1
-    resources:
-        mem_mb=1500,
-        runtime=30,
-    script:
-        "../scripts/map_atlas_to_regionprops.py"
+        "../scripts/sample_at_points.py"
 
 
 rule counts_per_voxel:
@@ -698,10 +541,6 @@ rule coloc_per_voxel_template:
         runtime=30,
     script:
         "../scripts/coloc_per_voxel_template.py"
-
-
-# to avoid wildcard conflicts:
-ruleorder: fieldfrac > fieldfrac_vessels
 
 
 rule fieldfrac:

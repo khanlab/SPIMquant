@@ -38,45 +38,6 @@ rule run_vesselfm:
         "../scripts/vesselfm.py"
 
 
-rule fieldfrac_vessels:
-    """Calculate field fraction from binary mask.
-    
-    Computes the fraction of brain tissue occupied by the vessels.
-    Note: This is a separate rule from `fieldfrac` to allow the 
-    dags groups to be disjoint.
-    
-    """
-    input:
-        mask=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level=config["segmentation_level"],
-            desc="{desc}",
-            suffix="mask.ozx",
-            **inputs["spim"].wildcards,
-        ),
-    params:
-        hires_level=config["segmentation_level"],
-        zarrnii_kwargs={"orientation": config["orientation"]},
-    output:
-        fieldfrac_nii=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level="{level}",
-            desc="{desc,vesselfm}",
-            suffix="fieldfrac.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-    threads: 32
-    resources:
-        mem_mb=1500,
-        runtime=15,
-    script:
-        "../scripts/fieldfrac.py"
-
-
 rule signed_distance_transform:
     """Compute signed distance transform from a binary mask.
 
