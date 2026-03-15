@@ -1,14 +1,7 @@
 
 rule map_regionprops_to_atlas_rois:
     input:
-        regionprops_parquet=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            desc="{desc}",
-            suffix="regionprops.parquet",
-            **inputs["spim"].wildcards,
-        ),
+        regionprops_parquet=get_regionprops_parquet,
         dseg=bids(
             root=root,
             datatype="micr",
@@ -25,18 +18,16 @@ rule map_regionprops_to_atlas_rois:
     params:
         coord_column_names=config["coord_column_names"],
     output:
-        regionprops_tsv=temp(
-            bids(
-                root=root,
-                datatype="micr",
-                seg="{seg}",
-                from_="{template}",
-                stain="{stain}",
-                level="{level}",
-                desc="{desc}",
-                suffix="regionpropstats.tsv",
-                **inputs["spim"].wildcards,
-            )
+        regionprops_tsv=bids(
+            root=root,
+            datatype="micr",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}",
+            suffix="regionpropstats.tsv",
+            **inputs["spim"].wildcards,
         ),
         counts_tsv=temp(
             bids(

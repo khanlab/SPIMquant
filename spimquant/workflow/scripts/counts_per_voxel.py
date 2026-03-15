@@ -16,6 +16,7 @@ with get_dask_client("threads", snakemake.threads):
     )
 
     df = pd.read_parquet(snakemake.input.regionprops_parquet)
+    df = df[df["stain"] == snakemake.wildcards.stain]
 
     points = df[snakemake.params.coord_column_names].values
 

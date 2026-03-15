@@ -17,8 +17,8 @@ rule counts_per_voxel:
         counts_nii=bids(
             root=root,
             datatype="micr",
-            stain="{stain}",
             level="{level}",
+            stain="{stain}",
             desc="{desc}",
             suffix="counts.nii.gz",
             **inputs["spim"].wildcards,
