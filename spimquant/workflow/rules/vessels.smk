@@ -43,8 +43,9 @@ rule signed_distance_transform:
 
     Applies the chamfer distance transform (distance_transform_cdt from scipy)
     to a binary mask using dask map_overlap for chunked, parallel processing.
-    The output is a signed distance transform where positive values indicate
-    the interior and negative values indicate the exterior of the mask.
+    The output is a signed distance transform computed as dt_outside - dt_inside,
+    where negative values indicate the interior and positive values indicate
+    the exterior of the mask.
     """
     input:
         mask=bids(
