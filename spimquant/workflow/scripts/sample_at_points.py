@@ -25,7 +25,7 @@ from zarrnii import ZarrNii
 df = pd.read_parquet(snakemake.input.parquet)
 
 coord_cols = snakemake.params.coord_column_names
-out_name = snakemake.params.out_name
+col_name = snakemake.params.col_name
 zarrnii_kwargs = snakemake.params.zarrnii_kwargs
 
 # Validate coordinate columns
