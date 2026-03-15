@@ -38,7 +38,6 @@ rule fieldfrac:
         "../scripts/fieldfrac.py"
 
 
-
 rule map_fieldfrac_img_to_seg_tsv:
     input:
         img=bids(
@@ -83,5 +82,3 @@ rule map_fieldfrac_img_to_seg_tsv:
         runtime=15,
     script:
         "../scripts/map_img_to_roi_tsv.py"
-
-

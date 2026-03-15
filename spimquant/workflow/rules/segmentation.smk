@@ -270,6 +270,3 @@ rule deform_negative_mask_to_subject_nii:
         " -ri NN "
         "  -rm {input.mask} {output.mask} "
         "  -r {input.xfm_ras},-1 {input.invwarp}"
-
-
-

@@ -1,4 +1,3 @@
-
 rule counts_per_voxel:
     """Calculate counts per voxel based on points"""
     input:
@@ -95,5 +94,3 @@ rule coloc_per_voxel_template:
         runtime=30,
     script:
         "../scripts/coloc_per_voxel_template.py"
-
-

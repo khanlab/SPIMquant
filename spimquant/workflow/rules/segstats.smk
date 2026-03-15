@@ -218,6 +218,7 @@ rule merge_into_colocsegstats_tsv:
     script:
         "../scripts/merge_into_segstats_tsv.py"
 
+
 def get_coloc_tsv_input_kwargs():
     """return coloc_tsv only if we have multiple stains to segment"""
     if len(stains_for_seg) == 1:
@@ -272,5 +273,3 @@ rule merge_indiv_and_coloc_segstats_tsv:
         runtime=15,
     script:
         "../scripts/merge_indiv_and_coloc_segstats_tsv.py"
-
-

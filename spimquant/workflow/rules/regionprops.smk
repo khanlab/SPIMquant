@@ -203,5 +203,3 @@ rule sample_at_vessel_sdt:
         runtime=30,
     script:
         "../scripts/sample_at_points.py"
-
-
