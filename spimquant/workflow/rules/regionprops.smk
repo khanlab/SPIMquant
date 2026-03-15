@@ -191,7 +191,7 @@ rule sample_at_vessel_sdt:
         parquet=bids(
             root=root,
             datatype="micr",
-            desc="{desc}",
+            desc="{desc}+vessels",
             space="{template}",
             vessels="{stain}",
             suffix="regionprops.parquet",

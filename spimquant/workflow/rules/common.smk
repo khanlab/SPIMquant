@@ -73,3 +73,25 @@ def get_stains_all_subjects():
         return list(stain_sets[0])
     else:
         raise ValueError(f"stains across subjects are not consistent, {stain_sets}")
+
+
+def get_regionprops_parquet(wildcards):
+    if do_vessels:
+        return bids(
+            root=root,
+            datatype="micr",
+            desc="{desc}+vessels",
+            space="{template}",
+            vessels=stain_for_vessels,
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        )
+    else:
+        return bids(
+            root=root,
+            datatype="micr",
+            desc="{desc}",
+            space="{template}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        )

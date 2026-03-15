@@ -80,12 +80,16 @@ else:
     do_coloc = len(stains_for_seg) > 1
 
 
-stains_for_vessels = list(set(config["stains_for_vessels"]).intersection(set(stains)))
+stain_for_vessels = None
 
-if len(stains_for_vessels) == 0 or config["no_segmentation"]:
+for stain in config["stains_for_vessels"]:
+    if stain in stains:
+        stain_for_vessels = stain
+        do_vessels = True
+        break
+
+if stain_for_vessels == None:
     do_vessels = False
-else:
-    do_vessels = True
 
 
 # atlas segmentations to use
@@ -253,21 +257,7 @@ rule all_vessels:
             level=config["registration_level"],
             template=config["template"],
             desc=config["vessel_seg_method"],
-            stain=stains_for_vessels,
-        ),
-        inputs["spim"].expand(
-            bids(
-                root=root,
-                datatype="micr",
-                desc="{desc}",
-                space="{template}",
-                vessels="{stain}",
-                suffix="regionprops.parquet",
-                **inputs["spim"].wildcards,
-            ),
-            template=config["template"],
-            desc=config["seg_method"],
-            stain=stains_for_vessels,
+            stain=stain_for_vessels,
         ),
 
 
