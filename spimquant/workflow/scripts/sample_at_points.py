@@ -13,7 +13,7 @@ Parameters (via snakemake.params):
         (e.g. {'orientation': 'RPI'}).
 
 Output (via snakemake.output):
-    arquet: Parquet file identical to the input parquet but with
+    parquet: Parquet file identical to the input parquet but with
         the additional new column with sampled scalar
 """
 
