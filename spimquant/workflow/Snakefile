@@ -662,6 +662,11 @@ include: "rules/vessels.smk"
 if config["no_segmentation"] == False:
 
     include: "rules/segmentation.smk"
+    include: "rules/counts.smk"
+    include: "rules/fieldfrac.smk"
+    include: "rules/heatmaps.smk"
+    include: "rules/regionprops.smk"
+    include: "rules/segstats.smk"
     include: "rules/patches.smk"
     include: "rules/groupstats.smk"
 
