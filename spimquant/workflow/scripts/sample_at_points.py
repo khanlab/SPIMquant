@@ -13,7 +13,7 @@ Parameters (via snakemake.params):
         (e.g. {'orientation': 'RPI'}).
 
 Output (via snakemake.output):
-    arquet: Parquet file identical to the input parquet but with
+    parquet: Parquet file identical to the input parquet but with
         the additional new column with sampled scalar
 """
 
@@ -25,7 +25,7 @@ from zarrnii import ZarrNii
 df = pd.read_parquet(snakemake.input.parquet)
 
 coord_cols = snakemake.params.coord_column_names
-out_name = snakemake.params.out_name
+col_name = snakemake.params.col_name
 zarrnii_kwargs = snakemake.params.zarrnii_kwargs
 
 # Validate coordinate columns
