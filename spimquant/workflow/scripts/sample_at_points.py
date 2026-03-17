@@ -17,7 +17,6 @@ Output (via snakemake.output):
         the additional new column with sampled scalar
 """
 
-import numpy as np
 import pandas as pd
 from zarrnii import ZarrNii
 
