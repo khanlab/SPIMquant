@@ -82,14 +82,17 @@ else:
 
 stain_for_vessels = None
 
-for stain in config["stains_for_vessels"]:
-    if stain in stains:
-        stain_for_vessels = stain
-        do_vessels = True
-        break
-
-if stain_for_vessels is None:
+if config["no_vessels"]:
     do_vessels = False
+else:
+    for stain in config["stains_for_vessels"]:
+        if stain in stains:
+            stain_for_vessels = stain
+            do_vessels = True
+            break
+
+    if stain_for_vessels is None:
+        do_vessels = False
 
 
 # atlas segmentations to use
@@ -647,18 +650,14 @@ include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/vessels.smk"
-
-
-if config["no_segmentation"] == False:
-
-    include: "rules/segmentation.smk"
-    include: "rules/counts.smk"
-    include: "rules/fieldfrac.smk"
-    include: "rules/heatmaps.smk"
-    include: "rules/regionprops.smk"
-    include: "rules/segstats.smk"
-    include: "rules/patches.smk"
-    include: "rules/groupstats.smk"
+include: "rules/segmentation.smk"
+include: "rules/counts.smk"
+include: "rules/fieldfrac.smk"
+include: "rules/heatmaps.smk"
+include: "rules/regionprops.smk"
+include: "rules/segstats.smk"
+include: "rules/patches.smk"
+include: "rules/groupstats.smk"
 
 
 if config["register_to_mri"]:

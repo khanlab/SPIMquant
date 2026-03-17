@@ -143,6 +143,11 @@ parse_args:
     action: store_true
     default: False
 
+  --no_vessels:
+    help: "Skip segmentation and quantification of vessels (default: %(default)s)"
+    action: store_true
+    default: False
+
   --correction_method:
     help: "Method to use for intensity non-uniformity correction, prior to performing segmentation (default: %(default)s)"
     choices: 
