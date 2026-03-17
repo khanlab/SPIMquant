@@ -9,14 +9,15 @@ regions, generating two outputs:
 from zarrnii import ZarrNiiAtlas
 import pandas as pd
 
-regionprops = pd.read_parquet(snakemake.input.regionprops_parquet).to_dict(
+df_in = pd.read_parquet(snakemake.input.regionprops_parquet)
+regionprops_dict = df_in[df_in["stain"] == snakemake.wildcards.stain].to_dict(
     orient="list"
 )
 
 atlas = ZarrNiiAtlas.from_files(snakemake.input.dseg, snakemake.input.label_tsv)
 
 df_regionprops, df_counts = atlas.label_region_properties(
-    regionprops,
+    regionprops_dict,
     coord_column_names=snakemake.params.coord_column_names,
     include_names=True,
 )

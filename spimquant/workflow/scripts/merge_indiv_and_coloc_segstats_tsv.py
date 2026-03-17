@@ -10,10 +10,7 @@ This is a Snakemake script that expects the `snakemake` object to be available.
 import pandas as pd
 
 indiv_files = snakemake.input.indiv_tsvs
-if "coloc_tsv" in snakemake.input:
-    coloc_file = snakemake.input.coloc_tsv
-else:
-    coloc_file = None
+coloc_file = getattr(snakemake.input, "coloc_tsv", None)
 
 output_file = snakemake.output.merged_tsv
 stains = snakemake.params.stains  # list aligned to indiv_files

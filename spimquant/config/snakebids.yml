@@ -143,6 +143,11 @@ parse_args:
     action: store_true
     default: False
 
+  --no_vessels:
+    help: "Skip segmentation and quantification of vessels (default: %(default)s)"
+    action: store_true
+    default: False
+
   --correction_method:
     help: "Method to use for intensity non-uniformity correction, prior to performing segmentation (default: %(default)s)"
     choices: 
@@ -385,30 +390,10 @@ seg_metrics:
   - volume
   - nvoxels
 
-vessel_seg_method:
-  - vesselfm
+vessel_seg_method: vesselfm
 
 vessel_metrics:
   - fieldfrac
-
-
-# Pairs of stains for mask-based colocalization analysis.
-# Each pair is [instance_stain, mask_stain], where:
-#   - instance_stain: a stain processed with connected components (from stains_for_seg),
-#     which produces per-instance regionprops (centroid, nvoxels, etc.)
-#   - mask_stain: a stain represented only by a binary mask (from stains_for_vessels),
-#     for which a signed distance transform (SDT) is used instead of instances.
-# For each instance in the instance_stain's regionprops, the SDT of the mask_stain
-# is sampled at the centroid. The colocalization score is: sdt - radius, where radius
-# is the equivalent sphere radius from nvoxels. A score near 0 means the instance
-# boundary is approximately at the mask boundary; negative means overlapping;
-# positive means further away.
-coloc_stain_pairs:
-  - - Abeta
-    - CD31
-
-
-
 
 
 coloc_seg_metrics:

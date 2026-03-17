@@ -80,26 +80,19 @@ else:
     do_coloc = len(stains_for_seg) > 1
 
 
-stains_for_vessels = list(set(config["stains_for_vessels"]).intersection(set(stains)))
+stain_for_vessels = None
 
-if len(stains_for_vessels) == 0 or config["no_segmentation"]:
+if config["no_vessels"]:
     do_vessels = False
 else:
-    do_vessels = True
+    for stain in config["stains_for_vessels"]:
+        if stain in stains:
+            stain_for_vessels = stain
+            do_vessels = True
+            break
 
-
-# Determine valid mask-based colocalization pairs.
-# Each pair is [instance_stain, mask_stain] where:
-#   - instance_stain must be present in stains_for_seg (has per-instance regionprops)
-#   - mask_stain must be present in stains_for_vessels (has only a binary mask / SDT)
-# Only pairs whose both stains are available in the dataset are kept.
-_raw_pairs = config.get("coloc_stain_pairs", [])
-maskcoloc_pairs = [
-    tuple(pair)
-    for pair in _raw_pairs
-    if len(pair) == 2 and pair[0] in stains_for_seg and pair[1] in stains_for_vessels
-]
-do_maskcoloc = len(maskcoloc_pairs) > 0 and do_vessels and do_seg
+    if stain_for_vessels is None:
+        do_vessels = False
 
 
 # atlas segmentations to use
@@ -267,22 +260,8 @@ rule all_vessels:
             level=config["registration_level"],
             template=config["template"],
             desc=config["vessel_seg_method"],
-            stain=stains_for_vessels,
+            stain=stain_for_vessels,
         ),
-
-
-#        inputs["spim"].expand(
-#            bids(
-#                root=root,
-#                datatype="micr",
-#                stain="{stain}",
-#                desc="{desc}",
-#                suffix="mask.ozx",
-#                **inputs["spim"].wildcards,
-#            ),
-#            desc=config["vessel_seg_method"],
-#            stain=stains_for_vessels,
-#        )
 
 
 rule all_segment:
@@ -410,39 +389,6 @@ rule all_segment_coloc:
             desc=config["seg_method"],
             template=config["template"],
         ),
-
-
-def _get_maskcoloc_targets():
-    """Return the list of mask-coloc parquet targets for all valid pairs."""
-    targets = []
-    for stain_a, stain_b in maskcoloc_pairs:
-        targets.extend(
-            inputs["spim"].expand(
-                bids(
-                    root=root,
-                    datatype="micr",
-                    stain=stain_a,
-                    desc="{desc}",
-                    **{"mask": stain_b},
-                    suffix="maskcoloc.parquet",
-                    **inputs["spim"].wildcards,
-                ),
-                desc=config["seg_method"],
-            )
-        )
-    return targets
-
-
-rule all_segment_maskcoloc:
-    """Target rule for mask-based colocalization analysis.
-
-    Produces per-instance regionprops tables annotated with a colocalization
-    score (``sdt_{mask_stain}`` column) for each configured stain pair in
-    ``coloc_stain_pairs``.  Only pairs where both stains are present in the
-    dataset are processed.
-    """
-    input:
-        _get_maskcoloc_targets() if do_maskcoloc else [],
 
 
 rule all_mri_reg:
@@ -692,7 +638,6 @@ rule all_participant:
         rules.all_segment.input if do_seg else [],
         rules.all_mri_reg.input if config["register_to_mri"] else [],
         rules.all_segment_coloc.input if do_coloc else [],
-        rules.all_segment_maskcoloc.input if do_maskcoloc else [],
 
 
 rule all_group:
@@ -705,13 +650,14 @@ include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/vessels.smk"
-
-
-if config["no_segmentation"] == False:
-
-    include: "rules/segmentation.smk"
-    include: "rules/patches.smk"
-    include: "rules/groupstats.smk"
+include: "rules/segmentation.smk"
+include: "rules/counts.smk"
+include: "rules/fieldfrac.smk"
+include: "rules/heatmaps.smk"
+include: "rules/regionprops.smk"
+include: "rules/segstats.smk"
+include: "rules/patches.smk"
+include: "rules/groupstats.smk"
 
 
 if config["register_to_mri"]:
