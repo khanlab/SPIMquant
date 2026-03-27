@@ -46,24 +46,7 @@ rule transform_regionprops_to_template:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-        xfm_ras=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            type_="ras",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
-        ),
-        invwarp=bids(
-            root=root,
-            datatype="warps",
-            from_="{template}",
-            to="subject",
-            suffix="warp.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
+        xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
     params:
         coord_column_names=config["coord_column_names"],
     output:

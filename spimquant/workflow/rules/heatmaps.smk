@@ -97,24 +97,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             **inputs["spim"].wildcards,
         ),
         ref=rules.import_template_anat.output.anat,
-        xfm_itk=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            type_="itk",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
-        ),
-        warp=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            suffix="warp.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
+        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
     output:
         nii=bids(
             root=root,
@@ -136,4 +119,4 @@ rule deform_fieldfrac_nii_to_template_nii:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n Linear "
         " -i {input.flo} -o {output.nii} "
-        " -r {input.ref} -t {input.warp} {input.xfm_itk}"
+        " -r {input.ref} -t {input.xfm_composite}"
