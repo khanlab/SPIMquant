@@ -178,14 +178,16 @@ rule affine_reg:
                 **inputs["spim"].wildcards,
             )
         ),
-        warped=bids(
-            root=root,
-            datatype="warps",
-            space="{template}",
-            stain=stain_for_reg,
-            desc="affinewarped",
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
+        warped=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                space="{template}",
+                stain=stain_for_reg,
+                desc="affinewarped",
+                suffix="SPIM.nii.gz",
+                **inputs["spim"].wildcards,
+            )
         ),
     log:
         bids(
