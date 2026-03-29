@@ -42,15 +42,18 @@
         },
         {
           "name": "z",
-          "type": "space"
+          "type": "space",
+          "unit": "millimeter"
         },
         {
           "name": "y",
-          "type": "space"
+          "type": "space",
+          "unit": "millimeter"
         },
         {
           "name": "x",
-          "type": "space"
+          "type": "space",
+          "unit": "millimeter"
         }
       ],
       "datasets": [
