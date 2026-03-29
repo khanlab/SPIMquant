@@ -166,24 +166,28 @@ rule affine_reg:
     params:
         iters="10x0x0" if config["sloppy"] else "100x100",
     output:
-        xfm_ras=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            type_="ras",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
+        xfm_ras=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                from_="subject",
+                to="{template}",
+                type_="ras",
+                desc="affine",
+                suffix="xfm.txt",
+                **inputs["spim"].wildcards,
+            )
         ),
-        warped=bids(
-            root=root,
-            datatype="warps",
-            space="{template}",
-            stain=stain_for_reg,
-            desc="affinewarped",
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
+        warped=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                space="{template}",
+                stain=stain_for_reg,
+                desc="affinewarped",
+                suffix="SPIM.nii.gz",
+                **inputs["spim"].wildcards,
+            )
         ),
     log:
         bids(
@@ -223,15 +227,17 @@ rule convert_ras_to_itk:
             **inputs["spim"].wildcards,
         ),
     output:
-        xfm_itk=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            type_="itk",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
+        xfm_itk=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                from_="subject",
+                to="{template}",
+                type_="itk",
+                desc="affine",
+                suffix="xfm.txt",
+                **inputs["spim"].wildcards,
+            )
         ),
     threads: 1
     resources:
@@ -268,21 +274,25 @@ rule deform_reg:
         sigma1="4vox",
         sigma2="2vox",
     output:
-        warp=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            suffix="warp.nii.gz",
-            **inputs["spim"].wildcards,
+        warp=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                from_="subject",
+                to="{template}",
+                suffix="warp.nii.gz",
+                **inputs["spim"].wildcards,
+            )
         ),
-        invwarp=bids(
-            root=root,
-            datatype="warps",
-            from_="{template}",
-            to="subject",
-            suffix="warp.nii.gz",
-            **inputs["spim"].wildcards,
+        invwarp=temp(
+            bids(
+                root=root,
+                datatype="warps",
+                from_="{template}",
+                to="subject",
+                suffix="warp.nii.gz",
+                **inputs["spim"].wildcards,
+            )
         ),
         warped=temp(
             bids(
@@ -315,6 +325,59 @@ rule deform_reg:
         " greedy -threads {threads} -d 3 -rf {input.template} "
         "  -rm {input.subject} {output.warped} "
         "  -r {output.warp} {input.xfm_ras} "
+
+
+rule compose_subject_to_template_warp:
+    """Compose affine and deformable transforms into a single composite warp field.
+
+    Creates composite transformation fields by concatenating the affine and
+    deformable registration transforms. This simplifies downstream applications
+    that need to move data between subject and template space, removing the need
+    to remember transform order or affine inversion.
+    """
+    input:
+        ref=rules.import_template_anat.output.anat,
+        subject=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level=config["registration_level"],
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        xfm_itk=rules.convert_ras_to_itk.output.xfm_itk,
+        warp=rules.deform_reg.output.warp,
+        invwarp=rules.deform_reg.output.invwarp,
+    output:
+        xfm_composite=bids(
+            root=root,
+            datatype="warps",
+            from_="subject",
+            to="{template}",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        xfm_composite_inv=bids(
+            root=root,
+            datatype="warps",
+            from_="{template}",
+            to="subject",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 4
+    resources:
+        mem_mb=8000,
+        runtime=15,
+    conda:
+        "../envs/ants.yaml"
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -o [{output.xfm_composite},1] "
+        " -r {input.ref} -t {input.warp} {input.xfm_itk} && "
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -o [{output.xfm_composite_inv},1] "
+        " -r {input.subject} -t {input.invwarp} [{input.xfm_itk},1]"
 
 
 rule resample_labels_to_zarr:
@@ -410,8 +473,7 @@ rule affine_zarr_to_template_ome_zarr:
 
 rule deform_zarr_to_template_nii:
     input:
-        xfm_ras=rules.affine_reg.output.xfm_ras,
-        warp_nii=rules.deform_reg.output.warp,
+        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
         ref_nii=get_template_for_reg,
     params:
         ome_zarr=inputs["spim"].path,
@@ -440,8 +502,7 @@ rule deform_zarr_to_template_nii:
 rule deform_to_template_nii_zoomed:
     input:
         ome_zarr=inputs["spim"].path,
-        xfm_ras=rules.affine_reg.output.xfm_ras,
-        warp_nii=rules.deform_reg.output.warp,
+        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
         ref_nii=get_template_for_reg,
     params:
         flo_opts={},  #any additional flo znimg options
@@ -485,24 +546,7 @@ rule deform_spim_nii_to_template_nii:
             **inputs["spim"].wildcards,
         ),
         ref=rules.import_template_anat.output.anat,
-        xfm_itk=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            type_="itk",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
-        ),
-        warp=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            suffix="warp.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
+        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
     output:
         spim=bids(
             root=root,
@@ -523,15 +567,15 @@ rule deform_spim_nii_to_template_nii:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n Linear "
         " -i {input.spim} -o {output.spim} "
-        " -r {input.ref} -t {input.warp} {input.xfm_itk}"
+        " -r {input.ref} -t {input.xfm_composite}"
 
 
 rule deform_template_dseg_to_subject_nii:
     """Transform template atlas labels to subject space.
     
-    Applies inverse warp to bring template segmentation labels into subject space.
-    Uses nearest-neighbor interpolation to preserve discrete label values.
-    This enables atlas-based analysis in native subject space.
+    Applies composite inverse warp to bring template segmentation labels into
+    subject space. Uses nearest-neighbor interpolation to preserve discrete label
+    values. This enables atlas-based analysis in native subject space.
     """
     input:
         ref=bids(
@@ -545,17 +589,7 @@ rule deform_template_dseg_to_subject_nii:
         dseg=bids_tpl(
             root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
         ),
-        xfm_itk=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            type_="itk",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
-        ),
-        invwarp=rules.deform_reg.output.invwarp,
+        xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
     output:
         dseg=bids(
             root=root,
@@ -577,7 +611,7 @@ rule deform_template_dseg_to_subject_nii:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n NearestNeighbor "
         " -i {input.dseg} -o {output.dseg} "
-        " -r {input.ref} -t  [{input.xfm_itk},1] {input.invwarp}"
+        " -r {input.ref} -t {input.xfm_composite_inv}"
 
 
 rule copy_template_dseg_tsv:
@@ -689,14 +723,7 @@ rule registration_qc_report:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        warp=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            suffix="warp.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
+        warp=rules.compose_subject_to_template_warp.output.xfm_composite,
         dseg=lambda wildcards: bids_tpl(
             root=root,
             template=wildcards.template,

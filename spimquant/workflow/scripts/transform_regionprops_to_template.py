@@ -1,14 +1,14 @@
 """Transform regionprops coordinates from subject to template space.
 
 This script takes computed regionprops from segmentation in subject space
-and applies the affine and warp transforms to convert the spatial coordinates
+and applies the composite inverse warp to convert the spatial coordinates
 (pos_x, pos_y, pos_z) from subject space to template space, adding new columns
 (template_x, template_y, template_z) while retaining all other regionprops columns.
 """
 
 import pandas as pd
 import numpy as np
-from zarrnii import AffineTransform, DisplacementTransform
+from zarrnii import DisplacementTransform
 
 # Load the regionprops data
 df = pd.read_parquet(snakemake.input.regionprops_parquet)
@@ -33,12 +33,11 @@ if not np.issubdtype(points.dtype, np.number):
     )
 
 
-# Transform points by applying inverse affine, then inverse warp
-invaff = AffineTransform.from_txt(snakemake.input.xfm_ras).invert()
-invwarp = DisplacementTransform.from_nifti(snakemake.input.invwarp)
+# Transform points using the composite inverse warp (template -> subject is inverted,
+# so this maps subject coordinates to template space)
+xfm_composite_inv = DisplacementTransform.from_nifti(snakemake.input.xfm_composite_inv)
 
-
-points_transformed = invwarp.apply_transform(invaff.apply_transform(points.T)).T
+points_transformed = xfm_composite_inv.apply_transform(points.T).T
 
 
 # Add the transformed coordinates as new columns

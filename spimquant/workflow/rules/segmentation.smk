@@ -249,8 +249,7 @@ rule deform_negative_mask_to_subject_nii:
             **inputs["spim"].wildcards,
         ),
         mask=config["template_negative_mask"],
-        xfm_ras=rules.init_affine_reg.output.xfm_ras,
-        invwarp=rules.deform_reg.output.invwarp,
+        xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
     output:
         mask=bids(
             root=root,
@@ -265,8 +264,10 @@ rule deform_negative_mask_to_subject_nii:
     resources:
         mem_mb=1500,
         runtime=15,
+    conda:
+        "../envs/ants.yaml"
     shell:
-        " greedy -threads {threads} -d 3 -rf {input.ref} "
-        " -ri NN "
-        "  -rm {input.mask} {output.mask} "
-        "  -r {input.xfm_ras},-1 {input.invwarp}"
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -v -n NearestNeighbor "
+        " -i {input.mask} -o {output.mask} "
+        " -r {input.ref} -t {input.xfm_composite_inv}"

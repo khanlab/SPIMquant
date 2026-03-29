@@ -578,6 +578,102 @@ rule affine_nlin_reg_mri_to_spim:
         "  -r {output.xfm_ras} "
 
 
+rule compose_mri_to_spim_warp:
+    """Compose affine and deformable MRI-to-SPIM transforms into a single composite warp field.
+
+    Creates composite transformation fields by concatenating the affine and
+    deformable registration transforms for MRI-to-SPIM registration. This
+    simplifies downstream applications that need to move data between MRI
+    and SPIM space, removing the need to remember transform order.
+    """
+    input:
+        ref=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level=config["registration_level"],
+            desc=config["templatereg"]["desc"],
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        subject=bids(
+            root=root,
+            datatype="anat",
+            desc="brain",
+            suffix=f"{mri_suffix}.nii.gz",
+            **inputs.subj_wildcards,
+        ),
+        xfm_ras=bids(
+            root=root,
+            datatype="warps",
+            from_=f"{mri_suffix}",
+            to="SPIM",
+            type_="ras",
+            desc="rigid",
+            suffix="xfm.txt",
+            dof=config["reg_mri"]["greedy"]["dof"],
+            iters=config["reg_mri"]["greedy"]["iters"],
+            radius=config["reg_mri"]["greedy"]["radius"],
+            gradsigma=config["reg_mri"]["greedy"]["gradsigma"],
+            warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
+            **inputs["spim"].wildcards,
+        ),
+        warp=bids(
+            root=root,
+            datatype="warps",
+            from_=f"{mri_suffix}",
+            to="SPIM",
+            suffix="warp.nii.gz",
+            dof=config["reg_mri"]["greedy"]["dof"],
+            iters=config["reg_mri"]["greedy"]["iters"],
+            radius=config["reg_mri"]["greedy"]["radius"],
+            gradsigma=config["reg_mri"]["greedy"]["gradsigma"],
+            warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
+            **inputs["spim"].wildcards,
+        ),
+        invwarp=bids(
+            root=root,
+            datatype="warps",
+            from_="SPIM",
+            to=f"{mri_suffix}",
+            suffix="warp.nii.gz",
+            dof=config["reg_mri"]["greedy"]["dof"],
+            iters=config["reg_mri"]["greedy"]["iters"],
+            radius=config["reg_mri"]["greedy"]["radius"],
+            gradsigma=config["reg_mri"]["greedy"]["gradsigma"],
+            warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        xfm_composite=bids(
+            root=root,
+            datatype="warps",
+            from_=f"{mri_suffix}",
+            to="SPIM",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        xfm_composite_inv=bids(
+            root=root,
+            datatype="warps",
+            from_="SPIM",
+            to=f"{mri_suffix}",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 4
+    resources:
+        mem_mb=8000,
+        runtime=15,
+    conda:
+        "../envs/c3d.yaml"
+    shell:
+        "greedy -threads {threads} -d 3 -rf {input.ref} "
+        "-rc {output.xfm_composite} -r {input.warp} {input.xfm_ras} && "
+        "greedy -threads {threads} -d 3 -rf {input.subject} "
+        "-rc {output.xfm_composite_inv} -r {input.xfm_ras},-1 {input.invwarp}"
+
+
 rule all_tune_mri_spim_reg:
     input:
         inputs["spim"].expand(
@@ -612,52 +708,8 @@ rule warp_mri_to_template_via_spim:
             **inputs.subj_wildcards,
         ),
         ref=rules.import_template_anat.output.anat,
-        affine_mri_to_spim=bids(
-            root=root,
-            datatype="warps",
-            from_=f"{mri_suffix}",
-            to="SPIM",
-            type_="ras",
-            desc="rigid",
-            suffix="xfm.txt",
-            dof=config["reg_mri"]["greedy"]["dof"],
-            iters=config["reg_mri"]["greedy"]["iters"],
-            radius=config["reg_mri"]["greedy"]["radius"],
-            gradsigma=config["reg_mri"]["greedy"]["gradsigma"],
-            warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
-            **inputs["spim"].wildcards,
-        ),
-        warp_mri_to_spim=bids(
-            root=root,
-            datatype="warps",
-            from_=f"{mri_suffix}",
-            to="SPIM",
-            suffix="warp.nii.gz",
-            dof=config["reg_mri"]["greedy"]["dof"],
-            iters=config["reg_mri"]["greedy"]["iters"],
-            radius=config["reg_mri"]["greedy"]["radius"],
-            gradsigma=config["reg_mri"]["greedy"]["gradsigma"],
-            warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
-            **inputs["spim"].wildcards,
-        ),
-        affine_spim_to_template=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            type_="ras",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
-        ),
-        warp_spim_to_template=bids(
-            root=root,
-            datatype="warps",
-            from_="subject",
-            to="{template}",
-            suffix="warp.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
+        xfm_composite_mri_to_spim=rules.compose_mri_to_spim_warp.output.xfm_composite,
+        xfm_composite_spim_to_template=rules.compose_subject_to_template_warp.output.xfm_composite,
     output:
         warped=bids(
             root=root,
@@ -677,13 +729,13 @@ rule warp_mri_to_template_via_spim:
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         "  -rm {input.mri} {output.warped} "
-        "  -r {input.warp_spim_to_template} {input.affine_spim_to_template} {input.warp_mri_to_spim} {input.affine_mri_to_spim}"
+        "  -r {input.xfm_composite_spim_to_template} {input.xfm_composite_mri_to_spim}"
 
 
 rule warp_mri_brainmask_to_spim:
     """Warp MRI brain mask to SPIM space for tissue comparison.
     
-    Applies the MRI->SPIM transformation to the MRI brain mask to enable
+    Applies the composite MRI->SPIM transformation to the MRI brain mask to enable
     direct comparison of brain tissue extent between modalities. Also computes
     Jacobian determinant to quantify local tissue deformation due to fixation
     and clearing processes.
@@ -709,34 +761,7 @@ rule warp_mri_brainmask_to_spim:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        affine_mri_to_spim=bids(
-            root=root,
-            datatype="warps",
-            from_=f"{mri_suffix}",
-            to="SPIM",
-            type_="ras",
-            desc="rigid",
-            suffix="xfm.txt",
-            iters="100x100x50x0",
-            dof="12",
-            radius="2x2x2",
-            gradsigma="3",
-            warpsigma="3",
-            **inputs["spim"].wildcards,
-        ),
-        warp_mri_to_spim=bids(
-            root=root,
-            datatype="warps",
-            from_=f"{mri_suffix}",
-            to="SPIM",
-            suffix="warp.nii.gz",
-            iters="100x100x50x0",
-            dof="12",
-            radius="2x2x2",
-            gradsigma="3",
-            warpsigma="3",
-            **inputs["spim"].wildcards,
-        ),
+        xfm_composite=rules.compose_mri_to_spim_warp.output.xfm_composite,
     output:
         mask=bids(
             root=root,
@@ -754,14 +779,6 @@ rule warp_mri_brainmask_to_spim:
             suffix="jacobian.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        composed_warp=bids(
-            root=root,
-            datatype="anat",
-            from_=f"{mri_suffix}",
-            to="SPIM",
-            suffix="warp.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
     threads: 32
     resources:
         mem_mb=1500,
@@ -771,7 +788,7 @@ rule warp_mri_brainmask_to_spim:
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} -ri NN"
         "  -rm {input.mask} {output.mask} "
-        "  -r {input.warp_mri_to_spim} {input.affine_mri_to_spim} -rj {output.jacobian}"
+        "  -r {input.xfm_composite} -rj {output.jacobian}"
 
 
 rule mri_spim_registration_qc_report:
@@ -819,19 +836,7 @@ rule mri_spim_registration_qc_report:
             warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
             **inputs["spim"].wildcards,
         ),
-        warp=bids(
-            root=root,
-            datatype="warps",
-            from_=f"{mri_suffix}",
-            to="SPIM",
-            suffix="warp.nii.gz",
-            dof=config["reg_mri"]["greedy"]["dof"],
-            iters=config["reg_mri"]["greedy"]["iters"],
-            radius=config["reg_mri"]["greedy"]["radius"],
-            gradsigma=config["reg_mri"]["greedy"]["gradsigma"],
-            warpsigma=config["reg_mri"]["greedy"]["warpsigma"],
-            **inputs["spim"].wildcards,
-        ),
+        warp=rules.compose_mri_to_spim_warp.output.xfm_composite,
     params:
         stain_for_reg=stain_for_reg,
     output:
