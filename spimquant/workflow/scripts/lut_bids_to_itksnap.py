@@ -1,4 +1,5 @@
 import pandas as pd
+import csv
 import random
 from matplotlib import colormaps
 from matplotlib.colors import to_hex
@@ -63,7 +64,7 @@ df["R"], df["G"], df["B"] = zip(*valid_colors)
 df["A"] = 1
 df["VIS"] = 1
 df["IDX"] = 1
-df["LABEL"] = df["name"].apply(lambda x: f'"{x}"')
+df["LABEL"] = df["name"]
 
 # Make background (first row) invisible
 df.iloc[0, df.columns.get_loc("A")] = 0
@@ -75,5 +76,12 @@ with open(snakemake.output.lut, "w") as f:
     f.write(lut_header)
 
 df[["index", "R", "G", "B", "A", "VIS", "IDX", "LABEL"]].to_csv(
-    snakemake.output.lut, sep="\t", index=False, header=False, mode="a", quoting=3
+    snakemake.output.lut,
+    sep="\t",
+    index=False,
+    header=False,
+    mode="a",
+    quoting=csv.QUOTE_NONNUMERIC,
+    # NONE,
+    # escapechar="\\",
 )

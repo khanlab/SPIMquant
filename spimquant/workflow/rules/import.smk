@@ -188,11 +188,13 @@ rule import_dseg:
 
 rule import_lut_tsv:
     input:
-        tsv=lambda wildcards: ancient(
-            resources_path(
-                config["templates"][wildcards.template]["atlases"][wildcards.seg][
-                    "tsv"
-                ]
+        tsv=lambda wildcards: storage(
+            ancient(
+                resources_path(
+                    config["templates"][wildcards.template]["atlases"][wildcards.seg][
+                        "tsv"
+                    ]
+                )
             )
         ),
     output:
