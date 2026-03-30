@@ -120,7 +120,7 @@ rule register_mri_to_first:
         xfm_ras=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 from_=f"{mri_suffix}",
                 to=f"{mri_suffix}ref",
                 type_="ras",
@@ -152,7 +152,7 @@ rule resample_mri_to_first:
         moving=get_mri_by_index,
         xfm_ras=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             from_=f"{mri_suffix}",
             to=f"{mri_suffix}ref",
             type_="ras",
@@ -230,7 +230,7 @@ rule rigid_nlin_reg_mri_to_template:
     brain-masking if a suitable model is found/trained.
     """
     input:
-        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        template=bids(root=root, template="{template}", suffix="anat.nii.gz"),
         subject=bids(
             root=root,
             datatype="anat",
@@ -247,7 +247,7 @@ rule rigid_nlin_reg_mri_to_template:
         xfm_ras=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 from_=f"{mri_suffix}",
                 to="{template}",
                 type_="ras",
@@ -263,7 +263,7 @@ rule rigid_nlin_reg_mri_to_template:
         warp=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 from_=f"{mri_suffix}",
                 to="{template}",
                 suffix="warp.nii.gz",
@@ -277,7 +277,7 @@ rule rigid_nlin_reg_mri_to_template:
         invwarp=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 from_="{template}",
                 to=f"{mri_suffix}",
                 suffix="warp.nii.gz",
@@ -291,7 +291,7 @@ rule rigid_nlin_reg_mri_to_template:
         warped=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 space="{template}",
                 desc="deformwarped",
                 suffix=f"{mri_suffix}.nii.gz",
@@ -343,7 +343,7 @@ rule all_tune_mri_mask:
 
 rule transform_template_mask_to_mri:
     input:
-        mask=bids_tpl(
+        mask=bids(
             root=root,
             template=config["template_mri"],
             desc="brain",
@@ -358,7 +358,7 @@ rule transform_template_mask_to_mri:
         ),
         xfm_ras=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             from_=f"{mri_suffix}",
             to=config["template_mri"],
             type_="ras",
@@ -372,7 +372,7 @@ rule transform_template_mask_to_mri:
         ),
         invwarp=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             from_=config["template_mri"],
             to=f"{mri_suffix}",
             suffix="warp.nii.gz",
@@ -483,7 +483,7 @@ rule affine_nlin_reg_mri_to_spim:
         xfm_ras=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 from_=f"{mri_suffix}",
                 to="SPIM",
                 type_="ras",
@@ -500,7 +500,7 @@ rule affine_nlin_reg_mri_to_spim:
         warp=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 from_=f"{mri_suffix}",
                 to="SPIM",
                 suffix="warp.nii.gz",
@@ -515,7 +515,7 @@ rule affine_nlin_reg_mri_to_spim:
         invwarp=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 from_="SPIM",
                 to=f"{mri_suffix}",
                 suffix="warp.nii.gz",
@@ -530,7 +530,7 @@ rule affine_nlin_reg_mri_to_spim:
         linwarped=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 space="SPIM",
                 desc="linearwarped",
                 suffix=f"{mri_suffix}.nii.gz",
@@ -545,7 +545,7 @@ rule affine_nlin_reg_mri_to_spim:
         warped=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 space="SPIM",
                 desc="deformwarped",
                 suffix=f"{mri_suffix}.nii.gz",
@@ -605,7 +605,7 @@ rule compose_mri_to_spim_warp:
         ),
         xfm_ras=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             from_=f"{mri_suffix}",
             to="SPIM",
             type_="ras",
@@ -620,7 +620,7 @@ rule compose_mri_to_spim_warp:
         ),
         warp=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             from_=f"{mri_suffix}",
             to="SPIM",
             suffix="warp.nii.gz",
@@ -633,7 +633,7 @@ rule compose_mri_to_spim_warp:
         ),
         invwarp=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             from_="SPIM",
             to=f"{mri_suffix}",
             suffix="warp.nii.gz",
@@ -647,7 +647,7 @@ rule compose_mri_to_spim_warp:
     output:
         xfm_composite=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             from_=f"{mri_suffix}",
             to="SPIM",
             suffix="xfm.nii.gz",
@@ -655,7 +655,7 @@ rule compose_mri_to_spim_warp:
         ),
         xfm_composite_inv=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             from_="SPIM",
             to=f"{mri_suffix}",
             suffix="xfm.nii.gz",
@@ -679,7 +679,7 @@ rule all_tune_mri_spim_reg:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 space="SPIM",
                 desc="deformwarped",
                 suffix=f"{mri_suffix}.nii.gz",
@@ -812,7 +812,7 @@ rule mri_spim_registration_qc_report:
         ),
         warped_affine=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             space="SPIM",
             desc="linearwarped",
             suffix=f"{mri_suffix}.nii.gz",
@@ -825,7 +825,7 @@ rule mri_spim_registration_qc_report:
         ),
         warped_deform=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             space="SPIM",
             desc="deformwarped",
             suffix=f"{mri_suffix}.nii.gz",
@@ -842,8 +842,9 @@ rule mri_spim_registration_qc_report:
     output:
         report_html=bids(
             root=root,
-            datatype="anat",
-            space="SPIM",
+            datatype="xfm",
+            from_=f"{mri_suffix}",
+            to="SPIM",
             suffix="regqc.html",
             **inputs["spim"].wildcards,
         ),

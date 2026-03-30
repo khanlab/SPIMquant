@@ -15,7 +15,7 @@ platforms = ["linux-64"]
 
 [tool.pixi.feature.runtime.dependencies]
 snakemake = ">=9.5.1,<10"
-snakebids = ">=0.14.0,<0.15"
+snakebids = ">=0.15.0,<0.16"
 snakemake-storage-plugin-s3 = ">=0.3.3,<0.4"
 snakemake-storage-plugin-gcs = ">=1.1.4,<2"
 gcsfs = ">=2025.5.1,<2026"

@@ -3,7 +3,6 @@ Common utility functions for SPIMquant workflows.
 
 This module provides shared helper functions used across multiple workflow rules:
 
-- bids_tpl(): BIDS path constructor for template-specific files
 - resources_path(): Path resolver for resources directory
 - get_template_path(): Template file locator with optional cropping
 - get_template_for_reg(): Registration-specific template selector
@@ -14,12 +13,6 @@ organization following BIDS conventions.
 """
 
 from pathlib import Path
-from snakebids import bids
-
-
-def bids_tpl(root, template, **entities):
-    """bids() wrapper for files in tpl-template folder"""
-    return str(Path(bids(root=root, tpl=template)) / bids(tpl=template, **entities))
 
 
 def resources_path(path):
@@ -38,14 +31,14 @@ def get_template_path(root, template, template_crop=None):
         suffix = "anat"
 
     if template_crop is not None:
-        return bids_tpl(
+        return bids(
             root=root,
             template=template,
             desc=f"{template_crop}crop",
             suffix=f"{suffix}.nii.gz",
         )
     else:
-        return bids_tpl(root=root, template=template, suffix=f"{suffix}.nii.gz")
+        return bids(root=root, template=template, suffix=f"{suffix}.nii.gz")
 
 
 def get_template_for_reg(wildcards):
@@ -58,9 +51,7 @@ def get_template_for_reg(wildcards):
     if config.get("template_crop") is not None:
         return get_template_path(root, wildcards.template, config["template_crop"])
     else:
-        return bids_tpl(
-            root=root, template=wildcards.template, suffix=f"{suffix}.nii.gz"
-        )
+        return bids(root=root, template=wildcards.template, suffix=f"{suffix}.nii.gz")
 
 
 def get_stains_all_subjects():
@@ -79,7 +70,7 @@ def get_regionprops_parquet(wildcards):
     if do_vessels:
         return bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             desc="{desc}+vessels",
             space="{template}",
             vessels=stain_for_vessels,
@@ -89,7 +80,7 @@ def get_regionprops_parquet(wildcards):
     else:
         return bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             desc="{desc}",
             space="{template}",
             suffix="regionprops.parquet",

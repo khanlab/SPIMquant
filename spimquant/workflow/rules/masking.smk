@@ -186,7 +186,7 @@ rule init_affine_reg:
         xfm_ras=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 from_="subject",
                 to="{template}",
                 type_="ras",
@@ -198,7 +198,7 @@ rule init_affine_reg:
         warped=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 space="{template}",
                 desc="initaffinewarped",
                 suffix="SPIM.nii.gz",

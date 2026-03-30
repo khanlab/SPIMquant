@@ -17,7 +17,7 @@ rule perform_group_stats:
         segstats_tsvs=lambda wildcards: inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 seg=wildcards.seg,
                 from_=wildcards.template,
                 desc=wildcards.desc,
@@ -67,9 +67,7 @@ rule create_stats_heatmap:
             desc="{desc}",
             suffix="groupstats.tsv",
         ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     params:
         metric_columns=expand(
             "{stain}+{metric}", stain=stains_for_seg, metric=config["seg_metrics"]
@@ -109,12 +107,8 @@ rule map_groupstats_to_template_nii:
             desc="{desc}",
             suffix="groupstats.tsv",
         ),
-        dseg=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
-        ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     params:
         label_column="index",
         feature_column="{metric}_{stat}",
@@ -148,7 +142,7 @@ rule concat_subj_parquet:
         parquet_files=inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 space="{template}",
                 desc="{desc}",
                 suffix="{suffix}.parquet",
@@ -177,7 +171,7 @@ rule group_counts_per_voxel:
     """Calculate counts per voxel based on concatenated points
     in template space"""
     input:
-        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        template=bids(root=root, template="{template}", suffix="anat.nii.gz"),
         regionprops_parquet=bids(
             root=root,
             datatype="group",
@@ -208,7 +202,7 @@ rule group_coloc_counts_per_voxel:
     """Calculate counts per voxel based on concatenated coloc points
     in template space"""
     input:
-        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        template=bids(root=root, template="{template}", suffix="anat.nii.gz"),
         coloc_parquet=bids(
             root=root,
             datatype="group",
@@ -248,7 +242,7 @@ rule concat_subj_parquet_contrast:
         parquet_files=inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 space="{template}",
                 desc="{desc}",
                 suffix="{suffix}.parquet",
@@ -281,7 +275,7 @@ rule group_counts_per_voxel_contrast:
     """Calculate counts per voxel based on concatenated points
     in template space, filtered by contrast"""
     input:
-        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        template=bids(root=root, template="{template}", suffix="anat.nii.gz"),
         regionprops_parquet=bids(
             root=root,
             datatype="group",
@@ -314,7 +308,7 @@ rule group_coloc_counts_per_voxel_contrast:
     """Calculate counts per voxel based on concatenated coloc points
     in template space, filtered by contrast"""
     input:
-        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        template=bids(root=root, template="{template}", suffix="anat.nii.gz"),
         coloc_parquet=bids(
             root=root,
             datatype="group",
@@ -357,7 +351,7 @@ rule concat_subj_segstats_contrast:
         segstats_tsvs=lambda wildcards: inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 seg=wildcards.seg,
                 from_=wildcards.template,
                 desc=wildcards.desc,
@@ -410,12 +404,8 @@ rule map_groupavg_segstats_to_template_nii:
             contrast="{contrast_column}+{contrast_value}",
             suffix="groupavgsegstats.tsv",
         ),
-        dseg=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
-        ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     params:
         label_column="index",
         feature_column="{metric}",

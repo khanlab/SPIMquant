@@ -3,8 +3,15 @@ import os
 from zarrnii import ZarrNii
 from snakemake.utils import format
 from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
+import snakebids
 
-set_bids_spec("v0_11_0")
+# update v15 spec to add template entity
+spec = snakebids.paths.specs.v0_15_0()
+tpl_spec = spec[0].copy()
+tpl_spec["entity"] = "template"
+tpl_spec["tag"] = "tpl"
+spec.insert(0, tpl_spec)
+snakebids.set_bids_spec(spec)
 
 
 configfile: "config/snakebids.yml"
@@ -200,7 +207,7 @@ rule all_fieldfrac_tune:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="seg",
                 stain="{stain}",
                 level="{level}",
                 desc="otsu+k{k}i{i}",
@@ -233,9 +240,10 @@ rule all_register:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="xfm",
                 stain="{stain}",
-                space="{template}",
+                from_="SPIM",
+                to="{template}",
                 suffix="regqc.html",
                 **inputs["spim"].wildcards,
             ),
@@ -249,7 +257,7 @@ rule all_vessels:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="vessels",
                 stain="{stain}",
                 level="{level}",
                 desc="{desc}",
@@ -269,7 +277,7 @@ rule all_segment:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="featuremap",
                 seg="{seg}",
                 space="{template}",
                 desc="{desc}",
@@ -299,7 +307,7 @@ rule all_segment:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="seg",
                 stain="{stain}",
                 level="{level}",
                 desc="{desc}",
@@ -315,25 +323,7 @@ rule all_segment:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
-                stain="{stain}",
-                seg="{seg}",
-                desc="deform",
-                level="{level}",
-                from_="{template}",
-                suffix="dseg.{ext}",
-                **inputs["spim"].wildcards,
-            ),
-            stain=stains_for_seg,
-            level=config["registration_level"],
-            seg=atlas_segs,
-            template=config["template"],
-            ext=["tsv", "itksnap.txt"],
-        ),
-        inputs["spim"].expand(
-            bids(
-                root=root,
-                datatype="micr",
+                datatype="seg",
                 stain="{stain}",
                 level="{level}",
                 desc="{desc}",
@@ -347,7 +337,7 @@ rule all_segment:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="seg",
                 stain="{stain}",
                 space="{template}",
                 desc="{desc}",
@@ -358,6 +348,17 @@ rule all_segment:
             template=config["template"],
             desc=config["seg_method"],
         ),
+        expand(
+            bids(
+                root=root,
+                template="{template}",
+                seg="{seg}",
+                suffix="dseg.{ext}",
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+            ext=["tsv", "itksnap.txt"],
+        ),
 
 
 rule all_segment_coloc:
@@ -365,7 +366,7 @@ rule all_segment_coloc:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="featuremap",
                 seg="{seg}",
                 space="{template}",
                 desc="{desc}",
@@ -380,7 +381,7 @@ rule all_segment_coloc:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="seg",
                 desc="{desc}",
                 space="{template}",
                 suffix="coloccounts.nii.gz",
@@ -408,8 +409,9 @@ rule all_mri_reg:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="anat",
-                space="SPIM",
+                datatype="xfm",
+                from_=f"{mri_suffix}",
+                to="SPIM",
                 suffix="regqc.html",
                 **inputs["spim"].wildcards,
             ),
@@ -421,7 +423,7 @@ rule all_spim_patches:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="seg",
                 stain="{stain}",
                 seg="{seg}",
                 from_="{template}",
@@ -439,7 +441,7 @@ rule all_spim_patches:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="seg",
                 stain="{stain}",
                 seg="{seg}",
                 from_="{template}",
@@ -461,7 +463,7 @@ rule all_imaris_crops:
         inputs["spim"].expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="seg",
                 seg="{seg}",
                 from_="{template}",
                 level="{level}",

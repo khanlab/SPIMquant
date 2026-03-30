@@ -21,7 +21,7 @@ rule run_vesselfm:
     output:
         mask=bids(
             root=root,
-            datatype="micr",
+            datatype="vessels",
             stain="{stain}",
             level="{level}",
             desc="vesselfm",
@@ -50,7 +50,7 @@ rule signed_distance_transform:
     input:
         mask=bids(
             root=root,
-            datatype="micr",
+            datatype="vessels",
             stain="{stain}",
             level="{level}",
             desc="vesselfm",
@@ -63,7 +63,7 @@ rule signed_distance_transform:
     output:
         dist=bids(
             root=root,
-            datatype="micr",
+            datatype="vessels",
             stain="{stain}",
             level="{level}",
             desc="{desc}",

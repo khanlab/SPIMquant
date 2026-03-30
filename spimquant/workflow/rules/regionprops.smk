@@ -3,7 +3,7 @@ rule compute_filtered_regionprops:
     input:
         mask=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
@@ -20,7 +20,7 @@ rule compute_filtered_regionprops:
         regionprops_parquet=temp(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 stain="{stain}",
                 desc="{desc}",
                 suffix="regionprops.parquet",
@@ -40,7 +40,7 @@ rule transform_regionprops_to_template:
     input:
         regionprops_parquet=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             stain="{stain}",
             desc="{desc}",
             suffix="regionprops.parquet",
@@ -53,7 +53,7 @@ rule transform_regionprops_to_template:
         regionprops_transformed_parquet=temp(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 stain="{stain}",
                 desc="{desc}",
                 space="{template}",
@@ -75,7 +75,7 @@ rule aggregate_regionprops_across_stains:
         regionprops_parquets=expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 stain="{stain}",
                 desc="{desc}",
                 space="{template}",
@@ -90,7 +90,7 @@ rule aggregate_regionprops_across_stains:
     output:
         regionprops_aggregated_parquet=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             desc="{desc}",
             space="{template}",
             suffix="regionprops.parquet",
@@ -114,7 +114,7 @@ rule colocalize_regionprops:
     input:
         regionprops_parquet=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             desc="{desc}",
             space="{template}",
             suffix="regionprops.parquet",
@@ -128,7 +128,7 @@ rule colocalize_regionprops:
     output:
         coloc_parquet=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             desc="{desc}",
             space="{template}",
             suffix="coloc.parquet",
@@ -151,7 +151,7 @@ rule sample_at_vessel_sdt:
     input:
         parquet=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             desc="{desc}",
             space="{template}",
             suffix="regionprops.parquet",
@@ -159,7 +159,7 @@ rule sample_at_vessel_sdt:
         ),
         scalar=bids(
             root=root,
-            datatype="micr",
+            datatype="vessels",
             stain="{stain}",
             level=config["segmentation_level"],
             desc=config["vessel_seg_method"],
@@ -173,7 +173,7 @@ rule sample_at_vessel_sdt:
     output:
         parquet=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             desc="{desc}+vessels",
             space="{template}",
             vessels="{stain}",
