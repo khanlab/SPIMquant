@@ -20,8 +20,13 @@ nav:
       - Cloud Processing: usage/cloud.md
   - How-To Guides:
       - MRI Registration: howto/mri_registration.md
+      - Segmentation Methods: howto/segmentation.md
   - Reference:
       - CLI Reference: reference/cli_reference.md
+      - Workflow Overview: reference/workflow_overview.md
+      - Output Files: reference/outputs.md
+      - Workflow Rules: reference/rules.md
+      - Workflow DAG Visualization: workflow_visualization.md
   - Examples:
       - Sample Datasets: examples/datasets.md
   - FAQ: faq.md

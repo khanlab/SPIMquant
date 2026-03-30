@@ -2,6 +2,10 @@
 
 SPIMquant's complex workflow is broken down into functional stages for easier understanding. Each stage represents a distinct phase of processing, from data import through registration, segmentation, and quantification.
 
+!!! tip "Looking for narrative documentation?"
+    For a full description of what each stage does and the outputs it produces, see
+    [How SPIMquant Works](reference/workflow_overview.md).
+
 ## Workflow Overview
 
 The full workflow contains **40 rules** organized into **11 functional stages**:

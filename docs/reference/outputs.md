@@ -1,75 +1,409 @@
 # Output Files Reference
 
-<!-- TODO: Add comprehensive output files reference -->
+This page documents every file produced by SPIMquant, organized by the workflow stage that
+creates it.  All paths follow [BIDS](https://bids-specification.readthedocs.io/) conventions.
+The tokens `{subject}`, `{sample}`, `{stain}`, `{level}`, `{template}`, `{atlas}`, and
+`{seg_method}` are filled in at runtime based on your dataset and configuration.
 
-Reference for SPIMquant output files and formats.
+For a narrative description of what each stage does, see the
+[Workflow Overview](workflow_overview.md).
 
-## Directory Structure
+---
+
+## Directory Layout
 
 ```
-output/
-└── spimquant/
-    ├── sub-01/
-    │   └── micr/
-    │       ├── *_space-template_SPIM.nii.gz
-    │       ├── *_dseg.nii.gz
-    │       └── *_segstats.tsv
-    └── qc/
+output/                               ← --output_dir
+├── tpl-{template}/                   ← reference template & atlas files
+│   ├── tpl-{template}_anat.nii.gz
+│   ├── tpl-{template}_desc-brain_mask.nii.gz
+│   ├── tpl-{template}_seg-{atlas}_dseg.nii.gz
+│   └── tpl-{template}_seg-{atlas}_dseg.tsv
+│
+├── sub-{subject}/
+│   └── micr/                         ← all per-subject outputs
+│       ├── *_SPIM.nii.gz             ← downsampled NIfTI conversions
+│       ├── *_space-{template}_*.nii.gz  ← template-space images
+│       ├── *_mask*.nii.gz            ← brain / segmentation masks
+│       ├── *_xfm*.{txt,nii.gz}       ← registration transforms
+│       ├── *.parquet                 ← per-object region properties
+│       ├── *_segstats.tsv            ← per-region statistics
+│       └── *.html                   ← QC reports
+│
+└── group/                            ← group-level analysis outputs
+    ├── *_groupstats.tsv
+    ├── *_groupstats.png
+    └── *_groupstats.nii.gz / *_groupavg.nii.gz
 ```
 
-## Participant-Level Outputs
+---
 
-<!-- TODO: Document participant outputs -->
+## Stage 1 — Data Import
 
-### Registered Images
+### Downsampled NIfTI images
 
-`*_space-template_SPIM.nii.gz`
+Each OME-Zarr resolution level is converted to NIfTI so that Snakemake rules can use
+standard NIfTI tools.
 
-<!-- TODO: Add file format details -->
+```
+sub-{subject}/micr/
+  sub-{subject}[_ses-{session}][_sample-{sample}][_acq-{acq}]
+    _stain-{stain}_level-{level}_SPIM.nii.gz
+```
 
-### Segmentation Maps
+| Field | Description |
+|-------|-------------|
+| `stain` | Fluorescent channel (e.g., `PI`, `abeta`, `Iba1`) |
+| `level` | Resolution level from the OME-Zarr pyramid (`0` = full resolution, higher numbers = more downsampled) |
 
-`*_dseg.nii.gz`
+### Template files
 
-<!-- TODO: Add file format details -->
+```
+tpl-{template}/
+  tpl-{template}_anat.nii.gz               ← anatomy reference image
+  tpl-{template}_desc-brain_mask.nii.gz    ← binary brain mask
+  tpl-{template}_seg-{atlas}_dseg.nii.gz   ← atlas parcellation (integer labels)
+  tpl-{template}_seg-{atlas}_dseg.tsv      ← label look-up table (index, name, colour)
+  tpl-{template}_seg-{atlas}_dseg.txt      ← ITK-SNAP colour table
+```
 
-### Statistics Tables
+---
 
-`*_segstats.tsv`
+## Stage 2 — Brain Masking
 
-<!-- TODO: Add table format details -->
+### Brain mask
 
-## Group-Level Outputs
+```
+sub-{subject}/micr/
+  sub-{subject}..._stain-{stain}_level-{level}_desc-brain_mask.nii.gz
+```
 
-<!-- TODO: Document group outputs -->
+Binary mask (0/1) identifying brain tissue.  Used as input to N4 bias-field correction and
+affine registration.
 
-### Statistical Results
+---
 
-`*_groupstats.tsv`
+## Stage 3 — Template Registration
 
-<!-- TODO: Add file format details -->
+### Bias-field corrected images
 
-### Visualizations
+```
+sub-{subject}/micr/
+  sub-{subject}..._stain-{stain}_level-{level}_desc-N4_SPIM.nii.gz
+  sub-{subject}..._stain-{stain}_level-{level}_desc-N4_biasfield.nii.gz
+  sub-{subject}..._stain-{stain}_level-{level}_desc-N4masked_SPIM.nii.gz
+```
 
-`*_groupstats.png`
+| File | Description |
+|------|-------------|
+| `desc-N4_SPIM.nii.gz` | Intensity-inhomogeneity corrected SPIM volume |
+| `desc-N4_biasfield.nii.gz` | Estimated N4 bias field (smooth multiplicative field) |
+| `desc-N4masked_SPIM.nii.gz` | Bias-corrected and brain-masked SPIM (input to registration) |
 
-<!-- TODO: Add visualization details -->
+### Registration transforms
 
-### Volume Maps
+```
+sub-{subject}/micr/
+  sub-{subject}..._stain-{stain}_level-{level}_desc-affine_xfm.txt
+  sub-{subject}..._stain-{stain}_level-{level}_desc-deform_xfm.nii.gz
+  sub-{subject}..._stain-{stain}_level-{level}_desc-invdeform_xfm.nii.gz
+  sub-{subject}..._stain-{stain}_level-{level}_from-subject_to-{template}_desc-composite_xfm.nii.gz
+```
 
-`*_groupstats.nii`
+| File | Description |
+|------|-------------|
+| `desc-affine_xfm.txt` | Affine (12 DOF) registration matrix in ITK text format |
+| `desc-deform_xfm.nii.gz` | Deformable warp field: subject → template |
+| `desc-invdeform_xfm.nii.gz` | Inverse warp field: template → subject |
+| `desc-composite_xfm.nii.gz` | Composed affine + deform warp (used for applying transforms) |
 
-<!-- TODO: Add file format details -->
+### Registered images
 
-## Quality Control Outputs
+```
+sub-{subject}/micr/
+  sub-{subject}..._stain-{stain}_level-{level}_space-{template}_SPIM.nii.gz
+```
 
-<!-- TODO: Document QC outputs -->
+The SPIM volume resampled into template space.  Useful for visual overlay with the template
+anatomy and for cross-subject comparisons.
 
-## Intermediate Files
+### Atlas labels in subject space
 
-<!-- TODO: Document intermediate files -->
+```
+sub-{subject}/micr/
+  sub-{subject}..._seg-{atlas}_desc-deform_level-{level}_from-{template}_dseg.nii.gz
+```
+
+The atlas parcellation warped from template into subject space using the inverse deformation.
+This file is used for all atlas-based measurements (region properties, field fraction, counts).
+
+### Registration QC report
+
+```
+sub-{subject}/micr/
+  sub-{subject}..._stain-{stain}_space-{template}_desc-reg_SPIM.html
+```
+
+Interactive HTML report generated by [reg-vis](https://github.com/khanlab/reg-vis) showing:
+
+- Axial/coronal/sagittal overlays of SPIM on template
+- Deformation grid visualization
+- Summary of registration parameters
+
+---
+
+## Stage 4 — Pathology Segmentation
+
+### Segmentation mask
+
+```
+sub-{subject}/micr/
+  sub-{subject}..._stain-{stain}_level-{seg_level}_seg-{seg_method}_desc-cleaned_mask.ozx
+```
+
+Binary segmentation mask in OME-Zarr (`.ozx`) format.  Voxel values are **0** (background)
+or **100** (foreground), scaled so that downsampling directly yields percent occupancy.
+
+!!! note
+    The `.ozx` extension is a renamed `.ome.zarr.zip` (Zarr zipstore).  It can be opened
+    with any OME-Zarr-compatible viewer such as napari or ITK-SNAP.
+
+### Field fraction NIfTI
+
+```
+sub-{subject}/micr/
+  sub-{subject}..._stain-{stain}_level-{reg_level}_fieldfrac.nii.gz
+  sub-{subject}..._stain-{stain}_level-{reg_level}_space-{template}_fieldfrac.nii.gz
+```
+
+The segmentation mask downsampled to the registration resolution.  Values represent the
+percentage of each voxel occupied by the pathology signal (0–100%).  The
+`space-{template}` variant is the field fraction warped into template space.
+
+---
+
+## Stage 5 — Region Properties
+
+### Per-object measurement tables
+
+```
+sub-{subject}/micr/
+  sub-{subject}..._stain-{stain}_seg-{atlas}_desc-filtered_regionprops.parquet
+  sub-{subject}..._stain-{stain}_seg-{atlas}_space-{template}_regionprops.parquet
+```
+
+[Apache Parquet](https://parquet.apache.org/) tables (one row per detected object) with
+columns:
+
+| Column | Description |
+|--------|-------------|
+| `centroid-0`, `centroid-1`, `centroid-2` | Centroid voxel coordinates (z, y, x) |
+| `area` | Object volume in voxels |
+| `atlas_roi` | Atlas region integer label containing this object |
+| `atlas_roi_name` | Human-readable atlas region name |
+
+The `space-{template}` variant has centroid coordinates in template space.
+
+### Colocalization table
+
+```
+sub-{subject}/micr/
+  sub-{subject}..._seg-{atlas}_desc-coloc_space-{template}_regionprops.parquet
+```
+
+Produced when multiple segmentation stains are present.  Contains matched object pairs
+from two different stains with pairwise distance and overlap measurements.
+
+### Count-per-voxel NIfTI
+
+```
+sub-{subject}/micr/
+  sub-{subject}..._stain-{stain}_level-{level}_desc-filtered_count.nii.gz
+  sub-{subject}..._stain-{stain}_space-{template}_level-{level}_count.nii.gz
+```
+
+Volumetric density maps where each voxel value is the number of detected objects whose
+centroid falls in that voxel at the given resolution.  Useful for visualizing spatial
+distributions of pathology.
+
+---
+
+## Stage 6 — Atlas Statistics
+
+### Per-stain segmentation statistics
+
+```
+sub-{subject}/micr/
+  sub-{subject}..._stain-{stain}_seg-{atlas}_from-{template}_desc-{atlas}_segstats.tsv
+```
+
+TSV file (one row per atlas region) with columns:
+
+| Column | Description |
+|--------|-------------|
+| `index` | Integer atlas region label |
+| `name` | Region name |
+| `count` | Number of detected objects in the region |
+| `density` | Objects per mm³ of brain tissue |
+| `fieldfrac` | Mean field fraction (%) |
+| `volume` | Total volume of pathology voxels (mm³) |
+| `nvoxels` | Total number of pathology voxels |
+
+### Merged statistics (all stains + colocalization)
+
+```
+sub-{subject}/micr/
+  sub-{subject}..._seg-{atlas}_from-{template}_desc-{atlas}_mergedsegstats.tsv
+```
+
+All per-stain segstats tables merged into one wide-format TSV, with stain names appended as
+column suffixes (e.g., `count_abeta`, `density_Iba1`).  When multiple stains are present,
+colocalization columns are also included (`overlapratio`, `distance_coloc`, etc.).
+
+This is the primary input for group-level statistical analysis.
+
+---
+
+## Stage 7 — Heatmaps
+
+### Per-subject metric maps
+
+```
+sub-{subject}/micr/
+  sub-{subject}..._space-{template}_seg-{atlas}_desc-{atlas}_{metric}.nii.gz
+  sub-{subject}..._level-{level}_from-{template}_seg-{atlas}_desc-{atlas}_{metric}.nii.gz
+```
+
+NIfTI volumes where each voxel belonging to atlas region *R* is assigned the value of
+`{metric}` for region *R* from the segstats TSV.  Available metrics: `density`, `fieldfrac`,
+`count`, `volume`, `nvoxels`.  The `space-{template}` variant is in template space; the
+`level-{level}` variant is in subject space.
+
+---
+
+## Stage 8 — Group Statistics
+
+All group outputs are written to the `group/` subdirectory of the output folder.
+
+### Group statistics table
+
+```
+group/
+  seg-{atlas}_from-{template}_desc-{atlas}_groupstats.tsv
+```
+
+One row per atlas region, with statistical comparison results:
+
+| Column | Description |
+|--------|-------------|
+| `index` | Integer atlas region label |
+| `name` | Region name |
+| `{metric}_{contrast0}_mean` | Mean value in contrast group 0 |
+| `{metric}_{contrast1}_mean` | Mean value in contrast group 1 |
+| `{metric}_tstat` | Two-sample t-statistic |
+| `{metric}_pval` | Uncorrected p-value |
+| `{metric}_cohensd` | Cohen's *d* effect size |
+
+### Statistical heatmap
+
+```
+group/
+  seg-{atlas}_from-{template}_desc-{atlas}_groupstats.png
+```
+
+PNG figure with a heatmap of statistical results (t-statistics and p-values) for each
+atlas region × metric combination, with regions sorted by effect size.
+
+### Statistical brain maps (NIfTI)
+
+```
+group/
+  seg-{atlas}_space-{template}_desc-{atlas}_{metric}_{stat}.nii.gz
+```
+
+Template-space NIfTI volumes painted with the group-level statistic for each atlas region.
+One file per metric × statistic combination.  `{stat}` is one of: `tstat`, `pval`,
+`cohensd`.
+
+### Group-averaged regional heatmaps
+
+```
+group/
+  seg-{atlas}_from-{template}_desc-{atlas}_contrast-{column}+{value}_groupavgsegstats.tsv
+  seg-{atlas}_space-{template}_desc-{atlas}_{metric}_contrast-{column}+{value}_groupavg.nii.gz
+```
+
+Per-contrast average of the regional metrics, stored as both a TSV table and a
+template-space NIfTI heatmap.  Useful for comparing the spatial distribution of pathology
+between experimental groups.
+
+### Group voxel-wise density maps
+
+```
+group/
+  space-{template}_level-{level}_desc-{atlas}_{stain}+count.nii.gz
+  space-{template}_level-{level}_desc-{atlas}_contrast-{col}+{val}_{stain}+count.nii.gz
+```
+
+Voxel-wise density maps aggregated across all subjects (or a single contrast group).
+Each voxel value is the total number of detected pathology objects from all subjects whose
+template-space centroid falls in that voxel.
+
+---
+
+## Optional Outputs
+
+### Vessel segmentation (`vessels.smk`)
+
+```
+sub-{subject}/micr/
+  sub-{subject}..._stain-{stain}_level-{level}_desc-vesselfm_mask.ozx
+  sub-{subject}..._stain-{stain}_level-{level}_desc-*_dist.ozx
+```
+
+| File | Description |
+|------|-------------|
+| `desc-vesselfm_mask.ozx` | Binary vessel segmentation mask from VesselFM |
+| `desc-*_dist.ozx` | Signed distance transform from vessel mask (negative inside, positive outside) |
+
+### Patch extractions (`patches.smk`)
+
+```
+sub-{subject}/micr/
+  sub-{subject}..._stain-{stain}_seg-{atlas}_from-{template}_level-{level}_desc-raw_SPIM.patches/
+  sub-{subject}..._stain-{stain}_seg-{atlas}_from-{template}_level-{level}_desc-cleaned_mask.patches/
+  sub-{subject}..._stain-{stain}_seg-{atlas}_from-{template}_level-{level}_desc-corrected*_SPIM.patches/
+  sub-{subject}..._seg-{atlas}_from-{template}_level-{level}_desc-crop_SPIM.imaris/
+```
+
+| Directory | Description |
+|-----------|-------------|
+| `*_SPIM.patches/` | 3D raw SPIM intensity patches (NIfTI files, one per patch) |
+| `*_mask.patches/` | Corresponding segmentation mask patches |
+| `*_corrected*_SPIM.patches/` | Bias-corrected SPIM patches |
+| `*_SPIM.imaris/` | Full-resolution atlas region crops in Imaris (`.ims`) format |
+
+---
+
+## File Format Summary
+
+| Extension | Format | Description |
+|-----------|--------|-------------|
+| `.nii.gz` | NIfTI-1 (gzip) | Standard neuroimaging volumetric images |
+| `.ozx` | OME-Zarr zipstore | High-res multi-scale 3D arrays (rename of `.ome.zarr.zip`) |
+| `.ome.zarr` | OME-Zarr (directory) | Multi-scale 3D Zarr arrays (intermediate, in `work/` dir) |
+| `.parquet` | Apache Parquet | Columnar tabular data (per-object region properties) |
+| `.tsv` | Tab-separated values | Per-region statistics, label tables |
+| `.txt` | ITK-SNAP LUT | Colour look-up table for visualization |
+| `.html` | HTML | Interactive QC registration reports |
+| `.png` | PNG image | Group statistics heatmaps |
+| `.patches/` | Directory of NIfTI | 3D SPIM/mask patches for ML or review |
+| `.imaris/` | Directory of IMS | Imaris-format high-resolution region crops |
+
+---
 
 ## Next Steps
 
-- [API Documentation](api.md)
-- [Configuration Options](config.md)
+- [Workflow Overview](workflow_overview.md): Understand what each stage produces and why
+- [Workflow Rules Reference](rules.md): Individual Snakemake rules
+- [Configuration Options](config.md): How to control outputs via configuration
