@@ -559,8 +559,8 @@ rule deform_spim_nii_to_template_nii:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
-        runtime=15,
+        mem_mb=32000,
+        runtime=30,
     conda:
         "../envs/ants.yaml"
     shell:
@@ -603,8 +603,8 @@ rule deform_template_dseg_to_subject_nii:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
-        runtime=15,
+        mem_mb=32000,
+        runtime=30,
     conda:
         "../envs/ants.yaml"
     shell:

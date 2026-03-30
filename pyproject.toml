@@ -51,11 +51,10 @@ omegaconf = ">=2.3.0,<3"
 [tool.pixi.pypi-dependencies]
 spimquant = { path = ".", editable = true }
 ngff-zarr = { version = ">=0.19.1", extras = ["cli","dask-image","itk","tensorstore","validate"] }
-zarrnii = ">=0.16.3-alpha2-dev0,<0.16.4"
+zarrnii = ">=0.17.1-a1,<0.18.0-a1"
 #zarrnii = { git = "https://github.com/khanlab/zarrnii", rev = "main",  editable = true }
 #zarrnii = { path = "./zarrnii", editable = true }
-zarrnii_plugin_api = ">=0.16.1a2-dev"
-vesselfm = { git = "https://github.com/khanlab/vesselfm", rev = "main" }
+vesselfm = { git = "https://github.com/khanlab/vesselfm", rev = "504baab" }
 h5py = ">=3.14.0"
 simpleitk = ">=2.4.0"
 pylibtiff = ">=0.7.0"
