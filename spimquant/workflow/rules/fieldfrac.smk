@@ -10,7 +10,7 @@ rule fieldfrac:
     input:
         mask=bids(
             root=root,
-            datatype="micr",
+            datatype="{datatype}",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
@@ -23,7 +23,7 @@ rule fieldfrac:
     output:
         fieldfrac_nii=bids(
             root=root,
-            datatype="micr",
+            datatype="{datatype,seg|vessels}",
             stain="{stain}",
             level="{level}",
             desc="{desc}",
@@ -42,7 +42,7 @@ rule map_fieldfrac_img_to_seg_tsv:
     input:
         img=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="{desc}",
@@ -51,22 +51,19 @@ rule map_fieldfrac_img_to_seg_tsv:
         ),
         dseg=bids(
             root=root,
-            datatype="micr",
+            datatype="parc",
             seg="{seg}",
-            desc="deform",
             level="{level}",
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     output:
         tsv=temp(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 seg="{seg}",
                 from_="{template}",
                 stain="{stain}",

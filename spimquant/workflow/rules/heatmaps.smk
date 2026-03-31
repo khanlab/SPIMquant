@@ -4,26 +4,22 @@ rule map_segstats_tsv_dseg_to_template_nii:
     input:
         tsv=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             seg="{seg}",
             from_="{template}",
             desc="{desc}",
             suffix="mergedsegstats.tsv",
             **inputs["spim"].wildcards,
         ),
-        dseg=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
-        ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     params:
         label_column="index",
         feature_column="{suffix}",
     output:
         nii=bids(
             root=root,
-            datatype="micr",
+            datatype="featuremap",
             seg="{seg}",
             space="{template}",
             desc="{desc}",
@@ -43,7 +39,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
     input:
         tsv=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             seg="{seg}",
             from_="{template}",
             desc="{desc}",
@@ -52,24 +48,21 @@ rule map_segstats_tsv_dseg_to_subject_nii:
         ),
         dseg=bids(
             root=root,
-            datatype="micr",
+            datatype="parc",
             seg="{seg}",
-            desc="deform",
             level="{level}",
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     params:
         label_column="index",
         feature_column="{suffix}",
     output:
         nii=bids(
             root=root,
-            datatype="micr",
+            datatype="featuremap",
             seg="{seg}",
             level="{level}",
             from_="{template}",
@@ -89,7 +82,7 @@ rule deform_fieldfrac_nii_to_template_nii:
     input:
         flo=bids(
             root=root,
-            datatype="micr",
+            datatype="{datatype}",
             stain="{stain}",
             level="{level}",
             desc="{desc}",
@@ -101,7 +94,7 @@ rule deform_fieldfrac_nii_to_template_nii:
     output:
         nii=bids(
             root=root,
-            datatype="micr",
+            datatype="{datatype,seg|vessels}",
             stain="{stain}",
             level="{level}",
             desc="{desc}",

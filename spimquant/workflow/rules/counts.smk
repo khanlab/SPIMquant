@@ -4,7 +4,7 @@ rule counts_per_voxel:
         ref_spim=inputs["spim"].path,
         regionprops_parquet=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             stain="{stain}",
             desc="{desc}",
             suffix="regionprops.parquet",
@@ -16,7 +16,7 @@ rule counts_per_voxel:
     output:
         counts_nii=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             level="{level}",
             stain="{stain}",
             desc="{desc}",
@@ -35,10 +35,10 @@ rule counts_per_voxel_template:
     """Calculate counts per voxel based on points
     in template space"""
     input:
-        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        template=bids(root=root, template="{template}", suffix="anat.nii.gz"),
         regionprops_parquet=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             space="{template}",
             desc="{desc}",
             suffix="regionprops.parquet",
@@ -49,7 +49,7 @@ rule counts_per_voxel_template:
     output:
         counts_nii=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             space="{template}",
             desc="{desc}",
@@ -68,10 +68,10 @@ rule coloc_per_voxel_template:
     """Calculate coloc counts per voxel based on points
     in template space"""
     input:
-        template=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        template=bids(root=root, template="{template}", suffix="anat.nii.gz"),
         coloc_parquet=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             space="{template}",
             desc="{desc}",
             suffix="coloc.parquet",
@@ -82,7 +82,7 @@ rule coloc_per_voxel_template:
     output:
         counts_nii=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             space="{template}",
             desc="{desc}",
             suffix="coloccounts.nii.gz",

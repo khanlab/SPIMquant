@@ -35,7 +35,7 @@ rule gaussian_biasfield:
             directory(
                 bids(
                     root=work,
-                    datatype="micr",
+                    datatype="seg",
                     stain="{stain}",
                     level="{level}",
                     desc="correctedgaussian",
@@ -49,7 +49,7 @@ rule gaussian_biasfield:
             directory(
                 bids(
                     root=work,
-                    datatype="micr",
+                    datatype="seg",
                     stain="{stain}",
                     level="{level}",
                     desc="gaussian",
@@ -82,7 +82,7 @@ rule n4_biasfield:
             directory(
                 bids(
                     root=work,
-                    datatype="micr",
+                    datatype="seg",
                     stain="{stain}",
                     level="{level}",
                     desc="correctedn4",
@@ -111,7 +111,7 @@ rule multiotsu:
     input:
         corrected=bids(
             root=work,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
@@ -127,7 +127,7 @@ rule multiotsu:
     output:
         mask=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
@@ -136,7 +136,7 @@ rule multiotsu:
         ),
         thresholds_png=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
@@ -161,7 +161,7 @@ rule threshold:
     input:
         corrected=bids(
             root=work,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
@@ -174,7 +174,7 @@ rule threshold:
     output:
         mask=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="th{threshold,[0-9]+}",
@@ -199,7 +199,7 @@ rule clean_segmentation:
     input:
         mask=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="{desc}",
@@ -213,7 +213,7 @@ rule clean_segmentation:
     output:
         exclude_mask=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="{desc}+cleaned",
@@ -222,7 +222,7 @@ rule clean_segmentation:
         ),
         cleaned_mask=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="{desc}+cleaned",
@@ -253,7 +253,7 @@ rule deform_negative_mask_to_subject_nii:
     output:
         mask=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             desc="negative",
             level="{level}",
             from_="{template}",

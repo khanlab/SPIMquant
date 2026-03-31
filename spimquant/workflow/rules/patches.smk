@@ -34,17 +34,14 @@ rule create_spim_patches:
         spim=inputs["spim"].path,
         dseg=bids(
             root=root,
-            datatype="micr",
+            datatype="parc",
             seg="{seg}",
-            desc="deform",
             level=config["registration_level"],
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     params:
         patch_size=config.get("patch_size", [256, 256, 256]),
         n_patches=config.get("n_patches_per_label", 10),
@@ -84,7 +81,7 @@ rule create_mask_patches:
     input:
         mask=bids(
             root=root,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
@@ -93,17 +90,14 @@ rule create_mask_patches:
         ),
         dseg=bids(
             root=root,
-            datatype="micr",
+            datatype="parc",
             seg="{seg}",
-            desc="deform",
             level=config["registration_level"],
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     params:
         patch_size=config.get("patch_size", [256, 256, 256]),
         n_patches=config.get("n_patches_per_label", 10),
@@ -115,7 +109,7 @@ rule create_mask_patches:
         patches_dir=directory(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="seg",
                 stain="{stain}",
                 seg="{seg}",
                 from_="{template}",
@@ -143,7 +137,7 @@ rule create_corrected_spim_patches:
     input:
         corrected=bids(
             root=work,
-            datatype="micr",
+            datatype="seg",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="corrected{corrmethod}",
@@ -152,17 +146,14 @@ rule create_corrected_spim_patches:
         ),
         dseg=bids(
             root=root,
-            datatype="micr",
+            datatype="parc",
             seg="{seg}",
-            desc="deform",
             level=config["registration_level"],
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     params:
         patch_size=config.get("patch_size", [256, 256, 256]),
         n_patches=config.get("n_patches_per_label", 10),
@@ -174,7 +165,7 @@ rule create_corrected_spim_patches:
         patches_dir=directory(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="seg",
                 stain="{stain}",
                 seg="{seg}",
                 from_="{template}",
@@ -203,17 +194,14 @@ rule create_imaris_crops:
         spim=inputs["spim"].path,
         dseg=bids(
             root=root,
-            datatype="micr",
+            datatype="parc",
             seg="{seg}",
-            desc="deform",
             level=config["registration_level"],
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     params:
         crop_labels=config.get("crop_labels", None),
         hires_level=0,  # input is the raw data
@@ -222,7 +210,7 @@ rule create_imaris_crops:
         crops_dir=directory(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="seg",
                 seg="{seg}",
                 from_="{template}",
                 level="{level}",

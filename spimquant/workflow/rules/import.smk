@@ -72,13 +72,13 @@ rule import_template_anat:
             ancient(resources_path(config["templates"][wildcards.template]["anat"]))
         ),
     output:
-        anat=bids_tpl(root=root, template="{template}", suffix="anat.nii.gz"),
+        anat=bids(root=root, template="{template}", suffix="anat.nii.gz"),
     threads: 1
     resources:
         mem_mb=1500,
         runtime=15,
     log:
-        bids_tpl(
+        bids(
             root="logs",
             datatype="import_anat",
             template="{template}",
@@ -102,15 +102,13 @@ rule import_template_spim:
             )
         ),
     output:
-        anat=bids_tpl(
-            root=root, template="{template}", suffix=f"{stain_for_reg}.nii.gz"
-        ),
+        anat=bids(root=root, template="{template}", suffix=f"{stain_for_reg}.nii.gz"),
     threads: 1
     resources:
         mem_mb=1500,
         runtime=15,
     log:
-        bids_tpl(
+        bids(
             root="logs",
             datatype=f"import_template_spim_{stain_for_reg}",
             template="{template}",
@@ -126,15 +124,13 @@ rule import_mask:
             ancient(resources_path(config["templates"][wildcards.template]["mask"]))
         ),
     output:
-        mask=bids_tpl(
-            root=root, template="{template}", desc="brain", suffix="mask.nii.gz"
-        ),
+        mask=bids(root=root, template="{template}", desc="brain", suffix="mask.nii.gz"),
     threads: 1
     resources:
         mem_mb=1500,
         runtime=15,
     log:
-        bids_tpl(
+        bids(
             root="logs",
             datatype="import_mask",
             template="{template}",
@@ -175,9 +171,7 @@ rule import_dseg:
             )
         ),
     output:
-        dseg=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
-        ),
+        dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
     threads: 1
     resources:
         mem_mb=1500,
@@ -198,7 +192,7 @@ rule import_lut_tsv:
             )
         ),
     output:
-        tsv=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
+        tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     threads: 1
     resources:
         mem_mb=1500,
@@ -211,7 +205,7 @@ rule import_DSURQE_tsv:
     input:
         csv=storage(config["templates"]["DSURQE"]["atlases"]["all"]["custom_csv"]),
     output:
-        tsv=bids_tpl(root=root, template="DSURQE", seg="all", suffix="dseg.tsv"),
+        tsv=bids(root=root, template="DSURQE", seg="all", suffix="dseg.tsv"),
     threads: 1
     resources:
         mem_mb=1500,

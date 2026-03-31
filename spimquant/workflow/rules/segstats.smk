@@ -4,23 +4,20 @@ rule map_regionprops_to_atlas_rois:
         regionprops_parquet=get_regionprops_parquet,
         dseg=bids(
             root=root,
-            datatype="micr",
+            datatype="parc",
             seg="{seg}",
-            desc="deform",
             level="{level}",
             from_="{template}",
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     params:
         coord_column_names=config["coord_column_names"],
     output:
         regionprops_tsv=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
@@ -32,7 +29,7 @@ rule map_regionprops_to_atlas_rois:
         counts_tsv=temp(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 seg="{seg}",
                 from_="{template}",
                 stain="{stain}",
@@ -54,25 +51,21 @@ rule map_coloc_to_atlas_rois:
     input:
         coloc_parquet=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             space="{template}",
             desc="{desc}",
             suffix="coloc.parquet",
             **inputs["spim"].wildcards,
         ),
-        dseg=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
-        ),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
-        ),
+        dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     params:
         coord_column_names=["template_coloc_x", "template_coloc_y", "template_coloc_z"],
     output:
         coloc_tsv=temp(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 seg="{seg}",
                 from_="{template}",
                 desc="{desc}",
@@ -83,7 +76,7 @@ rule map_coloc_to_atlas_rois:
         counts_tsv=temp(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 seg="{seg}",
                 from_="{template}",
                 desc="{desc}",
@@ -103,7 +96,7 @@ rule merge_into_segstats_tsv:
     input:
         regionprops_tsv=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
@@ -114,7 +107,7 @@ rule merge_into_segstats_tsv:
         ),
         counts_tsv=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
@@ -125,7 +118,7 @@ rule merge_into_segstats_tsv:
         ),
         fieldfrac_tsv=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             seg="{seg}",
             from_="{template}",
             stain="{stain}",
@@ -138,7 +131,7 @@ rule merge_into_segstats_tsv:
         tsv=temp(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 seg="{seg}",
                 from_="{template}",
                 stain="{stain}",
@@ -161,7 +154,7 @@ rule merge_into_colocsegstats_tsv:
     input:
         coloc_tsv=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             seg="{seg}",
             from_="{template}",
             desc="{desc}",
@@ -170,7 +163,7 @@ rule merge_into_colocsegstats_tsv:
         ),
         counts_tsv=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             seg="{seg}",
             from_="{template}",
             desc="{desc}",
@@ -179,7 +172,7 @@ rule merge_into_colocsegstats_tsv:
         ),
         fieldfrac_tsv=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             seg="{seg}",
             from_="{template}",
             stain=stains_for_seg[0],
@@ -194,7 +187,7 @@ rule merge_into_colocsegstats_tsv:
         tsv=temp(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 seg="{seg}",
                 from_="{template}",
                 desc="{desc}",
@@ -218,7 +211,7 @@ def get_coloc_tsv_input_kwargs():
         return {
             "coloc_tsv": bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 seg="{seg}",
                 from_="{template}",
                 desc="{desc}",
@@ -234,7 +227,7 @@ rule merge_indiv_and_coloc_segstats_tsv:
         indiv_tsvs=expand(
             bids(
                 root=root,
-                datatype="micr",
+                datatype="tabular",
                 seg="{seg}",
                 from_="{template}",
                 stain="{stain}",
@@ -251,7 +244,7 @@ rule merge_indiv_and_coloc_segstats_tsv:
     output:
         merged_tsv=bids(
             root=root,
-            datatype="micr",
+            datatype="tabular",
             seg="{seg}",
             from_="{template}",
             desc="{desc}",

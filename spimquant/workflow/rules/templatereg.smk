@@ -127,9 +127,9 @@ rule crop_template:
     to the specified hemisphere region.
     """
     input:
-        template=bids_tpl(root=root, template="{template}", suffix="{suffix}.nii.gz"),
+        template=bids(root=root, template="{template}", suffix="{suffix}.nii.gz"),
     output:
-        cropped=bids_tpl(
+        cropped=bids(
             root=root,
             template="{template}",
             desc="{hemisphere}crop",
@@ -169,7 +169,7 @@ rule affine_reg:
         xfm_ras=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 from_="subject",
                 to="{template}",
                 type_="ras",
@@ -181,7 +181,7 @@ rule affine_reg:
         warped=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 space="{template}",
                 stain=stain_for_reg,
                 desc="affinewarped",
@@ -218,7 +218,7 @@ rule convert_ras_to_itk:
     input:
         xfm_ras=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             from_="subject",
             to="{template}",
             type_="ras",
@@ -230,7 +230,7 @@ rule convert_ras_to_itk:
         xfm_itk=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 from_="subject",
                 to="{template}",
                 type_="itk",
@@ -277,7 +277,7 @@ rule deform_reg:
         warp=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 from_="subject",
                 to="{template}",
                 suffix="warp.nii.gz",
@@ -287,7 +287,7 @@ rule deform_reg:
         invwarp=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 from_="{template}",
                 to="subject",
                 suffix="warp.nii.gz",
@@ -297,7 +297,7 @@ rule deform_reg:
         warped=temp(
             bids(
                 root=root,
-                datatype="warps",
+                datatype="xfm",
                 space="{template}",
                 stain=stain_for_reg,
                 desc="deformwarped",
@@ -351,7 +351,7 @@ rule compose_subject_to_template_warp:
     output:
         xfm_composite=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             from_="subject",
             to="{template}",
             suffix="xfm.nii.gz",
@@ -359,7 +359,7 @@ rule compose_subject_to_template_warp:
         ),
         xfm_composite_inv=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             from_="{template}",
             to="subject",
             suffix="xfm.nii.gz",
@@ -383,10 +383,8 @@ rule compose_subject_to_template_warp:
 rule resample_labels_to_zarr:
     """TODO: add required OME metadata"""
     input:
-        dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
-        label_tsv=bids_tpl(
-            root=root, template="{template}", desc="LR", suffix="dseg.tsv"
-        ),
+        dseg=bids(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        label_tsv=bids(root=root, template="{template}", desc="LR", suffix="dseg.tsv"),
         xfm_ras=rules.affine_reg.output.xfm_ras,
         zarr_zip=inputs["spim"].path,
     params:
@@ -586,16 +584,13 @@ rule deform_template_dseg_to_subject_nii:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        dseg=bids_tpl(
-            root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
-        ),
+        dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
         xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
     output:
         dseg=bids(
             root=root,
-            datatype="micr",
+            datatype="parc",
             seg="{seg}",
-            desc="deform",
             level="{level}",
             from_="{template}",
             suffix="dseg.nii.gz",
@@ -614,34 +609,13 @@ rule deform_template_dseg_to_subject_nii:
         " -r {input.ref} -t {input.xfm_composite_inv}"
 
 
-rule copy_template_dseg_tsv:
-    input:
-        dseg=bids_tpl(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    output:
-        dseg=bids(
-            root=root,
-            datatype="micr",
-            seg="{seg}",
-            desc="deform",
-            level="{level}",
-            stain="{stain}",
-            from_="{template}",
-            suffix="dseg.tsv",
-            **inputs["spim"].wildcards,
-        ),
-    threads: 1
-    localrule: True
-    shell:
-        "cp {input} {output}"
-
-
 """ this rule needs updating - use atlas/seg wildcard and proper script
 rule deform_transform_labels_to_subj:
     input:
         ref_ome_zarr=inputs["spim"].path,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         invwarp_nii=rules.deform_reg.output.invwarp,
-        flo_nii=bids_tpl(
+        flo_nii=bids(
             root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"
         ),
     output:
@@ -661,7 +635,7 @@ rule deform_transform_labels_to_subj:
 
 rule transform_labels_to_zoomed_template:
     input:
-        dseg=bids_tpl(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
+        dseg=bids(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
         ref=bids(
             root=root,
             datatype="micr",
@@ -707,7 +681,7 @@ rule registration_qc_report:
         ),
         warped_affine=bids(
             root=root,
-            datatype="warps",
+            datatype="xfm",
             space="{template}",
             stain="{stain}",
             desc="affinewarped",
@@ -724,7 +698,7 @@ rule registration_qc_report:
             **inputs["spim"].wildcards,
         ),
         warp=rules.compose_subject_to_template_warp.output.xfm_composite,
-        dseg=lambda wildcards: bids_tpl(
+        dseg=lambda wildcards: bids(
             root=root,
             template=wildcards.template,
             seg=list(atlas_segs)[0],
@@ -733,9 +707,10 @@ rule registration_qc_report:
     output:
         report_html=bids(
             root=root,
-            datatype="micr",
+            datatype="xfm",
             stain="{stain}",
-            space="{template}",
+            from_="SPIM",
+            to="{template}",
             suffix="regqc.html",
             **inputs["spim"].wildcards,
         ),
