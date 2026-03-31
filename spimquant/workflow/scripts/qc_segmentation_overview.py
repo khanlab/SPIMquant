@@ -5,6 +5,9 @@ orientations (axial, coronal, sagittal), each with the segmentation
 field-fraction overlaid on the SPIM background image, plus a
 max-intensity projection (MIP) column for each orientation.
 
+Voxel dimensions from the NIfTI header are used to preserve the correct
+physical aspect ratio in each panel.
+
 This is a Snakemake script that expects the ``snakemake`` object to be
 available, which is automatically provided when executed as part of a
 Snakemake workflow.
@@ -43,13 +46,35 @@ def _match_shape(source, target_shape):
     return zoom(source, factors, order=1)
 
 
+def _slice_aspect(zooms, step_axis):
+    """Compute imshow aspect ratio for a slice through *step_axis*.
+
+    NIfTI data is indexed (x, y, z) and ``np.rot90`` is applied before
+    display, so the displayed image rows and columns are:
+
+    - step_axis=2 (Z-slice): rot90 of data[:, :, z] → rows=y, cols=x  → dy/dx
+    - step_axis=1 (Y-slice): rot90 of data[:, y, :] → rows=z, cols=x  → dz/dx
+    - step_axis=0 (X-slice): rot90 of data[x, :, :] → rows=z, cols=y  → dz/dy
+    """
+    dx, dy, dz = float(zooms[0]), float(zooms[1]), float(zooms[2])
+    if step_axis == 2:
+        return dy / dx
+    if step_axis == 1:
+        return dz / dx
+    return dz / dy  # step_axis == 0
+
+
 def main():
     stain = snakemake.wildcards.stain
     desc = snakemake.wildcards.desc
     subject = snakemake.wildcards.subject
 
-    spim_data = nib.load(snakemake.input.spim).get_fdata()
+    spim_nib = nib.load(snakemake.input.spim)
+    spim_data = spim_nib.get_fdata()
     ff_data = nib.load(snakemake.input.fieldfrac).get_fdata()
+
+    # Voxel dimensions (mm) for physical aspect-ratio correction
+    zooms = spim_nib.header.get_zooms()
 
     # Bring field-fraction image to the same voxel grid as SPIM
     ff_data = _match_shape(ff_data, spim_data.shape)
@@ -72,6 +97,7 @@ def main():
     )
 
     for row, (orient_name, ax_idx) in enumerate(zip(orient_labels, step_axes)):
+        aspect = _slice_aspect(zooms, ax_idx)
         slice_indices = _sample_slices(spim_data.shape[ax_idx], n_slices)
 
         for col, sl in enumerate(slice_indices):
@@ -81,9 +107,9 @@ def main():
             ff_sl = np.rot90(ff_norm[tuple(idx)])
 
             ax = axes[row, col]
-            ax.imshow(spim_sl, cmap="gray", vmin=0, vmax=1, aspect="auto")
+            ax.imshow(spim_sl, cmap="gray", vmin=0, vmax=1, aspect=aspect)
             ff_masked = np.ma.masked_where(ff_sl < 0.01, ff_sl)
-            ax.imshow(ff_masked, cmap="hot", alpha=0.6, vmin=0, vmax=1, aspect="auto")
+            ax.imshow(ff_masked, cmap="hot", alpha=0.6, vmin=0, vmax=1, aspect=aspect)
             ax.set_xticks([])
             ax.set_yticks([])
             if col == 0:
@@ -94,9 +120,9 @@ def main():
         ax = axes[row, n_slices]
         mip_spim = np.rot90(np.max(spim_norm, axis=ax_idx))
         mip_ff = np.rot90(np.max(ff_norm, axis=ax_idx))
-        ax.imshow(mip_spim, cmap="gray", vmin=0, vmax=1, aspect="auto")
+        ax.imshow(mip_spim, cmap="gray", vmin=0, vmax=1, aspect=aspect)
         mip_ff_masked = np.ma.masked_where(mip_ff < 0.01, mip_ff)
-        ax.imshow(mip_ff_masked, cmap="hot", alpha=0.6, vmin=0, vmax=1, aspect="auto")
+        ax.imshow(mip_ff_masked, cmap="hot", alpha=0.6, vmin=0, vmax=1, aspect=aspect)
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_title("MIP", fontsize=9)

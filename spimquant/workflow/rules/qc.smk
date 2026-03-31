@@ -7,8 +7,10 @@ This module produces PNG quality-control figures covering:
    - Cumulative distribution and saturation/clip fraction
 
 2. Segmentation overview figures
-   - Slice montages (axial, coronal, sagittal) with field-fraction overlay
+   - Slice montages (axial, coronal, sagittal) with field-fraction overlay,
+     aspect ratio corrected from NIfTI voxel dimensions
    - Max-intensity projection (MIP) with overlay
+   - Zoomed ROI montage: per-atlas-region crops with overlay detail
 
 3. Spatial QC / coverage
    - Z-profile of mean signal intensity and segmented field fraction
@@ -19,6 +21,8 @@ This module produces PNG quality-control figures covering:
 
 5. Per-ROI summaries (subject level)
    - Top-regions bar plots for field fraction, count, and density
+
+Rules 2 and the ROI zoom are also generated for vessel segmentations.
 
 All outputs are written to the ``qc`` datatype directory for each subject.
 """
@@ -60,8 +64,10 @@ rule qc_segmentation_overview:
 
 Displays sample slices in axial, coronal, and sagittal orientations with
 the segmentation field fraction overlaid on the SPIM background, and a
-max-intensity projection column for each orientation.  Useful for quickly
-identifying misregistration, segmentation artefacts, or coverage gaps.
+max-intensity projection column for each orientation.  Aspect ratio is
+corrected using voxel dimensions read from the NIfTI header.  Useful for
+quickly identifying misregistration, segmentation artefacts, or coverage
+gaps.
 """
     input:
         spim=bids(
@@ -96,6 +102,175 @@ identifying misregistration, segmentation artefacts, or coverage gaps.
         runtime=15,
     script:
         "../scripts/qc_segmentation_overview.py"
+
+
+rule qc_vessels_overview:
+    """Vessel segmentation overview slice montage QC.
+
+Identical visualisation to ``qc_segmentation_overview`` but applied to the
+vessel field-fraction mask.  Shows whole-brain slice montages (3 orientations)
+and MIP with the vessel field-fraction overlay and physically correct aspect
+ratio.
+"""
+    input:
+        spim=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level=config["registration_level"],
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        fieldfrac=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level=config["registration_level"],
+            desc="{desc}",
+            suffix="fieldfrac.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        png=bids(
+            root=root,
+            datatype="qc",
+            stain="{stain}",
+            desc="{desc}",
+            suffix="vesselslices.png",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 1
+    resources:
+        mem_mb=8000,
+        runtime=15,
+    script:
+        "../scripts/qc_segmentation_overview.py"
+
+
+rule qc_segmentation_roi_zoom:
+    """Zoomed ROI montage QC for segmentation.
+
+Crops the SPIM image and segmentation field-fraction mask to each atlas
+region's bounding box (in subject space) and displays the best axial slice
+with the field-fraction overlay.  Aspect ratio is corrected from NIfTI
+voxel dimensions.  Provides detail-level visualisation of segmentation
+quality within individual brain regions.
+"""
+    input:
+        spim=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level=config["registration_level"],
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        fieldfrac=bids(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level=config["registration_level"],
+            desc="{desc}",
+            suffix="fieldfrac.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        dseg=bids(
+            root=root,
+            datatype="parc",
+            seg="{seg}",
+            level=config["registration_level"],
+            from_="{template}",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        label_tsv=bids(
+            root=root,
+            template="{template}",
+            seg="{seg}",
+            suffix="dseg.tsv",
+        ),
+    output:
+        png=bids(
+            root=root,
+            datatype="qc",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            desc="{desc}",
+            suffix="roimontage.png",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 1
+    resources:
+        mem_mb=8000,
+        runtime=15,
+    params:
+        max_rois=25,
+        n_cols=5,
+    script:
+        "../scripts/qc_segmentation_roi_zoom.py"
+
+
+rule qc_vessels_roi_zoom:
+    """Zoomed ROI montage QC for vessel segmentation.
+
+Identical to ``qc_segmentation_roi_zoom`` but applied to the vessel
+field-fraction mask.  Crops to each atlas region's bounding box and
+displays the best axial slice with the vessel field-fraction overlay.
+"""
+    input:
+        spim=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level=config["registration_level"],
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        fieldfrac=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level=config["registration_level"],
+            desc="{desc}",
+            suffix="fieldfrac.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        dseg=bids(
+            root=root,
+            datatype="parc",
+            seg="{seg}",
+            level=config["registration_level"],
+            from_="{template}",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        label_tsv=bids(
+            root=root,
+            template="{template}",
+            seg="{seg}",
+            suffix="dseg.tsv",
+        ),
+    output:
+        png=bids(
+            root=root,
+            datatype="qc",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            desc="{desc}",
+            suffix="vesselroimontage.png",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 1
+    resources:
+        mem_mb=8000,
+        runtime=15,
+    params:
+        max_rois=25,
+        n_cols=5,
+    script:
+        "../scripts/qc_segmentation_roi_zoom.py"
 
 
 rule qc_zprofile:
