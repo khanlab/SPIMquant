@@ -28,9 +28,11 @@ SPIMquant supports multiple brain templates for registration:
 
 ## Quick Links
 
+- **[How It Works](workflow_overview.md)**: Narrative overview of the full pipeline
 - **[Installation](getting_started/installation.md)**: Get started with SPIMquant
 - **[Quick Start](getting_started/quickstart.md)**: Run your first workflow
 - **[CLI Reference](usage/cli.md)**: Command-line interface documentation
+- **[Output Files](reference/outputs.md)**: Description of all output types
 - **[Examples](examples/workflows.md)**: See SPIMquant in action
 - **[Contributing](contributing.md)**: Help improve SPIMquant
 
