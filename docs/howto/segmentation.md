@@ -60,12 +60,14 @@ stain_defaults:
 
 **Limitations:** Sensitive to residual intensity non-uniformities and to between-subject intensity variation.  May require manual threshold tuning per dataset.
 
-### Otsu + k-means (`seg_method: otsu+k3i2`)
+### Multi-Otsu (`seg_method: otsu+k3i2`)
 
-A two-step unsupervised method that adapts to the intensity distribution of each image:
+An unsupervised thresholding method that adapts to the intensity distribution of each image.
 
-1. **Multi-Otsu thresholding** — Otsu's method is extended to find *N* thresholds that minimise within-class variance, splitting the histogram into background, low-signal, and high-signal classes.
-2. **k-means refinement** — 3-class k-means clustering (`k=3`) is applied to the voxels that fall in the intermediate class identified by Otsu, further separating ambiguous voxels.  The result assigned class index `i=2` (the highest-intensity class) is kept as positive.
+The method string encodes two parameters: `k` — the number of Otsu classes, and `i` — the threshold index to use for the binary classification.  For `otsu+k3i2`:
+
+1. **Multi-Otsu thresholding** — Otsu's method is extended to find `k-1` thresholds that minimise within-class variance, splitting the histogram into `k` classes.  With `k=3` the image is divided into background, low-signal, and high-signal classes (2 thresholds).
+2. **Binary classification** — the threshold at index `i` (1-based) is applied to produce the final binary mask.  With `i=2` this selects the second (higher) threshold, classifying only the brightest voxels as positive.
 
 **Config key:**
 

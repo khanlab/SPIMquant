@@ -189,7 +189,7 @@ All outputs follow BIDS-derivative naming conventions.  The table below lists th
 | Path pattern | Content | Stage |
 |---|---|---|
 | `sub-*/micr/*_space-{tpl}_SPIM.nii.gz` | Subject brain warped to template | 6 |
-| `sub-*/micr/*_regqc.html` | Registration QC report | 10 |
+| `sub-*/xfm/*_regqc.html` | Registration QC report | 10 |
 | `sub-*/micr/*_desc-brain_mask.nii.gz` | Brain mask | 3 |
 | `sub-*/parc/*_from-{tpl}_dseg.nii.gz` | Atlas parcellation in subject space | 6 |
 | `sub-*/seg/*_desc-*_mask.ome.zarr` | Full-resolution segmentation mask | 7 |
