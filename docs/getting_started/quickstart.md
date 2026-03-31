@@ -97,29 +97,12 @@ Processing time depends on:
 
 ## Step 5: View Results
 
-After processing completes, find your results in the output directory:
-
-```
-output/spimquant/
-├── sub-01/
-│   ├── micr/
-│   │   ├── sub-01_sample-brain_acq-4x_stain-YOPRO_space-ABAv3_SPIM.nii.gz
-│   │   └── sub-01_sample-brain_acq-4x_mask.nii.gz
-│   ├── seg/
-│   │   └── sub-01_sample-brain_acq-4x_stain-Abeta_SPIM.ome.zarr
-│   ├── parc/
-│   │   └── sub-01_sample-brain_acq-4x_seg-ABAv3_from-ABAv3_dseg.nii.gz
-│   └── tabular/
-│       └── sub-01_sample-brain_acq-4x_seg-ABAv3_from-ABAv3_stain-Abeta_segstats.tsv
-└── group/
-    ├── *_groupstats.tsv
-    └── *_groupstats.png
-```
+After processing completes, find your results in the output directory.
 
 Key output files:
 
 - `micr/*_space-{template}_SPIM.nii.gz`: Registered SPIM data in template space
-- `seg/*_SPIM.ome.zarr`: Full-resolution segmentation results
+- `seg/*_mask.ozx`: Full-resolution segmentation results
 - `parc/*_from-{template}_dseg.nii.gz`: Atlas-based parcellation maps
 - `tabular/*_segstats.tsv`: Quantitative statistics by brain region
 - `group/*_groupstats.tsv`: Group-level statistical results
