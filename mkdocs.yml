@@ -8,6 +8,7 @@ repo_url: https://github.com/khanlab/SPIMquant
 
 nav:
   - Home: index.md
+  - How It Works: workflow_overview.md
   - Getting Started:
       - Installation: getting_started/installation.md
       - Quick Start: getting_started/quickstart.md
@@ -19,9 +20,12 @@ nav:
       - Group Analysis: usage/group_analysis.md
       - Cloud Processing: usage/cloud.md
   - How-To Guides:
+      - Segmentation Methods: howto/segmentation.md
       - MRI Registration: howto/mri_registration.md
   - Reference:
       - CLI Reference: reference/cli_reference.md
+      - Output Files: reference/outputs.md
+      - Workflow Visualization: workflow_visualization.md
   - Examples:
       - Sample Datasets: examples/datasets.md
   - FAQ: faq.md
