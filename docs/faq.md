@@ -160,14 +160,16 @@ Cohen's d interpretation:
 
 ### Where are my results?
 
-Results are in the output directory under `spimquant/`:
+Results are in the output directory under `spimquant/`. Outputs are organized across several subdirectories by type:
 ```
 output/spimquant/
 ├── sub-01/
-│   └── micr/
-│       ├── *_space-template_SPIM.nii.gz
-│       ├── *_dseg.nii.gz
-│       └── *_segstats.tsv
+│   ├── micr/       - registered images (*_space-{template}_SPIM.nii.gz) and masks
+│   ├── seg/        - full-resolution segmentation data (*_SPIM.ome.zarr)
+│   ├── parc/       - atlas parcellation maps (*_from-{template}_dseg.nii.gz)
+│   ├── tabular/    - statistics tables (*_segstats.tsv, *_regionpropstats.tsv, etc.)
+│   └── xfm/        - registration transforms
+└── group/          - group-level results (*_groupstats.tsv, *_groupstats.png, etc.)
 ```
 
 ### What format are the statistics in?
