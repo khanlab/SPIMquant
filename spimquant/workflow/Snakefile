@@ -632,6 +632,84 @@ rule all_group_stats_coloc:
         ),
 
 
+rule all_qc:
+    """Target rule for subject-level visual QC outputs."""
+    input:
+        # Intensity histograms for every stain channel
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                suffix="histogram.png",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains,
+        ),
+        # Segmentation overview figures (per stain, per seg method)
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="segslices.png",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            desc=config["seg_method"],
+        )
+        if do_seg
+        else [],
+        # Z-profile QC (per stain, per seg method)
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="zprofile.png",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            desc=config["seg_method"],
+        )
+        if do_seg
+        else [],
+        # Object-level statistics (per stain, per seg method)
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="objectstats.png",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            desc=config["seg_method"],
+        )
+        if do_seg
+        else [],
+        # Per-ROI summary (per atlas seg, per seg method)
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="roisummary.png",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+            desc=config["seg_method"],
+        )
+        if do_seg
+        else [],
+
+
 rule all_participant:
     default_target: True
     input:
@@ -640,6 +718,7 @@ rule all_participant:
         rules.all_segment.input if do_seg else [],
         rules.all_mri_reg.input if config["register_to_mri"] else [],
         rules.all_segment_coloc.input if do_coloc else [],
+        rules.all_qc.input,
 
 
 rule all_group:
@@ -660,6 +739,7 @@ include: "rules/regionprops.smk"
 include: "rules/segstats.smk"
 include: "rules/patches.smk"
 include: "rules/groupstats.smk"
+include: "rules/qc.smk"
 
 
 if config["register_to_mri"]:
