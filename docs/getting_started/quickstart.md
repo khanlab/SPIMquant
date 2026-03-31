@@ -97,25 +97,15 @@ Processing time depends on:
 
 ## Step 5: View Results
 
-After processing completes, find your results in the output directory:
-
-```
-output/
-└── spimquant/
-    ├── sub-01/
-    │   └── micr/
-    │       ├── sub-01_space-template_SPIM.nii.gz
-    │       ├── sub-01_space-template_dseg.nii.gz
-    │       └── sub-01_segstats.tsv
-    └── qc/
-        └── sub-01_registration_overlay.png
-```
+After processing completes, find your results in the output directory.
 
 Key output files:
 
-- `*_space-template_SPIM.nii.gz`: Registered SPIM data
-- `*_dseg.nii.gz`: Segmentation results
-- `*_segstats.tsv`: Quantitative statistics by brain region
+- `micr/*_space-{template}_SPIM.nii.gz`: Registered SPIM data in template space
+- `seg/*_mask.ozx`: Full-resolution segmentation results
+- `parc/*_from-{template}_dseg.nii.gz`: Atlas-based parcellation maps
+- `tabular/*_segstats.tsv`: Quantitative statistics by brain region
+- `group/*_groupstats.tsv`: Group-level statistical results
 
 ## Step 6: Generate a Report
 
