@@ -50,8 +50,6 @@ def main():
         disp_max = float(bin_centers[nonzero_mask][-1]) * 1.05
     else:
         disp_max = max_range
-
-    # Saturation: fraction of voxels in the last histogram bin
     sat_fraction = (
         float(hist_counts[-1]) / total_voxels * 100 if total_voxels > 0 else 0.0
     )
@@ -69,6 +67,16 @@ def main():
     else:
         mean_val = p50_val = p99_val = 0.0
 
+    # Percentile-based display bounds for the linear-scale histogram panel
+    # X: cap at the 99th percentile value (+ 5 % headroom) to avoid long empty tails
+    lin_xlim = p99_val * 1.05 if total_voxels > 0 else max_range
+    # Y: cap at the tallest bar in the visible x range (+ 5 % headroom) so the
+    # body of the distribution is visible rather than dominated by a background spike
+    visible = hist_counts[bin_centers <= lin_xlim]
+    lin_ylim = (
+        float(visible.max()) * 1.05 if visible.size and visible.max() > 0 else 1.0
+    )
+
     subject = snakemake.wildcards.subject
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
@@ -84,7 +92,8 @@ def main():
     ax.set_xlabel("Intensity")
     ax.set_ylabel("Voxel count")
     ax.set_title("Linear-scale histogram")
-    ax.set_xlim(0, disp_max)
+    ax.set_xlim(0, lin_xlim)
+    ax.set_ylim(0, lin_ylim)
 
     # Panel 2: log-scale histogram
     ax = axes[0, 1]
