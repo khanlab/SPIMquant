@@ -50,6 +50,10 @@ def main():
     stats_df = pd.read_csv(snakemake.input.segstats, sep="\t")
     label_df = pd.read_csv(snakemake.input.label_tsv, sep="\t")
 
+    # Drop background (atlas label 0) — those voxels are outside the brain
+    if "index" in stats_df.columns:
+        stats_df = stats_df[stats_df["index"] != 0].copy()
+
     # Merge region names (label_df has 'index' and 'name' columns)
     if "name" not in stats_df.columns and "index" in stats_df.columns:
         stats_df = stats_df.merge(label_df[["index", "name"]], on="index", how="left")
