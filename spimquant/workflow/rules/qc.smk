@@ -157,24 +157,17 @@ voxel dimensions.  Provides detail-level visualisation of segmentation
 quality within individual brain regions.
 """
     input:
-        spim=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level=config["registration_level"],
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        fieldfrac=bids(
+        spim=inputs["spim"].path,
+        mask=bids(
             root=root,
             datatype="seg",
             stain="{stain}",
-            level=config["registration_level"],
+            level=config['segmentation_level'],
             desc="{desc}",
-            suffix="fieldfrac.nii.gz",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
-        dseg=bids(
+        dseg_nii=bids(
             root=root,
             datatype="parc",
             seg="{seg}",
@@ -200,13 +193,14 @@ quality within individual brain regions.
             suffix="roimontage.png",
             **inputs["spim"].wildcards,
         ),
-    threads: 1
+    threads: 32
     resources:
-        mem_mb=8000,
+        mem_mb=32000,
         runtime=15,
     params:
         max_rois=25,
         n_cols=5,
+        level=config['segmentation_level'],
     script:
         "../scripts/qc_segmentation_roi_zoom.py"
 

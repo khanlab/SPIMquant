@@ -1,12 +1,12 @@
 """ROI-cropped segmentation montage QC.
 
 For each brain region in the atlas parcellation (resampled to subject space),
-crops the SPIM image and the field-fraction mask to the region's bounding box
-and shows the central axial slice with the field-fraction overlay.  This
-provides a detail-level view of segmentation quality within individual brain
-regions, complementing the whole-brain overview in ``qc_segmentation_overview``.
+crops the SPIM image and the segmentation mask to a fixed 2D bounding box 
+at the region centroid.   This provides a detail-level view of segmentation 
+quality within individual brain regions, complementing the whole-brain 
+overview in ``qc_segmentation_overview``.
 
-Voxel dimensions from the NIfTI header are used to preserve the correct
+Voxel dimensions from the OME-Zarr image are used to preserve the correct
 physical aspect ratio in each panel.
 
 This is a Snakemake script that expects the ``snakemake`` object to be
@@ -18,6 +18,7 @@ import matplotlib
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
+from zarrnii import ZarrNii, ZarrNiiAtlas
 import nibabel as nib
 import numpy as np
 import pandas as pd
@@ -74,28 +75,36 @@ def main():
     max_rois = snakemake.params.max_rois
     n_cols = snakemake.params.n_cols
 
-    spim_nib = nib.load(snakemake.input.spim)
-    spim_data = spim_nib.get_fdata()
-    ff_data = nib.load(snakemake.input.fieldfrac).get_fdata()
-    dseg_data = nib.load(snakemake.input.dseg).get_fdata().astype(int)
+    spim_img = ZarrNii.from_ome_zarr(snakemake.input.spim,level=snakemake.params.level, downsample_near_isotropic=True,channel_labels=[snakemake.wildcards.stain])
+    mask_img = ZarrNii.from_ome_zarr(snakemake.input.mask,level=0)
+    
+    atlas = ZarrNiiAtlas.from_files(snakemake.input.dseg_nii,snakemake.input.label_tsv)
+
+    dseg_data = atlas.dseg.data.compute()
+
+    #spim_data = spim_nib.get_fdata()
+    #ff_data = nib.load(snakemake.input.fieldfrac).get_fdata()
+    #dseg_data = nib.load(snakemake.input.dseg).get_fdata().astype(int)
 
     # Voxel dimensions (mm) for physical aspect-ratio correction
-    zooms = spim_nib.header.get_zooms()
-    dx, dy = float(zooms[0]), float(zooms[1])
-    # Axial (Z) slice: after rot90, rows=y, cols=x → aspect = dy/dx
-    aspect_axial = dy / dx
+    #zooms = spim_nib.header.get_zooms()
+    #dx, dy = float(zooms[0]), float(zooms[1])
+    ## Axial (Z) slice: after rot90, rows=y, cols=x → aspect = dy/dx
+    #aspect_axial = dy / dx
+
+
 
     # Bring all volumes to the SPIM grid
-    ff_data = _match_shape(ff_data, spim_data.shape, order=1)
-    dseg_data = _match_shape(dseg_data, spim_data.shape, order=0).astype(int)
+    #ff_data = _match_shape(ff_data, spim_data.shape, order=1)
+    #dseg_data = _match_shape(dseg_data, spim_data.shape, order=0).astype(int)
 
     # Global normalisations
-    spim_norm = _percentile_norm(spim_data)
+    #spim_norm = _percentile_norm(spim_data)
     # Field fraction values are 0–100; normalise to 0–1 for display
-    ff_norm = np.clip(ff_data / 100.0, 0.0, 1.0)
+    #ff_norm = np.clip(ff_data / 100.0, 0.0, 1.0)
 
     # Load atlas label table
-    label_df = pd.read_csv(snakemake.input.label_tsv, sep="\t")
+    label_df = atlas.labels_df
 
     # Keep non-background labels that are present in this subject's dseg
     present_ids = set(np.unique(dseg_data)) - {0}
@@ -151,35 +160,43 @@ def main():
         label_id = int(row["index"])
         label_name = str(row.get("name", label_id))
 
-        roi_mask = dseg_data == label_id
-        bbox = _get_bounding_box(roi_mask, pad=5)
-        if bbox is None:
-            ax.text(
-                0.5,
-                0.5,
-                f"{label_name}\n(empty)",
-                ha="center",
-                va="center",
-                transform=ax.transAxes,
-                fontsize=7,
-                color="gray",
-            )
-            ax.axis("off")
-            continue
+
+        #get cropped images for this label
+        bbox_min, bbox_max = atlas.get_region_bounding_box(region_ids=label_id)
+        center_coord = bbox_max - bbox_min
+        spim_crop = spim_img.crop_centered(center_coord, patch_size=(256,256,1))[0]
+        mask_crop = mask_img.crop_centered(center_coord, patch_size=(256,256,1))[0]
+
+#        roi_mask = dseg_data == label_id
+#
+#        bbox = _get_bounding_box(roi_mask, pad=5)
+#        if bbox is None:
+#            ax.text(
+#                0.5,
+#                0.5,
+#                f"{label_name}\n(empty)",
+#                ha="center",
+#                va="center",
+#                transform=ax.transAxes,
+#                fontsize=7,
+#                color="gray",
+#            )
+#            ax.axis("off")
+#            continue
 
         # Crop to ROI bounding box
-        spim_crop = spim_norm[bbox]
-        ff_crop = ff_norm[bbox]
+#        spim_crop = spim_norm[bbox]
+#        ff_crop = ff_norm[bbox]
 
         # Choose the Z-slice within the crop with the most field-fraction signal
-        z_best = _select_best_z_slice(ff_crop)
+#        z_best = _select_best_z_slice(ff_crop)
 
-        spim_sl = np.rot90(spim_crop[:, :, z_best])
-        ff_sl = np.rot90(ff_crop[:, :, z_best])
+        spim_sl = np.rot90(spim_crop[:, :, 0])
+        mask_sl = np.rot90(mask_crop[:, :, 0])
 
         ax.imshow(spim_sl, cmap="gray", vmin=0, vmax=1, aspect=aspect_axial)
-        ff_masked = np.ma.masked_where(ff_sl < 0.01, ff_sl)
-        ax.imshow(ff_masked, cmap="hot", alpha=0.6, vmin=0, vmax=1, aspect=aspect_axial)
+        mask_masked = np.ma.masked_where(mask_sl < 0.01, mask_sl)
+        ax.imshow(mask_masked, cmap="hot", alpha=0.6, vmin=0, vmax=1, aspect=aspect_axial)
         ax.set_title(label_name, fontsize=7, pad=2)
         ax.set_xticks([])
         ax.set_yticks([])
