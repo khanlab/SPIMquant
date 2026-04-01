@@ -1,12 +1,15 @@
-"""Segmentation overview QC: slice montage with field-fraction overlay.
+"""Segmentation / vessel overview QC: whole-brain slice montage with mask overlay.
 
 Generates a multi-panel figure with sample slices in three anatomical
-orientations (axial, coronal, sagittal), each with the segmentation
-field-fraction overlaid on the SPIM background image, plus a
-max-intensity projection (MIP) column for each orientation.
+orientations (axial, coronal, sagittal), each with the binary segmentation or
+vessel mask overlaid on the SPIM background image, plus a max-intensity
+projection (MIP) column for each orientation.
 
-Voxel dimensions from the NIfTI header are used to preserve the correct
-physical aspect ratio in each panel.
+Data are loaded via ZarrNii so that the correct physical resolution and
+aspect ratio are applied automatically.  The SPIM is loaded with
+``downsample_near_isotropic=True`` to obtain near-isotropic voxels.
+Voxel spacings are read with ``get_zooms()`` and used to compute the correct
+``imshow`` aspect ratio for each panel.
 
 This is a Snakemake script that expects the ``snakemake`` object to be
 available, which is automatically provided when executed as part of a
@@ -17,9 +20,9 @@ import matplotlib
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
-import nibabel as nib
 import numpy as np
 from scipy.ndimage import zoom
+from zarrnii import ZarrNii
 
 
 def _percentile_norm(arr, pct_low=1, pct_high=99):
@@ -38,18 +41,10 @@ def _sample_slices(size, n=5):
     return np.linspace(start, stop - 1, n, dtype=int)
 
 
-def _match_shape(source, target_shape):
-    """Zoom *source* array to *target_shape* if shapes differ."""
-    if source.shape == target_shape:
-        return source
-    factors = [t / s for t, s in zip(target_shape, source.shape)]
-    return zoom(source, factors, order=1)
-
-
 def _slice_aspect(zooms, step_axis):
     """Compute imshow aspect ratio for a slice through *step_axis*.
 
-    NIfTI data is indexed (x, y, z) and ``np.rot90`` is applied before
+    ZarrNii data is indexed (x, y, z) and ``np.rot90`` is applied before
     display, so the displayed image rows and columns are:
 
     - step_axis=2 (Z-slice): rot90 of data[:, :, z] → rows=y, cols=x  → dy/dx
@@ -69,19 +64,34 @@ def main():
     desc = snakemake.wildcards.desc
     subject = snakemake.wildcards.subject
 
-    spim_nib = nib.load(snakemake.input.spim)
-    spim_data = spim_nib.get_fdata()
-    ff_data = nib.load(snakemake.input.fieldfrac).get_fdata()
+    spim_img = ZarrNii.from_ome_zarr(
+        snakemake.input.spim,
+        level=snakemake.params.level,
+        downsample_near_isotropic=True,
+        channel_labels=[stain],
+        **snakemake.params.zarrnii_kwargs,
+    )
+    mask_img = ZarrNii.from_ome_zarr(
+        snakemake.input.mask,
+        level=snakemake.params.mask_level,
+        downsample_near_isotropic=True,
+        **snakemake.params.zarrnii_kwargs,
+    )
 
     # Voxel dimensions (mm) for physical aspect-ratio correction
-    zooms = spim_nib.header.get_zooms()
+    zooms = spim_img.get_zooms()
 
-    # Bring field-fraction image to the same voxel grid as SPIM
-    ff_data = _match_shape(ff_data, spim_data.shape)
+    spim_data = spim_img.data[0].compute()  # (X, Y, Z)
+    mask_data = mask_img.data[0].compute()  # (X, Y, Z), values 0–100
+
+    # Bring mask to the same grid as SPIM if needed
+    if mask_data.shape != spim_data.shape:
+        factors = [t / s for t, s in zip(spim_data.shape, mask_data.shape)]
+        mask_data = zoom(mask_data, factors, order=1)
 
     spim_norm = _percentile_norm(spim_data)
-    # Field fraction values are 0–100; normalise to 0–1 for display
-    ff_norm = np.clip(ff_data / 100.0, 0.0, 1.0)
+    # Mask values are 0–100 (field-fraction percent); normalise to 0–1 for display
+    mask_norm = np.clip(mask_data / 100.0, 0.0, 1.0)
 
     n_slices = 5
     orient_labels = ["Axial (Z)", "Coronal (Y)", "Sagittal (X)"]
@@ -104,12 +114,12 @@ def main():
             idx = [slice(None)] * 3
             idx[ax_idx] = int(sl)
             spim_sl = np.rot90(spim_norm[tuple(idx)])
-            ff_sl = np.rot90(ff_norm[tuple(idx)])
+            mask_sl = np.rot90(mask_norm[tuple(idx)])
 
             ax = axes[row, col]
             ax.imshow(spim_sl, cmap="gray", vmin=0, vmax=1, aspect=aspect)
-            ff_masked = np.ma.masked_where(ff_sl < 0.01, ff_sl)
-            ax.imshow(ff_masked, cmap="hot", alpha=0.6, vmin=0, vmax=1, aspect=aspect)
+            mask_masked = np.ma.masked_where(mask_sl < 0.01, mask_sl)
+            ax.imshow(mask_masked, cmap="hot", alpha=0.6, vmin=0, vmax=1, aspect=aspect)
             ax.set_xticks([])
             ax.set_yticks([])
             if col == 0:
@@ -119,10 +129,10 @@ def main():
         # MIP column (last column)
         ax = axes[row, n_slices]
         mip_spim = np.rot90(np.max(spim_norm, axis=ax_idx))
-        mip_ff = np.rot90(np.max(ff_norm, axis=ax_idx))
+        mip_mask = np.rot90(np.max(mask_norm, axis=ax_idx))
         ax.imshow(mip_spim, cmap="gray", vmin=0, vmax=1, aspect=aspect)
-        mip_ff_masked = np.ma.masked_where(mip_ff < 0.01, mip_ff)
-        ax.imshow(mip_ff_masked, cmap="hot", alpha=0.6, vmin=0, vmax=1, aspect=aspect)
+        mip_masked = np.ma.masked_where(mip_mask < 0.01, mip_mask)
+        ax.imshow(mip_masked, cmap="hot", alpha=0.6, vmin=0, vmax=1, aspect=aspect)
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_title("MIP", fontsize=9)

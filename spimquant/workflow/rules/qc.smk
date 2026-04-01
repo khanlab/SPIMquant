@@ -62,29 +62,21 @@ saturation/clip fraction (percentage of voxels at the maximum bin).
 rule qc_segmentation_overview:
     """Segmentation overview slice montage QC.
 
-Displays sample slices in axial, coronal, and sagittal orientations with
-the segmentation field fraction overlaid on the SPIM background, and a
-max-intensity projection column for each orientation.  Aspect ratio is
-corrected using voxel dimensions read from the NIfTI header.  Useful for
-quickly identifying misregistration, segmentation artefacts, or coverage
-gaps.
+Loads SPIM data via ZarrNii (``downsample_near_isotropic=True``) and the
+raw binary segmentation mask at the corresponding pyramid level.  Displays
+sample slices in axial, coronal, and sagittal orientations with the mask
+overlay, and a max-intensity projection column for each orientation.
+Aspect ratio is corrected using voxel spacings from ``ZarrNii.get_zooms()``.
 """
     input:
-        spim=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level=config["registration_level"],
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        fieldfrac=bids(
+        spim=inputs["spim"].path,
+        mask=bids(
             root=root,
             datatype="seg",
             stain="{stain}",
-            level=config["registration_level"],
+            level=config["segmentation_level"],
             desc="{desc}",
-            suffix="fieldfrac.nii.gz",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -96,10 +88,14 @@ gaps.
             suffix="segslices.png",
             **inputs["spim"].wildcards,
         ),
-    threads: 1
+    threads: 8
     resources:
-        mem_mb=8000,
-        runtime=15,
+        mem_mb=16000,
+        runtime=30,
+    params:
+        level=config["registration_level"],
+        mask_level=config["registration_level"] - config["segmentation_level"],
+        zarrnii_kwargs={"orientation": config["orientation"]},
     script:
         "../scripts/qc_segmentation_overview.py"
 
@@ -108,26 +104,18 @@ rule qc_vessels_overview:
     """Vessel segmentation overview slice montage QC.
 
 Identical visualisation to ``qc_segmentation_overview`` but applied to the
-vessel field-fraction mask.  Shows whole-brain slice montages (3 orientations)
-and MIP with the vessel field-fraction overlay and physically correct aspect
-ratio.
+vessel binary mask.  Loads data via ZarrNii with ``downsample_near_isotropic``
+for isotropic display and physically correct aspect ratio.
 """
     input:
-        spim=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level=config["registration_level"],
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        fieldfrac=bids(
+        spim=inputs["spim"].path,
+        mask=bids(
             root=root,
             datatype="vessels",
             stain="{stain}",
-            level=config["registration_level"],
+            level=config["segmentation_level"],
             desc="{desc}",
-            suffix="fieldfrac.nii.gz",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -139,10 +127,14 @@ ratio.
             suffix="vesselslices.png",
             **inputs["spim"].wildcards,
         ),
-    threads: 1
+    threads: 8
     resources:
-        mem_mb=8000,
-        runtime=15,
+        mem_mb=16000,
+        runtime=30,
+    params:
+        level=config["registration_level"],
+        mask_level=config["registration_level"] - config["segmentation_level"],
+        zarrnii_kwargs={"orientation": config["orientation"]},
     script:
         "../scripts/qc_segmentation_overview.py"
 
@@ -162,7 +154,7 @@ quality within individual brain regions.
             root=root,
             datatype="seg",
             stain="{stain}",
-            level=config['segmentation_level'],
+            level=config["segmentation_level"],
             desc="{desc}",
             suffix="mask.ozx",
             **inputs["spim"].wildcards,
@@ -200,7 +192,7 @@ quality within individual brain regions.
     params:
         max_rois=25,
         n_cols=5,
-        level=config['segmentation_level'],
+        level=config["segmentation_level"],
     script:
         "../scripts/qc_segmentation_roi_zoom.py"
 
@@ -209,28 +201,21 @@ rule qc_vessels_roi_zoom:
     """Zoomed ROI montage QC for vessel segmentation.
 
 Identical to ``qc_segmentation_roi_zoom`` but applied to the vessel
-field-fraction mask.  Crops to each atlas region's bounding box and
-displays the best axial slice with the vessel field-fraction overlay.
+binary mask.  Uses ZarrNii to load full-resolution data and
+ZarrNiiAtlas for atlas-based ROI cropping.
 """
     input:
-        spim=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level=config["registration_level"],
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        fieldfrac=bids(
+        spim=inputs["spim"].path,
+        mask=bids(
             root=root,
             datatype="vessels",
             stain="{stain}",
-            level=config["registration_level"],
+            level=config["segmentation_level"],
             desc="{desc}",
-            suffix="fieldfrac.nii.gz",
+            suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
-        dseg=bids(
+        dseg_nii=bids(
             root=root,
             datatype="parc",
             seg="{seg}",
@@ -256,13 +241,14 @@ displays the best axial slice with the vessel field-fraction overlay.
             suffix="vesselroimontage.png",
             **inputs["spim"].wildcards,
         ),
-    threads: 1
+    threads: 32
     resources:
-        mem_mb=8000,
+        mem_mb=32000,
         runtime=15,
     params:
         max_rois=25,
         n_cols=5,
+        level=config["segmentation_level"],
     script:
         "../scripts/qc_segmentation_roi_zoom.py"
 
