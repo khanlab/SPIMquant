@@ -2,7 +2,7 @@
 
 Loads the merged segmentation-statistics TSV (all stains) together with
 the atlas label table, then produces bar-chart visualisations of the
-top brain-regions ranked by field fraction and count for each stain.
+top brain-regions ranked by field fraction and density for each stain.
 
 This is a Snakemake script that expects the ``snakemake`` object to be
 available, which is automatically provided when executed as part of a
@@ -19,7 +19,6 @@ import pandas as pd
 # Suffixes used to identify stain-prefixed metric columns in mergedsegstats TSV.
 # Columns follow the pattern "{stain}+{metric}", e.g. "Abeta+fieldfrac".
 _SUFFIX_FIELDFRAC = "+fieldfrac"
-_SUFFIX_COUNT = "+count"
 _SUFFIX_DENSITY = "+density"
 
 
@@ -62,15 +61,13 @@ def main():
 
     # Identify stain-prefixed metric columns (pattern: "{stain}+{metric}")
     ff_cols = [c for c in stats_df.columns if c.endswith(_SUFFIX_FIELDFRAC)]
-    count_cols = [c for c in stats_df.columns if c.endswith(_SUFFIX_COUNT)]
     density_cols = [c for c in stats_df.columns if c.endswith(_SUFFIX_DENSITY)]
 
-    # Determine number of rows: 1 row per metric type (ff, count, density)
+    # Determine number of rows: 1 row per metric type (ff,  density)
     # with one subplot per stain within each row
     n_ff = len(ff_cols)
-    n_count = len(count_cols)
     n_density = len(density_cols)
-    n_rows = (1 if n_ff else 0) + (1 if n_count else 0) + (1 if n_density else 0)
+    n_rows = (1 if n_ff else 0) + (1 if n_density else 0)
 
     if n_rows == 0:
         fig, ax = plt.subplots(figsize=(8, 4))
@@ -95,8 +92,6 @@ def main():
     row_specs = []
     if n_ff:
         row_specs.append(("Field Fraction (%)", ff_cols, "steelblue"))
-    if n_count:
-        row_specs.append(("Count (objects)", count_cols, "darkorange"))
     if n_density:
         row_specs.append(("Density (objects/vol)", density_cols, "forestgreen"))
 

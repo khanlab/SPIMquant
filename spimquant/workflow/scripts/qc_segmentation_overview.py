@@ -113,8 +113,8 @@ def main():
         for col, sl in enumerate(slice_indices):
             idx = [slice(None)] * 3
             idx[ax_idx] = int(sl)
-            spim_sl = np.rot90(spim_norm[tuple(idx)])
-            mask_sl = np.rot90(mask_norm[tuple(idx)])
+            spim_sl = spim_norm[tuple(idx)]
+            mask_sl = mask_norm[tuple(idx)]
 
             ax = axes[row, col]
             ax.imshow(spim_sl, cmap="gray", vmin=0, vmax=1, aspect=aspect)

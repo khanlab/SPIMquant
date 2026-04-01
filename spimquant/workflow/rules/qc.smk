@@ -46,7 +46,7 @@ saturation/clip fraction (percentage of voxels at the maximum bin).
             suffix="histogram.png",
             **inputs["spim"].wildcards,
         ),
-    threads: 8
+    threads: 4
     resources:
         mem_mb=16000,
         runtime=30,
@@ -88,7 +88,7 @@ Aspect ratio is corrected using voxel spacings from ``ZarrNii.get_zooms()``.
             suffix="segslices.png",
             **inputs["spim"].wildcards,
         ),
-    threads: 8
+    threads: 4
     resources:
         mem_mb=16000,
         runtime=30,
@@ -127,7 +127,7 @@ for isotropic display and physically correct aspect ratio.
             suffix="vesselslices.png",
             **inputs["spim"].wildcards,
         ),
-    threads: 8
+    threads: 4
     resources:
         mem_mb=16000,
         runtime=30,
@@ -185,13 +185,14 @@ quality within individual brain regions.
             suffix="roimontage.png",
             **inputs["spim"].wildcards,
         ),
-    threads: 32
+    threads: 4
     resources:
         mem_mb=32000,
         runtime=15,
     params:
-        max_rois=25,
-        n_cols=5,
+        max_rois=lambda wildcards: 25 if wildcards.seg == "coarse" else 100,
+        n_cols=lambda wildcards: 5 if wildcards.seg == "coarse" else 10,
+        patch_size=lambda wildcards: 2000 if wildcards.seg == "coarse" else 500,
         level=config["segmentation_level"],
     script:
         "../scripts/qc_segmentation_roi_zoom.py"
@@ -241,13 +242,14 @@ ZarrNiiAtlas for atlas-based ROI cropping.
             suffix="vesselroimontage.png",
             **inputs["spim"].wildcards,
         ),
-    threads: 32
+    threads: 4
     resources:
         mem_mb=32000,
         runtime=15,
     params:
-        max_rois=25,
-        n_cols=5,
+        max_rois=lambda wildcards: 25 if wildcards.seg == "coarse" else 100,
+        n_cols=lambda wildcards: 5 if wildcards.seg == "coarse" else 10,
+        patch_size=lambda wildcards: 2000 if wildcards.seg == "coarse" else 500,
         level=config["segmentation_level"],
     script:
         "../scripts/qc_segmentation_roi_zoom.py"

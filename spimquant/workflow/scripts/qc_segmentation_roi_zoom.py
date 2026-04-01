@@ -23,47 +23,23 @@ import pandas as pd
 from scipy.ndimage import zoom
 
 
-def _percentile_norm(arr, pct_low=1, pct_high=99):
-    """Percentile-normalise *arr* to the range [0, 1] using global statistics."""
+def _estimate_global_percentiles(
+    arr,
+    pct_low=1,
+    pct_high=99,
+):
+    """
+    Estimate percentile normalization bounds from an image
+    """
     lo = np.percentile(arr, pct_low)
     hi = np.percentile(arr, pct_high)
+    return float(lo), float(hi)
+
+
+def _apply_fixed_percentile_norm(arr, lo, hi):
     if hi > lo:
-        return np.clip((arr.astype(float) - lo) / (hi - lo), 0.0, 1.0)
-    return np.zeros_like(arr, dtype=float)
-
-
-def _match_shape(source, target_shape, order=1):
-    """Zoom *source* array to *target_shape* if shapes differ."""
-    if source.shape == target_shape:
-        return source
-    factors = [t / s for t, s in zip(target_shape, source.shape)]
-    return zoom(source, factors, order=order)
-
-
-def _select_best_z_slice(ff_crop):
-    """Return the Z-index with the most field-fraction signal.
-
-    Falls back to the central slice when no signal is present.
-    """
-    ff_per_z = ff_crop.sum(axis=(0, 1))
-    if ff_per_z.max() > 0:
-        return int(ff_per_z.argmax())
-    return ff_crop.shape[2] // 2
-
-
-def _get_bounding_box(mask, pad=5):
-    """Return index slices for the bounding box of a boolean *mask* with padding.
-
-    Returns ``None`` when the mask is empty.
-    """
-    indices = np.where(mask)
-    if not indices[0].size:
-        return None
-    shape = mask.shape
-    return tuple(
-        slice(max(0, int(idx.min()) - pad), min(sz, int(idx.max()) + pad + 1))
-        for idx, sz in zip(indices, shape)
-    )
+        return np.clip((arr.astype(np.float32) - lo) / (hi - lo), 0.0, 1.0)
+    return np.zeros_like(arr, dtype=np.float32)
 
 
 def main():
@@ -73,20 +49,33 @@ def main():
     max_rois = snakemake.params.max_rois
     n_cols = snakemake.params.n_cols
 
-    spim_img = ZarrNii.from_ome_zarr(snakemake.input.spim,level=snakemake.params.level, downsample_near_isotropic=True,channel_labels=[snakemake.wildcards.stain])
-    mask_img = ZarrNii.from_ome_zarr(snakemake.input.mask,level=0)
-    
-    atlas = ZarrNiiAtlas.from_files(snakemake.input.dseg_nii,snakemake.input.label_tsv)
+    spim_img = ZarrNii.from_ome_zarr(
+        snakemake.input.spim,
+        level=snakemake.params.level,
+        downsample_near_isotropic=True,
+        channel_labels=[snakemake.wildcards.stain],
+    )
+    mask_img = ZarrNii.from_ome_zarr(snakemake.input.mask, level=0)
+
+    atlas = ZarrNiiAtlas.from_files(snakemake.input.dseg_nii, snakemake.input.label_tsv)
 
     dseg_data = atlas.dseg.data.compute()
 
-
     # Voxel dimensions (mm) for physical aspect-ratio correction - not implemented yet
-    # but should be easy with ZarrNii image .scale 
+    # but should be easy with ZarrNii image .scale
     aspect_axial = 1
 
+    spim_img_ds = ZarrNii.from_ome_zarr(
+        snakemake.input.spim,
+        level=(int(snakemake.params.level) + 5),
+        downsample_near_isotropic=True,
+        channel_labels=[snakemake.wildcards.stain],
+    )
 
-    # Global normalisations  - not implemented yet
+    # estimate once globally, from a coarse version of the full image
+    glob_lo, glob_hi = _estimate_global_percentiles(
+        spim_img_ds.data.compute(), pct_low=1, pct_high=99
+    )
 
     # Load atlas label table
     label_df = atlas.labels_df
@@ -145,20 +134,27 @@ def main():
         label_id = int(row["index"])
         label_name = str(row.get("name", label_id))
 
-
-        #get cropped images for this label
+        # get cropped images for this label
         bbox_min, bbox_max = atlas.get_region_bounding_box(region_ids=label_id)
         center_coord = tuple((x + y) / 2 for x, y in zip(bbox_min, bbox_max))
-        spim_crop = spim_img.crop_centered(center_coord, patch_size=(2000,2000,1))
-        mask_crop = mask_img.crop_centered(center_coord, patch_size=(2000,2000,1))
+        spim_crop = spim_img.crop_centered(
+            center_coord,
+            patch_size=(snakemake.params.patch_size, snakemake.params.patch_size, 1),
+        )
+        mask_crop = mask_img.crop_centered(
+            center_coord,
+            patch_size=(snakemake.params.patch_size, snakemake.params.patch_size, 1),
+        )
 
-
-        spim_sl = np.rot90(spim_crop.data[0, :, :].squeeze().compute())
-        mask_sl = np.rot90(mask_crop.data[0, :, :].squeeze().compute())
+        spim_sl = spim_crop.data[0, :, :].squeeze().compute()
+        spim_sl = _apply_fixed_percentile_norm(spim_sl, glob_lo, glob_hi)
+        mask_sl = mask_crop.data[0, :, :].squeeze().compute()
 
         ax.imshow(spim_sl, cmap="gray")
         mask_masked = np.ma.masked_where(mask_sl < 100, mask_sl)
-        ax.imshow(mask_masked, cmap="spring", alpha=0.6, vmin=0, vmax=100, aspect=aspect_axial)
+        ax.imshow(
+            mask_masked, cmap="spring", alpha=0.6, vmin=0, vmax=100, aspect=aspect_axial
+        )
         ax.set_title(label_name, fontsize=7, pad=2)
         ax.set_xticks([])
         ax.set_yticks([])

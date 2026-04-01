@@ -24,7 +24,7 @@ def main():
     hist_bins = snakemake.params.hist_bins
     hist_range = snakemake.params.hist_range
 
-    with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
+    with get_dask_client("threads", snakemake.threads):
         znimg = ZarrNii.from_ome_zarr(
             snakemake.input.spim,
             level=level,
