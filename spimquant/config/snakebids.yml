@@ -275,6 +275,11 @@ templates:
       YoPro: https://zenodo.org/records/18749025/files/tpl-ABAv3_level-5_stain-YoPro_SPIM.nii.gz
       Iba1: https://zenodo.org/records/18749025/files/tpl-ABAv3_level-5_stain-Iba1_SPIM.nii.gz
       Abeta: https://zenodo.org/records/18749025/files/tpl-ABAv3_level-5_stain-Abeta_SPIM.nii.gz
+    default_segs:
+      - all
+      - coarse
+      - mid
+      - fine
     atlases:
       all: 
         dseg: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-all_dseg.nii.gz

@@ -55,10 +55,13 @@ stains = get_stains_all_subjects()
 
 stain_for_reg = None
 
+template = config["templates"][config["template"]]
+
+
 # first, check if there are any SPIM templates defined
 # for the stains we have
 use_spim_template = False
-spim_templates = config["templates"][config["template"]].get("spim_templates", None)
+spim_templates = template.get("spim_templates", None)
 
 if spim_templates is not None:
     for stain in spim_templates.keys():
@@ -103,16 +106,15 @@ else:
 
 
 # atlas segmentations to use
-all_atlas_segs = config["templates"][config["template"]]["atlases"].keys()
 
 if config["atlas_segs"] is None:
-    atlas_segs = all_atlas_segs
+    atlas_segs = template.get("default_segs", template["atlases"].keys())
 else:
     atlas_segs = []
     for seg in config["atlas_segs"]:
-        if seg not in all_atlas_segs:
+        if seg not in template["atlases"]:
             raise ValueError(
-                f"Chosen segmentation {seg} was not found in the template {config['template']}"
+                f"Chosen segmentation {seg} was not found in the template {template}"
             )
         else:
             atlas_segs.append(seg)
@@ -120,9 +122,9 @@ else:
 # atlas segmentations to use for patches (defaults to roi22)
 patch_atlas_segs = []
 for seg in config["patch_atlas_segs"]:
-    if seg not in all_atlas_segs:
+    if seg not in template["atlases"]:
         raise ValueError(
-            f"Chosen patch segmentation {seg} was not found in the template {config['template']}"
+            f"Chosen patch segmentation {seg} was not found in the template {template}"
         )
     else:
         patch_atlas_segs.append(seg)
@@ -130,9 +132,9 @@ for seg in config["patch_atlas_segs"]:
 # atlas segmentations to use for Imaris crops (defaults to roi22)
 crop_atlas_segs = []
 for seg in config["crop_atlas_segs"]:
-    if seg not in all_atlas_segs:
+    if seg not in template["atlases"]:
         raise ValueError(
-            f"Chosen crop segmentation {seg} was not found in the template {config['template']}"
+            f"Chosen crop segmentation {seg} was not found in the template {template}"
         )
     else:
         crop_atlas_segs.append(seg)
@@ -632,6 +634,137 @@ rule all_group_stats_coloc:
         ),
 
 
+rule all_qc:
+    """Target rule for subject-level visual QC outputs."""
+    input:
+        # Intensity histograms for every stain channel
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                suffix="histogram.png",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains,
+        ),
+        # Segmentation overview figures (per stain, per seg method)
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="segslices.png",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            desc=config["seg_method"],
+        )
+        if do_seg
+        else [],
+        # Segmentation ROI zoom montage (per stain, per atlas, per seg method)
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                seg="{seg}",
+                from_="{template}",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="roimontage.png",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+            stain=stains_for_seg,
+            desc=config["seg_method"],
+        )
+        if do_seg
+        else [],
+        # Vessel overview figures
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="vesselslices.png",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stain_for_vessels,
+            desc=config["vessel_seg_method"],
+        )
+        if do_vessels
+        else [],
+        # Vessel ROI zoom montage (per atlas)
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                seg="{seg}",
+                from_="{template}",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="vesselroimontage.png",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+            stain=stain_for_vessels,
+            desc=config["vessel_seg_method"],
+        )
+        if do_vessels
+        else [],
+        # Z-profile QC (per stain, per seg method)
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="zprofile.png",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            desc=config["seg_method"],
+        )
+        if do_seg
+        else [],
+        # Object-level statistics (per stain, per seg method)
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="objectstats.png",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            desc=config["seg_method"],
+        )
+        if do_seg
+        else [],
+        # Per-ROI summary (per atlas seg, per seg method)
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="roisummary.png",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+            desc=config["seg_method"],
+        )
+        if do_seg
+        else [],
+
+
 rule all_participant:
     default_target: True
     input:
@@ -640,6 +773,7 @@ rule all_participant:
         rules.all_segment.input if do_seg else [],
         rules.all_mri_reg.input if config["register_to_mri"] else [],
         rules.all_segment_coloc.input if do_coloc else [],
+        rules.all_qc.input,
 
 
 rule all_group:
@@ -660,6 +794,7 @@ include: "rules/regionprops.smk"
 include: "rules/segstats.smk"
 include: "rules/patches.smk"
 include: "rules/groupstats.smk"
+include: "rules/qc.smk"
 
 
 if config["register_to_mri"]:
