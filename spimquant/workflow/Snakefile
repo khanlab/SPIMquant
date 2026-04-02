@@ -11,7 +11,7 @@ tpl_spec = spec[0].copy()
 tpl_spec["entity"] = "template"
 tpl_spec["tag"] = "tpl"
 spec.insert(0, tpl_spec)
-snakebids.set_bids_spec(spec)
+set_bids_spec(spec)
 
 
 configfile: "config/snakebids.yml"

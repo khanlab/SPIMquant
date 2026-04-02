@@ -63,34 +63,11 @@ parse_args:
      - MBMv3
      - turone
 
-  --template_mri:
-    help: "Template to use for MRI registration to obtain brain mask\n"
-    default: MouseIn
-    choices:
-      - MouseIn
-      - DSURQE
-      - MBMv3
-      - turone
-
   --atlas_segs:
-    help: "Atlas segmentations to use with the chosen template (default: use them all)"
+    help: "Atlas segmentations to use with the chosen template (default: predefined list or all)"
     default: null
     action: store
     nargs: '+'
-
-  --patch_atlas_segs:
-    help: "Atlas segmentations to use for extracting patches (default: roi22)"
-    default:
-      - roi22
-    action: store
-    nargs: '+'
-
-
-
-  --template_negative_mask:
-    help: "Negative mask, in the template space, to highlight regions to avoid\n"
-    type: Path
-    default: placeholder
 
   --template_crop:
     help: "Crop template along X-axis to retain specific hemisphere for registration (default: %(default)s)"
@@ -105,13 +82,14 @@ parse_args:
       - PI
       - YOPRO
       - YoPro
+      - YoPro1
       - AutoF
       - autof
     action: store
     nargs: '+'
 
   --stains_for_seg:
-    help: "List of stains to use for segmentation and quantification\n (default: %(default)s)"
+    help: "List of stains to use for segmentation and quantification (will segment any that match the data)\n (default: %(default)s)"
     default: 
       - abeta
       - Abeta
@@ -123,7 +101,7 @@ parse_args:
     nargs: '+'
 
   --stains_for_vessels:
-    help: "List of stains to use for vessel segmentation and quantification\n (default: %(default)s)"
+    help: "List of stains to use for vessel segmentation and quantification (will choose first available, in order)\n (default: %(default)s)"
     default: 
       - CD31
       - Lectin
@@ -131,11 +109,13 @@ parse_args:
     nargs: '+'
 
   --registration_level:
-    help: "Downsampling level to use for registration (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
+    help: "Downsampling level to use for registration (level 0 is full res, level 1 is 50% size, ...) (default: 5)"
+    type: int
     default: 5
 
   --segmentation_level:
-    help: "Downsampling level to use for segmentation (level 0 is full res, level 1 is 50% size, ...) (default: %(default)s)"
+    help: "Downsampling level to use for segmentation (including vessels) (level 0 is full res, level 1 is 50% size, ...) (default: 0)"
+    type: int
     default: 0
 
   --no_segmentation:
@@ -179,6 +159,15 @@ parse_args:
     action: store_true
     default: False
 
+  --template_mri:
+    help: "Template to use for MRI registration to obtain brain mask\n"
+    default: MouseIn
+    choices:
+      - MouseIn
+      - DSURQE
+      - MBMv3
+      - turone
+
   --mri_resample_percent:
     help: "Resampling factor for multi-MRI averaging to create super-resolved images, as a percent (default: %(default)s). Use 200 for upsampling to twice the resolution"
     default: 100
@@ -219,6 +208,14 @@ parse_args:
     nargs: 3
     type: int
 
+  --patch_atlas_segs:
+    help: "Atlas segmentations to use for extracting patches (default: coarse)"
+    default:
+      - coarse
+    action: store
+    nargs: '+'
+
+
   --n_patches_per_label:
     help: "Number of patches to extract per atlas label (default: %(default)s)"
     default: 5
@@ -240,11 +237,12 @@ parse_args:
     nargs: '+'
 
   --crop_atlas_segs:
-    help: "Atlas segmentations to use for extracting Imaris crops (default: roi22)"
+    help: "Atlas segmentations to use for extracting Imaris crops (default: coarse)"
     default:
-      - roi22
+      - coarse
     action: store
     nargs: '+'
+
   --contrast_column:
     help: "Column name in participants.tsv to use for defining group contrasts (e.g., 'treatment', 'genotype'). Required for group-level statistical analysis."
     default: null
