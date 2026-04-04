@@ -90,7 +90,7 @@ rule coloc_per_voxel_template:
         ),
     threads: 16
     resources:
-        mem_mb=15000,
+        mem_mb=64000,
         runtime=30,
     script:
         "../scripts/coloc_per_voxel_template.py"
