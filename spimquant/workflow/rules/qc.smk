@@ -396,6 +396,62 @@ specified by the ``{stain}`` wildcard.
         "../scripts/qc_objectstats.py"
 
 
+rule qc_otsu_threshold_sweep:
+    """Threshold sweep QC HTML report for multiotsu segmentation.
+
+Sweeps over a range of threshold values (spanning the configurable
+percentile range of the bias-field corrected image) and generates 2D
+crops at evenly-spaced positions in the image, one figure per threshold
+value.  The otsu histogram PNG produced by the ``multiotsu`` rule is
+embedded at the top of the report.  The resulting HTML report can be
+visually assessed to select the optimal threshold before running the full
+segmentation pipeline.
+
+Only applicable when ``seg_method`` uses the ``otsu+k{}i{}`` pattern.
+"""
+    input:
+        corrected=bids(
+            root=work,
+            datatype="seg",
+            stain="{stain}",
+            level=str(config["segmentation_level"]),
+            desc="corrected{method}".format(method=config["correction_method"]),
+            suffix="SPIM.ome.zarr",
+            **inputs["spim"].wildcards,
+        ),
+        thresholds_png=bids(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level=str(config["segmentation_level"]),
+            desc="{desc}",
+            suffix="thresholds.png",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        html=bids(
+            root=root,
+            datatype="qc",
+            stain="{stain}",
+            desc="{desc}",
+            suffix="otsuthreshqc.html",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 4
+    resources:
+        mem_mb=32000,
+        runtime=30,
+    params:
+        n_thresholds=10,
+        n_crops=5,
+        patch_size=300,
+        level=config["segmentation_level"],
+        hist_percentile_range=[float(x) for x in config["seg_hist_percentile_range"]],
+        zarrnii_kwargs={"orientation": config["orientation"]},
+    script:
+        "../scripts/qc_otsu_threshold_sweep.py"
+
+
 rule qc_roi_summary:
     """Per-ROI summary QC: top-region bar plots for a single subject.
 

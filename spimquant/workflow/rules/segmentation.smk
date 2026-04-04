@@ -119,8 +119,8 @@ rule multiotsu:
             **inputs["spim"].wildcards,
         ),
     params:
-        hist_bins=int(config["seg_hist_bins"]),
-        hist_range=[int(x) for x in config["seg_hist_range"]],
+        hist_bin_width=float(config["seg_hist_bin_width"]),
+        hist_percentile_range=[float(x) for x in config["seg_hist_percentile_range"]],
         otsu_k=lambda wildcards: int(wildcards.k),
         otsu_threshold_index=lambda wildcards: int(wildcards.i),
         zarrnii_kwargs={"orientation": config["orientation"]},
