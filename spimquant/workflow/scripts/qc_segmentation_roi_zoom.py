@@ -48,9 +48,11 @@ def main():
     subject = snakemake.wildcards.subject
     max_rois = snakemake.params.max_rois
     n_cols = snakemake.params.n_cols
+    use_n4_bg = snakemake.params.get("use_n4_bg", False)
 
+    spim_bg_path = snakemake.input.spim_n4 if use_n4_bg else snakemake.input.spim
     spim_img = ZarrNii.from_ome_zarr(
-        snakemake.input.spim,
+        spim_bg_path,
         level=snakemake.params.level,
         downsample_near_isotropic=True,
         channel_labels=[snakemake.wildcards.stain],
@@ -66,7 +68,7 @@ def main():
     aspect_axial = 1
 
     spim_img_ds = ZarrNii.from_ome_zarr(
-        snakemake.input.spim,
+        spim_bg_path,
         level=(int(snakemake.params.level) + 5),
         downsample_near_isotropic=True,
         channel_labels=[snakemake.wildcards.stain],
@@ -103,7 +105,22 @@ def main():
             color="gray",
         )
         ax.axis("off")
-        plt.savefig(snakemake.output.png, dpi=120, bbox_inches="tight")
+        plt.savefig(snakemake.output.png, dpi=150, bbox_inches="tight")
+        plt.close()
+        # Also save the no-mask version (same empty figure)
+        fig, ax = plt.subplots(figsize=(18, 12))
+        ax.text(
+            0.5,
+            0.5,
+            "No atlas ROIs found in subject",
+            ha="center",
+            va="center",
+            transform=ax.transAxes,
+            fontsize=12,
+            color="gray",
+        )
+        ax.axis("off")
+        plt.savefig(snakemake.output.png_nomask, dpi=150, bbox_inches="tight")
         plt.close()
         return
 
@@ -126,6 +143,8 @@ def main():
     elif n_cols == 1:
         axes = axes[:, np.newaxis]
 
+    # Cache crops for both masked and no-mask figures
+    cached_slices = []
     for i, row in enumerate(roi_rows):
         ax_row = i // n_cols
         ax_col = i % n_cols
@@ -149,11 +168,12 @@ def main():
         spim_sl = spim_crop.data[0, :, :].squeeze().compute()
         spim_sl = _apply_fixed_percentile_norm(spim_sl, glob_lo, glob_hi)
         mask_sl = mask_crop.data[0, :, :].squeeze().compute()
+        cached_slices.append((label_name, spim_sl, mask_sl))
 
         ax.imshow(spim_sl, cmap="gray")
         mask_masked = np.ma.masked_where(mask_sl < 100, mask_sl)
         ax.imshow(
-            mask_masked, cmap="spring", alpha=0.6, vmin=0, vmax=100, aspect=aspect_axial
+            mask_masked, cmap="Reds", alpha=0.6, vmin=0, vmax=100, aspect=aspect_axial
         )
         ax.set_title(label_name, fontsize=7, pad=2)
         ax.set_xticks([])
@@ -166,6 +186,41 @@ def main():
     plt.savefig(snakemake.output.png, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"Saved ROI zoom montage to {snakemake.output.png}")
+
+    # --- No-mask version (reuses cached slices) ---
+    n_rows_nm = int(np.ceil(n_rois / n_cols))
+    fig_nm, axes_nm = plt.subplots(
+        n_rows_nm,
+        n_cols,
+        figsize=(n_cols * 3, n_rows_nm * 3),
+        constrained_layout=True,
+    )
+    fig_nm.suptitle(
+        f"ROI Zoom Montage QC (no mask overlay)\n"
+        f"Subject: {subject}  |  Stain: {stain}  |  Method: {desc}",
+        fontsize=11,
+        fontweight="bold",
+    )
+    if n_rows_nm == 1 and n_cols == 1:
+        axes_nm = np.array([[axes_nm]])
+    elif n_rows_nm == 1:
+        axes_nm = axes_nm[np.newaxis, :]
+    elif n_cols == 1:
+        axes_nm = axes_nm[:, np.newaxis]
+
+    for i, (label_name, spim_sl, _) in enumerate(cached_slices):
+        ax_nm = axes_nm[i // n_cols, i % n_cols]
+        ax_nm.imshow(spim_sl, cmap="gray")
+        ax_nm.set_title(label_name, fontsize=7, pad=2)
+        ax_nm.set_xticks([])
+        ax_nm.set_yticks([])
+
+    for i in range(n_rois, n_rows_nm * n_cols):
+        axes_nm[i // n_cols, i % n_cols].axis("off")
+
+    plt.savefig(snakemake.output.png_nomask, dpi=150, bbox_inches="tight")
+    plt.close()
+    print(f"Saved no-mask ROI zoom montage to {snakemake.output.png_nomask}")
 
 
 if __name__ == "__main__":
