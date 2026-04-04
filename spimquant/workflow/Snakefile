@@ -682,6 +682,25 @@ rule all_qc:
         )
         if do_seg
         else [],
+        # Segmentation ROI zoom montage - no mask overlay
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                seg="{seg}",
+                from_="{template}",
+                stain="{stain}",
+                desc="{desc}nomask",
+                suffix="roimontage.png",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+            stain=stains_for_seg,
+            desc=config["seg_method"],
+        )
+        if do_seg
+        else [],
         # Vessel overview figures
         inputs["spim"].expand(
             bids(
@@ -706,6 +725,25 @@ rule all_qc:
                 from_="{template}",
                 stain="{stain}",
                 desc="{desc}",
+                suffix="vesselroimontage.png",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+            stain=stain_for_vessels,
+            desc=config["vessel_seg_method"],
+        )
+        if do_vessels
+        else [],
+        # Vessel ROI zoom montage - no mask overlay
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                seg="{seg}",
+                from_="{template}",
+                stain="{stain}",
+                desc="{desc}nomask",
                 suffix="vesselroimontage.png",
                 **inputs["spim"].wildcards,
             ),

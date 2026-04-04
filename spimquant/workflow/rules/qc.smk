@@ -34,6 +34,13 @@ Rules 2 and the ROI zoom are also generated for vessel segmentations.
 All outputs are written to the ``qc`` datatype directory for each subject.
 """
 
+# Whether to use the n4-corrected OME-Zarr as the background in zoom montage QC.
+# Enabled via the --qc_roi_zoom_bg_n4 CLI option (only meaningful when
+# correction_method=="n4").
+_use_n4_bg = config.get("qc_roi_zoom_bg_n4", False) and (
+    config.get("correction_method") == "n4"
+)
+
 
 rule qc_intensity_histogram:
     """Per-channel intensity histogram QC.
@@ -154,8 +161,26 @@ region's bounding box (in subject space) and displays the best axial slice
 with the field-fraction overlay.  Aspect ratio is corrected from NIfTI
 voxel dimensions.  Provides detail-level visualisation of segmentation
 quality within individual brain regions.
+
+Two PNGs are produced: one with the mask overlay (``roimontage.png``) and
+one without (``desc-{desc}nomask_roimontage.png``).
 """
     input:
+        **(
+            {
+                "spim_n4": bids(
+                    root=work,
+                    datatype="seg",
+                    stain="{stain}",
+                    level=str(config["segmentation_level"]),
+                    desc="correctedn4",
+                    suffix="SPIM.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
+            }
+            if _use_n4_bg
+            else {}
+        ),
         spim=inputs["spim"].path,
         mask=bids(
             root=root,
@@ -192,6 +217,16 @@ quality within individual brain regions.
             suffix="roimontage.png",
             **inputs["spim"].wildcards,
         ),
+        png_nomask=bids(
+            root=root,
+            datatype="qc",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            desc="{desc}nomask",
+            suffix="roimontage.png",
+            **inputs["spim"].wildcards,
+        ),
     threads: 4
     resources:
         mem_mb=32000,
@@ -201,6 +236,7 @@ quality within individual brain regions.
         n_cols=lambda wildcards: 5 if wildcards.seg == "coarse" else 10,
         patch_size=lambda wildcards: 2000 if wildcards.seg == "coarse" else 500,
         level=config["segmentation_level"],
+        use_n4_bg=_use_n4_bg,
     script:
         "../scripts/qc_segmentation_roi_zoom.py"
 
@@ -211,8 +247,26 @@ rule qc_vessels_roi_zoom:
 Identical to ``qc_segmentation_roi_zoom`` but applied to the vessel
 binary mask.  Uses ZarrNii to load full-resolution data and
 ZarrNiiAtlas for atlas-based ROI cropping.
+
+Two PNGs are produced: one with the mask overlay (``vesselroimontage.png``)
+and one without (``desc-{desc}nomask_vesselroimontage.png``).
 """
     input:
+        **(
+            {
+                "spim_n4": bids(
+                    root=work,
+                    datatype="seg",
+                    stain="{stain}",
+                    level=str(config["segmentation_level"]),
+                    desc="correctedn4",
+                    suffix="SPIM.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
+            }
+            if _use_n4_bg
+            else {}
+        ),
         spim=inputs["spim"].path,
         mask=bids(
             root=root,
@@ -249,6 +303,16 @@ ZarrNiiAtlas for atlas-based ROI cropping.
             suffix="vesselroimontage.png",
             **inputs["spim"].wildcards,
         ),
+        png_nomask=bids(
+            root=root,
+            datatype="qc",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            desc="{desc}nomask",
+            suffix="vesselroimontage.png",
+            **inputs["spim"].wildcards,
+        ),
     threads: 4
     resources:
         mem_mb=32000,
@@ -258,6 +322,7 @@ ZarrNiiAtlas for atlas-based ROI cropping.
         n_cols=lambda wildcards: 5 if wildcards.seg == "coarse" else 10,
         patch_size=lambda wildcards: 2000 if wildcards.seg == "coarse" else 500,
         level=config["segmentation_level"],
+        use_n4_bg=_use_n4_bg,
     script:
         "../scripts/qc_segmentation_roi_zoom.py"
 
