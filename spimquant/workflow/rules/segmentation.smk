@@ -236,38 +236,3 @@ rule clean_segmentation:
         runtime=30,
     script:
         "../scripts/clean_segmentation.py"
-
-
-rule deform_negative_mask_to_subject_nii:
-    input:
-        ref=bids(
-            root=root,
-            datatype="micr",
-            stain=stain_for_reg,
-            level="{level}",
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        mask=config["template_negative_mask"],
-        xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
-    output:
-        mask=bids(
-            root=root,
-            datatype="seg",
-            desc="negative",
-            level="{level}",
-            from_="{template}",
-            suffix="mask.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-    threads: 32
-    resources:
-        mem_mb=1500,
-        runtime=15,
-    conda:
-        "../envs/ants.yaml"
-    shell:
-        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
-        "antsApplyTransforms -d 3 -v -n NearestNeighbor "
-        " -i {input.mask} -o {output.mask} "
-        " -r {input.ref} -t {input.xfm_composite_inv}"

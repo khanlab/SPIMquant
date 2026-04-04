@@ -134,10 +134,10 @@ rule colocalize_regionprops:
             suffix="coloc.parquet",
             **inputs["spim"].wildcards,
         ),
-    threads: 1
+    threads: 16
     resources:
-        mem_mb=1500,
-        runtime=30,
+        mem_mb=64000,
+        runtime=180,
     script:
         "../scripts/compute_colocalization.py"
 
@@ -180,9 +180,9 @@ rule sample_at_vessel_sdt:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-    threads: 1
+    threads: 8
     resources:
         mem_mb=32000,
-        runtime=30,
+        runtime=360,
     script:
         "../scripts/sample_at_points.py"

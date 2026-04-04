@@ -39,9 +39,9 @@ rule map_regionprops_to_atlas_rois:
                 **inputs["spim"].wildcards,
             )
         ),
-    threads: 1
+    threads: 4
     resources:
-        mem_mb=1500,
+        mem_mb=32000,
         runtime=15,
     script:
         "../scripts/map_atlas_to_regionprops.py"
@@ -84,9 +84,9 @@ rule map_coloc_to_atlas_rois:
                 **inputs["spim"].wildcards,
             )
         ),
-    threads: 1
+    threads: 4
     resources:
-        mem_mb=1500,
+        mem_mb=32000,
         runtime=15,
     script:
         "../scripts/map_atlas_to_coloc.py"
