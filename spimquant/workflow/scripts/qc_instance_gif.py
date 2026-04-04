@@ -32,8 +32,11 @@ available.
 from __future__ import annotations
 
 import io
+import logging
 
 import matplotlib
+
+log = logging.getLogger(__name__)
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
@@ -83,7 +86,9 @@ def _global_norms(imgs, channels):
     norms = {}
     base_level = int(snakemake.params.level)
     for ch in channels:
-        # Try progressively coarser levels; stop at the first that works
+        # Try progressively coarser pyramid levels (base+5, base+3, base+1, base)
+        # to obtain a small array quickly for percentile estimation; stop at the
+        # first level that the OME-Zarr contains.
         arr = None
         for extra in (5, 3, 1, 0):
             try:
@@ -94,9 +99,20 @@ def _global_norms(imgs, channels):
                 )
                 arr = coarse.data.compute()
                 break
-            except Exception:
+            except Exception as exc:
+                log.debug(
+                    "Level %d+%d not available for channel %s: %s",
+                    base_level,
+                    extra,
+                    ch,
+                    exc,
+                )
                 continue
         if arr is None:
+            log.warning(
+                "No coarser level found for channel %s; using full level for norm estimation",
+                ch,
+            )
             arr = imgs[ch].data.compute()
         lo, hi = _estimate_global_percentiles(arr)
         norms[ch] = (lo, hi)
@@ -141,8 +157,8 @@ def _add_atlas_labels(df, pos_cols, dseg_nii, label_tsv):
             df["atlas_index"] = df_labeled[index_col].values
         if name_col:
             df["atlas_name"] = df_labeled[name_col].values
-    except Exception:
-        pass  # atlas labeling is best-effort; we just won't have names
+    except Exception as exc:
+        log.warning("Atlas labeling failed (will proceed without ROI names): %s", exc)
 
     if "atlas_index" not in df.columns:
         df["atlas_index"] = np.nan
@@ -186,7 +202,8 @@ def _make_frame(row, imgs, channels, norms, pos_cols, patch_size, instance_type)
         try:
             crop = imgs[ch].crop_centered(pos, patch_size=(patch_size, patch_size, 1))
             sl = crop.data[0, :, :].squeeze().compute()
-        except Exception:
+        except Exception as exc:
+            log.warning("Crop failed for channel %s at pos %s: %s", ch, pos, exc)
             sl = np.zeros((patch_size, patch_size), dtype=np.float32)
 
         lo, hi = norms.get(ch, (0.0, 1.0))
