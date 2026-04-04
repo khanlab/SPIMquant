@@ -32,7 +32,6 @@ available.
 from __future__ import annotations
 
 import io
-import random
 
 import matplotlib
 
@@ -75,34 +74,54 @@ def _load_channel_images(spim_path, channels, level):
 
 
 def _global_norms(imgs, channels):
-    """Compute per-channel (lo, hi) from a coarse level for normalisation."""
+    """Compute per-channel (lo, hi) from a coarse level for normalisation.
+
+    Attempts to load a downsampled version of each channel for efficiency.
+    Falls back to the provided ``imgs`` dict if the coarse level is not
+    available.
+    """
     norms = {}
+    base_level = int(snakemake.params.level)
     for ch in channels:
-        # load a very coarse version for statistics
-        try:
-            coarse = ZarrNii.from_ome_zarr(
-                snakemake.input.spim,
-                level=(int(snakemake.params.level) + 5),
-                channel_labels=[ch],
-            )
-            arr = coarse.data.compute()
-        except Exception:
+        # Try progressively coarser levels; stop at the first that works
+        arr = None
+        for extra in (5, 3, 1, 0):
+            try:
+                coarse = ZarrNii.from_ome_zarr(
+                    snakemake.input.spim,
+                    level=(base_level + extra),
+                    channel_labels=[ch],
+                )
+                arr = coarse.data.compute()
+                break
+            except Exception:
+                continue
+        if arr is None:
             arr = imgs[ch].data.compute()
         lo, hi = _estimate_global_percentiles(arr)
         norms[ch] = (lo, hi)
     return norms
 
 
+# Candidate column names for atlas region index and human-readable name,
+# in preference order.  ``label_region_properties`` in zarrnii adds one of
+# these columns; the first match is used.
+_ATLAS_INDEX_CANDIDATES = ("index", "label_index", "atlas_index", "region_index")
+_ATLAS_NAME_CANDIDATES = ("name", "label_name", "atlas_name", "region_name")
+
+
 def _add_atlas_labels(df, pos_cols, dseg_nii, label_tsv):
-    """Use ZarrNiiAtlas to add 'atlas_index' and 'atlas_name' columns."""
+    """Use ZarrNiiAtlas to add 'atlas_index' and 'atlas_name' columns.
+
+    ``label_region_properties`` requires at least one non-coordinate numeric
+    column in the input dict; a ``_dummy`` column of zeros is included to
+    fulfil this requirement when the caller has not provided other columns.
+    """
     atlas = ZarrNiiAtlas.from_files(dseg_nii, label_tsv)
     regionprops_dict = df[pos_cols].copy()
     regionprops_dict = regionprops_dict.rename(
         columns={pos_cols[0]: "pos_x", pos_cols[1]: "pos_y", pos_cols[2]: "pos_z"}
     ).to_dict(orient="list")
-
-    # label_region_properties needs at least one numeric column alongside coords
-    # We add a dummy column to satisfy the interface if needed
     regionprops_dict["_dummy"] = [0] * len(df)
 
     try:
@@ -111,15 +130,17 @@ def _add_atlas_labels(df, pos_cols, dseg_nii, label_tsv):
             coord_column_names=["pos_x", "pos_y", "pos_z"],
             include_names=True,
         )
-        # Find the atlas index/name columns added by label_region_properties
-        for candidate in ("index", "label_index", "atlas_index", "region_index"):
-            if candidate in df_labeled.columns:
-                df["atlas_index"] = df_labeled[candidate].values
-                break
-        for candidate in ("name", "label_name", "atlas_name", "region_name"):
-            if candidate in df_labeled.columns:
-                df["atlas_name"] = df_labeled[candidate].values
-                break
+        # Locate the atlas index and name columns by checking known candidates
+        index_col = next(
+            (c for c in _ATLAS_INDEX_CANDIDATES if c in df_labeled.columns), None
+        )
+        name_col = next(
+            (c for c in _ATLAS_NAME_CANDIDATES if c in df_labeled.columns), None
+        )
+        if index_col:
+            df["atlas_index"] = df_labeled[index_col].values
+        if name_col:
+            df["atlas_name"] = df_labeled[name_col].values
     except Exception:
         pass  # atlas labeling is best-effort; we just won't have names
 
@@ -320,10 +341,10 @@ def main():
     # ------------------------------------------------------------------
     # Build two orderings
     # ------------------------------------------------------------------
-    rng_state = random.Random(seed)
-    random_order = list(df.index)
-    rng_state.shuffle(random_order)
-    df_random = df.loc[random_order].reset_index(drop=True)
+    # Randomised order: use numpy RNG for reproducible permutation
+    rng_order = np.random.default_rng(seed)
+    random_order = rng_order.permutation(len(df)).tolist()
+    df_random = df.iloc[random_order].reset_index(drop=True)
 
     df_sorted = df.sort_values("_radius_sort").reset_index(drop=True)
 
