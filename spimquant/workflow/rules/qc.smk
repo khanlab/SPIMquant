@@ -159,6 +159,21 @@ Two PNGs are produced: one with the mask overlay (``roimontage.png``) and
 one without (``desc-{desc}nomask_roimontage.png``).
 """
     input:
+        **(
+            {
+                "spim_n4": bids(
+                    root=work,
+                    datatype="seg",
+                    stain="{stain}",
+                    level=str(config["segmentation_level"]),
+                    desc="correctedn4",
+                    suffix="SPIM.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
+            }
+            if _use_n4_bg
+            else {}
+        ),
         spim=inputs["spim"].path,
         mask=bids(
             root=root,
@@ -184,19 +199,6 @@ one without (``desc-{desc}nomask_roimontage.png``).
             seg="{seg}",
             suffix="dseg.tsv",
         ),
-        **{
-            "spim_n4": bids(
-                root=work,
-                datatype="seg",
-                stain="{stain}",
-                level=str(config["segmentation_level"]),
-                desc="correctedn4",
-                suffix="SPIM.ome.zarr",
-                **inputs["spim"].wildcards,
-            )
-        }
-        if _use_n4_bg
-        else {},
     output:
         png=bids(
             root=root,
@@ -243,6 +245,21 @@ Two PNGs are produced: one with the mask overlay (``vesselroimontage.png``)
 and one without (``desc-{desc}nomask_vesselroimontage.png``).
 """
     input:
+        **(
+            {
+                "spim_n4": bids(
+                    root=work,
+                    datatype="seg",
+                    stain="{stain}",
+                    level=str(config["segmentation_level"]),
+                    desc="correctedn4",
+                    suffix="SPIM.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
+            }
+            if _use_n4_bg
+            else {}
+        ),
         spim=inputs["spim"].path,
         mask=bids(
             root=root,
@@ -268,19 +285,6 @@ and one without (``desc-{desc}nomask_vesselroimontage.png``).
             seg="{seg}",
             suffix="dseg.tsv",
         ),
-        **{
-            "spim_n4": bids(
-                root=work,
-                datatype="seg",
-                stain="{stain}",
-                level=str(config["segmentation_level"]),
-                desc="correctedn4",
-                suffix="SPIM.ome.zarr",
-                **inputs["spim"].wildcards,
-            )
-        }
-        if _use_n4_bg
-        else {},
     output:
         png=bids(
             root=root,
