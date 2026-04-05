@@ -46,7 +46,7 @@ rule transform_regionprops_to_template:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-        xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
+        xfm_composite_inv=get_composite_warp_inv,
     params:
         coord_column_names=config["coord_column_names"],
     output:

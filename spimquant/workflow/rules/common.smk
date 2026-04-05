@@ -86,3 +86,80 @@ def get_regionprops_parquet(wildcards):
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         )
+
+
+def get_composite_warp(wildcards):
+    """Get the composite warp from subject to template space.
+
+    Returns the path to either the direct composite warp (no via-template)
+    or the combined via-template composite warp if --via-template is configured.
+    """
+    spim_wildcards = {k: getattr(wildcards, k) for k in inputs["spim"].wildcards.keys()}
+    if via_template is None:
+        return bids(
+            root=root,
+            datatype="xfm",
+            from_="subject",
+            to=wildcards.template,
+            suffix="xfm.nii.gz",
+            **spim_wildcards,
+        )
+    else:
+        return bids(
+            root=root,
+            datatype="xfm",
+            from_="subject",
+            to=wildcards.template,
+            via=via_template,
+            suffix="xfm.nii.gz",
+            **spim_wildcards,
+        )
+
+
+def get_composite_warp_inv(wildcards):
+    """Get the inverse composite warp from template to subject space.
+
+    Returns the path to either the direct inverse composite warp (no via-template)
+    or the combined via-template inverse composite warp if --via-template is configured.
+    """
+    spim_wildcards = {k: getattr(wildcards, k) for k in inputs["spim"].wildcards.keys()}
+    if via_template is None:
+        return bids(
+            root=root,
+            datatype="xfm",
+            from_=wildcards.template,
+            to="subject",
+            suffix="xfm.nii.gz",
+            **spim_wildcards,
+        )
+    else:
+        return bids(
+            root=root,
+            datatype="xfm",
+            from_=wildcards.template,
+            to="subject",
+            via=via_template,
+            suffix="xfm.nii.gz",
+            **spim_wildcards,
+        )
+
+
+def get_affine_warped_for_qc(wildcards):
+    """Get the affine-warped SPIM image for QC report.
+
+    Returns the affine-warped image in the appropriate space:
+    - Without via-template: image is warped to the final template space
+    - With via-template: image is warped to the intermediate (via) template space,
+      since that is where the affine registration is performed.
+    """
+    spim_wildcards = {k: getattr(wildcards, k) for k in inputs["spim"].wildcards.keys()}
+    target_space = via_template if via_template is not None else wildcards.template
+    return bids(
+        root=root,
+        datatype="xfm",
+        space=target_space,
+        stain=wildcards.stain,
+        desc="affinewarped",
+        suffix="SPIM.nii.gz",
+        **spim_wildcards,
+    )
