@@ -1,18 +1,30 @@
-"""Perform group-based statistical analysis on segmentation statistics.
+"""Perform formula-based group statistical analysis on segmentation statistics.
 
-This script reads segstats.tsv files from multiple participants and performs
-statistical tests (e.g., t-tests, ANOVA) based on contrasts defined in the
-participants.tsv file.
+This script reads segstats.tsv files from multiple participants, fits a single
+global OLS model per region/metric using the user-supplied patsy/statsmodels
+formula, and computes pairwise contrast statistics using the model's covariance
+matrix.
 
-This is a Snakemake script that expects the `snakemake` object to be available,
-which is automatically provided when executed as part of a Snakemake workflow.
+The contrast is specified via ``snakemake.params.pairwise_contrast_info``, a
+dict with keys:
+- ``factor``: the column in participants.tsv to compare levels of
+- ``levelA`` / ``levelB``: the two levels to contrast (levelA − levelB)
+- ``strata``: a dict of {column: value} pairs for stratified analyses;
+  if non-empty the model is fit with *all* data but marginal means are
+  evaluated at the given stratum values.
+
+This is a Snakemake script that expects the ``snakemake`` object to be
+available, which is automatically provided when executed as part of a
+Snakemake workflow.
 """
 
 import os
-import pandas as pd
-import numpy as np
-from scipy import stats
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import statsmodels.formula.api as smf
+from patsy import dmatrix
 
 
 def load_segstats_with_metadata(segstats_paths, participants_df):
@@ -21,14 +33,14 @@ def load_segstats_with_metadata(segstats_paths, participants_df):
     Parameters
     ----------
     segstats_paths : list
-        List of paths to segstats.tsv files
+        List of paths to segstats.tsv files.
     participants_df : pd.DataFrame
-        DataFrame containing participant metadata
+        DataFrame containing participant metadata from participants.tsv.
 
     Returns
     -------
     pd.DataFrame
-        Combined dataframe with segstats and participant metadata
+        Combined dataframe with segstats and participant metadata.
     """
     all_data = []
 
@@ -36,185 +48,264 @@ def load_segstats_with_metadata(segstats_paths, participants_df):
         if not os.path.exists(path):
             continue
 
-        # Extract subject ID from path
-        # Path format: ...sub-{subject_id}/...
         parts = Path(path).parts
-        subject_id = None
-        for part in parts:
-            if part.startswith("sub-"):
-                subject_id = part
-                break
-
+        subject_id = next((p for p in parts if p.startswith("sub-")), None)
         if subject_id is None:
             continue
 
-        # Load segstats
         df = pd.read_csv(path, sep="\t")
         df["participant_id"] = subject_id
-
         all_data.append(df)
 
     if not all_data:
         raise ValueError("No valid segstats files found")
 
-    # Combine all segstats
     combined = pd.concat(all_data, ignore_index=True)
-
-    # Merge with participants metadata
-    merged = combined.merge(participants_df, on="participant_id", how="left")
-
-    return merged
+    return combined.merge(participants_df, on="participant_id", how="left")
 
 
-def perform_two_group_test(data, group_column, group1_value, group2_value, metrics):
-    """Perform two-sample t-tests for each region and metric.
+def _build_prediction_row(region_data, pairwise_factor, level, strata):
+    """Build a one-row DataFrame for marginal mean prediction.
+
+    Continuous variables are held at their mean; categorical variables are
+    held at their mode.  The pairwise factor and any strata variables are set
+    to the supplied values.
+
+    Parameters
+    ----------
+    region_data : pd.DataFrame
+    pairwise_factor : str
+    level : str
+    strata : dict
+
+    Returns
+    -------
+    pd.DataFrame  (single row)
+    """
+    row = {}
+    for col in region_data.columns:
+        if col == "participant_id":
+            continue
+        if pd.api.types.is_numeric_dtype(region_data[col]):
+            row[col] = [region_data[col].mean()]
+        else:
+            mode_vals = region_data[col].mode()
+            row[col] = [mode_vals.iloc[0] if len(mode_vals) > 0 else None]
+
+    row[pairwise_factor] = [level]
+    for factor, value in strata.items():
+        row[factor] = [value]
+
+    return pd.DataFrame(row)
+
+
+def compute_contrast_for_metric(
+    region_data,
+    formula_template,
+    metric,
+    pairwise_factor,
+    level_a,
+    level_b,
+    strata,
+):
+    """Fit a global OLS model and compute one pairwise contrast for *metric*.
+
+    The model is fit on all rows of *region_data*.  Marginal means are
+    computed by predicting at reference covariate values with the pairwise
+    factor set to each level in turn (and strata variables fixed at the
+    requested values).
+
+    Parameters
+    ----------
+    region_data : pd.DataFrame
+    formula_template : str
+        Formula with the literal string ``metric`` as the response variable
+        placeholder, e.g. ``"metric ~ C(treatment) + age"``.
+    metric : str
+        Actual metric column name; replaces ``metric`` in the formula.
+    pairwise_factor : str
+    level_a, level_b : str
+    strata : dict
+
+    Returns
+    -------
+    dict  with keys ``{metric}_tstat``, ``{metric}_pval``, ``{metric}_cohensd``,
+          ``{metric}_mean_{level_a}``, ``{metric}_mean_{level_b}``,
+          ``n_{level_a}``, ``n_{level_b}``.
+    """
+    # Replace the placeholder with the actual (possibly backtick-quoted) column.
+    actual_formula = formula_template.replace("metric", f"`{metric}`")
+
+    # Filter to rows relevant for the raw-mean / Cohen's d calculation.
+    grp_a = region_data[region_data[pairwise_factor] == level_a]
+    grp_b = region_data[region_data[pairwise_factor] == level_b]
+    if strata:
+        for f, v in strata.items():
+            grp_a = grp_a[grp_a[f] == v]
+            grp_b = grp_b[grp_b[f] == v]
+
+    n_a = int(grp_a[metric].dropna().shape[0])
+    n_b = int(grp_b[metric].dropna().shape[0])
+    mean_a = float(grp_a[metric].mean()) if n_a > 0 else np.nan
+    mean_b = float(grp_b[metric].mean()) if n_b > 0 else np.nan
+    std_a = float(grp_a[metric].std()) if n_a > 1 else np.nan
+    std_b = float(grp_b[metric].std()) if n_b > 1 else np.nan
+
+    result = {
+        f"n_{level_a}": n_a,
+        f"n_{level_b}": n_b,
+        f"{metric}_mean_{level_a}": mean_a,
+        f"{metric}_mean_{level_b}": mean_b,
+        f"{metric}_tstat": np.nan,
+        f"{metric}_pval": np.nan,
+        f"{metric}_cohensd": np.nan,
+    }
+
+    if n_a < 2 or n_b < 2:
+        return result
+
+    try:
+        fitted = smf.ols(actual_formula, data=region_data).fit()
+
+        # Build prediction rows for each level at the desired strata.
+        pred_df_a = _build_prediction_row(region_data, pairwise_factor, level_a, strata)
+        pred_df_b = _build_prediction_row(region_data, pairwise_factor, level_b, strata)
+
+        # Use patsy with the model's design_info for consistent dummy encoding.
+        design_info = fitted.model.data.design_info
+        dm_a = np.asarray(dmatrix(design_info, pred_df_a, return_type="matrix"))
+        dm_b = np.asarray(dmatrix(design_info, pred_df_b, return_type="matrix"))
+        contrast_vec = (dm_a - dm_b)[0]
+
+        ct = fitted.t_test(contrast_vec)
+        tstat = float(np.asarray(ct.tvalue).item())
+        pval = float(np.asarray(ct.pvalue).item())
+
+        # Cohen's d from pooled standard deviation.
+        denom = n_a + n_b - 2
+        if denom > 0 and not (np.isnan(std_a) or np.isnan(std_b)):
+            pooled_var = ((n_a - 1) * std_a**2 + (n_b - 1) * std_b**2) / denom
+            pooled_std = np.sqrt(pooled_var) if pooled_var >= 0 else np.nan
+            cohensd = (mean_a - mean_b) / pooled_std if pooled_std > 0 else np.nan
+        else:
+            cohensd = np.nan
+
+        result[f"{metric}_tstat"] = tstat
+        result[f"{metric}_pval"] = pval
+        result[f"{metric}_cohensd"] = cohensd
+
+    except Exception:  # noqa: BLE001
+        pass  # leave NaN placeholders
+
+    return result
+
+
+def perform_model_based_contrast(
+    data, formula, pairwise_factor, level_a, level_b, strata, metrics
+):
+    """Compute pairwise contrast statistics for every region and metric.
 
     Parameters
     ----------
     data : pd.DataFrame
-        Combined dataframe with segstats and metadata
-    group_column : str
-        Column name for grouping (e.g., 'treatment')
-    group1_value : str
-        Value for group 1 (e.g., 'control')
-    group2_value : str
-        Value for group 2 (e.g., 'drug')
-    metrics : list
-        List of metric columns to test (e.g., ['fieldfrac', 'density'])
+        Combined dataframe with segstats and participant metadata.
+    formula : str
+        Model formula (patsy/statsmodels), with ``metric`` as placeholder.
+    pairwise_factor : str
+    level_a, level_b : str
+    strata : dict
+    metrics : list[str]
 
     Returns
     -------
     pd.DataFrame
-        Results dataframe with statistics for each region
+        One row per region with columns for each metric's statistics.
     """
-    results = []
-
-    # Get unique regions
     regions = data[["index", "name"]].drop_duplicates()
+    rows = []
 
     for _, region in regions.iterrows():
-        region_idx = region["index"]
-        region_name = region["name"]
+        region_data = data[data["index"] == region["index"]].copy()
 
-        # Filter data for this region
-        region_data = data[data["index"] == region_idx]
+        row = {"index": region["index"], "name": region["name"]}
 
-        result = {
-            "index": region_idx,
-            "name": region_name,
-        }
-
-        # Get group data
-        group1_data = region_data[region_data[group_column] == group1_value]
-        group2_data = region_data[region_data[group_column] == group2_value]
-
-        result[f"n_{group1_value}"] = len(group1_data)
-        result[f"n_{group2_value}"] = len(group2_data)
-
-        # Perform tests for each metric
         for metric in metrics:
             if metric not in region_data.columns:
+                row.update(
+                    {
+                        f"n_{level_a}": np.nan,
+                        f"n_{level_b}": np.nan,
+                        f"{metric}_mean_{level_a}": np.nan,
+                        f"{metric}_mean_{level_b}": np.nan,
+                        f"{metric}_tstat": np.nan,
+                        f"{metric}_pval": np.nan,
+                        f"{metric}_cohensd": np.nan,
+                    }
+                )
                 continue
 
-            g1_values = group1_data[metric].dropna()
-            g2_values = group2_data[metric].dropna()
-
-            if len(g1_values) < 2 or len(g2_values) < 2:
-                # Not enough data for testing
-                result[f"{metric}_mean_{group1_value}"] = (
-                    g1_values.mean() if len(g1_values) > 0 else np.nan
-                )
-                result[f"{metric}_mean_{group2_value}"] = (
-                    g2_values.mean() if len(g2_values) > 0 else np.nan
-                )
-                result[f"{metric}_tstat"] = np.nan
-                result[f"{metric}_pval"] = np.nan
-                continue
-
-            # Calculate means
-            result[f"{metric}_mean_{group1_value}"] = g1_values.mean()
-            result[f"{metric}_mean_{group2_value}"] = g2_values.mean()
-            result[f"{metric}_std_{group1_value}"] = g1_values.std()
-            result[f"{metric}_std_{group2_value}"] = g2_values.std()
-
-            # Perform two-sample t-test
-            tstat, pval = stats.ttest_ind(g1_values, g2_values)
-            result[f"{metric}_tstat"] = tstat
-            result[f"{metric}_pval"] = pval
-
-            # Calculate effect size (Cohen's d)
-            pooled_std = np.sqrt(
-                (
-                    (len(g1_values) - 1) * g1_values.std() ** 2
-                    + (len(g2_values) - 1) * g2_values.std() ** 2
-                )
-                / (len(g1_values) + len(g2_values) - 2)
+            stats = compute_contrast_for_metric(
+                region_data,
+                formula,
+                metric,
+                pairwise_factor,
+                level_a,
+                level_b,
+                strata,
             )
-            if pooled_std > 0:
-                cohens_d = (g1_values.mean() - g2_values.mean()) / pooled_std
-                result[f"{metric}_cohensd"] = cohens_d
-            else:
-                result[f"{metric}_cohensd"] = np.nan
+            row.update(stats)
 
-        results.append(result)
+        rows.append(row)
 
-    return pd.DataFrame(results)
+    return pd.DataFrame(rows)
 
 
 def main():
     """Main function - uses snakemake object provided by Snakemake workflow."""
     participants_df = pd.read_csv(snakemake.input.participants_tsv, sep="\t")
 
-    # Validate participants.tsv has required columns
     if "participant_id" not in participants_df.columns:
         raise ValueError("participants.tsv must contain a 'participant_id' column")
 
-    # Load and combine all segstats files
     combined_data = load_segstats_with_metadata(
         snakemake.input.segstats_tsvs, participants_df
     )
 
-    # Get contrast information
-    contrast_column = snakemake.params.contrast_column
-    contrast_values = snakemake.params.contrast_values
+    formula = snakemake.params.model
+    contrast_info = snakemake.params.pairwise_contrast_info
     metrics = snakemake.params.metric_columns + snakemake.params.coloc_metric_columns
 
-    # Validate contrast column exists if specified
-    if contrast_column is not None and contrast_column not in participants_df.columns:
+    if not formula:
+        raise ValueError("No model formula supplied (--model is required).")
+    if not contrast_info:
         raise ValueError(
-            f"Contrast column '{contrast_column}' not found in participants.tsv. "
-            f"Available columns: {list(participants_df.columns)}"
+            "No pairwise contrast information found for this wildcard. "
+            "Check that --pairwise matches a column in participants.tsv."
         )
 
-    if contrast_column is None or contrast_values is None:
-        # No contrasts specified - just aggregate data
-        # Group by region and compute summary statistics
+    pairwise_factor = contrast_info["factor"]
+    level_a = contrast_info["levelA"]
+    level_b = contrast_info["levelB"]
+    strata = contrast_info.get("strata", {})
 
-        agg_dict = {"participant_id": "count"}
-        for metric in metrics:
-            agg_dict[metric] = ["mean", "std", "min", "max"]
+    # Validate required columns exist
+    for col in [pairwise_factor] + list(strata.keys()):
+        if col not in combined_data.columns:
+            raise ValueError(
+                f"Column '{col}' not found in data after merging with "
+                f"participants.tsv. Available columns: {list(combined_data.columns)}"
+            )
 
-        results = combined_data.groupby(["index", "name"]).agg(agg_dict).reset_index()
-        results.columns = ["_".join(col).strip("_") for col in results.columns.values]
-        results.rename(columns={"participant_id_count": "n_subjects"}, inplace=True)
+    results = perform_model_based_contrast(
+        combined_data,
+        formula,
+        pairwise_factor,
+        level_a,
+        level_b,
+        strata,
+        metrics,
+    )
 
-    elif len(contrast_values) == 2:
-        # Two-group comparison
-
-        results = perform_two_group_test(
-            combined_data,
-            contrast_column,
-            contrast_values[0],
-            contrast_values[1],
-            metrics,
-        )
-    else:
-        raise ValueError(
-            "Currently only two-group contrasts are supported. "
-            f"Got {len(contrast_values)} groups: {contrast_values}"
-        )
-
-    # Save results
     results.to_csv(snakemake.output.stats_tsv, sep="\t", index=False)
 
 

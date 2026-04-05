@@ -250,15 +250,20 @@ parse_args:
     action: store
     nargs: '+'
 
-  --contrast_column:
-    help: "Column name in participants.tsv to use for defining group contrasts (e.g., 'treatment', 'genotype'). Required for group-level statistical analysis."
+  --model:
+    help: "Statistical model formula in patsy/statsmodels format, with 'metric' as a placeholder for the response variable (e.g. 'metric ~ C(treatment) * C(genotype) + age'). Required for group-level analysis."
     default: null
     type: str
 
-  --contrast_values:
-    help: "Two group values for contrast comparison (e.g., 'control' 'drug'). Used with --contrast_column for statistical testing. Provide exactly 2 values."
+  --pairwise:
+    help: "Factor(s) in participants.tsv for which all pairwise comparisons should be computed. Can be specified multiple times (e.g. '--pairwise treatment --pairwise genotype')."
     default: null
-    nargs: 2
+    nargs: '+'
+
+  --within:
+    help: "Factors defining strata within which pairwise contrasts are computed (e.g. '--within genotype sex'). All combinations of these factor levels will be used as separate strata."
+    default: null
+    nargs: '+'
 
 
 #--- workflow specific configuration -- 
