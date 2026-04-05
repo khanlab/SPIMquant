@@ -64,7 +64,7 @@ def load_segstats_with_metadata(segstats_paths, participants_df):
     return combined.merge(participants_df, on="participant_id", how="left")
 
 
-def _build_prediction_row(region_data, pairwise_factor, level, strata):
+def build_prediction_row(region_data, pairwise_factor, level, strata):
     """Build a one-row DataFrame for marginal mean prediction.
 
     Continuous variables are held at their mean; categorical variables are
@@ -168,8 +168,8 @@ def compute_contrast_for_metric(
         fitted = smf.ols(actual_formula, data=region_data).fit()
 
         # Build prediction rows for each level at the desired strata.
-        pred_df_a = _build_prediction_row(region_data, pairwise_factor, level_a, strata)
-        pred_df_b = _build_prediction_row(region_data, pairwise_factor, level_b, strata)
+        pred_df_a = build_prediction_row(region_data, pairwise_factor, level_a, strata)
+        pred_df_b = build_prediction_row(region_data, pairwise_factor, level_b, strata)
 
         # Use patsy with the model's design_info for consistent dummy encoding.
         design_info = fitted.model.data.design_info

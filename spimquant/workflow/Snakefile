@@ -1,5 +1,7 @@
 import os
+from itertools import combinations as _combinations, product as _product
 
+import pandas as _pd
 from zarrnii import ZarrNii
 from snakemake.utils import format
 from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
@@ -143,9 +145,6 @@ for seg in config["crop_atlas_segs"]:
         crop_atlas_segs.append(seg)
 # Validate that model/pairwise arguments are provided when using group analysis level
 # and generate pairwise contrast labels from participants.tsv at planning time
-from itertools import combinations as _combinations, product as _product
-import pandas as _pd
-
 pairwise_contrast_labels = []
 pairwise_contrast_info = {}  # label -> dict with factor, levelA, levelB, strata
 
