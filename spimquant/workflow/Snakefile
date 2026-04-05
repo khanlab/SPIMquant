@@ -82,6 +82,9 @@ if stain_for_reg is None:
 
 stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
 
+# seg methods that use multi-Otsu thresholding (otsu+k{}i{} pattern)
+otsu_seg_methods = [m for m in config["seg_method"] if m.startswith("otsu+")]
+
 if len(stains_for_seg) == 0 or config["no_segmentation"]:
     do_seg = False
     do_coloc = False
@@ -221,6 +224,32 @@ rule all_fieldfrac_tune:
             k=4,
             i=range(4),
         ),
+
+
+rule all_otsu_hist_qc:
+    """Target rule to generate otsu threshold sweep QC HTML reports.
+
+Produces one HTML report per subject/stain/method combination for every
+otsu+k{}i{} segmentation method.  Each report shows the multi-Otsu
+histogram alongside 2D crops at a sweep of threshold values so that the
+optimal threshold can be identified visually.  Only meaningful when the
+active ``seg_method`` contains at least one ``otsu+k{}i{}`` entry.
+"""
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="otsuthreshqc.html",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            desc=otsu_seg_methods,
+        )
+        if (do_seg and len(otsu_seg_methods) > 0)
+        else [],
 
 
 rule all_register:

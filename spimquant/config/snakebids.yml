@@ -142,16 +142,18 @@ parse_args:
       - otsu+k3i2
     nargs: '+'
 
-  --seg_hist_range:
-    help: "Range of intensities to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. Specify 2 numbers, for min and max values. (default: %(default)s)"
-    default: 
-      - 0
-      - 1000
+  --seg_hist_percentile_range:
+    help: "Percentile range to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. Specify 2 numbers for the low and high percentiles (default: %(default)s)"
+    default:
+      - 1
+      - 99
     nargs: 2
+    type: float
 
-  --seg_hist_bins:
-    help: "Number of bins to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. (default: %(default)s)"
-    default: 1000
+  --seg_hist_bin_width:
+    help: "Bin width to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. (default: %(default)s)"
+    default: 1
+    type: float
 
 
   --register_to_mri:
