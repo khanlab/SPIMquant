@@ -135,6 +135,11 @@ parse_args:
       - n4
     default: n4
 
+  --direct_biasfield:
+    help: "Compute bias field correction directly at the segmentation level without downsampling and upsampling. Useful when the segmentation level is already small enough for efficient direct computation (default: %(default)s)"
+    action: store_true
+    default: False
+
 
   --seg_method:
     help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions. "
