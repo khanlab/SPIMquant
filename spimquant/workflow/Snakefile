@@ -162,6 +162,11 @@ if config.get("analysis_level") == "group":
         )
 
     _participants_tsv = os.path.join(config["bids_dir"], "participants.tsv")
+    if not os.path.exists(_participants_tsv):
+        raise ValueError(
+            f"participants.tsv not found at '{_participants_tsv}'. "
+            "This file is required for group-level analysis."
+        )
     _participants_df = _pd.read_csv(_participants_tsv, sep="\t")
 
     _pairwise_factors = config["pairwise"]
@@ -189,7 +194,7 @@ if config.get("analysis_level") == "group":
             for _lA, _lB in _combinations(_levels, 2):
                 for _stratum in _product(*_within_level_lists):
                     _strata_dict = dict(zip(_within_factors, _stratum))
-                    _strata_str = "+".join(f"{f}{v}" for f, v in _strata_dict.items())
+                    _strata_str = "+".join(f"{f}-{v}" for f, v in _strata_dict.items())
                     _label = f"{_factor}+{_lA}vs{_lB}+{_strata_str}"
                     pairwise_contrast_labels.append(_label)
                     pairwise_contrast_info[_label] = {
@@ -212,7 +217,7 @@ if config.get("analysis_level") == "group":
 
 wildcard_constraints:
     stain="[a-zA-Z0-9]+",
-    pairwise_contrast="[a-zA-Z0-9+_]+",
+    pairwise_contrast="[a-zA-Z0-9+_-]+",
 
 
 rule all_templatereg_deform_zooms:

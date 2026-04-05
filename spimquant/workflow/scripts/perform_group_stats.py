@@ -194,8 +194,12 @@ def compute_contrast_for_metric(
         result[f"{metric}_pval"] = pval
         result[f"{metric}_cohensd"] = cohensd
 
-    except Exception:  # noqa: BLE001
-        pass  # leave NaN placeholders
+    except Exception as exc:  # noqa: BLE001
+        print(
+            f"Warning: model fitting failed for metric '{metric}' "
+            f"(factor='{pairwise_factor}', {level_a} vs {level_b}, "
+            f"strata={strata}): {exc}. Leaving stats as NaN."
+        )  # leave NaN placeholders
 
     return result
 
