@@ -29,8 +29,6 @@ This is a Snakemake script that expects the ``snakemake`` object to be
 available.
 """
 
-from __future__ import annotations
-
 import io
 import logging
 
