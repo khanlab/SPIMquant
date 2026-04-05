@@ -801,6 +801,65 @@ rule all_qc:
         )
         if do_seg
         else [],
+        # Instance-centred animated GIFs (per stain, per atlas seg, per seg method)
+        inputs["spim"].expand(
+            [
+                bids(
+                    root=root,
+                    datatype="qc",
+                    seg="{seg}",
+                    from_="{template}",
+                    stain="{stain}",
+                    desc="{desc}",
+                    suffix="instancerandom.gif",
+                    **inputs["spim"].wildcards,
+                ),
+                bids(
+                    root=root,
+                    datatype="qc",
+                    seg="{seg}",
+                    from_="{template}",
+                    stain="{stain}",
+                    desc="{desc}",
+                    suffix="instancesorted.gif",
+                    **inputs["spim"].wildcards,
+                ),
+            ],
+            seg=atlas_segs,
+            template=config["template"],
+            stain=stains_for_seg,
+            desc=config["seg_method"],
+        )
+        if do_seg
+        else [],
+        # Colocalization instance GIFs (per atlas seg, per seg method)
+        inputs["spim"].expand(
+            [
+                bids(
+                    root=root,
+                    datatype="qc",
+                    seg="{seg}",
+                    from_="{template}",
+                    desc="{desc}",
+                    suffix="colocinstancerandom.gif",
+                    **inputs["spim"].wildcards,
+                ),
+                bids(
+                    root=root,
+                    datatype="qc",
+                    seg="{seg}",
+                    from_="{template}",
+                    desc="{desc}",
+                    suffix="colocinstancesorted.gif",
+                    **inputs["spim"].wildcards,
+                ),
+            ],
+            seg=atlas_segs,
+            template=config["template"],
+            desc=config["seg_method"],
+        )
+        if do_coloc
+        else [],
 
 
 rule all_participant:

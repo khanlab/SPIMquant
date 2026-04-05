@@ -6,7 +6,7 @@ For each pair of nearby objects from different channels, it records their relati
 and computes a colocalization coordinate.
 
 Input:
-    - regionprops_aggregated_parquet: Aggregated regionprops with 'stain' column and 
+    - regionprops_aggregated_parquet: Aggregated regionprops with 'stain' column and
       template space coordinates (template_x, template_y, template_z)
 
 Parameters:
@@ -23,16 +23,16 @@ Output:
       * nvoxels_a, nvoxels_b: Volume in voxels
       * distance: Euclidean distance between centroids
       * overlap_ratio: Estimated overlap (1 - distance/sum_radii)
-      * template_coloc_x/y/z: Colocalization coordinate (midpoint)
+      * pos_coloc_x/y/z: Colocalization coordinate midpoint in subject space
+      * template_coloc_x/y/z: Colocalization coordinate (midpoint) in template space
 
-The output can be used for downstream spatial statistics including KDE, 
+The output can be used for downstream spatial statistics including KDE,
 histograms, voxelization, or further colocalization analysis.
 """
 
 import numpy as np
 import pandas as pd
 from scipy.spatial import KDTree
-
 
 # Get configuration parameters with defaults
 # Search radius multiplier: determines how far to look for potential colocalizations
@@ -187,6 +187,9 @@ for i, stain_a in enumerate(stains):
                     # Calculate colocalization coordinate (midpoint)
                     coloc_coord = (template_pos_a + template_pos_b) / 2.0
 
+                    # Subject-space midpoint (for cropping in subject space)
+                    subject_coloc_coord = (pos_a + pos_b) / 2.0
+
                     # Store the colocalization result
                     coloc_results.append(
                         {
@@ -200,6 +203,9 @@ for i, stain_a in enumerate(stains):
                             "nvoxels_b": obj_b["nvoxels"],
                             "distance": distance,
                             "overlapratio": overlap_ratio,
+                            "pos_coloc_x": subject_coloc_coord[0],
+                            "pos_coloc_y": subject_coloc_coord[1],
+                            "pos_coloc_z": subject_coloc_coord[2],
                             "template_coloc_x": coloc_coord[0],
                             "template_coloc_y": coloc_coord[1],
                             "template_coloc_z": coloc_coord[2],
@@ -224,6 +230,9 @@ else:
             "nvoxels_b",
             "distance",
             "overlapratio",
+            "pos_coloc_x",
+            "pos_coloc_y",
+            "pos_coloc_z",
             "template_coloc_x",
             "template_coloc_y",
             "template_coloc_z",

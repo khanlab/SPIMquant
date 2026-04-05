@@ -22,6 +22,13 @@ This module produces PNG quality-control figures covering:
 5. Per-ROI summaries (subject level)
    - Top-regions bar plots for field fraction, count, and density
 
+6. Instance-centred animated GIFs
+   - Per-stain: two GIFs (random order + sorted by radius) showing SPIM crops
+     centred on each detected instance with all channels side-by-side, a
+     hollow circle marker for the equivalent diameter, and atlas ROI annotation
+   - Per-colocalization: same but centred on the midpoint of each colocalized
+     object pair
+
 Rules 2 and the ROI zoom are also generated for vessel segmentations.
 
 All outputs are written to the ``qc`` datatype directory for each subject.
@@ -435,3 +442,145 @@ ranked by field fraction, object count, and density for every stain.
         runtime=10,
     script:
         "../scripts/qc_roi_summary.py"
+
+
+rule qc_stain_instance_gif:
+    """Instance-centred animated GIF QC for a single stain.
+
+For every detected instance of the given stain, crops the raw SPIM data
+(all channels side-by-side) centred on the instance position, overlays a
+hollow circle whose diameter represents the equivalent spherical diameter,
+and annotates with position, atlas ROI, and radius.  Two GIFs are produced:
+one with a randomised frame order and one sorted by ascending equivalent
+radius.
+
+Inputs are the aggregated (all-stain) regionprops parquet in template space
+(which retains subject-space ``pos_x/y/z`` columns) together with the atlas
+parcellation for atlas-label lookup.
+"""
+    input:
+        spim=inputs["spim"].path,
+        instance_parquet=bids(
+            root=root,
+            datatype="tabular",
+            desc="{desc}",
+            space="{template}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+        dseg_nii=bids(
+            root=root,
+            datatype="parc",
+            seg="{seg}",
+            level=config["registration_level"],
+            from_="{template}",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        label_tsv=bids(
+            root=root,
+            template="{template}",
+            seg="{seg}",
+            suffix="dseg.tsv",
+        ),
+    output:
+        gif_random=bids(
+            root=root,
+            datatype="qc",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            desc="{desc}",
+            suffix="instancerandom.gif",
+            **inputs["spim"].wildcards,
+        ),
+        gif_sorted=bids(
+            root=root,
+            datatype="qc",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            desc="{desc}",
+            suffix="instancesorted.gif",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 4
+    resources:
+        mem_mb=16000,
+        runtime=60,
+    params:
+        instance_type="stain",
+        channels=stains,
+        level=config["segmentation_level"],
+        patch_size=config.get("instance_gif_patch_size", 100),
+        max_instances=config.get("instance_gif_max_instances", 200),
+        seed=42,
+    script:
+        "../scripts/qc_instance_gif.py"
+
+
+rule qc_coloc_instance_gif:
+    """Instance-centred animated GIF QC for colocalized object pairs.
+
+Identical to ``qc_stain_instance_gif`` but operates on the colocalization
+parquet: each frame shows the SPIM crop centred on the midpoint between the
+two colocalized objects (subject-space ``pos_coloc_x/y/z``), with a circle
+marker drawn at the average radius of the pair.
+"""
+    input:
+        spim=inputs["spim"].path,
+        instance_parquet=bids(
+            root=root,
+            datatype="tabular",
+            desc="{desc}",
+            space="{template}",
+            suffix="coloc.parquet",
+            **inputs["spim"].wildcards,
+        ),
+        dseg_nii=bids(
+            root=root,
+            datatype="parc",
+            seg="{seg}",
+            level=config["registration_level"],
+            from_="{template}",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        label_tsv=bids(
+            root=root,
+            template="{template}",
+            seg="{seg}",
+            suffix="dseg.tsv",
+        ),
+    output:
+        gif_random=bids(
+            root=root,
+            datatype="qc",
+            seg="{seg}",
+            from_="{template}",
+            desc="{desc}",
+            suffix="colocinstancerandom.gif",
+            **inputs["spim"].wildcards,
+        ),
+        gif_sorted=bids(
+            root=root,
+            datatype="qc",
+            seg="{seg}",
+            from_="{template}",
+            desc="{desc}",
+            suffix="colocinstancesorted.gif",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 4
+    resources:
+        mem_mb=16000,
+        runtime=60,
+    params:
+        instance_type="coloc",
+        channels=stains,
+        level=config["segmentation_level"],
+        patch_size=config.get("instance_gif_patch_size", 100),
+        max_instances=config.get("instance_gif_max_instances", 200),
+        seed=42,
+    script:
+        "../scripts/qc_instance_gif.py"
