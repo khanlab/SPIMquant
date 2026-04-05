@@ -44,9 +44,7 @@ if __name__ == "__main__":
         print(f"  📊 bins: {n_bins} (bin width: {bin_width})")
 
         # we use the default level=0, since we are reading in the n4 output, which is already downsampled if level was >0
-        znimg = ZarrNii.from_ome_zarr(
-            snakemake.input.corrected, **zarrnii_kwargs
-        )
+        znimg = ZarrNii.from_ome_zarr(snakemake.input.corrected, **zarrnii_kwargs)
 
         # calculate histogram using percentile-based range and bin-width-derived bin count
         (hist_counts, bin_edges) = znimg.compute_histogram(

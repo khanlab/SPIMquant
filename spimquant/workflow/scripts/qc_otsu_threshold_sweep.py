@@ -45,9 +45,7 @@ def _file_to_base64_png(path):
 def _norm(arr, lo, hi):
     """Linearly normalise *arr* to [0, 1] using the given bounds."""
     if hi > lo:
-        return np.clip(
-            (arr.astype(np.float32) - lo) / (hi - lo), 0.0, 1.0
-        )
+        return np.clip((arr.astype(np.float32) - lo) / (hi - lo), 0.0, 1.0)
     return np.zeros_like(arr, dtype=np.float32)
 
 
@@ -134,15 +132,11 @@ def main():
     threshold_entries = []
     for thresh in thresholds:
         fig, axes = plt.subplots(1, n_crops, figsize=(n_crops * 3, 3))
-        fig.suptitle(
-            f"Threshold = {thresh:.1f}", fontsize=10, fontweight="bold"
-        )
+        fig.suptitle(f"Threshold = {thresh:.1f}", fontsize=10, fontweight="bold")
         if n_crops == 1:
             axes = [axes]
 
-        for ax, (z, y0, y1, x0, x1), crop_norm in zip(
-            axes, crop_boxes, img_crops_norm
-        ):
+        for ax, (z, y0, y1, x0, x1), crop_norm in zip(axes, crop_boxes, img_crops_norm):
             mask_crop = (data[z, y0:y1, x0:x1] > thresh).astype(np.float32)
             ax.imshow(crop_norm, cmap="gray")
             mask_ma = np.ma.masked_where(mask_crop < 0.5, mask_crop)
