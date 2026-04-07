@@ -13,7 +13,10 @@ bg_tissue = tissue_vol * (template_mask_vol == 0)
 
 out_mask = np.zeros(template_mask_vol.shape)
 
-for i in range(1, snakemake.params.k + 1):
+# Detect the number of tissue classes from the segmentation labels
+tissue_labels = sorted(np.unique(tissue_vol[tissue_vol > 0]).astype(int))
+
+for i in tissue_labels:
 
     # if more voxels in foreground than in background, we assign it to the mask
     nvox_fg = (fg_tissue == i).sum()
