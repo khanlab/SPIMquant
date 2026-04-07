@@ -23,20 +23,36 @@ posteriors_dir = snakemake.output.posteriors_dir
 
 os.makedirs(posteriors_dir, exist_ok=True)
 
+env = os.environ.copy()
+env["ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS"] = str(threads)
+
 for k in range(init_k, min_k - 1, -1):
-    cmd = (
-        f"ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
-        f"Atropos -v -d 3 --initialization KMeans[{k}] "
-        f" --intensity-image {downsampled} "
-        f" --output [{dseg},{posteriors_dir}/class-%02d.nii] "
-        f" --mask-image {mask} --mrf [{mrf_smoothing},{mrf_radius}]"
-    )
-    result = subprocess.run(cmd, shell=True)
+    cmd = [
+        "Atropos",
+        "-v",
+        "-d",
+        "3",
+        "--initialization",
+        f"KMeans[{k}]",
+        "--intensity-image",
+        downsampled,
+        "--output",
+        f"[{dseg},{posteriors_dir}/class-%02d.nii]",
+        "--mask-image",
+        mask,
+        "--mrf",
+        f"[{mrf_smoothing},{mrf_radius}]",
+    ]
+    result = subprocess.run(cmd, env=env)
     if result.returncode == 0:
         break
     elif k == min_k:
         raise subprocess.CalledProcessError(result.returncode, cmd)
     else:
+        print(
+            f"Atropos failed with k={k} (exit code {result.returncode}), "
+            f"retrying with k={k - 1}"
+        )
         # Clean up and retry with lower k
         if os.path.exists(dseg):
             os.remove(dseg)
