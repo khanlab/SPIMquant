@@ -57,6 +57,19 @@ stain_for_reg = None
 
 template = config["templates"][config["template"]]
 
+via_template = config.get("via_template", None)
+
+if via_template is not None:
+    if via_template == config["template"]:
+        raise ValueError(
+            f"--via-template ({via_template}) must be different from --template ({config['template']})"
+        )
+    if via_template not in config["templates"]:
+        raise ValueError(
+            f"--via-template ({via_template}) not found in configured templates: "
+            f"{list(config['templates'].keys())}"
+        )
+
 
 # first, check if there are any SPIM templates defined
 # for the stains we have
@@ -921,6 +934,11 @@ include: "rules/segstats.smk"
 include: "rules/patches.smk"
 include: "rules/groupstats.smk"
 include: "rules/qc.smk"
+
+
+if via_template is not None:
+
+    include: "rules/viatemplatereg.smk"
 
 
 if config["register_to_mri"]:
