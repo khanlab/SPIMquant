@@ -1,5 +1,7 @@
 import os
+from itertools import combinations as _combinations, product as _product
 
+import pandas as _pd
 from zarrnii import ZarrNii
 from snakemake.utils import format
 from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
@@ -141,19 +143,80 @@ for seg in config["crop_atlas_segs"]:
         )
     else:
         crop_atlas_segs.append(seg)
-# Validate that contrast arguments are provided when using group analysis level
+# Validate that model/pairwise arguments are provided when using group analysis level
+# and generate pairwise contrast labels from participants.tsv at planning time
+pairwise_contrast_labels = []
+pairwise_contrast_info = {}  # label -> dict with factor, levelA, levelB, strata
+
 if config.get("analysis_level") == "group":
-    if config.get("contrast_column") is None or config.get("contrast_values") is None:
+    if not config.get("model"):
         raise ValueError(
-            "When using group analysis level, both --contrast_column and "
-            "--contrast_values must be specified for filtering group data by contrasts."
+            "When using group analysis level, --model must be specified "
+            "(e.g. 'metric ~ C(treatment) + age')."
         )
+    if not config.get("pairwise"):
+        raise ValueError(
+            "When using group analysis level, --pairwise must be specified "
+            "(e.g. '--pairwise treatment')."
+        )
+
+    _participants_tsv = os.path.join(config["bids_dir"], "participants.tsv")
+    if not os.path.exists(_participants_tsv):
+        raise ValueError(
+            f"participants.tsv not found at '{_participants_tsv}'. "
+            "This file is required for group-level analysis."
+        )
+    _participants_df = _pd.read_csv(_participants_tsv, sep="\t")
+
+    _pairwise_factors = config["pairwise"]
+    _within_factors = config.get("within") or []
+
+    for _factor in _pairwise_factors:
+        if _factor not in _participants_df.columns:
+            raise ValueError(
+                f"Pairwise factor '{_factor}' not found in participants.tsv. "
+                f"Available columns: {list(_participants_df.columns)}"
+            )
+        _levels = sorted(str(v) for v in _participants_df[_factor].dropna().unique())
+
+        if _within_factors:
+            _within_level_lists = []
+            for _wf in _within_factors:
+                if _wf not in _participants_df.columns:
+                    raise ValueError(
+                        f"Within factor '{_wf}' not found in participants.tsv. "
+                        f"Available columns: {list(_participants_df.columns)}"
+                    )
+                _within_level_lists.append(
+                    sorted(str(v) for v in _participants_df[_wf].dropna().unique())
+                )
+            for _lA, _lB in _combinations(_levels, 2):
+                for _stratum in _product(*_within_level_lists):
+                    _strata_dict = dict(zip(_within_factors, _stratum))
+                    _strata_str = "+".join(f"{f}-{v}" for f, v in _strata_dict.items())
+                    _label = f"{_factor}+{_lA}vs{_lB}+{_strata_str}"
+                    pairwise_contrast_labels.append(_label)
+                    pairwise_contrast_info[_label] = {
+                        "factor": _factor,
+                        "levelA": _lA,
+                        "levelB": _lB,
+                        "strata": _strata_dict,
+                    }
+        else:
+            for _lA, _lB in _combinations(_levels, 2):
+                _label = f"{_factor}+{_lA}vs{_lB}"
+                pairwise_contrast_labels.append(_label)
+                pairwise_contrast_info[_label] = {
+                    "factor": _factor,
+                    "levelA": _lA,
+                    "levelB": _lB,
+                    "strata": {},
+                }
 
 
 wildcard_constraints:
     stain="[a-zA-Z0-9]+",
-    contrast_column="[a-zA-Z0-9_]+",
-    contrast_value="[a-zA-Z0-9_]+",
+    pairwise_contrast="[a-zA-Z0-9+_-]+",
 
 
 rule all_templatereg_deform_zooms:
@@ -511,6 +574,7 @@ rule all_imaris_crops:
 rule all_group_stats:
     """Target rule for group-level statistical analysis."""
     input:
+        # Per-contrast groupstats TSV and PNG
         expand(
             bids(
                 root=root,
@@ -518,13 +582,16 @@ rule all_group_stats:
                 seg="{seg}",
                 from_="{template}",
                 desc="{desc}",
+                contrast="{pairwise_contrast}",
                 suffix="groupstats.{ext}",
             ),
             seg=atlas_segs,
             desc=config["seg_method"],
             template=config["template"],
+            pairwise_contrast=pairwise_contrast_labels,
             ext=["png", "tsv"],
         ),
+        # Per-contrast NIfTI stat maps for each seg metric
         expand(
             bids(
                 root=root,
@@ -532,6 +599,7 @@ rule all_group_stats:
                 seg="{seg}",
                 space="{template}",
                 desc="{desc}",
+                contrast="{pairwise_contrast}",
                 metric="{stain}+{metric}",
                 suffix="{stat}.nii.gz",
             ),
@@ -541,7 +609,9 @@ rule all_group_stats:
             stain=stains_for_seg,
             metric=config["seg_metrics"],
             stat=config["stats_maps"],
+            pairwise_contrast=pairwise_contrast_labels,
         ),
+        # All-subjects count maps (not contrast-specific)
         expand(
             bids(
                 root=root,
@@ -555,49 +625,12 @@ rule all_group_stats:
             template=config["template"],
             level=range(4),
             stain=stains_for_seg,
-        ),
-        # Add contrast-filtered outputs
-        expand(
-            bids(
-                root=root,
-                datatype="group",
-                level="{level}",
-                space="{template}",
-                desc="{desc}",
-                contrast="{contrast_column}+{contrast_value}",
-                suffix="{stain}+count.nii.gz",
-            ),
-            desc=config["seg_method"],
-            template=config["template"],
-            level=range(4),
-            stain=stains_for_seg,
-            contrast_column=config["contrast_column"],
-            contrast_value=config["contrast_values"],
-        ),
-        # Add group-averaged segstats maps by contrast
-        expand(
-            bids(
-                root=root,
-                datatype="group",
-                seg="{seg}",
-                space="{template}",
-                desc="{desc}",
-                contrast="{contrast_column}+{contrast_value}",
-                metric="{stain}+{metric}",
-                suffix="groupavg.nii.gz",
-            ),
-            seg=atlas_segs,
-            desc=config["seg_method"],
-            template=config["template"],
-            stain=stains_for_seg,
-            metric=config["seg_metrics"],
-            contrast_column=config["contrast_column"],
-            contrast_value=config["contrast_values"],
         ),
 
 
 rule all_group_stats_coloc:
     input:
+        # Per-contrast NIfTI stat maps for coloc metrics
         expand(
             bids(
                 root=root,
@@ -605,6 +638,7 @@ rule all_group_stats_coloc:
                 seg="{seg}",
                 space="{template}",
                 desc="{desc}",
+                contrast="{pairwise_contrast}",
                 metric="coloc+{metric}",
                 suffix="{stat}.nii.gz",
             ),
@@ -613,7 +647,9 @@ rule all_group_stats_coloc:
             template=config["template"],
             metric=config["coloc_seg_metrics"],
             stat=config["stats_maps"],
+            pairwise_contrast=pairwise_contrast_labels,
         ),
+        # All-subjects colocalization count maps (not contrast-specific)
         expand(
             bids(
                 root=root,
@@ -626,40 +662,6 @@ rule all_group_stats_coloc:
             desc=config["seg_method"],
             template=config["template"],
             level=range(4),
-        ),
-        expand(
-            bids(
-                root=root,
-                datatype="group",
-                space="{template}",
-                level="{level}",
-                desc="{desc}",
-                contrast="{contrast_column}+{contrast_value}",
-                suffix="coloccount.nii.gz",
-            ),
-            desc=config["seg_method"],
-            template=config["template"],
-            level=range(4),
-            contrast_column=config["contrast_column"],
-            contrast_value=config["contrast_values"],
-        ),
-        expand(
-            bids(
-                root=root,
-                datatype="group",
-                seg="{seg}",
-                space="{template}",
-                desc="{desc}",
-                contrast="{contrast_column}+{contrast_value}",
-                metric="coloc+{metric}",
-                suffix="groupavg.nii.gz",
-            ),
-            seg=atlas_segs,
-            desc=config["seg_method"],
-            template=config["template"],
-            metric=config["coloc_seg_metrics"],
-            contrast_column=config["contrast_column"],
-            contrast_value=config["contrast_values"],
         ),
 
 
