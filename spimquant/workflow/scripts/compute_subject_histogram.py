@@ -32,8 +32,8 @@ if __name__ == "__main__":
                 )
                 znimg_ds = candidate
                 break
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"  level {ds_level} not available ({e}), trying lower level")
 
         if znimg_ds is None:
             znimg_ds = ZarrNii.from_ome_zarr(
