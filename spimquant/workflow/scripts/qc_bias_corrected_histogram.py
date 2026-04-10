@@ -24,6 +24,16 @@ from zarrnii import ZarrNii, ZarrNiiAtlas
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
+# Integer label used in the single-label brain-mask atlas.
+BRAIN_REGION_ID = 1
+
+# Multiplicative headroom added to axis limits when computing display bounds.
+DISPLAY_MARGIN_FACTOR = 1.05
+
+# Minimum value used as denominator floor when dividing by the bias field,
+# preventing division by zero.
+BIASFIELD_FLOOR = np.finfo(np.float32).eps
+
 
 def main():
     stain = snakemake.wildcards.stain
@@ -52,7 +62,7 @@ def main():
             snakemake.input.brain_mask, **zarrnii_kwargs
         )
         labels_df = pd.DataFrame(
-            {"index": [1], "name": ["brain"], "abbreviation": ["brain"]}
+            {"index": [BRAIN_REGION_ID], "name": ["brain"], "abbreviation": ["brain"]}
         )
         atlas = ZarrNiiAtlas.create_from_dseg(brain_znii, labels_df)
 
@@ -60,7 +70,7 @@ def main():
         logging.info(f"Sampling {n_patches} patch centers from brain mask ...")
         centers = atlas.sample_region_patches(
             n_patches=n_patches,
-            region_ids=1,
+            region_ids=BRAIN_REGION_ID,
             seed=seed,
         )
         logging.info(f"Sampled {len(centers)} centers.")
@@ -81,11 +91,12 @@ def main():
 
         # Collect corrected intensities patch by patch.
         all_intensities = []
-        epsilon = np.finfo(np.float32).eps
 
         for i, center in enumerate(centers):
             try:
                 # Extract full-resolution raw patch.
+                # crop_centered may return a single ZarrNii or a list; normalise
+                # to list so the rest of the loop is consistent.
                 raw_patch = znimg_raw.crop_centered([center], patch_size=patch_size)
                 if not isinstance(raw_patch, list):
                     raw_patch = [raw_patch]
@@ -102,17 +113,22 @@ def main():
                 bf_np = np.squeeze(bf_patch[0].data.compute()).astype(np.float32)
 
                 # Upsample the biasfield patch to match the raw patch spatial shape.
+                # Linear interpolation (order=1) is chosen because the bias field
+                # is a smooth low-frequency signal; linear upsampling avoids the
+                # ringing artefacts that higher-order splines can introduce.
                 if raw_np.shape != bf_np.shape:
-                    zoom_factors = tuple(r / b for r, b in zip(raw_np.shape, bf_np.shape))
+                    zoom_factors = tuple(
+                        r / b for r, b in zip(raw_np.shape, bf_np.shape)
+                    )
                     bf_np = zoom(bf_np, zoom_factors, order=1)
 
                 # Apply bias field correction: corrected = raw / biasfield.
-                corrected = raw_np / np.maximum(bf_np, epsilon)
+                corrected = raw_np / np.maximum(bf_np, BIASFIELD_FLOOR)
                 all_intensities.append(corrected.ravel())
 
                 logging.info(f"Processed patch {i + 1}/{len(centers)}")
 
-            except Exception as e:
+            except (ValueError, IndexError, RuntimeError) as e:
                 logging.warning(f"Skipping patch {i + 1}: {e}")
                 continue
 
@@ -134,7 +150,11 @@ def main():
     max_range = hist_range[1]
 
     nonzero_mask = hist_counts > 0
-    disp_max = float(bin_centers[nonzero_mask][-1]) * 1.05 if nonzero_mask.any() else max_range
+    disp_max = (
+        float(bin_centers[nonzero_mask][-1]) * DISPLAY_MARGIN_FACTOR
+        if nonzero_mask.any()
+        else max_range
+    )
     sat_fraction = (
         float(hist_counts[-1]) / total_voxels * 100 if total_voxels > 0 else 0.0
     )
@@ -151,9 +171,13 @@ def main():
     else:
         mean_val = p50_val = p99_val = 0.0
 
-    lin_xlim = p99_val * 1.05 if total_voxels > 0 else max_range
+    lin_xlim = p99_val * DISPLAY_MARGIN_FACTOR if total_voxels > 0 else max_range
     visible = hist_counts[bin_centers <= lin_xlim]
-    lin_ylim = float(visible.max()) * 1.05 if visible.size and visible.max() > 0 else 1.0
+    lin_ylim = (
+        float(visible.max()) * DISPLAY_MARGIN_FACTOR
+        if visible.size and visible.max() > 0
+        else 1.0
+    )
 
     subject = snakemake.wildcards.subject
 
