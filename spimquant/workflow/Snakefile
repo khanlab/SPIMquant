@@ -677,6 +677,20 @@ rule all_qc:
             ),
             stain=stains,
         ),
+        # Bias-corrected intensity histograms (per stain, requires segmentation)
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                desc="biascorrected",
+                suffix="histogram.png",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+        )
+        if do_seg
+        else [],
         # Segmentation overview figures (per stain, per seg method)
         inputs["spim"].expand(
             bids(

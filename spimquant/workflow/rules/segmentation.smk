@@ -92,9 +92,24 @@ rule n4_biasfield:
             ),
             group_jobs=True,
         ),
+        biasfield=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="seg",
+                    stain="{stain}",
+                    level="{level}",
+                    desc="n4",
+                    suffix="biasfield.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
+            ),
+            group_jobs=True,
+        ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
+        disk_mb=2097152,
         runtime=180,
     script:
         "../scripts/n4_biasfield.py"

@@ -73,6 +73,68 @@ saturation/clip fraction (percentage of voxels at the maximum bin).
         "../scripts/qc_intensity_histogram.py"
 
 
+rule qc_bias_corrected_histogram:
+    """Per-channel bias-corrected intensity histogram QC.
+
+Samples random full-resolution patches from within the brain mask using
+ZarrNiiAtlas patch sampling, applies bias field correction patch-wise by
+upsampling the downsampled correction map to each patch, and generates a
+four-panel intensity histogram of the corrected intensities.
+
+Inputs:
+  - Raw SPIM OME-Zarr (full-resolution patches are extracted at level 0)
+  - Downsampled bias field OME-Zarr (loaded at registration_level within the
+    zarr pyramid for efficient patch extraction; upsampled per-patch via
+    scipy.ndimage.zoom)
+  - Brain mask NIfTI (used as a single-label ZarrNiiAtlas to draw random
+    patch centre coordinates within the brain)
+"""
+    input:
+        spim=inputs["spim"].path,
+        biasfield=bids(
+            root=work,
+            datatype="seg",
+            stain="{stain}",
+            level=config["segmentation_level"],
+            desc=config["correction_method"],
+            suffix="biasfield.ome.zarr",
+            **inputs["spim"].wildcards,
+        ),
+        brain_mask=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level=config["registration_level"],
+            desc="brain",
+            suffix="mask.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        png=bids(
+            root=root,
+            datatype="qc",
+            stain="{stain}",
+            desc="biascorrected",
+            suffix="histogram.png",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 8
+    resources:
+        mem_mb=32000,
+        runtime=60,
+    params:
+        n_patches=config.get("n_patches_per_label", 5),
+        patch_size=config.get("patch_size", [256, 256, 256]),
+        seed=config.get("patch_seed", 42),
+        hist_bins=500,
+        hist_range=[0, 65535],
+        biasfield_zarr_level=config["registration_level"],
+        correction_method=config["correction_method"],
+        zarrnii_kwargs={"orientation": config["orientation"]},
+    script:
+        "../scripts/qc_bias_corrected_histogram.py"
+
+
 rule qc_segmentation_overview:
     """Segmentation overview slice montage QC.
 
