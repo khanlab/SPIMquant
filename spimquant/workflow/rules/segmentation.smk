@@ -78,19 +78,14 @@ rule n4_biasfield:
         shrink_factor=16 if config["sloppy"] else 1,
         target_chunk_size=512,  #this sets the chunk size for this and downstream masks
     output:
-        corrected=temp(
-            directory(
-                bids(
-                    root=work,
+        corrected=bids(
+                    root=root,
                     datatype="seg",
                     stain="{stain}",
                     level="{level}",
                     desc="correctedn4",
-                    suffix="SPIM.ome.zarr",
+                    suffix="SPIM.ozx",
                     **inputs["spim"].wildcards,
-                )
-            ),
-            group_jobs=True,
         ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
@@ -110,12 +105,12 @@ rule multiotsu:
     """
     input:
         corrected=bids(
-            root=work,
+            root=root,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -163,12 +158,12 @@ rule compute_subject_histogram:
     """
     input:
         corrected=bids(
-            root=work,
+            root=root,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -207,12 +202,12 @@ rule multiotsu_group:
     """
     input:
         corrected=bids(
-            root=work,
+            root=root,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.ozx",
             **inputs["spim"].wildcards,
         ),
         thresholds_json=bids(
@@ -263,12 +258,12 @@ rule threshold:
     """
     input:
         corrected=bids(
-            root=work,
+            root=root,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
