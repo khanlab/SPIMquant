@@ -252,6 +252,32 @@ active ``seg_method`` contains at least one ``otsu+k{}i{}`` entry.
         else [],
 
 
+rule all_batch_otsu_hist_qc:
+    """Target rule to generate batch-wide Otsu threshold sweep QC reports.
+
+Produces one HTML report per stain/method combination (across all subjects)
+for every ``otsu+k{}i{}`` segmentation method.  Each report shows the
+aggregated histogram with Multi-Otsu threshold positions and one mid-volume
+crop per subject at each threshold, enabling visual selection of a threshold
+that generalises across the entire acquisition batch.  Only meaningful when
+the active ``seg_method`` contains at least one ``otsu+k{}i{}`` entry.
+"""
+    input:
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                stain="{stain}",
+                desc="{desc}",
+                suffix="batchotsuthreshqc.html",
+            ),
+            stain=stains_for_seg,
+            desc=otsu_seg_methods,
+        )
+        if (do_seg and len(otsu_seg_methods) > 0)
+        else [],
+
+
 rule all_register:
     input:
         inputs["spim"].expand(
