@@ -10,10 +10,12 @@ flowchart LR
     B --> C{seg_method}
     C -->|threshold| D[Threshold]
     C -->|otsu+k3i2| E[Multi-Otsu + k-means]
-    D --> F[Binary Mask]
-    E --> F
-    F --> G[Clean: remove edge / small objects]
-    G --> H[Segmentation Output]
+    C -->|groupotsu+k3i2| F[Group Multi-Otsu]
+    D --> G[Binary Mask]
+    E --> G
+    F --> G
+    G --> H[Clean: remove edge / small objects]
+    H --> I[Segmentation Output]
 ```
 
 After segmentation the binary mask is used to compute [field fraction](../reference/outputs.md#field-fraction-map-seg), [object count](../reference/outputs.md#object-count-map-seg), and [per-object region properties](../reference/outputs.md#region-properties-statistics-table-tabular).
@@ -80,6 +82,45 @@ stain_defaults:
 **When to use:** Preferred when the staining intensity varies across subjects or imaging sessions, because the threshold adapts automatically to each image.  Also more robust to residual illumination gradients.
 
 **Limitations:** Can fail on images with unusual histograms (e.g. very sparse pathology that does not form a distinct peak) or when the background is very noisy.
+
+### Group Multi-Otsu (`seg_method: groupotsu+k3i2`)
+
+A variant of Multi-Otsu that derives a **single shared threshold from the aggregate histogram of all subjects** rather than computing a threshold independently per image.  This is preferred when subjects were acquired with common acquisition settings and you want to ensure consistent, comparable quantification across the cohort.
+
+The workflow is a two-step process:
+
+**Step 1 — compute group threshold** (run once for the whole cohort):
+
+```bash
+spimquant /bids /output participant \
+    --targets all_group_otsu \
+    --seg_method groupotsu+k3i2
+```
+
+This triggers:
+
+1. For each subject: compute a percentile-clipped intensity histogram from the bias-field corrected image and save it as an NPZ file.
+2. Aggregate all subject histograms onto a common intensity grid, apply multi-level Otsu thresholding, and save the resulting thresholds as a JSON file in `{output}/group/`.
+
+**Step 2 — segment each subject using the group threshold**:
+
+```bash
+spimquant /bids /output participant \
+    --seg_method groupotsu+k3i2
+```
+
+Each subject's binary mask is produced by applying the group-level threshold from the JSON file.  A per-subject PNG is also generated showing the group threshold overlaid on the individual histogram, useful for visual quality control.
+
+**Config key:**
+
+```yaml
+seg_method:
+  - groupotsu+k3i2
+```
+
+**When to use:** Preferred when a batch of subjects shares the same acquisition protocol and you want consistent thresholding across subjects.  Reduces subject-to-subject variability in the segmentation boundary that can occur with per-subject Otsu.
+
+**Limitations:** Less adaptive than per-subject Otsu — if staining intensity varies substantially across subjects (e.g. due to different batches of antibody or tissue preparation), a single group threshold may over- or under-segment some subjects.
 
 ---
 

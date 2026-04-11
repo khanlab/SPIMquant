@@ -78,19 +78,14 @@ rule n4_biasfield:
         shrink_factor=16 if config["sloppy"] else 1,
         target_chunk_size=512,  #this sets the chunk size for this and downstream masks
     output:
-        corrected=temp(
-            directory(
-                bids(
-                    root=work,
+        corrected=bids(
+                    root=root,
                     datatype="seg",
                     stain="{stain}",
                     level="{level}",
                     desc="correctedn4",
-                    suffix="SPIM.ome.zarr",
+                    suffix="SPIM.ozx",
                     **inputs["spim"].wildcards,
-                )
-            ),
-            group_jobs=True,
         ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
@@ -110,12 +105,12 @@ rule multiotsu:
     """
     input:
         corrected=bids(
-            root=work,
+            root=root,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.ozx",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -152,6 +147,109 @@ rule multiotsu:
         "../scripts/multiotsu.py"
 
 
+rule compute_subject_histogram:
+    """Compute intensity histogram for a single subject for group-level Otsu thresholding.
+
+    Calculates a percentile-clipped histogram of the bias-field corrected image
+    and saves it as an NPZ file (hist_counts + bin_edges).  These per-subject
+    histogram files are later aggregated by the ``group_otsu`` rule to derive
+    a single set of thresholds that can be applied consistently across the whole
+    cohort with the ``multiotsu_group`` rule.
+    """
+    input:
+        corrected=bids(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="corrected{method}".format(method=config["correction_method"]),
+            suffix="SPIM.ozx",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        hist_bin_width=float(config["seg_hist_bin_width"]),
+        hist_percentile_range=[float(x) for x in config["seg_hist_percentile_range"]],
+        zarrnii_kwargs={"orientation": config["orientation"]},
+    output:
+        histogram_npz=bids(
+            root=work,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="groupotsu+k{k,[0-9]+}i{i,[0-9]+}",
+            suffix="histogram.npz",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    resources:
+        mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
+        runtime=90,
+    script:
+        "../scripts/compute_subject_histogram.py"
+
+
+rule multiotsu_group:
+    """Apply group-level Otsu threshold for segmentation.
+
+    Uses a pre-computed group-level Otsu threshold (derived from an aggregate
+    histogram across all subjects) to create a binary mask for the current
+    subject.  This ensures consistent thresholding across the whole cohort.
+    A per-subject PNG is also produced showing the group threshold overlaid
+    on this subject's own intensity histogram for visual quality control.
+
+    Run ``all_group_otsu`` before using this rule so that the group threshold
+    JSON file is available.
+    """
+    input:
+        corrected=bids(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="corrected{method}".format(method=config["correction_method"]),
+            suffix="SPIM.ozx",
+            **inputs["spim"].wildcards,
+        ),
+        thresholds_json=bids(
+            root=root,
+            datatype="group",
+            stain="{stain}",
+            level="{level}",
+            desc="groupotsu+k{k,[0-9]+}i{i,[0-9]+}",
+            suffix="thresholds.json",
+        ),
+    params:
+        hist_bin_width=float(config["seg_hist_bin_width"]),
+        hist_percentile_range=[float(x) for x in config["seg_hist_percentile_range"]],
+        zarrnii_kwargs={"orientation": config["orientation"]},
+    output:
+        mask=bids(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="groupotsu+k{k,[0-9]+}i{i,[0-9]+}",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
+        ),
+        thresholds_png=bids(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="groupotsu+k{k,[0-9]+}i{i,[0-9]+}",
+            suffix="thresholds.png",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    resources:
+        mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
+        disk_mb=2097152,
+        runtime=180,
+    script:
+        "../scripts/multiotsu_group.py"
+
+
 rule threshold:
     """Apply simple intensity threshold for segmentation.
     
@@ -160,12 +258,12 @@ rule threshold:
     """
     input:
         corrected=bids(
-            root=work,
+            root=root,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.ozx",
             **inputs["spim"].wildcards,
         ),
     params:

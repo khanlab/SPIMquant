@@ -85,6 +85,9 @@ stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
 # seg methods that use multi-Otsu thresholding (otsu+k{}i{} pattern)
 otsu_seg_methods = [m for m in config["seg_method"] if m.startswith("otsu+")]
 
+# seg methods that use group-level multi-Otsu thresholding (groupotsu+k{}i{} pattern)
+groupotsu_seg_methods = [m for m in config["seg_method"] if m.startswith("groupotsu+")]
+
 if len(stains_for_seg) == 0 or config["no_segmentation"]:
     do_seg = False
     do_coloc = False
@@ -906,6 +909,43 @@ rule all_group:
     input:
         rules.all_group_stats.input if do_seg else [],
         rules.all_group_stats_coloc.input if do_coloc else [],
+
+
+rule all_group_otsu:
+    """Target rule for group-level Otsu threshold computation.
+
+    Aggregates intensity histograms across all subjects for each stain and
+    computes a single set of Otsu thresholds that can be applied consistently
+    to every subject.  Run this rule before participant-level segmentation
+    when ``groupotsu+k{}i{}`` is included in ``seg_method``.
+
+    Example::
+
+        spimquant /bids /output participant \\
+            --targets all_group_otsu \\
+            --seg_method groupotsu+k3i2
+
+    Then run segmentation using the computed group thresholds::
+
+        spimquant /bids /output participant \\
+            --seg_method groupotsu+k3i2
+    """
+    input:
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}",
+                suffix="thresholds.json",
+            ),
+            stain=stains_for_seg,
+            level=config["segmentation_level"],
+            desc=groupotsu_seg_methods,
+        )
+        if (do_seg and groupotsu_seg_methods)
+        else [],
 
 
 include: "rules/import.smk"

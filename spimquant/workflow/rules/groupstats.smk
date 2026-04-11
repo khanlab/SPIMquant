@@ -4,7 +4,65 @@ Group-level statistical analysis rules for SPIMquant.
 This module performs group-based statistical tests on segmentation statistics
 (e.g., fieldfrac, density, volume) across participants, using metadata from
 participants.tsv to define contrasts.
+
+It also provides the ``group_otsu`` rule which aggregates per-subject intensity
+histograms (produced by ``compute_subject_histogram``) to compute a single set
+of Otsu thresholds shared across all subjects.
 """
+
+
+rule group_otsu:
+    """Compute group-level Otsu thresholds from aggregated per-subject histograms.
+
+    Collects the intensity histogram NPZ files computed by
+    ``compute_subject_histogram`` for all subjects, merges them onto a
+    common intensity grid, and applies multi-level Otsu thresholding to the
+    aggregate histogram.  The resulting thresholds are saved as a JSON file
+    (consumed by ``multiotsu_group`` during participant-level segmentation)
+    and as a PNG figure for visual inspection.
+
+    This rule is the target of ``all_group_otsu`` and should be run before
+    participant-level segmentation when ``groupotsu+k{}i{}`` is used as the
+    segmentation method.
+    """
+    input:
+        histogram_npz=lambda wildcards: inputs["spim"].expand(
+            bids(
+                root=work,
+                datatype="seg",
+                stain=wildcards.stain,
+                level=wildcards.level,
+                desc="groupotsu+k{k}i{i}".format(k=wildcards.k, i=wildcards.i),
+                suffix="histogram.npz",
+                **inputs["spim"].wildcards,
+            )
+        ),
+    params:
+        otsu_k=lambda wildcards: int(wildcards.k),
+        otsu_threshold_index=lambda wildcards: int(wildcards.i),
+    output:
+        thresholds_json=bids(
+            root=root,
+            datatype="group",
+            stain="{stain}",
+            level="{level}",
+            desc="groupotsu+k{k,[0-9]+}i{i,[0-9]+}",
+            suffix="thresholds.json",
+        ),
+        thresholds_png=bids(
+            root=root,
+            datatype="group",
+            stain="{stain}",
+            level="{level}",
+            desc="groupotsu+k{k,[0-9]+}i{i,[0-9]+}",
+            suffix="thresholds.png",
+        ),
+    threads: 4
+    resources:
+        mem_mb=8000,
+        runtime=10,
+    script:
+        "../scripts/group_otsu.py"
 
 
 rule perform_group_stats:
