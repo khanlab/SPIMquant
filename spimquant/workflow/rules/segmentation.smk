@@ -209,12 +209,13 @@ aggregation and batch-wide threshold optimisation.
             suffix="histogram.npz",
             **inputs["spim"].wildcards,
         ),
-    threads: 32
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=32000,
-        runtime=30,
+        mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
+        disk_mb=2097152,
+        runtime=180,
     params:
-        level="{level}",
+        level=lambda wildcards: int(wildcards.level),
         hist_bins=config.get("spim_hist_bins", 500),
         hist_range=config.get("spim_hist_range", [0, 65535]),
         zarrnii_kwargs={"orientation": config["orientation"]},

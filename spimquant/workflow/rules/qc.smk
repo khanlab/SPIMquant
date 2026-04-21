@@ -458,6 +458,51 @@ Only applicable when ``seg_method`` uses the ``otsu+k{}i{}`` pattern.
     script:
         "../scripts/qc_otsu_threshold_sweep.py"
 
+rule qc_batch_otsu_threshold_sweep_raw:
+    """Batch threshold sweep QC HTML report for multiotsu segmentation, on raw uncorrected images.
+
+Uses the batch-wide Multi-Otsu thresholds (computed from the aggregated
+histogram across all subjects in the dataset) to sweep over a range of
+threshold values and display one mid-volume 2D crop per subject at each
+threshold.  Subjects are shown as columns so that the user can immediately
+see whether a given threshold generalises across the entire acquisition batch.
+
+The aggregated histogram PNG is embedded at the top of the report.
+
+Only applicable when ``seg_method`` uses the ``otsu+k{}i{}`` pattern.
+"""
+    input:
+        zarrs=inputs["spim"].expand(),
+        thresholds_png=bids(
+            root=root,
+            datatype="group",
+            stain="{stain}",
+            level=str(config["segmentation_level"]),
+            desc="{desc}",
+            suffix="thresholds.png",
+        ),
+    output:
+        html=bids(
+            root=root,
+            datatype="group",
+            stain="{stain}",
+            desc="{desc}",
+            suffix="batchotsuthreshqcraw.html",
+        ),
+    threads: 4
+    resources:
+        mem_mb=32000,
+        runtime=60,
+    params:
+        n_thresholds=10,
+        patch_size=300,
+        level=config["segmentation_level"],
+        hist_percentile_range=[float(x) for x in config["seg_hist_percentile_range"]],
+        zarrnii_kwargs=lambda wildcards: {"orientation": config["orientation"],"channel_labels":[wildcards.stain]},
+    script:
+        "../scripts/qc_batch_otsu_threshold_sweep.py"
+
+
 
 rule qc_batch_otsu_threshold_sweep:
     """Batch threshold sweep QC HTML report for multiotsu segmentation.
@@ -473,7 +518,7 @@ The aggregated histogram PNG is embedded at the top of the report.
 Only applicable when ``seg_method`` uses the ``otsu+k{}i{}`` pattern.
 """
     input:
-        corrected_zarrs=inputs["spim"].expand(
+        zarrs=inputs["spim"].expand(
             bids(
                 root=work,
                 datatype="seg",

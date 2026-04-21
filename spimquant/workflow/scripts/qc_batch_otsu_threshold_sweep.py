@@ -69,9 +69,9 @@ def main():
     stain = snakemake.wildcards.stain
     desc = snakemake.wildcards.desc
 
-    corrected_zarrs = snakemake.input.corrected_zarrs
-    n_subjects = len(corrected_zarrs)
-    subject_labels = [_subject_label(p) for p in corrected_zarrs]
+    zarrs = snakemake.input.zarrs
+    n_subjects = len(zarrs)
+    subject_labels = [_subject_label(p) for p in zarrs]
 
     print(f"Batch threshold sweep QC: stain={stain}, desc={desc}")
     print(f"  {n_subjects} subject(s): {subject_labels}")
@@ -83,10 +83,10 @@ def main():
     subject_crops = []
     subject_ranges = []
 
-    for zarr_path, label in zip(corrected_zarrs, subject_labels):
+    for zarr_path, label in zip(zarrs, subject_labels):
         print(f"  Loading crop from {label} …")
         znimg = None
-        for ds_offset in [3, 2, 1, 0]:
+        for ds_offset in [5,4,3, 2, 1, 0]:
             try:
                 candidate = ZarrNii.from_ome_zarr(
                     zarr_path, level=level + ds_offset, **zarrnii_kwargs
