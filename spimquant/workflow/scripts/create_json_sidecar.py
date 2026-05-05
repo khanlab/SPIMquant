@@ -116,12 +116,37 @@ def resolve_column(col, column_descriptions, stat_suffixes):
             }
 
     # 5. Aggregate suffix: "{base}_mean", "{base}_std", "{base}_min", "{base}_max"
-    agg_suffixes = ("_mean", "_std", "_min", "_max")
+    #    Also handles "{base}_{agg}_{group}" (e.g. "fieldfrac_mean_control").
+    agg_suffixes = ("mean", "std", "min", "max")
     for agg in agg_suffixes:
-        if col.endswith(agg):
-            base = col[: -len(agg)]
+        # With trailing group: {base}_{agg}_{group}
+        pattern_with_group = re.compile(rf"^(.+)_{re.escape(agg)}_(.+)$")
+        m = pattern_with_group.match(col)
+        if m:
+            base, group = m.group(1), m.group(2)
             base_desc = resolve_column(base, column_descriptions, stat_suffixes)
-            agg_label = agg.lstrip("_").capitalize()
+            agg_label = agg.capitalize()
+            if base_desc:
+                long_name = base_desc.get("LongName", base)
+                desc_text = base_desc.get("Description", "")
+                entry = {
+                    "LongName": f"{long_name} – {agg_label} (group: {group})",
+                    "Description": f"{agg_label} of: {desc_text} Group: {group}."
+                    if desc_text
+                    else f"{agg_label} of '{base}' for group '{group}'.",
+                }
+                if "Units" in base_desc:
+                    entry["Units"] = base_desc["Units"]
+                return entry
+            return {
+                "LongName": f"{base} – {agg_label} (group: {group})",
+                "Description": f"{agg_label} of '{base}' for group '{group}'.",
+            }
+        # Without group: {base}_{agg}
+        if col.endswith(f"_{agg}"):
+            base = col[: -(len(agg) + 1)]
+            base_desc = resolve_column(base, column_descriptions, stat_suffixes)
+            agg_label = agg.capitalize()
             if base_desc:
                 long_name = base_desc.get("LongName", base)
                 desc_text = base_desc.get("Description", "")
@@ -143,10 +168,16 @@ def resolve_column(col, column_descriptions, stat_suffixes):
     if re.match(r"^n_[A-Za-z0-9_]+$", col):
         group = col[2:]
         if group == "subjects":
-            return dict(column_descriptions.get("n_subjects", {
-                "LongName": "Number of subjects",
-                "Description": "Total number of subjects contributing data to this row.",
-            }))
+            # Look up in config first; fall back gracefully if absent
+            return dict(
+                column_descriptions.get(
+                    "n_subjects",
+                    {
+                        "LongName": "Number of subjects",
+                        "Description": "Total number of subjects contributing data to this row.",
+                    },
+                )
+            )
         return {
             "LongName": f"Number of subjects (group: {group})",
             "Description": (
@@ -181,5 +212,8 @@ def main():
     with open(output_file, "w") as fh:
         json.dump(sidecar, fh, indent=4)
 
+
+if "snakemake" not in dir():
+    raise RuntimeError("This script must be run within Snakemake")
 
 main()
