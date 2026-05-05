@@ -429,3 +429,149 @@ stats_maps:
   - tstat
   - pval
   - cohensd
+
+# BIDS-style column descriptions for JSON sidecars produced alongside tabular outputs.
+# Each entry follows the BIDS sidecar structure:
+#   LongName  - human-readable full name
+#   Description - what the column contains
+#   Units     - physical/logical units (optional)
+# Dynamic columns (e.g. "{stain}+fieldfrac") are resolved at runtime by the
+# create_json_sidecar.py script.
+column_descriptions:
+  index:
+    LongName: Atlas region index
+    Description: Integer index of the brain atlas region (label value in the parcellation image).
+  name:
+    LongName: Atlas region name
+    Description: Human-readable name of the brain atlas region.
+  abbreviation:
+    LongName: Atlas region abbreviation
+    Description: Short abbreviation of the brain atlas region name.
+  nvoxels:
+    LongName: Number of voxels
+    Description: Total number of foreground voxels belonging to the segmented object or region.
+    Units: voxels
+  count:
+    LongName: Object count
+    Description: Number of segmented objects (e.g. plaques, cells) detected within the region.
+    Units: objects
+  volume:
+    LongName: Region volume
+    Description: Physical volume of the atlas region derived from the parcellation image.
+    Units: mm^3
+  density:
+    LongName: Object density
+    Description: Number of segmented objects per unit volume (count / volume).
+    Units: objects/mm^3
+  fieldfrac:
+    LongName: Field fraction
+    Description: >
+      Fraction of brain tissue occupied by the segmented pathology marker within the
+      atlas region, expressed as a percentage (0–100).
+    Units: percent
+  pos_x:
+    LongName: Centroid x-coordinate (subject space)
+    Description: X-axis coordinate of the object centroid in subject (image) space.
+    Units: voxels
+  pos_y:
+    LongName: Centroid y-coordinate (subject space)
+    Description: Y-axis coordinate of the object centroid in subject (image) space.
+    Units: voxels
+  pos_z:
+    LongName: Centroid z-coordinate (subject space)
+    Description: Z-axis coordinate of the object centroid in subject (image) space.
+    Units: voxels
+  template_x:
+    LongName: Centroid x-coordinate (template space)
+    Description: X-axis coordinate of the object centroid after transformation to template space.
+    Units: mm
+  template_y:
+    LongName: Centroid y-coordinate (template space)
+    Description: Y-axis coordinate of the object centroid after transformation to template space.
+    Units: mm
+  template_z:
+    LongName: Centroid z-coordinate (template space)
+    Description: Z-axis coordinate of the object centroid after transformation to template space.
+    Units: mm
+  stain:
+    LongName: Staining channel
+    Description: Name of the immunofluorescence or histochemical stain/channel associated with this object.
+  object_id:
+    LongName: Object identifier
+    Description: Unique identifier for each segmented object, composed of stain name and index.
+  object_id_a:
+    LongName: Object identifier (channel A)
+    Description: Unique identifier of the first object in a colocalization pair.
+  object_id_b:
+    LongName: Object identifier (channel B)
+    Description: Unique identifier of the second object in a colocalization pair.
+  stain_a:
+    LongName: Staining channel A
+    Description: Stain/channel name of the first object in a colocalization pair.
+  stain_b:
+    LongName: Staining channel B
+    Description: Stain/channel name of the second object in a colocalization pair.
+  radius_a:
+    LongName: Estimated radius (channel A)
+    Description: Estimated spherical radius of the first object, derived from its voxel count.
+    Units: voxels
+  radius_b:
+    LongName: Estimated radius (channel B)
+    Description: Estimated spherical radius of the second object, derived from its voxel count.
+    Units: voxels
+  nvoxels_a:
+    LongName: Number of voxels (channel A)
+    Description: Number of voxels of the first object in a colocalization pair.
+    Units: voxels
+  nvoxels_b:
+    LongName: Number of voxels (channel B)
+    Description: Number of voxels of the second object in a colocalization pair.
+    Units: voxels
+  distance:
+    LongName: Inter-object distance
+    Description: Euclidean distance between the centroids of two colocalized objects.
+    Units: voxels
+  overlapratio:
+    LongName: Overlap ratio
+    Description: >
+      Estimated overlap between two colocalized objects (1 – distance / sum_of_radii),
+      clamped to [0, 1]. Values closer to 1 indicate greater spatial overlap.
+  pos_coloc_x:
+    LongName: Colocalization x-coordinate (subject space)
+    Description: X-axis coordinate of the midpoint between two colocalized objects in subject space.
+    Units: voxels
+  pos_coloc_y:
+    LongName: Colocalization y-coordinate (subject space)
+    Description: Y-axis coordinate of the midpoint between two colocalized objects in subject space.
+    Units: voxels
+  pos_coloc_z:
+    LongName: Colocalization z-coordinate (subject space)
+    Description: Z-axis coordinate of the midpoint between two colocalized objects in subject space.
+    Units: voxels
+  template_coloc_x:
+    LongName: Colocalization x-coordinate (template space)
+    Description: X-axis coordinate of the colocalization midpoint in template space.
+    Units: mm
+  template_coloc_y:
+    LongName: Colocalization y-coordinate (template space)
+    Description: Y-axis coordinate of the colocalization midpoint in template space.
+    Units: mm
+  template_coloc_z:
+    LongName: Colocalization z-coordinate (template space)
+    Description: Z-axis coordinate of the colocalization midpoint in template space.
+    Units: mm
+  participant_id:
+    LongName: Participant identifier
+    Description: BIDS participant identifier (e.g. sub-01) for the subject contributing this row.
+  n_subjects:
+    LongName: Number of subjects
+    Description: Total number of subjects contributing data to this region estimate.
+  tstat:
+    LongName: t-statistic
+    Description: Two-sample Welch t-statistic comparing the two contrast groups for this metric.
+  pval:
+    LongName: p-value
+    Description: Two-tailed p-value of the t-test for this metric and region.
+  cohensd:
+    LongName: Cohen's d
+    Description: Effect size (Cohen's d) expressing the standardised mean difference between the two contrast groups.
