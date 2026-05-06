@@ -33,6 +33,11 @@ _GMM_MAX_ITER = 200
 # Downsampling levels to try (in order) for range estimation
 _DS_LEVELS = [5, 4, 3, 2, 1]
 
+# Maximum number of samples drawn from the histogram for GMM fitting.
+# Drawing a fixed-size sample avoids expanding all voxel counts into memory,
+# which can be prohibitive for large 3D images.
+_GMM_MAX_SAMPLES = 500_000
+
 
 def _parse_gmm_method(method: str):
     """Parse a gmm+n{n}k{k} method string.
@@ -263,15 +268,24 @@ if __name__ == "__main__":
         # ------------------------------------------------------------------ #
         bin_centers_log = np.log1p(np.maximum(bin_centers, 0.0)).astype(np.float32)
 
-        # expand histogram bins into a sample weighted by counts
-        counts_int = hist_counts.astype(np.int64)
-        data_log = np.repeat(bin_centers_log, counts_int)
-
-        if data_log.size == 0:
+        total_counts = hist_counts.sum()
+        if total_counts == 0:
             raise ValueError(
                 "Histogram is empty after applying percentile range filter. "
                 "Check seg_hist_percentile_range settings."
             )
+
+        # Draw a memory-bounded sample from the histogram distribution.
+        # Using np.repeat would create a sample as large as the total voxel
+        # count, which can be many GBs for full-resolution 3D images.
+        n_samples = min(int(total_counts), _GMM_MAX_SAMPLES)
+        probabilities = hist_counts / total_counts
+        rng = np.random.default_rng(_GMM_RANDOM_STATE)
+        sampled_indices = rng.choice(
+            len(bin_centers_log), size=n_samples, p=probabilities
+        )
+        data_log = bin_centers_log[sampled_indices]
+        print(f"  📊 GMM fitting on {n_samples:,} samples drawn from histogram")
 
         print(
             f"fitting GMM with n={n_components} components in log1p space "
