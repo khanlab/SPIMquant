@@ -245,6 +245,10 @@ if __name__ == "__main__":
         hist_counts, bin_edges = znimg.compute_histogram(
             bins=n_bins, range=[range_lo, range_hi]
         )
+        # compute_histogram may return dask arrays; materialise to numpy so
+        # downstream numpy/matplotlib operations work correctly.
+        hist_counts = np.asarray(hist_counts)
+        bin_edges = np.asarray(bin_edges)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
         # ------------------------------------------------------------------ #
