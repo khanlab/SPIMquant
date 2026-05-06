@@ -61,12 +61,28 @@ if downsampling_level < 0:
 Path(output_dir).mkdir(parents=True, exist_ok=True)
 
 
-def convert_nii_to_uint8(nii_path, low_pct=0.1, high_pct=99.9, sample_voxels=5_000_000):
+def convert_nii_to_uint8(
+    nii_path, low_pct=0.1, high_pct=99.9, sample_voxels=5_000_000, rng_seed=42
+):
     """Convert a NIfTI file to uint8 using robust percentile scaling.
 
     Scales voxel intensities to the [0, 255] range using the specified
     percentiles for clipping, then overwrites the file in place.
     This avoids endianness issues in downstream applications such as SyGlass.
+
+    Parameters
+    ----------
+    nii_path : str
+        Path to the NIfTI file to convert (overwritten in place).
+    low_pct : float
+        Lower percentile (0-100) used for intensity clipping. Default is 0.1.
+    high_pct : float
+        Upper percentile (0-100) used for intensity clipping. Default is 99.9.
+    sample_voxels : int
+        Maximum number of nonzero voxels to sample for percentile estimation.
+        Default is 5,000,000.
+    rng_seed : int
+        Random seed for reproducible voxel sampling. Default is 42.
     """
     img = nib.load(nii_path)
 
@@ -89,7 +105,7 @@ def convert_nii_to_uint8(nii_path, low_pct=0.1, high_pct=99.9, sample_voxels=5_0
         return
 
     if nonzero.size > sample_voxels:
-        rng = np.random.default_rng(0)
+        rng = np.random.default_rng(rng_seed)
         sample = rng.choice(nonzero, size=sample_voxels, replace=False)
     else:
         sample = nonzero
@@ -199,7 +215,7 @@ with get_dask_client("threads", snakemake.threads):
                     )
                     patch.to_nifti(str(out_file))
                     if patch_uint8:
-                        convert_nii_to_uint8(str(out_file))
+                        convert_nii_to_uint8(str(out_file), rng_seed=seed)
 
             except ValueError as e:
                 # ValueError from sample_region_patches when region has no voxels
