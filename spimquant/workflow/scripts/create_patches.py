@@ -136,6 +136,7 @@ def convert_nii_to_uint8(
     new_header["scl_inter"] = 0
     nib.save(nib.Nifti1Image(out, img.affine, new_header), nii_path)
 
+
 with get_dask_client("threads", snakemake.threads):
     # Load the atlas with labels
     atlas = ZarrNiiAtlas.from_files(
