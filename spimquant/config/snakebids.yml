@@ -137,13 +137,33 @@ parse_args:
 
 
   --seg_method:
-    help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions. "
-    default: 
+    help: >
+      Method(s) to use for microscopy segmentation (e.g. plaques, protein
+      deposits, cells) applied to 'stains_for_seg' channels.
+
+      Supported methods:
+
+      ``th<value>`` – simple fixed intensity threshold, e.g. ``th500`` applies
+      a threshold of 500.
+
+      ``otsu+k<k>i<i>`` – multi-level Otsu thresholding.  Fits k intensity
+      classes to the global histogram and uses threshold index i (0-based) as
+      the segmentation boundary.  Example: ``otsu+k3i2`` fits 3 classes and
+      selects the 2nd threshold (between the 2nd and 3rd class).
+
+      ``gmm+n<n>k<k>`` – Gaussian Mixture Model (GMM) tail-thresholding.
+      Fits a GMM with n components to the log1p-transformed global intensity
+      histogram, sorts the components by mean intensity ascending, and defines
+      the threshold from the highest-intensity component as
+      ``threshold = expm1(mean_n + k * sigma_n)``.  The float multiplier k
+      may be encoded with 'p' as a decimal separator to keep BIDS-compatible
+      filenames, e.g. ``gmm+n2k2p5`` → n=2, k=2.5.
+    default:
       - otsu+k3i2
     nargs: '+'
 
   --seg_hist_percentile_range:
-    help: "Percentile range to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. Specify 2 numbers for the low and high percentiles (default: %(default)s)"
+    help: "Percentile range to use for histogram calculation in histogram-based segmentation methods (otsu+k{}i{} and gmm+n{}k{}). Specify 2 numbers for the low and high percentiles (default: %(default)s)"
     default:
       - 1
       - 99
@@ -151,7 +171,7 @@ parse_args:
     type: float
 
   --seg_hist_bin_width:
-    help: "Bin width to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. (default: %(default)s)"
+    help: "Bin width to use for histogram calculation in histogram-based segmentation methods (otsu+k{}i{} and gmm+n{}k{}). (default: %(default)s)"
     default: 1
     type: float
 
