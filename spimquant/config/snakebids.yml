@@ -250,6 +250,11 @@ parse_args:
     action: store
     nargs: '+'
 
+  --no_patch_uint8:
+    help: "Disable conversion of patch NIfTI files from uint16 to uint8 using robust percentile scaling. By default, patches are converted to uint8 to avoid endianness issues in downstream applications (e.g. SyGlass). (default: %(default)s)"
+    action: store_true
+    default: False
+
   --contrast_column:
     help: "Column name in participants.tsv to use for defining group contrasts (e.g., 'treatment', 'genotype'). Required for group-level statistical analysis."
     default: null

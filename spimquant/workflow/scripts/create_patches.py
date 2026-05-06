@@ -13,6 +13,8 @@ import logging
 import re
 from pathlib import Path
 
+import nibabel as nib
+import numpy as np
 from dask.diagnostics import ProgressBar
 from dask_setup import get_dask_client
 from zarrnii import ZarrNii, ZarrNiiAtlas
@@ -42,6 +44,7 @@ n_patches = snakemake.params.n_patches
 patch_labels = snakemake.params.patch_labels
 seed = snakemake.params.seed
 zarrnii_kwargs = snakemake.params.zarrnii_kwargs
+patch_uint8 = snakemake.params.get("patch_uint8", True)
 
 # Get wildcards
 atlas_seg = snakemake.wildcards.seg
@@ -56,6 +59,66 @@ if downsampling_level < 0:
 
 # Create output directory
 Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+
+def convert_nii_to_uint8(nii_path, low_pct=0.1, high_pct=99.9, sample_voxels=5_000_000):
+    """Convert a NIfTI file to uint8 using robust percentile scaling.
+
+    Scales voxel intensities to the [0, 255] range using the specified
+    percentiles for clipping, then overwrites the file in place.
+    This avoids endianness issues in downstream applications such as SyGlass.
+    """
+    img = nib.load(nii_path)
+
+    # Skip conversion if already uint8
+    if img.get_data_dtype() == np.uint8:
+        return
+
+    data = np.asanyarray(img.dataobj)
+
+    flat = data.ravel()
+    nonzero = flat[flat > 0]
+
+    if nonzero.size == 0:
+        out = np.zeros(data.shape, dtype=np.uint8)
+        new_header = img.header.copy()
+        new_header.set_data_dtype(np.uint8)
+        new_header["scl_slope"] = 1
+        new_header["scl_inter"] = 0
+        nib.save(nib.Nifti1Image(out, img.affine, new_header), nii_path)
+        return
+
+    if nonzero.size > sample_voxels:
+        rng = np.random.default_rng(0)
+        sample = rng.choice(nonzero, size=sample_voxels, replace=False)
+    else:
+        sample = nonzero
+
+    lo, hi = np.percentile(sample, [low_pct, high_pct])
+
+    if hi <= lo:
+        raise ValueError(f"Bad percentile range: lo={lo}, hi={hi}")
+
+    logging.info(
+        "Converting %s to uint8: dtype=%s, %g%%=%g, %g%%=%g",
+        nii_path,
+        data.dtype,
+        low_pct,
+        lo,
+        high_pct,
+        hi,
+    )
+
+    data_f = data.astype(np.float32)
+    scaled = (data_f - lo) / (hi - lo)
+    scaled = np.clip(scaled, 0, 1)
+    out = np.round(scaled * 255).astype(np.uint8)
+
+    new_header = img.header.copy()
+    new_header.set_data_dtype(np.uint8)
+    new_header["scl_slope"] = 1
+    new_header["scl_inter"] = 0
+    nib.save(nib.Nifti1Image(out, img.affine, new_header), nii_path)
 
 with get_dask_client("threads", snakemake.threads):
     # Load the atlas with labels
@@ -135,6 +198,8 @@ with get_dask_client("threads", snakemake.threads):
                         f"seg-{atlas_seg}_label-{clean_abbrev}_patch-{i:04d}.nii"
                     )
                     patch.to_nifti(str(out_file))
+                    if patch_uint8:
+                        convert_nii_to_uint8(str(out_file))
 
             except ValueError as e:
                 # ValueError from sample_region_patches when region has no voxels
