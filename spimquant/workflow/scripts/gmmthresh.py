@@ -24,6 +24,15 @@ from zarrnii import ZarrNii
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
 
+# Fixed random seed for reproducible GMM fitting
+_GMM_RANDOM_STATE = 42
+
+# Maximum EM iterations for GMM convergence
+_GMM_MAX_ITER = 200
+
+# Downsampling levels to try (in order) for range estimation
+_DS_LEVELS = [5, 4, 3, 2, 1]
+
 
 def _parse_gmm_method(method: str):
     """Parse a gmm+n{n}k{k} method string.
@@ -56,7 +65,9 @@ def _parse_gmm_method(method: str):
     return n_components, k_sigma
 
 
-def _fit_gmm_and_threshold(data_log, n_components, k_sigma, random_state=42):
+def _fit_gmm_and_threshold(
+    data_log, n_components, k_sigma, random_state=_GMM_RANDOM_STATE
+):
     """Fit a GMM in log-intensity space and return the threshold and fit info.
 
     Parameters
@@ -88,7 +99,7 @@ def _fit_gmm_and_threshold(data_log, n_components, k_sigma, random_state=42):
         n_components=n_components,
         covariance_type="full",
         random_state=random_state,
-        max_iter=200,
+        max_iter=_GMM_MAX_ITER,
     )
     gmm.fit(data_log.reshape(-1, 1))
 
@@ -199,7 +210,7 @@ if __name__ == "__main__":
         # ------------------------------------------------------------------ #
         print("estimating intensity range from downsampled image...")
         znimg_ds = None
-        for ds_level in [5, 4, 3, 2, 1]:
+        for ds_level in _DS_LEVELS:
             try:
                 candidate = ZarrNii.from_ome_zarr(
                     snakemake.input.corrected, level=ds_level, **zarrnii_kwargs
