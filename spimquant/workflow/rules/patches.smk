@@ -49,6 +49,7 @@ rule create_spim_patches:
         hires_level=0,  #input is the raw data
         seed=config.get("patch_seed", 42),
         zarrnii_kwargs={"orientation": config["orientation"]},
+        patch_uint8=not config.get("no_patch_uint8", False),
     output:
         patches_dir=directory(
             bids(
@@ -105,6 +106,7 @@ rule create_mask_patches:
         seed=config.get("patch_seed", 42),
         hires_level=config["segmentation_level"],
         zarrnii_kwargs={"orientation": config["orientation"]},
+        patch_uint8=not config.get("no_patch_uint8", False),
     output:
         patches_dir=directory(
             bids(
@@ -161,6 +163,7 @@ rule create_corrected_spim_patches:
         seed=config.get("patch_seed", 42),
         hires_level=config["segmentation_level"],
         zarrnii_kwargs={"orientation": config["orientation"]},
+        patch_uint8=not config.get("no_patch_uint8", False),
     output:
         patches_dir=directory(
             bids(
