@@ -302,9 +302,10 @@ templates:
     anat: https://zenodo.org/records/18906782/files/tpl-ABAv3_anat.nii.gz
     mask: https://zenodo.org/records/18906782/files/tpl-ABAv3_desc-brain_mask.nii.gz
     spim_templates: #sorted in priority order:
-      YoPro: https://zenodo.org/records/18749025/files/tpl-ABAv3_level-5_stain-YoPro_SPIM.nii.gz
-      Iba1: https://zenodo.org/records/18749025/files/tpl-ABAv3_level-5_stain-Iba1_SPIM.nii.gz
-      Abeta: https://zenodo.org/records/18749025/files/tpl-ABAv3_level-5_stain-Abeta_SPIM.nii.gz
+      YoPro: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-YoPro_SPIM.nii.gz
+      Iba1: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-Iba1_SPIM.nii.gz
+      CD31: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-CD31_SPIM.nii.gz
+      Abeta: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-Abeta_SPIM.nii.gz
     default_segs:
       - all
       - coarse
