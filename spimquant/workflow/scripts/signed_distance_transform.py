@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
         overlap_depth = snakemake.params.overlap_depth
 
-        znimg = ZarrNii.from_ome_zarr(
+        znimg = ZarrNii.from_file(
             snakemake.input.mask, **snakemake.params.zarrnii_kwargs
         )
 

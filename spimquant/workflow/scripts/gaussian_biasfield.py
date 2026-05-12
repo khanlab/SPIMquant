@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
 
-        znimg = ZarrNii.from_ome_zarr(
+        znimg = ZarrNii.from_file(
             snakemake.input.spim,
             channel_labels=[snakemake.wildcards.stain],
             level=hires_level,

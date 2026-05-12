@@ -147,7 +147,7 @@ with get_dask_client("threads", snakemake.threads):
 
     # Load the image data
     # Check if input is ome.zarr format or nifti
-    image = ZarrNii.from_ome_zarr(
+    image = ZarrNii.from_file(
         input_zarr,
         level=downsampling_level,
         **channel_args,

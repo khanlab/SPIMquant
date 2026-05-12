@@ -19,7 +19,7 @@ if __name__ == "__main__":
         znimg_ds = None
         for ds_level in [5, 4, 3, 2, 1]:
             try:
-                candidate = ZarrNii.from_ome_zarr(
+                candidate = ZarrNii.from_file(
                     snakemake.input.corrected, level=ds_level, **zarrnii_kwargs
                 )
                 znimg_ds = candidate
@@ -28,7 +28,7 @@ if __name__ == "__main__":
                 pass
 
         if znimg_ds is None:
-            znimg_ds = ZarrNii.from_ome_zarr(
+            znimg_ds = ZarrNii.from_file(
                 snakemake.input.corrected, **zarrnii_kwargs
             )
 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         print(f"  📊 bins: {n_bins} (bin width: {bin_width})")
 
         # we use the default level=0, since we are reading in the n4 output, which is already downsampled if level was >0
-        znimg = ZarrNii.from_ome_zarr(snakemake.input.corrected, **zarrnii_kwargs)
+        znimg = ZarrNii.from_file(snakemake.input.corrected, **zarrnii_kwargs)
 
         # calculate histogram using percentile-based range and bin-width-derived bin count
         (hist_counts, bin_edges) = znimg.compute_histogram(

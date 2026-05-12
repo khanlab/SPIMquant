@@ -57,7 +57,7 @@ with get_dask_client("threads", snakemake.threads):
     )
 
     # Load the image data
-    image = ZarrNii.from_ome_zarr(
+    image = ZarrNii.from_file(
         input_zarr,
         level=downsampling_level,
         **{k: v for k, v in zarrnii_kwargs.items() if v is not None},

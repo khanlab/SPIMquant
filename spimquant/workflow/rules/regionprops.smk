@@ -169,7 +169,7 @@ rule sample_at_vessel_sdt:
     params:
         coord_column_names=config["coord_column_names"],
         col_name="sdt_{stain}",
-        zarrnii_kwargs={"orientation": config["orientation"], "level": 0},
+        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         parquet=bids(
             root=root,

@@ -76,6 +76,10 @@ parse_args:
       - right
     default: null
 
+  --set_channel_labels:
+    help: "Set or override channel labels for input data. Note: this is required if using imaris as input"
+    default: null
+
   --stains_for_reg:
     help: "Possible stains to use for registration (will choose first available, in order)\n (default: %(default)s)"
     default: 

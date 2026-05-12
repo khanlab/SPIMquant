@@ -68,7 +68,7 @@ def main():
     znimg = None
     for ds_offset in [3, 2, 1, 0]:
         try:
-            candidate = ZarrNii.from_ome_zarr(
+            candidate = ZarrNii.from_file(
                 snakemake.input.corrected, level=level + ds_offset, **zarrnii_kwargs
             )
             znimg = candidate
@@ -78,7 +78,7 @@ def main():
             print(f"  Level {level + ds_offset} not available: {exc}")
 
     if znimg is None:
-        znimg = ZarrNii.from_ome_zarr(snakemake.input.corrected, **zarrnii_kwargs)
+        znimg = ZarrNii.from_file(snakemake.input.corrected, **zarrnii_kwargs)
 
     # ------------------------------------------------------------------
     # Get array data — shape is (C, Z, Y, X) or (Z, Y, X)

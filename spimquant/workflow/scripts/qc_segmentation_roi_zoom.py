@@ -51,13 +51,13 @@ def main():
     use_n4_bg = snakemake.params.get("use_n4_bg", False)
 
     spim_bg_path = snakemake.input.spim_n4 if use_n4_bg else snakemake.input.spim
-    spim_img = ZarrNii.from_ome_zarr(
+    spim_img = ZarrNii.from_file(
         spim_bg_path,
         level=snakemake.params.level,
         downsample_near_isotropic=True,
         channel_labels=[snakemake.wildcards.stain],
     )
-    mask_img = ZarrNii.from_ome_zarr(snakemake.input.mask, level=0)
+    mask_img = ZarrNii.from_file(snakemake.input.mask, level=0)
 
     atlas = ZarrNiiAtlas.from_files(snakemake.input.dseg_nii, snakemake.input.label_tsv)
 
@@ -67,7 +67,7 @@ def main():
     # but should be easy with ZarrNii image .scale
     aspect_axial = 1
 
-    spim_img_ds = ZarrNii.from_ome_zarr(
+    spim_img_ds = ZarrNii.from_file(
         spim_bg_path,
         level=(int(snakemake.params.level) + 5),
         downsample_near_isotropic=True,

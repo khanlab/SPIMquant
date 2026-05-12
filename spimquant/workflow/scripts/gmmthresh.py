@@ -209,7 +209,7 @@ if __name__ == "__main__":
         znimg_ds = None
         for ds_level in _DS_LEVELS:
             try:
-                candidate = ZarrNii.from_ome_zarr(
+                candidate = ZarrNii.from_file(
                     snakemake.input.corrected, level=ds_level, **zarrnii_kwargs
                 )
                 znimg_ds = candidate
@@ -218,7 +218,7 @@ if __name__ == "__main__":
                 pass
 
         if znimg_ds is None:
-            znimg_ds = ZarrNii.from_ome_zarr(
+            znimg_ds = ZarrNii.from_file(
                 snakemake.input.corrected, **zarrnii_kwargs
             )
 
@@ -234,7 +234,7 @@ if __name__ == "__main__":
         # ------------------------------------------------------------------ #
         # 2. Load full-resolution (level=0) corrected image
         # ------------------------------------------------------------------ #
-        znimg = ZarrNii.from_ome_zarr(snakemake.input.corrected, **zarrnii_kwargs)
+        znimg = ZarrNii.from_file(snakemake.input.corrected, **zarrnii_kwargs)
 
         # ------------------------------------------------------------------ #
         # 3. Compute histogram in linear space using percentile range

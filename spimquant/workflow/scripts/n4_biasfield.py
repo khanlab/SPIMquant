@@ -12,7 +12,7 @@ if __name__ == "__main__":
         unadjusted_downsample_factor = 2**proc_level
         adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
 
-        znimg = ZarrNii.from_ome_zarr(
+        znimg = ZarrNii.from_file(
             snakemake.input.spim,
             channel_labels=[snakemake.wildcards.stain],
             level=hires_level,
