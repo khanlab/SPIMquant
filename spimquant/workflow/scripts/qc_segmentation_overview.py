@@ -75,7 +75,6 @@ def main():
         snakemake.input.mask,
         level=snakemake.params.mask_level,
         downsample_near_isotropic=True,
-        **snakemake.params.zarrnii_kwargs,
     )
 
     # Voxel dimensions (mm) for physical aspect-ratio correction

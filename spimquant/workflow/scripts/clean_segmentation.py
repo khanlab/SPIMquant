@@ -24,7 +24,6 @@ if __name__ == "__main__":
         znimg = ZarrNii.from_file(
             snakemake.input.mask,
             level=0,  # we load level 0 since we are already at the highres level
-            **snakemake.params.zarrnii_kwargs,
         )
 
         # perform cleaning of artifactual positives by

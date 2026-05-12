@@ -21,6 +21,7 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 from scipy.ndimage import zoom
+from dask_setup import get_dask_client
 
 
 def _estimate_global_percentiles(
@@ -56,6 +57,7 @@ def main():
         level=snakemake.params.level,
         downsample_near_isotropic=True,
         channel_labels=[snakemake.wildcards.stain],
+        **snakemake.params.zarrnii_kwargs,
     )
     mask_img = ZarrNii.from_file(snakemake.input.mask, level=0)
 
@@ -72,6 +74,7 @@ def main():
         level=(int(snakemake.params.level) + 5),
         downsample_near_isotropic=True,
         channel_labels=[snakemake.wildcards.stain],
+        **snakemake.params.zarrnii_kwargs,
     )
 
     # estimate once globally, from a coarse version of the full image
@@ -224,4 +227,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
+        main()

@@ -13,7 +13,6 @@ znimg_density_ds = ZarrNii.from_file(
     snakemake.input.mask,
     level=downsampling_level,
     downsample_near_isotropic=True,
-    **snakemake.params.zarrnii_kwargs,
 )
 
 print(znimg_density_ds.darr)

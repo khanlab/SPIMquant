@@ -13,6 +13,7 @@ with get_dask_client("threads", snakemake.threads):
         level=level,
         channel_labels=[stain],
         downsample_near_isotropic=True,
+        **snakemake.params.zarrnii_kwargs,
     )
 
     df = pd.read_parquet(snakemake.input.regionprops_parquet)

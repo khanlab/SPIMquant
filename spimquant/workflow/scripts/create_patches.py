@@ -142,16 +142,12 @@ with get_dask_client("threads", snakemake.threads):
     atlas = ZarrNiiAtlas.from_files(
         input_dseg,
         input_tsv,
-        **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
     )
 
     # Load the image data
     # Check if input is ome.zarr format or nifti
     image = ZarrNii.from_file(
-        input_zarr,
-        level=downsampling_level,
-        **channel_args,
-        **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
+        input_zarr, level=downsampling_level, **channel_args, **zarrnii_kwargs
     )
 
     # Determine which labels to use for patches

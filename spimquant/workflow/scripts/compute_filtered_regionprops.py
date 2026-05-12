@@ -14,7 +14,6 @@ if __name__ == "__main__":
         znimg = ZarrNii.from_file(
             snakemake.input.mask,
             level=0,  # input image is already downsampled to the wildcard level
-            **snakemake.params.zarrnii_kwargs,
         )
 
         znimg.compute_region_properties(

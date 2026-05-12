@@ -50,7 +50,6 @@ def _norm(arr, lo, hi):
 
 
 def main():
-    zarrnii_kwargs = snakemake.params.zarrnii_kwargs
     n_thresholds = snakemake.params.n_thresholds
     n_crops = snakemake.params.n_crops
     patch_size = snakemake.params.patch_size
@@ -69,7 +68,8 @@ def main():
     for ds_offset in [3, 2, 1, 0]:
         try:
             candidate = ZarrNii.from_file(
-                snakemake.input.corrected, level=level + ds_offset, **zarrnii_kwargs
+                snakemake.input.corrected,
+                level=level + ds_offset,
             )
             znimg = candidate
             print(f"  Loaded at pyramid level {level + ds_offset}")
@@ -78,7 +78,7 @@ def main():
             print(f"  Level {level + ds_offset} not available: {exc}")
 
     if znimg is None:
-        znimg = ZarrNii.from_file(snakemake.input.corrected, **zarrnii_kwargs)
+        znimg = ZarrNii.from_file(snakemake.input.corrected)
 
     # ------------------------------------------------------------------
     # Get array data — shape is (C, Z, Y, X) or (Z, Y, X)
