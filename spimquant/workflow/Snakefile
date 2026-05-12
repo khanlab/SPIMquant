@@ -50,18 +50,21 @@ else:
 
 include: "rules/common.smk"
 
-zarrnii_kwargs={}
 
-if config['set_channel_labels']:
-    print("Using set_channel_labels override at data import: {config['set_channel_labels']}")
-    stains = config['set_channel_labels']
-    zarrnii_kwargs['set_channel_labels'] = stains
+zarrnii_in_kwargs = {}
+
+if config["set_channel_labels"]:
+    print(
+        f"Using set_channel_labels override at data import: {config['set_channel_labels']}"
+    )
+    stains = config["set_channel_labels"]
+    zarrnii_in_kwargs["set_channel_labels"] = stains
 else:
     stains = get_stains_all_subjects()
 
-if config['orientation']:
-    print("Using orientation to override at data import: {config['orientation']}") 
-    zarrnii_kwargs['orientation'] = config['orientation']
+if config["orientation"]:
+    print(f"Using orientation to override at data import: {config['orientation']}")
+    zarrnii_in_kwargs["orientation"] = config["orientation"]
 
 stain_for_reg = None
 

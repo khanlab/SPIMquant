@@ -48,7 +48,7 @@ rule create_spim_patches:
         patch_labels=config.get("patch_labels", None),
         hires_level=0,  #input is the raw data
         seed=config.get("patch_seed", 42),
-        zarrnii_kwargs={"orientation": config["orientation"]},
+        zarrnii_kwargs=zarrnii_in_kwargs,
         patch_uint8=not config.get("no_patch_uint8", False),
     output:
         patches_dir=directory(
@@ -105,7 +105,6 @@ rule create_mask_patches:
         patch_labels=config.get("patch_labels", None),
         seed=config.get("patch_seed", 42),
         hires_level=config["segmentation_level"],
-        zarrnii_kwargs={"orientation": config["orientation"]},
         patch_uint8=not config.get("no_patch_uint8", False),
     output:
         patches_dir=directory(
@@ -162,7 +161,6 @@ rule create_corrected_spim_patches:
         patch_labels=config.get("patch_labels", None),
         seed=config.get("patch_seed", 42),
         hires_level=config["segmentation_level"],
-        zarrnii_kwargs={"orientation": config["orientation"]},
         patch_uint8=not config.get("no_patch_uint8", False),
     output:
         patches_dir=directory(
@@ -208,7 +206,7 @@ rule create_imaris_crops:
     params:
         crop_labels=config.get("crop_labels", None),
         hires_level=0,  # input is the raw data
-        zarrnii_kwargs={"orientation": config["orientation"]},
+        zarrnii_kwargs=zarrnii_in_kwargs,
     output:
         crops_dir=directory(
             bids(

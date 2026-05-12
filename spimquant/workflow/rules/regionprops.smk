@@ -15,7 +15,6 @@ rule compute_filtered_regionprops:
             "regionprop_filters"
         ].get(wildcards.stain, config["regionprop_filters"]),
         output_properties=config["regionprop_outputs"],
-        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         regionprops_parquet=temp(
             bids(
@@ -169,7 +168,6 @@ rule sample_at_vessel_sdt:
     params:
         coord_column_names=config["coord_column_names"],
         col_name="sdt_{stain}",
-        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         parquet=bids(
             root=root,

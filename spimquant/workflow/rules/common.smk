@@ -53,10 +53,10 @@ def get_template_for_reg(wildcards):
     else:
         return bids(root=root, template=wildcards.template, suffix=f"{suffix}.nii.gz")
 
+
 def get_stains_all_subjects():
     stain_sets = [
-        set(ZarrNii.from_file(zarr).list_channels())
-        for zarr in inputs["spim"].expand()
+        set(ZarrNii.from_file(zarr).list_channels()) for zarr in inputs["spim"].expand()
     ]
     if all(s == stain_sets[0] for s in stain_sets):
         return sorted(stain_sets[0])

@@ -28,9 +28,7 @@ if __name__ == "__main__":
                 pass
 
         if znimg_ds is None:
-            znimg_ds = ZarrNii.from_file(
-                snakemake.input.corrected, **zarrnii_kwargs
-            )
+            znimg_ds = ZarrNii.from_file(snakemake.input.corrected, **zarrnii_kwargs)
 
         data_ds = znimg_ds.data.compute().ravel().astype(np.float32)
         range_lo = float(np.percentile(data_ds, pct_lo))

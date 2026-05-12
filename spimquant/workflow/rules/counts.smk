@@ -12,7 +12,7 @@ rule counts_per_voxel:
         ),
     params:
         coord_column_names=config["coord_column_names"],
-        zarrnii_kwargs={"orientation": config["orientation"]},
+        zarrnii_kwargs=zarrnii_in_kwargs,
     output:
         counts_nii=bids(
             root=root,
