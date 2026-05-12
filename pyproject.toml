@@ -50,9 +50,9 @@ omegaconf = ">=2.3.0,<3"
 
 [tool.pixi.pypi-dependencies]
 spimquant = { path = ".", editable = true }
-zarrnii = ">=0.19.2,<0.20.0"
+zarrnii = ">=0.19.3,<0.20.0"
 #zarrnii = { git = "https://github.com/khanlab/zarrnii", rev = "main",  editable = true }
-#zarrnii = { path = "./zarrnii", editable = true }
+#zarrnii = { path = "../zarrnii", editable = true }
 vesselfm = { git = "https://github.com/khanlab/vesselfm", rev = "504baab" }
 h5py = ">=3.14.0"
 simpleitk = ">=2.4.0"
