@@ -30,6 +30,7 @@ if __name__ == "__main__":
         znimg_corrected = znimg.apply_scaled_processing(
             N4BiasFieldCorrection(shrink_factor=snakemake.params.shrink_factor),
             downsample_factor=adjusted_downsample_factor,
+            upsampled_ome_zarr_path=snakemake.output.biasfield,
         )
 
         # write to ome_zarr
