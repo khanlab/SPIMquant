@@ -168,6 +168,7 @@ rule sample_at_vessel_sdt:
     params:
         coord_column_names=config["coord_column_names"],
         col_name="sdt_{stain}",
+        zarrnii_kwargs=zarrnii_in_kwargs,
     output:
         parquet=bids(
             root=root,

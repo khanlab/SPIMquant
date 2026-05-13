@@ -20,6 +20,10 @@ if __name__ == "__main__":
             **snakemake.params.zarrnii_kwargs,
         )
 
+        multiscales, scale_factors = scale_factors_from_input_omezarr(
+            snakemake.input.spim
+        )
+
         print("compute bias field correction")
 
         adjusted_chunk = int(
@@ -33,4 +37,6 @@ if __name__ == "__main__":
         )
 
         # write to ome_zarr
-        znimg_corrected.to_ome_zarr(snakemake.output.corrected, max_layer=5)
+        znimg_corrected.to_ome_zarr(
+            snakemake.output.corrected, match_scale_factors_from=snakemake.input.spim
+        )

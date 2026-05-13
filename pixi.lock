@@ -626,7 +626,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/d1/14/7688e984cdd0be1438779825640b943574b89946ed868d76497b3cffb3d5/tensorstore-0.1.83-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: git+https://github.com/khanlab/vesselfm?rev=504baab#504baabb253c2b6bf7d5a4037a93c2f590c9da51
       - pypi: https://files.pythonhosted.org/packages/c5/c1/9c64ed6c2d152b56482bb66297bfc03442d25449bfa91da7bf2e58a80f01/wasmtime-44.0.0-py3-none-manylinux1_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/da/8c/bf77a5a6aacf0e146ec90a88d46000fea74863d0a04ef250a9d7f0166ef9/zarrnii-0.19.3-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/10/67/a266d8077498d25e1b64c047902c90b2da699eab4b0da8aaa6b18881a8ea/zarrnii-0.19.4-py3-none-any.whl
       - pypi: ./
   dev:
     channels:
@@ -1433,7 +1433,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/d1/14/7688e984cdd0be1438779825640b943574b89946ed868d76497b3cffb3d5/tensorstore-0.1.83-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: git+https://github.com/khanlab/vesselfm?rev=504baab#504baabb253c2b6bf7d5a4037a93c2f590c9da51
       - pypi: https://files.pythonhosted.org/packages/c5/c1/9c64ed6c2d152b56482bb66297bfc03442d25449bfa91da7bf2e58a80f01/wasmtime-44.0.0-py3-none-manylinux1_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/da/8c/bf77a5a6aacf0e146ec90a88d46000fea74863d0a04ef250a9d7f0166ef9/zarrnii-0.19.3-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/10/67/a266d8077498d25e1b64c047902c90b2da699eab4b0da8aaa6b18881a8ea/zarrnii-0.19.4-py3-none-any.whl
       - pypi: ./
   dev-only:
     channels:
@@ -1670,7 +1670,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/af/aa/ead46a88f9ec3a432a4832dfedb84092fc35af2d0ba40cd04aea3889f247/wrapt-2.1.2-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/66/3e/868e5c3364b6cee19ff3e1a122194fa4ce51def02c61023970442162859e/yarl-1.23.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/88/0a/469e2bd01be1490336e6c8707386845655d59261543315778a3ccc7e8019/zarr-3.2.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/da/8c/bf77a5a6aacf0e146ec90a88d46000fea74863d0a04ef250a9d7f0166ef9/zarrnii-0.19.3-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/10/67/a266d8077498d25e1b64c047902c90b2da699eab4b0da8aaa6b18881a8ea/zarrnii-0.19.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/ab/11a76c1e2126084fde2639514f24e6111b789b0bfa4fc6264a8975c7e1f1/zict-3.0.0-py2.py3-none-any.whl
       - pypi: ./
   gpu:
@@ -2327,7 +2327,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/d1/14/7688e984cdd0be1438779825640b943574b89946ed868d76497b3cffb3d5/tensorstore-0.1.83-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: git+https://github.com/khanlab/vesselfm?rev=504baab#504baabb253c2b6bf7d5a4037a93c2f590c9da51
       - pypi: https://files.pythonhosted.org/packages/c5/c1/9c64ed6c2d152b56482bb66297bfc03442d25449bfa91da7bf2e58a80f01/wasmtime-44.0.0-py3-none-manylinux1_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/da/8c/bf77a5a6aacf0e146ec90a88d46000fea74863d0a04ef250a9d7f0166ef9/zarrnii-0.19.3-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/10/67/a266d8077498d25e1b64c047902c90b2da699eab4b0da8aaa6b18881a8ea/zarrnii-0.19.4-py3-none-any.whl
       - pypi: ./
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
@@ -13875,7 +13875,7 @@ packages:
 - pypi: ./
   name: spimquant
   version: 0.1.0
-  sha256: 577bd80de80425e0041a5f719af3e87a9da0880910202739291b82a97744f965
+  sha256: fb69dbe80b561eba62499987330791735e6f4b097d2f1e17f378ea9d3b7cac9e
   requires_python: '>=3.11'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/spirv-tools-2025.5-hb700be7_0.conda
   sha256: 7547142ab1352132adf98d555ed955badd96c9f277cbd054ae52f7edd6cf6cb8
@@ -15496,10 +15496,10 @@ packages:
   - pkg:pypi/zarr?source=hash-mapping
   size: 367721
   timestamp: 1777989189792
-- pypi: https://files.pythonhosted.org/packages/da/8c/bf77a5a6aacf0e146ec90a88d46000fea74863d0a04ef250a9d7f0166ef9/zarrnii-0.19.3-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/10/67/a266d8077498d25e1b64c047902c90b2da699eab4b0da8aaa6b18881a8ea/zarrnii-0.19.4-py3-none-any.whl
   name: zarrnii
-  version: 0.19.3
-  sha256: 5034841526da1bf0e7ec91aa292fc9abc4a81d7c7513373925d909ebf5e7216d
+  version: 0.19.4
+  sha256: a4b47063cf3e175f8fc999513f3c797d3dc87692c15486bfd137c739305f05b0
   requires_dist:
   - dask>=2026.3.0
   - h5py>=3.14.0
