@@ -62,6 +62,7 @@ if config["set_channel_labels"]:
 else:
     stains = get_stains_all_subjects()
 
+
 if config["orientation"]:
     print(f"Using orientation to override at data import: {config['orientation']}")
     zarrnii_in_kwargs["orientation"] = config["orientation"]
@@ -93,7 +94,7 @@ if stain_for_reg is None:
     raise ValueError(f"a stain for registration was not found in {stains}")
 
 
-stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
+stains_for_seg = sorted(list(set(config["stains_for_seg"]).intersection(set(stains))))
 
 # seg methods that use multi-Otsu thresholding (otsu+k{}i{} pattern)
 otsu_seg_methods = [m for m in config["seg_method"] if m.startswith("otsu+")]
@@ -907,6 +908,124 @@ rule all_qc:
         else [],
 
 
+rule all_tabular_sidecars:
+    """Target rule for JSON sidecar files alongside all non-temp tabular outputs."""
+    input:
+        # --- participant-level TSV sidecars ---
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="mergedsegstats.json",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+        )
+        if do_seg
+        else [],
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                seg="{seg}",
+                from_="{template}",
+                stain="{stain}",
+                level=config["registration_level"],
+                desc="{desc}",
+                suffix="regionpropstats.json",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            stain=stains_for_seg,
+        )
+        if do_seg
+        else [],
+        # --- participant-level parquet sidecars ---
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                desc="{desc}",
+                space="{template}",
+                suffix="regionprops.json",
+                **inputs["spim"].wildcards,
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+        )
+        if do_seg
+        else [],
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                desc="{desc}",
+                space="{template}",
+                suffix="coloc.json",
+                **inputs["spim"].wildcards,
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+        )
+        if do_coloc
+        else [],
+
+
+rule all_group_stats_tabular_sidecars:
+    """Target rule for JSON sidecar files alongside all non-temp tabular outputs."""
+    input:
+        # --- group-level TSV sidecars ---
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="groupstats.json",
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+        )
+        if do_seg
+        else [],
+        # --- group-level parquet sidecars ---
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                space="{template}",
+                desc="{desc}",
+                suffix="regionprops.json",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+        )
+        if do_seg
+        else [],
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                space="{template}",
+                desc="{desc}",
+                suffix="coloc.json",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+        )
+        if do_coloc
+        else [],
+
+
 rule all_participant:
     default_target: True
     input:
@@ -916,12 +1035,14 @@ rule all_participant:
         rules.all_mri_reg.input if config["register_to_mri"] else [],
         rules.all_segment_coloc.input if do_coloc else [],
         rules.all_qc.input,
+        rules.all_tabular_sidecars.input,
 
 
 rule all_group:
     input:
         rules.all_group_stats.input if do_seg else [],
         rules.all_group_stats_coloc.input if do_coloc else [],
+        rules.all_group_stats_tabular_sidecars.input,
 
 
 include: "rules/import.smk"
@@ -937,6 +1058,7 @@ include: "rules/segstats.smk"
 include: "rules/patches.smk"
 include: "rules/groupstats.smk"
 include: "rules/qc.smk"
+include: "rules/sidecars.smk"
 
 
 if config["register_to_mri"]:
