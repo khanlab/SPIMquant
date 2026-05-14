@@ -166,7 +166,7 @@ parse_args:
       may be encoded with 'p' as a decimal separator to keep BIDS-compatible
       filenames, e.g. ``gmm+n2k2p5`` → n=2, k=2.5.
     default:
-      - otsu+k3i2
+      - gmm+n3k4
     nargs: '+'
 
   --seg_hist_percentile_range:
