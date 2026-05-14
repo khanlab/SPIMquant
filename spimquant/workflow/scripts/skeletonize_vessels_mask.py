@@ -23,7 +23,7 @@ if __name__ == "__main__":
             for c in range(block.shape[0]):
                 binary = block[c] > 0
                 if np.any(binary):
-                    # Preserve the project mask convention of foreground=100.
+                    # Preserve the project's mask convention of foreground=100.
                     result[c] = skeletonize(binary).astype(np.uint8) * MASK_TRUE_VALUE
             return result
 
