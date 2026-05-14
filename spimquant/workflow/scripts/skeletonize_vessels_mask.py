@@ -8,6 +8,8 @@ from zarrnii import ZarrNii
 
 from dask_setup import get_dask_client
 
+MASK_TRUE_VALUE = np.uint8(100)
+
 
 if __name__ == "__main__":
     with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
@@ -20,7 +22,8 @@ if __name__ == "__main__":
             for c in range(block.shape[0]):
                 binary = block[c] > 0
                 if np.any(binary):
-                    result[c] = skeletonize(binary).astype(np.uint8) * 100
+                    # Preserve the project mask convention of foreground=100.
+                    result[c] = skeletonize(binary).astype(np.uint8) * MASK_TRUE_VALUE
             return result
 
         depth = {0: 0, 1: overlap_depth, 2: overlap_depth, 3: overlap_depth}

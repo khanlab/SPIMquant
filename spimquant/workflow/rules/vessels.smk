@@ -69,6 +69,7 @@ rule signed_distance_transform:
             suffix="dist.ozx",
             **inputs["spim"].wildcards,
         ),
+    # Match the thread policy used by signed_distance_transform.
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
