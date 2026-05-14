@@ -63,7 +63,7 @@ rule gaussian_biasfield:
         runtime=15,
     params:
         proc_level=5,
-        zarrnii_kwargs={"orientation": config["orientation"]},
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/gaussian_biasfield.py"
 
@@ -93,7 +93,7 @@ rule n4_biasfield:
         runtime=180,
     params:
         proc_level=5,
-        zarrnii_kwargs={"orientation": config["orientation"]},
+        zarrnii_kwargs=zarrnii_in_kwargs,
         shrink_factor=16 if config["sloppy"] else 1,
         target_chunk_size=512,  #this sets the chunk size for this and downstream masks
     script:
@@ -147,7 +147,6 @@ histogram visualization of the threshold selection.
         hist_percentile_range=[float(x) for x in config["seg_hist_percentile_range"]],
         otsu_k=lambda wildcards: int(wildcards.k),
         otsu_threshold_index=lambda wildcards: int(wildcards.i),
-        zarrnii_kwargs={"orientation": config["orientation"]},
     script:
         "../scripts/multiotsu.py"
 
@@ -207,7 +206,6 @@ separator (e.g. gmm+n2k2p5 → k=2.5).
         hist_percentile_range=[float(x) for x in config["seg_hist_percentile_range"]],
         gmm_n=lambda wildcards: int(wildcards.n),
         gmm_k=lambda wildcards: float(wildcards.k.replace("p", ".")),
-        zarrnii_kwargs={"orientation": config["orientation"]},
     script:
         "../scripts/gmmthresh.py"
 
@@ -245,7 +243,6 @@ Simpler alternative to multi-Otsu for cases where the threshold is known a prior
         runtime=180,
     params:
         threshold=lambda wildcards: int(wildcards.threshold),
-        zarrnii_kwargs={"orientation": config["orientation"]},
     script:
         "../scripts/threshold.py"
 
@@ -294,6 +291,5 @@ a cleaned mask and an exclusion mask showing what was removed.
     params:
         max_extent=0.15,
         proc_level=2,  #level at which to calculate conncomp
-        zarrnii_kwargs={"orientation": config["orientation"]},
     script:
         "../scripts/clean_segmentation.py"

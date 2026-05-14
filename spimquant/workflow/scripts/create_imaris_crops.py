@@ -53,15 +53,10 @@ with get_dask_client("threads", snakemake.threads):
     atlas = ZarrNiiAtlas.from_files(
         input_dseg,
         input_tsv,
-        **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
     )
 
     # Load the image data
-    image = ZarrNii.from_ome_zarr(
-        input_zarr,
-        level=downsampling_level,
-        **{k: v for k, v in zarrnii_kwargs.items() if v is not None},
-    )
+    image = ZarrNii.from_file(input_zarr, level=downsampling_level, **zarrnii_kwargs)
 
     # Determine which labels to use for crops
     if crop_labels is None:

@@ -9,11 +9,10 @@ if downsampling_level < 0:
 
 
 # this will downsample automatically based on the level
-znimg_density_ds = ZarrNii.from_ome_zarr(
+znimg_density_ds = ZarrNii.from_file(
     snakemake.input.mask,
     level=downsampling_level,
     downsample_near_isotropic=True,
-    **snakemake.params.zarrnii_kwargs,
 )
 
 print(znimg_density_ds.darr)

@@ -66,7 +66,7 @@ def _load_channel_images(spim_path, channels, level):
     """Return a dict {channel: ZarrNii} for all requested channels."""
     imgs = {}
     for ch in channels:
-        imgs[ch] = ZarrNii.from_ome_zarr(
+        imgs[ch] = ZarrNii.from_file(
             spim_path,
             level=level,
             channel_labels=[ch],
@@ -90,7 +90,7 @@ def _global_norms(imgs, channels):
         arr = None
         for extra in (5, 3, 1, 0):
             try:
-                coarse = ZarrNii.from_ome_zarr(
+                coarse = ZarrNii.from_file(
                     snakemake.input.spim,
                     level=(base_level + extra),
                     channel_labels=[ch],

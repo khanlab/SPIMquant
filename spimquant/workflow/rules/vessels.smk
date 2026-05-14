@@ -13,7 +13,7 @@ rule run_vesselfm:
         spim=inputs["spim"].path,
         model_path="resources/models/vesselfm.pt",
     params:
-        zarrnii_kwargs={"orientation": config["orientation"]},
+        zarrnii_kwargs=zarrnii_in_kwargs,
         vesselfm_kwargs=lambda wildcards, input: {
             "chunk_size": (1, 128, 128, 128),
             "model_path": input.model_path,
@@ -59,7 +59,6 @@ rule signed_distance_transform:
         ),
     params:
         overlap_depth=32,
-        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         dist=bids(
             root=root,

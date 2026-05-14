@@ -4,8 +4,8 @@ from zarrnii import ZarrNii
 if __name__ == "__main__":
     with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
 
-        znimg_hires = ZarrNii.from_ome_zarr(
-            snakemake.input.corrected, **snakemake.params.zarrnii_kwargs
+        znimg_hires = ZarrNii.from_file(
+            snakemake.input.corrected,
         )
 
         print("thresholding image, saving as ome zarr")

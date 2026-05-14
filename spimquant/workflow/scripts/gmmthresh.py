@@ -196,7 +196,6 @@ def _make_qc_figure(
 if __name__ == "__main__":
     with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
 
-        zarrnii_kwargs = snakemake.params.zarrnii_kwargs
         pct_lo, pct_hi = snakemake.params.hist_percentile_range
         bin_width = snakemake.params.hist_bin_width
         n_components = snakemake.params.gmm_n
@@ -209,18 +208,14 @@ if __name__ == "__main__":
         znimg_ds = None
         for ds_level in _DS_LEVELS:
             try:
-                candidate = ZarrNii.from_ome_zarr(
-                    snakemake.input.corrected, level=ds_level, **zarrnii_kwargs
-                )
+                candidate = ZarrNii.from_file(snakemake.input.corrected, level=ds_level)
                 znimg_ds = candidate
                 break
             except Exception:
                 pass
 
         if znimg_ds is None:
-            znimg_ds = ZarrNii.from_ome_zarr(
-                snakemake.input.corrected, **zarrnii_kwargs
-            )
+            znimg_ds = ZarrNii.from_file(snakemake.input.corrected)
 
         data_ds = znimg_ds.data.compute().ravel().astype(np.float32)
 
@@ -234,7 +229,7 @@ if __name__ == "__main__":
         # ------------------------------------------------------------------ #
         # 2. Load full-resolution (level=0) corrected image
         # ------------------------------------------------------------------ #
-        znimg = ZarrNii.from_ome_zarr(snakemake.input.corrected, **zarrnii_kwargs)
+        znimg = ZarrNii.from_file(snakemake.input.corrected)
 
         # ------------------------------------------------------------------ #
         # 3. Compute histogram in linear space using percentile range
@@ -298,10 +293,12 @@ if __name__ == "__main__":
         # 6. Apply threshold to original image and save
         # ------------------------------------------------------------------ #
         print("thresholding image, saving as ome zarr")
-        znimg_mask = znimg.segment_threshold(threshold)
+        znimg_mask = znimg.segment_threshold(float(threshold))
 
         # multiplying binary mask by 100 (so values are 0 and 100) to enable
         # field fraction calculation by subsequent local-mean downsampling
         znimg_mask = znimg_mask * 100
 
-        znimg_mask.to_ome_zarr(snakemake.output.mask, max_layer=5)
+        znimg_mask.to_ome_zarr(
+            snakemake.output.mask, match_scale_factors_from=snakemake.input.corrected
+        )

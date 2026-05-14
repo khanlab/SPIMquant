@@ -25,7 +25,7 @@ def main():
     hist_range = snakemake.params.hist_range
 
     with get_dask_client("threads", snakemake.threads):
-        znimg = ZarrNii.from_ome_zarr(
+        znimg = ZarrNii.from_file(
             snakemake.input.spim,
             level=level,
             channel_labels=[stain],
