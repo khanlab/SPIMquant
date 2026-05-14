@@ -84,7 +84,6 @@ rule import_template_anat:
             template="{template}",
             suffix="log.txt",
         ),
-    cache: "omit-software"
     script:
         "../scripts/copy_nii.py"
 
@@ -115,7 +114,6 @@ rule import_template_spim:
             template="{template}",
             suffix="log.txt",
         ),
-    cache: "omit-software"
     script:
         "../scripts/copy_nii.py"
 
@@ -138,7 +136,6 @@ rule import_mask:
             template="{template}",
             suffix="log.txt",
         ),
-    cache: "omit-software"
     script:
         "../scripts/copy_nii.py"
 
@@ -179,7 +176,6 @@ rule import_dseg:
     resources:
         mem_mb=1500,
         runtime=15,
-    cache: "omit-software"
     script:
         "../scripts/copy_nii.py"
 
@@ -201,7 +197,6 @@ rule import_lut_tsv:
     resources:
         mem_mb=1500,
         runtime=15,
-    cache: "omit-software"
     shell:
         "cp {input} {output}"
 
@@ -215,6 +210,5 @@ rule import_DSURQE_tsv:
     resources:
         mem_mb=1500,
         runtime=15,
-    cache: "omit-software"
     script:
         "../scripts/import_DSURQE_dseg_tsv.py"
