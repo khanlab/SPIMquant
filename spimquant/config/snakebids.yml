@@ -608,3 +608,10 @@ column_descriptions:
   cohensd:
     LongName: Cohen's d
     Description: Effect size (Cohen's d) expressing the standardised mean difference between the two contrast groups.
+  vesseldist:
+    LongName: Distance to vessel boundary
+    Description: >
+      Signed distance from the object centroid to the nearest vessel boundary.
+      Negative values indicate the centroid is inside a vessel; positive values indicate
+      it is outside. Vessels are defined by the CD31 immunofluorescence channel.
+    Units: voxels
