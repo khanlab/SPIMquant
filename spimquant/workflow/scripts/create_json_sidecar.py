@@ -131,9 +131,11 @@ def resolve_column(col, column_descriptions, stat_suffixes):
                 desc_text = base_desc.get("Description", "")
                 entry = {
                     "LongName": f"{long_name} – {agg_label} (group: {group})",
-                    "Description": f"{agg_label} of: {desc_text} Group: {group}."
-                    if desc_text
-                    else f"{agg_label} of '{base}' for group '{group}'.",
+                    "Description": (
+                        f"{agg_label} of: {desc_text} Group: {group}."
+                        if desc_text
+                        else f"{agg_label} of '{base}' for group '{group}'."
+                    ),
                 }
                 if "Units" in base_desc:
                     entry["Units"] = base_desc["Units"]
@@ -152,9 +154,11 @@ def resolve_column(col, column_descriptions, stat_suffixes):
                 desc_text = base_desc.get("Description", "")
                 entry = {
                     "LongName": f"{long_name} – {agg_label}",
-                    "Description": f"{agg_label} of: {desc_text}"
-                    if desc_text
-                    else f"{agg_label} of '{base}'.",
+                    "Description": (
+                        f"{agg_label} of: {desc_text}"
+                        if desc_text
+                        else f"{agg_label} of '{base}'."
+                    ),
                 }
                 if "Units" in base_desc:
                     entry["Units"] = base_desc["Units"]
@@ -203,7 +207,9 @@ def main():
     output_file = snakemake.output[0]
     column_descriptions = snakemake.params.column_descriptions
     # stats_maps contains the short stat tokens used as suffixes (tstat, pval, cohensd)
-    stat_suffixes = set(snakemake.params.get("stats_maps", ["tstat", "pval", "cohensd"]))
+    stat_suffixes = set(
+        snakemake.params.get("stats_maps", ["tstat", "pval", "cohensd"])
+    )
 
     columns = get_columns(input_file)
     sidecar = build_sidecar(columns, column_descriptions, stat_suffixes)
