@@ -20,10 +20,6 @@ if __name__ == "__main__":
             **snakemake.params.zarrnii_kwargs,
         )
 
-        multiscales, scale_factors = scale_factors_from_input_omezarr(
-            snakemake.input.spim
-        )
-
         print("compute bias field correction")
 
         adjusted_chunk = int(
