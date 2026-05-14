@@ -18,6 +18,7 @@ if __name__ == "__main__":
         znimg = ZarrNii.from_file(snakemake.input.mask)
 
         def skeletonize_block(block):
+            """Skeletonize a chunk with shape (C, Z, Y, X) and return same shape."""
             result = np.zeros(block.shape, dtype=np.uint8)
             for c in range(block.shape[0]):
                 binary = block[c] > 0
@@ -39,4 +40,5 @@ if __name__ == "__main__":
         znimg.darr = skel_darr
 
         with ProgressBar():
+            # Match pyramid generation used by other mask-producing scripts.
             znimg.to_ome_zarr(snakemake.output.mask, max_layer=5)
