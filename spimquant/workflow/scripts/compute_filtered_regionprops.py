@@ -11,10 +11,9 @@ from zarrnii import ZarrNii
 if __name__ == "__main__":
     with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
 
-        znimg = ZarrNii.from_ome_zarr(
+        znimg = ZarrNii.from_file(
             snakemake.input.mask,
             level=0,  # input image is already downsampled to the wildcard level
-            **snakemake.params.zarrnii_kwargs,
         )
 
         znimg.compute_region_properties(

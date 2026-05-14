@@ -68,7 +68,7 @@ saturation/clip fraction (percentage of voxels at the maximum bin).
         level=config["registration_level"],
         hist_bins=500,
         hist_range=[0, 65535],
-        zarrnii_kwargs={"orientation": config["orientation"]},
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/qc_intensity_histogram.py"
 
@@ -109,7 +109,7 @@ Aspect ratio is corrected using voxel spacings from ``ZarrNii.get_zooms()``.
     params:
         level=config["registration_level"],
         mask_level=config["registration_level"] - config["segmentation_level"],
-        zarrnii_kwargs={"orientation": config["orientation"]},
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/qc_segmentation_overview.py"
 
@@ -148,7 +148,7 @@ for isotropic display and physically correct aspect ratio.
     params:
         level=config["registration_level"],
         mask_level=config["registration_level"] - config["segmentation_level"],
-        zarrnii_kwargs={"orientation": config["orientation"]},
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/qc_segmentation_overview.py"
 
@@ -237,6 +237,7 @@ one without (``desc-{desc}nomask_roimontage.png``).
         patch_size=lambda wildcards: 2000 if wildcards.seg == "coarse" else 500,
         level=config["segmentation_level"],
         use_n4_bg=_use_n4_bg,
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/qc_segmentation_roi_zoom.py"
 
@@ -323,6 +324,7 @@ and one without (``desc-{desc}nomask_vesselroimontage.png``).
         patch_size=lambda wildcards: 2000 if wildcards.seg == "coarse" else 500,
         level=config["segmentation_level"],
         use_n4_bg=_use_n4_bg,
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/qc_segmentation_roi_zoom.py"
 
@@ -454,7 +456,6 @@ Only applicable when ``seg_method`` uses the ``otsu+k{}i{}`` pattern.
         patch_size=300,
         level=config["segmentation_level"],
         hist_percentile_range=[float(x) for x in config["seg_hist_percentile_range"]],
-        zarrnii_kwargs={"orientation": config["orientation"]},
     script:
         "../scripts/qc_otsu_threshold_sweep.py"
 
@@ -571,6 +572,7 @@ parcellation for atlas-label lookup.
         patch_size=config.get("instance_gif_patch_size", 100),
         max_instances=config.get("instance_gif_max_instances", 200),
         seed=42,
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/qc_instance_gif.py"
 
@@ -638,5 +640,6 @@ marker drawn at the average radius of the pair.
         patch_size=config.get("instance_gif_patch_size", 100),
         max_instances=config.get("instance_gif_max_instances", 200),
         seed=42,
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/qc_instance_gif.py"

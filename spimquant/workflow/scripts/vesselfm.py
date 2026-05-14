@@ -5,7 +5,7 @@ from dask.diagnostics import ProgressBar
 from dask_setup import get_dask_client
 
 with get_dask_client("threads", snakemake.threads):
-    znimg = ZarrNii.from_ome_zarr(
+    znimg = ZarrNii.from_file(
         snakemake.input.spim,
         level=int(snakemake.wildcards.level),
         channel_labels=[snakemake.wildcards.stain],

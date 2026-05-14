@@ -64,18 +64,17 @@ def main():
     desc = snakemake.wildcards.desc
     subject = snakemake.wildcards.subject
 
-    spim_img = ZarrNii.from_ome_zarr(
+    spim_img = ZarrNii.from_file(
         snakemake.input.spim,
         level=snakemake.params.level,
         downsample_near_isotropic=True,
         channel_labels=[stain],
         **snakemake.params.zarrnii_kwargs,
     )
-    mask_img = ZarrNii.from_ome_zarr(
+    mask_img = ZarrNii.from_file(
         snakemake.input.mask,
         level=snakemake.params.mask_level,
         downsample_near_isotropic=True,
-        **snakemake.params.zarrnii_kwargs,
     )
 
     # Voxel dimensions (mm) for physical aspect-ratio correction

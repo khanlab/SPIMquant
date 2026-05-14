@@ -19,7 +19,6 @@ rule fieldfrac:
         ),
     params:
         hires_level=config["segmentation_level"],
-        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         fieldfrac_nii=bids(
             root=root,

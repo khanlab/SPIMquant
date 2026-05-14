@@ -76,6 +76,13 @@ parse_args:
       - right
     default: null
 
+  --set_channel_labels:
+    help: "Set or override channel labels for input data. Note: this is required if using imaris as input"
+    default: null
+    action: store
+    nargs: '+'
+
+
   --stains_for_reg:
     help: "Possible stains to use for registration (will choose first available, in order)\n (default: %(default)s)"
     default: 
@@ -137,21 +144,41 @@ parse_args:
 
 
   --seg_method:
-    help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions. "
-    default: 
+    help: >
+      Method(s) to use for microscopy segmentation (e.g. plaques, protein
+      deposits, cells) applied to 'stains_for_seg' channels.
+
+      Supported methods:
+
+      ``th<value>`` – simple fixed intensity threshold, e.g. ``th500`` applies
+      a threshold of 500.
+
+      ``otsu+k<k>i<i>`` – multi-level Otsu thresholding.  Fits k intensity
+      classes to the global histogram and uses threshold index i (0-based) as
+      the segmentation boundary.  Example: ``otsu+k3i2`` fits 3 classes and
+      selects the 2nd threshold (between the 2nd and 3rd class).
+
+      ``gmm+n<n>k<k>`` – Gaussian Mixture Model (GMM) tail-thresholding.
+      Fits a GMM with n components to the log1p-transformed global intensity
+      histogram, sorts the components by mean intensity ascending, and defines
+      the threshold from the highest-intensity component as
+      ``threshold = expm1(mean_n + k * sigma_n)``.  The float multiplier k
+      may be encoded with 'p' as a decimal separator to keep BIDS-compatible
+      filenames, e.g. ``gmm+n2k2p5`` → n=2, k=2.5.
+    default:
       - otsu+k3i2
     nargs: '+'
 
   --seg_hist_percentile_range:
-    help: "Percentile range to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. Specify 2 numbers for the low and high percentiles (default: %(default)s)"
+    help: "Percentile range to use for histogram calculation in histogram-based segmentation methods (otsu+k{}i{} and gmm+n{}k{}). Specify 2 numbers for the low and high percentiles (default: %(default)s)"
     default:
       - 1
-      - 99
+      - 99.5
     nargs: 2
     type: float
 
   --seg_hist_bin_width:
-    help: "Bin width to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. (default: %(default)s)"
+    help: "Bin width to use for histogram calculation in histogram-based segmentation methods (otsu+k{}i{} and gmm+n{}k{}). (default: %(default)s)"
     default: 1
     type: float
 
@@ -250,6 +277,11 @@ parse_args:
     action: store
     nargs: '+'
 
+  --no_patch_uint8:
+    help: "Disable conversion of patch NIfTI files to uint8 using robust percentile scaling. By default, patches are converted to uint8 to avoid endianness issues in downstream applications (e.g. SyGlass). (default: %(default)s)"
+    action: store_true
+    default: False
+
   --contrast_column:
     help: "Column name in participants.tsv to use for defining group contrasts (e.g., 'treatment', 'genotype'). Required for group-level statistical analysis."
     default: null
@@ -277,9 +309,10 @@ templates:
     anat: https://zenodo.org/records/18906782/files/tpl-ABAv3_anat.nii.gz
     mask: https://zenodo.org/records/18906782/files/tpl-ABAv3_desc-brain_mask.nii.gz
     spim_templates: #sorted in priority order:
-      YoPro: https://zenodo.org/records/18749025/files/tpl-ABAv3_level-5_stain-YoPro_SPIM.nii.gz
-      Iba1: https://zenodo.org/records/18749025/files/tpl-ABAv3_level-5_stain-Iba1_SPIM.nii.gz
-      Abeta: https://zenodo.org/records/18749025/files/tpl-ABAv3_level-5_stain-Abeta_SPIM.nii.gz
+      YoPro: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-YoPro_SPIM.nii.gz
+      Iba1: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-Iba1_SPIM.nii.gz
+      CD31: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-CD31_SPIM.nii.gz
+      Abeta: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-Abeta_SPIM.nii.gz
     default_segs:
       - all
       - coarse

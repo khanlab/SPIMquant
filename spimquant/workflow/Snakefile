@@ -51,7 +51,20 @@ else:
 include: "rules/common.smk"
 
 
-stains = get_stains_all_subjects()
+zarrnii_in_kwargs = {}
+
+if config["set_channel_labels"]:
+    print(
+        f"Using set_channel_labels override at data import: {config['set_channel_labels']}"
+    )
+    stains = config["set_channel_labels"]
+    zarrnii_in_kwargs["set_channel_labels"] = stains
+else:
+    stains = get_stains_all_subjects()
+
+if config["orientation"]:
+    print(f"Using orientation to override at data import: {config['orientation']}")
+    zarrnii_in_kwargs["orientation"] = config["orientation"]
 
 stain_for_reg = None
 
@@ -84,6 +97,9 @@ stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
 
 # seg methods that use multi-Otsu thresholding (otsu+k{}i{} pattern)
 otsu_seg_methods = [m for m in config["seg_method"] if m.startswith("otsu+")]
+
+# seg methods that use GMM tail-thresholding (gmm+n{}k{} pattern)
+gmm_seg_methods = [m for m in config["seg_method"] if m.startswith("gmm+")]
 
 if len(stains_for_seg) == 0 or config["no_segmentation"]:
     do_seg = False
