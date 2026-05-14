@@ -26,6 +26,7 @@ if __name__ == "__main__":
                     result[c] = skeletonize(binary).astype(np.uint8) * MASK_TRUE_VALUE
             return result
 
+        # Channel axis gets no overlap; spatial axes (Z, Y, X) use overlap padding.
         depth = {0: 0, 1: overlap_depth, 2: overlap_depth, 3: overlap_depth}
         skel_darr = da.map_overlap(
             skeletonize_block,
