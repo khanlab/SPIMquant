@@ -16,6 +16,12 @@ if __name__ == "__main__":
         overlap_depth = snakemake.params.overlap_depth
 
         znimg = ZarrNii.from_file(snakemake.input.mask)
+        expected_dims = ("c", "z", "y", "x")
+        if tuple(znimg.dims) != expected_dims:
+            raise ValueError(
+                f"Expected dims {expected_dims} for vessel mask skeletonization, "
+                f"got {tuple(znimg.dims)}."
+            )
 
         def skeletonize_block(block):
             """Skeletonize a chunk with shape (C, Z, Y, X) and return same shape."""
@@ -27,7 +33,7 @@ if __name__ == "__main__":
                     result[c] = skeletonize(binary).astype(np.uint8) * MASK_TRUE_VALUE
             return result
 
-        # Channel axis gets no overlap; spatial axes (Z, Y, X) use overlap padding.
+        # Dims are validated as (C, Z, Y, X): no overlap on C, overlap on Z/Y/X.
         depth = {0: 0, 1: overlap_depth, 2: overlap_depth, 3: overlap_depth}
         skel_darr = da.map_overlap(
             skeletonize_block,
