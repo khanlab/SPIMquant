@@ -133,6 +133,8 @@ rule vessel_skeleton_graph:
             **inputs["spim"].wildcards,
         ),
     params:
+        # Keep overlap consistent with SDT/skeletonization to preserve continuity
+        # of centerlines across chunk boundaries.
         overlap_depth=32,
     output:
         graph_parquet=bids(

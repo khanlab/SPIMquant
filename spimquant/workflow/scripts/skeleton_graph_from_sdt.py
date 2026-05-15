@@ -188,7 +188,7 @@ def _process_chunk(
 if __name__ == "__main__":
     with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
         # Overlap keeps local skeleton connectivity across chunk boundaries.
-        # This matches overlap used by vessel SDT/skeletonization rules.
+        # vessels.smk sets overlap_depth=32 for SDT, skeletonization, and this rule.
         overlap_depth = int(snakemake.params.overlap_depth)
 
         zn_skel = ZarrNii.from_file(snakemake.input.skeleton)
@@ -229,17 +229,17 @@ if __name__ == "__main__":
             dtype=np.float64,
         )
 
-        overlap_per_dim = {0: 0, 1: overlap_depth, 2: overlap_depth, 3: overlap_depth}
+        overlap_per_axis = {0: 0, 1: overlap_depth, 2: overlap_depth, 3: overlap_depth}
         skel_overlap = zn_skel.darr.map_overlap(
             lambda x: x,
-            depth=overlap_per_dim,
+            depth=overlap_per_axis,
             boundary=0,
             trim=False,
             dtype=zn_skel.darr.dtype,
         )
         sdt_overlap = zn_sdt.darr.map_overlap(
             lambda x: x,
-            depth=overlap_per_dim,
+            depth=overlap_per_axis,
             boundary=0,
             trim=False,
             dtype=zn_sdt.darr.dtype,
