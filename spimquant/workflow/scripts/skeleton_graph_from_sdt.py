@@ -9,6 +9,8 @@ node is derived from SDT values sampled at skeleton voxels.
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pandas as pd
 from dask import compute, delayed
@@ -219,7 +221,7 @@ if __name__ == "__main__":
             ],
             dtype=np.float64,
         )
-        translation = getattr(zn_skel, "translation", {}) or {}
+        translation = getattr(zn_skel, "translation", {})
         translation_xyz = np.array(
             [
                 float(translation.get("x", 0.0)),
@@ -229,6 +231,7 @@ if __name__ == "__main__":
             dtype=np.float64,
         )
 
+        # Keys are array axis indices for dims (c, z, y, x), respectively.
         overlap_per_axis = {0: 0, 1: overlap_depth, 2: overlap_depth, 3: overlap_depth}
         skel_overlap = zn_skel.darr.map_overlap(
             lambda x: x,
@@ -250,21 +253,26 @@ if __name__ == "__main__":
         if affine_obj is not None:
             affine_matrix = np.asarray(getattr(affine_obj, "matrix", affine_obj))
             if affine_matrix.shape != (4, 4):
+                warnings.warn(
+                    "Invalid affine shape in skeleton OME-Zarr metadata; falling back "
+                    "to scale/translation-based coordinate conversion.",
+                    stacklevel=2,
+                )
                 affine_matrix = None
 
         skel_blocks = skel_overlap.to_delayed()
         sdt_blocks = sdt_overlap.to_delayed()
 
         delayed_tables = []
-        for block_idx in np.ndindex(*skel_overlap.numblocks):
-            skel_block = skel_blocks[block_idx]
-            sdt_block = sdt_blocks[block_idx]
+        for chunk_idx in np.ndindex(*skel_overlap.numblocks):
+            skel_block = skel_blocks[chunk_idx]
+            sdt_block = sdt_blocks[chunk_idx]
 
             delayed_tables.append(
                 delayed(_process_chunk)(
                     skel_block,
                     sdt_block,
-                    block_idx,
+                    chunk_idx,
                     zn_skel.darr.chunks,
                     overlap_depth,
                     affine_matrix,
