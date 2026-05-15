@@ -56,6 +56,13 @@ def _process_chunk(
         if chunk_starts[d] > 0:
             core_start_local[d] = overlap_depth
 
+    # Global origin of this overlapped block (before the chunk's core starts).
+    # For interior chunks, map_overlap prepends `overlap_depth` voxels.
+    overlap_block_starts = [
+        chunk_starts[d] - core_start_local[d]
+        for d in range(4)
+    ]
+
     core_end_local = [
         core_start_local[d] + chunk_sizes[d]
         for d in range(4)
@@ -86,9 +93,9 @@ def _process_chunk(
 
         # Convert local chunk coords -> global voxel coords.
         global_zyx = np.empty_like(coords_zyx)
-        global_zyx[:, 0] = chunk_starts[1] + (coords_zyx[:, 0] - core_start_local[1])
-        global_zyx[:, 1] = chunk_starts[2] + (coords_zyx[:, 1] - core_start_local[2])
-        global_zyx[:, 2] = chunk_starts[3] + (coords_zyx[:, 2] - core_start_local[3])
+        global_zyx[:, 0] = overlap_block_starts[1] + coords_zyx[:, 0]
+        global_zyx[:, 1] = overlap_block_starts[2] + coords_zyx[:, 1]
+        global_zyx[:, 2] = overlap_block_starts[3] + coords_zyx[:, 2]
 
         global_xyz = global_zyx[:, [2, 1, 0]]
         if affine_matrix is not None:
@@ -180,6 +187,8 @@ def _process_chunk(
 
 if __name__ == "__main__":
     with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
+        # Overlap keeps local skeleton connectivity across chunk boundaries.
+        # This matches overlap used by vessel SDT/skeletonization rules.
         overlap_depth = int(snakemake.params.overlap_depth)
 
         zn_skel = ZarrNii.from_file(snakemake.input.skeleton)
@@ -220,17 +229,17 @@ if __name__ == "__main__":
             dtype=np.float64,
         )
 
-        depth = {0: 0, 1: overlap_depth, 2: overlap_depth, 3: overlap_depth}
+        overlap_per_dim = {0: 0, 1: overlap_depth, 2: overlap_depth, 3: overlap_depth}
         skel_overlap = zn_skel.darr.map_overlap(
             lambda x: x,
-            depth=depth,
+            depth=overlap_per_dim,
             boundary=0,
             trim=False,
             dtype=zn_skel.darr.dtype,
         )
         sdt_overlap = zn_sdt.darr.map_overlap(
             lambda x: x,
-            depth=depth,
+            depth=overlap_per_dim,
             boundary=0,
             trim=False,
             dtype=zn_sdt.darr.dtype,
