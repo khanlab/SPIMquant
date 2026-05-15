@@ -318,6 +318,20 @@ rule all_vessels:
             desc=config["vessel_seg_method"],
             stain=stain_for_vessels,
         ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="vessels",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}+skeleton",
+                suffix="graph.parquet",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["segmentation_level"],
+            desc=config["vessel_seg_method"],
+            stain=stain_for_vessels,
+        ),
 
 
 rule all_segment:

@@ -110,3 +110,45 @@ rule skeletonize_vessels_mask:
         runtime=360,
     script:
         "../scripts/skeletonize_vessels_mask.py"
+
+rule vessel_skeleton_graph:
+    """Create a sparse vessel graph parquet from skeleton mask and SDT."""
+    input:
+        skeleton=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
+        ),
+        sdt=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}",
+            suffix="dist.ozx",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        overlap_depth=32,
+    output:
+        graph_parquet=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            suffix="graph.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 64 if config["dask_scheduler"] == "distributed" else 32
+    resources:
+        mem_mb=256000,
+        disk_mb=2097152,
+        runtime=360,
+    script:
+        "../scripts/skeleton_graph_from_sdt.py"
+
