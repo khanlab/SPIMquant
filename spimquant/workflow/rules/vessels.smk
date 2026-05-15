@@ -69,6 +69,7 @@ rule signed_distance_transform:
             suffix="dist.ozx",
             **inputs["spim"].wildcards,
         ),
+    # Match the thread policy used by signed_distance_transform.
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
@@ -76,3 +77,36 @@ rule signed_distance_transform:
         runtime=360,
     script:
         "../scripts/signed_distance_transform.py"
+
+
+rule skeletonize_vessels_mask:
+    """Skeletonize a vessel mask using chunked overlap-aware processing."""
+    input:
+        mask=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        overlap_depth=32,
+    output:
+        mask=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            suffix="mask.ozx",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    resources:
+        mem_mb=256000,
+        disk_mb=2097152,
+        runtime=360,
+    script:
+        "../scripts/skeletonize_vessels_mask.py"
