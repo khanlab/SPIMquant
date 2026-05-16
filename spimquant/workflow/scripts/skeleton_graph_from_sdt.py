@@ -186,9 +186,9 @@ def _process_chunk(
             dst_xyz_phys = phys_xyz[dst]
 
             # Canonicalize edge orientation by voxel coordinate tuple to deduplicate.
-            # Convert to hashable integer voxel-coordinate tuples for edge ordering.
-            src_key = tuple(np.rint(src_xyz_vox).astype(np.int64))
-            dst_key = tuple(np.rint(dst_xyz_vox).astype(np.int64))
+            # Convert to native Python-int tuples for stable hashing/serialization.
+            src_key = tuple(np.rint(src_xyz_vox).astype(np.int64).tolist())
+            dst_key = tuple(np.rint(dst_xyz_vox).astype(np.int64).tolist())
 
             if src_key <= dst_key:
                 p0_vox, p1_vox = src_xyz_vox, dst_xyz_vox
@@ -343,7 +343,7 @@ if __name__ == "__main__":
             )
 
         with ProgressBar():
-            block_tables = list(compute(*delayed_tables)) if delayed_tables else []
+            block_tables = list(compute(*delayed_tables))
 
         out_df = _aggregate_block_tables(block_tables)
         out_df.to_parquet(snakemake.output.graph_parquet, index=False)

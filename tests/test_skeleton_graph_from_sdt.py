@@ -7,10 +7,22 @@ import pandas as pd
 import pytest
 from scipy.ndimage import distance_transform_edt
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+
+def _find_repo_root(start: Path) -> Path:
+    """Find repository root by locating pyproject.toml."""
+    current = start.resolve()
+    for candidate in [current, *current.parents]:
+        if (candidate / "pyproject.toml").exists():
+            return candidate
+    raise RuntimeError("Could not locate repository root from test path")
+
+
+REPO_ROOT = _find_repo_root(Path(__file__).parent)
 SCRIPT_PATH = REPO_ROOT / "spimquant/workflow/scripts/skeleton_graph_from_sdt.py"
 
 
+# This script is executed by Snakemake as a standalone file, not as an importable
+# package module; we use importlib to unit-test helper functions directly.
 spec = spec_from_file_location("skeleton_graph_from_sdt", SCRIPT_PATH)
 skeleton_graph_mod = module_from_spec(spec)
 spec.loader.exec_module(skeleton_graph_mod)
