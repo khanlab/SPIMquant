@@ -70,6 +70,29 @@ def _as_czyx_darr(zn_arr, input_name):
     )
 
 
+def _has_neighbor_pair_26(binary_zyx):
+    """Return True when any foreground voxel has a 26-neighborhood neighbor."""
+    shape = binary_zyx.shape
+    for dz in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                if dz == dy == dx == 0:
+                    continue
+                src = binary_zyx[
+                    max(0, -dz) : shape[0] - max(0, dz),
+                    max(0, -dy) : shape[1] - max(0, dy),
+                    max(0, -dx) : shape[2] - max(0, dx),
+                ]
+                dst = binary_zyx[
+                    max(0, dz) : shape[0] - max(0, -dz),
+                    max(0, dy) : shape[1] - max(0, -dy),
+                    max(0, dx) : shape[2] - max(0, -dx),
+                ]
+                if np.any(src & dst):
+                    return True
+    return False
+
+
 def _aggregate_block_tables(block_tables):
     """Aggregate per-chunk edge tables into one deduplicated DataFrame."""
     non_empty = [
@@ -144,12 +167,11 @@ def _process_chunk(
         if not np.any(skel_c):
             continue
 
-        try:
-            skeleton = Skeleton(skel_c.astype(np.uint8))
-        except ValueError:
-            # skan can fail on tiny/degenerate components in overlap chunks.
-            # Treat such chunks as contributing no valid graph edges.
+        skel_u8 = skel_c.astype(np.uint8)
+        if not _has_neighbor_pair_26(skel_u8):
+            # Degenerate chunks with isolated points have no valid graph edges.
             continue
+        skeleton = Skeleton(skel_u8)
         coords_zyx = np.asarray(skeleton.coordinates, dtype=np.float64)
 
         if coords_zyx.shape[0] == 0:

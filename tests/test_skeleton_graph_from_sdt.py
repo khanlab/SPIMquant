@@ -222,3 +222,25 @@ def test_chunked_graph_extraction_with_zarrnii_loaded_examples(tmp_path):
     parquet_path = tmp_path / "example_graph.parquet"
     out.to_parquet(parquet_path, index=False)
     assert parquet_path.exists()
+
+
+def test_process_chunk_skips_isolated_voxel_components():
+    skeleton = np.zeros((20, 20, 20), dtype=np.uint8)
+    skeleton[2, 2, 2] = 100
+    skeleton[8, 8, 8] = 100
+    skeleton[14, 14, 14] = 100
+    sdt = np.ones_like(skeleton, dtype=np.float32)
+
+    out = skeleton_graph_mod._process_chunk(
+        skeleton[np.newaxis, ...],
+        sdt[np.newaxis, ...],
+        (0, 0, 0, 0),
+        ((1,), (20,), (20,), (20,)),
+        0,
+        None,
+        np.array([1.0, 1.0, 1.0]),
+        np.array([0.0, 0.0, 0.0]),
+    )
+
+    assert isinstance(out, pd.DataFrame)
+    assert out.empty
