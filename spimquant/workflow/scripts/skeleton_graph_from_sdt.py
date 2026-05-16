@@ -57,7 +57,12 @@ def _coord_from_affine(voxel_xyz, affine_matrix):
 
 
 def _as_czyx_darr(zn_arr, input_name):
-    """Return array as (c, z, y, x), accepting either czyx or cxyz metadata."""
+    """Return zarrnii `.darr` as (c, z, y, x) from either czyx or cxyz `.dims`.
+
+    Expects an object exposing `dims` metadata and a dask-backed `darr` array.
+    When dims are (c, x, y, z), transposes with (0, 3, 2, 1) to normalize to
+    (c, z, y, x) for chunk processing.
+    """
     dims = tuple(zn_arr.dims)
     if dims == EXPECTED_DIMS_CZYX:
         return zn_arr.darr
@@ -71,7 +76,11 @@ def _as_czyx_darr(zn_arr, input_name):
 
 
 def _has_neighbor_pair_26(binary_zyx):
-    """Return True when any foreground voxel has a 26-neighborhood neighbor."""
+    """Return True if any foreground voxel has a 26-connected neighbor.
+
+    This pre-check filters degenerate skeleton chunks made only of isolated
+    points, which do not contribute graph edges and can make skan fail.
+    """
     shape = binary_zyx.shape
     for dz in (-1, 0, 1):
         for dy in (-1, 0, 1):

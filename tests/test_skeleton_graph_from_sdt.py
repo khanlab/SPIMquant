@@ -19,6 +19,7 @@ def _find_repo_root(start: Path) -> Path:
 
 REPO_ROOT = _find_repo_root(Path(__file__).parent)
 SCRIPT_PATH = REPO_ROOT / "spimquant/workflow/scripts/skeleton_graph_from_sdt.py"
+MASK_FOREGROUND_VALUE = 100
 
 
 # This script is executed by Snakemake as a standalone file, not as an importable
@@ -226,9 +227,9 @@ def test_chunked_graph_extraction_with_zarrnii_loaded_examples(tmp_path):
 
 def test_process_chunk_skips_isolated_voxel_components():
     skeleton = np.zeros((20, 20, 20), dtype=np.uint8)
-    skeleton[2, 2, 2] = 100
-    skeleton[8, 8, 8] = 100
-    skeleton[14, 14, 14] = 100
+    skeleton[2, 2, 2] = MASK_FOREGROUND_VALUE
+    skeleton[8, 8, 8] = MASK_FOREGROUND_VALUE
+    skeleton[14, 14, 14] = MASK_FOREGROUND_VALUE
     sdt = np.ones_like(skeleton, dtype=np.float32)
 
     out = skeleton_graph_mod._process_chunk(
