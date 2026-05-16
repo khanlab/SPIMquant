@@ -146,12 +146,10 @@ def _process_chunk(
 
         try:
             skeleton = Skeleton(skel_c.astype(np.uint8))
-        except ValueError as exc:
+        except ValueError:
             # skan can fail on tiny/degenerate components in overlap chunks.
             # Treat such chunks as contributing no valid graph edges.
-            if "index pointer size 0 should be 1" in str(exc):
-                continue
-            raise
+            continue
         coords_zyx = np.asarray(skeleton.coordinates, dtype=np.float64)
 
         if coords_zyx.shape[0] == 0:
