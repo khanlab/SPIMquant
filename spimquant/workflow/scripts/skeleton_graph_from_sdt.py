@@ -186,7 +186,8 @@ def _process_chunk(
             dst_xyz_phys = phys_xyz[dst]
 
             # Canonicalize edge orientation by voxel coordinate tuple to deduplicate.
-            # Convert to native Python-int tuples for stable hashing/serialization.
+            # Convert to native Python-int tuples so edge-key equality/hashing is
+            # consistent across pandas/parquet serialization boundaries.
             src_key = tuple(np.rint(src_xyz_vox).astype(np.int64).tolist())
             dst_key = tuple(np.rint(dst_xyz_vox).astype(np.int64).tolist())
 
