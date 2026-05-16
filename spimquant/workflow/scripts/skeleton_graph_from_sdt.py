@@ -38,6 +38,8 @@ AXIS_C = 0
 AXIS_Z = 1
 AXIS_Y = 2
 AXIS_X = 3
+EXPECTED_DIMS_CZYX = ("c", "z", "y", "x")
+EXPECTED_DIMS_CXYZ = ("c", "x", "y", "z")
 
 
 def _coord_from_scale_translation(voxel_xyz, scale_xyz, translation_xyz):
@@ -52,6 +54,20 @@ def _coord_from_affine(voxel_xyz, affine_matrix):
         axis=1,
     )
     return (voxel_h @ affine_matrix.T)[:, :3]
+
+
+def _as_czyx_darr(zn_arr, input_name):
+    """Return array as (c, z, y, x), accepting either czyx or cxyz metadata."""
+    dims = tuple(zn_arr.dims)
+    if dims == EXPECTED_DIMS_CZYX:
+        return zn_arr.darr
+    if dims == EXPECTED_DIMS_CXYZ:
+        # zarrnii can expose NIfTI-like arrays as (c, x, y, z); transpose to czyx.
+        return zn_arr.darr.transpose(0, 3, 2, 1)
+    raise ValueError(
+        f"Expected dims {EXPECTED_DIMS_CZYX} or {EXPECTED_DIMS_CXYZ} for "
+        f"{input_name}, got {dims}."
+    )
 
 
 def _aggregate_block_tables(block_tables):
@@ -128,7 +144,14 @@ def _process_chunk(
         if not np.any(skel_c):
             continue
 
-        skeleton = Skeleton(skel_c.astype(np.uint8))
+        try:
+            skeleton = Skeleton(skel_c.astype(np.uint8))
+        except ValueError as exc:
+            # skan can fail on tiny/degenerate components in overlap chunks.
+            # Treat such chunks as contributing no valid graph edges.
+            if "index pointer size 0 should be 1" in str(exc):
+                continue
+            raise
         coords_zyx = np.asarray(skeleton.coordinates, dtype=np.float64)
 
         if coords_zyx.shape[0] == 0:
@@ -252,21 +275,13 @@ if __name__ == "__main__":
         zn_skel = ZarrNii.from_file(snakemake.input.skeleton)
         zn_sdt = ZarrNii.from_file(snakemake.input.sdt)
 
-        expected_dims = ("c", "z", "y", "x")
-        if tuple(zn_skel.dims) != expected_dims:
-            raise ValueError(
-                f"Expected dims {expected_dims} for vessel skeleton graph extraction, "
-                f"got {tuple(zn_skel.dims)}."
-            )
-        if tuple(zn_sdt.dims) != expected_dims:
-            raise ValueError(
-                f"Expected dims {expected_dims} for vessel SDT graph extraction, "
-                f"got {tuple(zn_sdt.dims)}."
-            )
-        if zn_skel.darr.shape != zn_sdt.darr.shape:
+        skel_darr = _as_czyx_darr(zn_skel, "vessel skeleton graph extraction")
+        sdt_darr = _as_czyx_darr(zn_sdt, "vessel SDT graph extraction")
+
+        if skel_darr.shape != sdt_darr.shape:
             raise ValueError(
                 "Skeleton and SDT arrays must have identical shape, got "
-                f"{zn_skel.darr.shape} vs {zn_sdt.darr.shape}."
+                f"{skel_darr.shape} vs {sdt_darr.shape}."
             )
 
         scale_xyz = np.array(
@@ -294,19 +309,19 @@ if __name__ == "__main__":
             AXIS_Y: overlap_depth,
             AXIS_X: overlap_depth,
         }
-        skel_overlap = zn_skel.darr.map_overlap(
+        skel_overlap = skel_darr.map_overlap(
             lambda x: x,
             depth=overlap_per_axis,
             boundary=0,
             trim=False,
-            dtype=zn_skel.darr.dtype,
+            dtype=skel_darr.dtype,
         )
-        sdt_overlap = zn_sdt.darr.map_overlap(
+        sdt_overlap = sdt_darr.map_overlap(
             lambda x: x,
             depth=overlap_per_axis,
             boundary=0,
             trim=False,
-            dtype=zn_sdt.darr.dtype,
+            dtype=sdt_darr.dtype,
         )
 
         affine_obj = getattr(zn_skel, "affine", None)
@@ -335,7 +350,7 @@ if __name__ == "__main__":
                     skel_block,
                     sdt_block,
                     chunk_idx,
-                    zn_skel.darr.chunks,
+                    skel_darr.chunks,
                     overlap_depth,
                     affine_matrix,
                     scale_xyz,

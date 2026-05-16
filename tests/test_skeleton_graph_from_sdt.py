@@ -73,6 +73,12 @@ def _run_chunked_extraction(skeleton_zyx, sdt_zyx, overlap_depth=4, spatial_chun
         chunks=(1, spatial_chunk, spatial_chunk, spatial_chunk),
     )
 
+    return _run_chunked_extraction_from_darr(
+        skel_da, sdt_da, overlap_depth=overlap_depth
+    )
+
+
+def _run_chunked_extraction_from_darr(skel_da, sdt_da, overlap_depth=4):
     overlap = {
         skeleton_graph_mod.AXIS_C: 0,
         skeleton_graph_mod.AXIS_Z: overlap_depth,
@@ -181,3 +187,38 @@ def test_affine_coordinate_conversion_is_applied():
     assert (out["src_x"] >= 10.0).all()
     assert (out["src_y"] >= 20.0).all()
     assert (out["src_z"] >= 30.0).all()
+
+
+def test_as_czyx_darr_accepts_and_transposes_cxyz():
+    zarrnii = pytest.importorskip("zarrnii")
+    vessels_nii = REPO_ROOT / "tests/example_vessels_mask.nii.gz"
+    skeleton_nii = REPO_ROOT / "tests/example_skeleton.nii.gz"
+    if not (vessels_nii.exists() and skeleton_nii.exists()):
+        pytest.skip("example NIfTI masks are not available")
+
+    zn_skel = zarrnii.ZarrNii.from_file(str(skeleton_nii))
+    skel_czyx = skeleton_graph_mod._as_czyx_darr(zn_skel, "test skeleton")
+
+    assert tuple(skel_czyx.shape) == (1, 300, 300, 300)
+    assert len(skel_czyx.chunks) == 4
+
+
+def test_chunked_graph_extraction_with_zarrnii_loaded_examples(tmp_path):
+    zarrnii = pytest.importorskip("zarrnii")
+    vessels_nii = REPO_ROOT / "tests/example_vessels_mask.nii.gz"
+    skeleton_nii = REPO_ROOT / "tests/example_skeleton.nii.gz"
+    if not (vessels_nii.exists() and skeleton_nii.exists()):
+        pytest.skip("example NIfTI masks are not available")
+
+    zn_skel = zarrnii.ZarrNii.from_file(str(skeleton_nii))
+    zn_vessels = zarrnii.ZarrNii.from_file(str(vessels_nii))
+    skel_da = skeleton_graph_mod._as_czyx_darr(zn_skel, "test skeleton")
+    vessels_da = skeleton_graph_mod._as_czyx_darr(zn_vessels, "test vessels")
+
+    sdt_da = da.where(vessels_da > 0, 1.0, 0.0).astype(np.float32)
+    out = _run_chunked_extraction_from_darr(skel_da, sdt_da, overlap_depth=8)
+
+    assert len(out) > 0
+    parquet_path = tmp_path / "example_graph.parquet"
+    out.to_parquet(parquet_path, index=False)
+    assert parquet_path.exists()
