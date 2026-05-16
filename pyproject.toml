@@ -101,3 +101,4 @@ quality_fix = "isort --profile black spimquant/*.py && black spimquant  && snake
 
 [tool.pixi.dependencies]
 pip = ">=25.3,<26"
+skan = ">=0.13.1,<0.14"

@@ -7,8 +7,6 @@ space using OME-Zarr scale/translation metadata. Vessel radius at each skeleton
 node is derived from SDT values sampled at skeleton voxels.
 """
 
-from __future__ import annotations
-
 import warnings
 
 import numpy as np
