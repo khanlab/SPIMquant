@@ -85,7 +85,7 @@ def _has_neighbor_pair_26(binary_zyx):
     for dz in (-1, 0, 1):
         for dy in (-1, 0, 1):
             for dx in (-1, 0, 1):
-                if dz == dy == dx == 0:
+                if dz == 0 and dy == 0 and dx == 0:
                     continue
                 src = binary_zyx[
                     max(0, -dz) : shape[0] - max(0, dz),
