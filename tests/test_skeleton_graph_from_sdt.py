@@ -7,9 +7,8 @@ import pandas as pd
 import pytest
 from scipy.ndimage import distance_transform_edt
 
-SCRIPT_PATH = Path(
-    "/home/runner/work/SPIMquant/SPIMquant/spimquant/workflow/scripts/skeleton_graph_from_sdt.py"
-)
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SCRIPT_PATH = REPO_ROOT / "spimquant/workflow/scripts/skeleton_graph_from_sdt.py"
 
 
 spec = spec_from_file_location("skeleton_graph_from_sdt", SCRIPT_PATH)
@@ -19,12 +18,8 @@ spec.loader.exec_module(skeleton_graph_mod)
 
 def _load_example_or_synthetic():
     """Load provided example masks when present; otherwise create synthetic masks."""
-    vessels_nii = Path(
-        "/home/runner/work/SPIMquant/SPIMquant/tests/example_vessels_mask.nii.gz"
-    )
-    skeleton_nii = Path(
-        "/home/runner/work/SPIMquant/SPIMquant/tests/example_skeleton.nii.gz"
-    )
+    vessels_nii = REPO_ROOT / "tests/example_vessels_mask.nii.gz"
+    skeleton_nii = REPO_ROOT / "tests/example_skeleton.nii.gz"
 
     if vessels_nii.exists() and skeleton_nii.exists():
         nib = pytest.importorskip("nibabel")

@@ -186,6 +186,7 @@ def _process_chunk(
             dst_xyz_phys = phys_xyz[dst]
 
             # Canonicalize edge orientation by voxel coordinate tuple to deduplicate.
+            # Convert to hashable integer voxel-coordinate tuples for edge ordering.
             src_key = tuple(np.rint(src_xyz_vox).astype(np.int64))
             dst_key = tuple(np.rint(dst_xyz_vox).astype(np.int64))
 
