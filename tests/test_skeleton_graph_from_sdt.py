@@ -226,6 +226,7 @@ def test_chunked_graph_extraction_with_zarrnii_loaded_examples(tmp_path):
 
 def test_process_chunk_skips_isolated_voxel_components():
     skeleton = np.zeros((20, 20, 20), dtype=np.uint8)
+    # Place voxels far apart so none are 26-connected neighbors.
     # Any non-zero value denotes foreground for this degenerate-isolation case.
     skeleton[2, 2, 2] = 1
     skeleton[8, 8, 8] = 1
