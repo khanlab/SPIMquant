@@ -98,3 +98,26 @@ def test_validate_columns_raises_for_missing():
     edge_df = _sample_edges().drop(columns=["src_x"])
     with pytest.raises(ValueError, match="missing expected columns"):
         convert_mod._validate_edge_table_columns(edge_df)
+
+
+def test_streaming_nodes_edges_parquet_roundtrip(tmp_path):
+    pytest.importorskip("pyarrow.parquet")
+    edge_df = _sample_edges()
+    graph_parquet = tmp_path / "graph.parquet"
+    nodes_parquet = tmp_path / "nodes.parquet"
+    edges_parquet = tmp_path / "edges.parquet"
+    edge_df.to_parquet(graph_parquet, index=False)
+
+    convert_mod.validate_input_parquet_columns(graph_parquet)
+    nodes_df = convert_mod.build_nodes_table_from_parquet(graph_parquet, batch_size=1)
+    nodes_df.to_parquet(nodes_parquet, index=False)
+    convert_mod.write_edges_table_from_parquet(
+        graph_parquet, nodes_df, edges_parquet, batch_size=1
+    )
+
+    out_nodes = pd.read_parquet(nodes_parquet)
+    out_edges = pd.read_parquet(edges_parquet)
+    assert list(out_nodes.columns) == convert_mod.NODE_COLUMNS
+    assert list(out_edges.columns) == convert_mod.EDGE_COLUMNS
+    assert len(out_nodes) == 3
+    assert len(out_edges) == 2
