@@ -69,7 +69,6 @@ rule signed_distance_transform:
             suffix="dist.ozx",
             **inputs["spim"].wildcards,
         ),
-    # Match the thread policy used by signed_distance_transform.
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
@@ -111,6 +110,7 @@ rule skeletonize_vessels_mask:
     script:
         "../scripts/skeletonize_vessels_mask.py"
 
+
 rule vessel_skeleton_graph:
     """Create a sparse vessel graph parquet from skeleton mask and SDT."""
     input:
@@ -133,8 +133,6 @@ rule vessel_skeleton_graph:
             **inputs["spim"].wildcards,
         ),
     params:
-        # Keep overlap consistent with SDT/skeletonization to preserve continuity
-        # of centerlines across chunk boundaries.
         overlap_depth=32,
     output:
         graph_parquet=bids(
@@ -153,4 +151,3 @@ rule vessel_skeleton_graph:
         runtime=360,
     script:
         "../scripts/skeleton_graph_from_sdt.py"
-

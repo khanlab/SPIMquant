@@ -328,7 +328,6 @@ rule all_vessels:
                 suffix="graph.parquet",
                 **inputs["spim"].wildcards,
             ),
-            # Skeleton/SDT are both generated at segmentation_level.
             level=config["segmentation_level"],
             desc=config["vessel_seg_method"],
             stain=stain_for_vessels,
