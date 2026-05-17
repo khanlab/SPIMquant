@@ -152,7 +152,9 @@ def write_nodes_table_from_parquet(
                 by=["channel", "vox_z", "vox_y", "vox_x"]
             ).reset_index(drop=True)
             n_rows = len(nodes_df)
-            nodes_df["node_id"] = range(node_id_offset, node_id_offset + n_rows)
+            nodes_df["node_id"] = pd.RangeIndex(
+                node_id_offset, node_id_offset + n_rows
+            ).astype("int64")
             node_id_offset += n_rows
             node_table = pa.Table.from_pandas(
                 nodes_df[NODE_COLUMNS], preserve_index=False
@@ -304,8 +306,12 @@ def write_edges_table_from_parquet(
         how="left",
     )
 
-    missing_src = edges_with_nodes["src_node_id"].isna().any().compute()
-    missing_dst = edges_with_nodes["dst_node_id"].isna().any().compute()
+    import dask
+
+    missing_src, missing_dst = dask.compute(
+        edges_with_nodes["src_node_id"].isna().any(),
+        edges_with_nodes["dst_node_id"].isna().any(),
+    )
     if missing_src or missing_dst:
         raise ValueError("Could not map all edge endpoints to node IDs.")
 
@@ -318,7 +324,9 @@ def write_edges_table_from_parquet(
                 continue
             edge_df = edge_df.reset_index(drop=True)
             n_rows = len(edge_df)
-            edge_df["edge_id"] = range(edge_id_offset, edge_id_offset + n_rows)
+            edge_df["edge_id"] = pd.RangeIndex(
+                edge_id_offset, edge_id_offset + n_rows
+            ).astype("int64")
             edge_id_offset += n_rows
             edge_df["src_node_id"] = edge_df["src_node_id"].astype("int64")
             edge_df["dst_node_id"] = edge_df["dst_node_id"].astype("int64")
@@ -335,12 +343,6 @@ def write_edges_table_from_parquet(
 
 
 if __name__ == "__main__":
-    import sys
-    from pathlib import Path
-
-    script_dir = Path(__file__).resolve().parent
-    if str(script_dir) not in sys.path:
-        sys.path.append(str(script_dir))
     from dask_setup import get_dask_client
 
     graph_parquet = snakemake.input.graph_parquet
