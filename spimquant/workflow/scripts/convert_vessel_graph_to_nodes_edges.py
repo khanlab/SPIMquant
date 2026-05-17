@@ -1,4 +1,13 @@
-"""Convert vessel skeleton edge-list parquet into nodes/edges graph tables."""
+"""Convert vessel skeleton edge-list parquet into graph-package tables.
+
+Expected Snakemake I/O
+----------------------
+Input:
+    snakemake.input.graph_parquet
+Outputs:
+    snakemake.output.nodes_parquet
+    snakemake.output.edges_parquet
+"""
 
 import pandas as pd
 
@@ -127,7 +136,7 @@ def build_edges_table(edge_df, nodes_df):
                 "src_vox_x": "dst_vox_x",
                 "src_vox_y": "dst_vox_y",
                 "src_vox_z": "dst_vox_z",
-                "src_node_id": "dst_node_id",
+                "node_id": "dst_node_id",
             }
         ),
         on=["channel", "dst_vox_x", "dst_vox_y", "dst_vox_z"],
