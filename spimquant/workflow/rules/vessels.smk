@@ -151,3 +151,42 @@ rule vessel_skeleton_graph:
         runtime=360,
     script:
         "../scripts/skeleton_graph_from_sdt.py"
+
+
+rule vessel_graph_to_nodes_edges:
+    """Convert vessel skeleton edge-list into graph-friendly node/edge tables."""
+    input:
+        graph_parquet=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            suffix="graph.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        nodes_parquet=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            suffix="nodes.parquet",
+            **inputs["spim"].wildcards,
+        ),
+        edges_parquet=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            suffix="edges.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 4
+    resources:
+        mem_mb=16000,
+        runtime=60,
+    script:
+        "../scripts/convert_vessel_graph_to_nodes_edges.py"
