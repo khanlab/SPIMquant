@@ -64,7 +64,8 @@ def _validate_edge_table_columns(df):
         )
 
 
-def validate_input_parquet_columns(graph_parquet):
+def _validate_input_parquet_columns(graph_parquet):
+    """Validate required vessel graph columns from parquet schema."""
     import pyarrow.parquet as pq
 
     col_names = set(pq.ParquetFile(graph_parquet).schema.names)
@@ -77,6 +78,7 @@ def validate_input_parquet_columns(graph_parquet):
 
 
 def _accumulate_endpoint_nodes(edge_df, endpoint, node_stats):
+    """Accumulate per-node sums/counts from one endpoint view of an edge batch."""
     vox_x = edge_df[f"{endpoint}_vox_x"].astype("int64").to_numpy()
     vox_y = edge_df[f"{endpoint}_vox_y"].astype("int64").to_numpy()
     vox_z = edge_df[f"{endpoint}_vox_z"].astype("int64").to_numpy()
@@ -101,6 +103,7 @@ def _accumulate_endpoint_nodes(edge_df, endpoint, node_stats):
 
 
 def build_nodes_table_from_parquet(graph_parquet, batch_size=PARQUET_BATCH_SIZE):
+    """Build nodes table by streaming edge parquet and aggregating endpoint stats."""
     import pyarrow.parquet as pq
 
     node_stats = {}
@@ -258,6 +261,7 @@ def build_edges_table(edge_df, nodes_df):
 def write_edges_table_from_parquet(
     graph_parquet, nodes_df, edges_parquet, batch_size=PARQUET_BATCH_SIZE
 ):
+    """Stream edge parquet and write edge table with mapped node IDs."""
     import pyarrow as pa
     import pyarrow.parquet as pq
 
@@ -285,6 +289,7 @@ def write_edges_table_from_parquet(
     ]
     edge_id_offset = 0
     writer = None
+    wrote_any = False
 
     try:
         for batch in parquet_file.iter_batches(batch_size=batch_size, columns=columns):
@@ -334,17 +339,18 @@ def write_edges_table_from_parquet(
             if writer is None:
                 writer = pq.ParquetWriter(edges_parquet, edge_table.schema)
             writer.write_table(edge_table)
+            wrote_any = True
     finally:
         if writer is not None:
             writer.close()
 
-    if writer is None:
+    if not wrote_any:
         _empty_edges().to_parquet(edges_parquet, index=False)
 
 
 if __name__ == "__main__":
     graph_parquet = snakemake.input.graph_parquet
-    validate_input_parquet_columns(graph_parquet)
+    _validate_input_parquet_columns(graph_parquet)
     nodes_df = build_nodes_table_from_parquet(graph_parquet)
     nodes_df.to_parquet(snakemake.output.nodes_parquet, index=False)
     write_edges_table_from_parquet(
