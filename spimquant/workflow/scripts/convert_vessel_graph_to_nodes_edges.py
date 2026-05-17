@@ -77,93 +77,95 @@ def _validate_input_parquet_columns(graph_parquet):
         )
 
 
-def _accumulate_endpoint_nodes(edge_df, endpoint, node_stats):
-    """Accumulate per-node sums/counts from one endpoint view of an edge batch."""
-    vox_x = edge_df[f"{endpoint}_vox_x"].astype("int64").to_numpy()
-    vox_y = edge_df[f"{endpoint}_vox_y"].astype("int64").to_numpy()
-    vox_z = edge_df[f"{endpoint}_vox_z"].astype("int64").to_numpy()
-    channels = edge_df["channel"].astype("int64").to_numpy()
-    x = edge_df[f"{endpoint}_x"].astype("float64").to_numpy()
-    y = edge_df[f"{endpoint}_y"].astype("float64").to_numpy()
-    z = edge_df[f"{endpoint}_z"].astype("float64").to_numpy()
-    radius = edge_df[f"{endpoint}_radius"].astype("float64").to_numpy()
-
-    for c, vx, vy, vz, px, py, pz, pr in zip(
-        channels, vox_x, vox_y, vox_z, x, y, z, radius
-    ):
-        key = (int(c), int(vx), int(vy), int(vz))
-        if key not in node_stats:
-            node_stats[key] = [float(px), float(py), float(pz), float(pr), 1]
-        else:
-            node_stats[key][0] += float(px)
-            node_stats[key][1] += float(py)
-            node_stats[key][2] += float(pz)
-            node_stats[key][3] += float(pr)
-            node_stats[key][4] += 1
-
-
-def build_nodes_table_from_parquet(graph_parquet, batch_size=PARQUET_BATCH_SIZE):
-    """Build nodes table by streaming edge parquet and aggregating endpoint stats."""
+def write_nodes_table_from_parquet(
+    graph_parquet, nodes_parquet, batch_size=PARQUET_BATCH_SIZE
+):
+    """Build nodes table with Dask and write to parquet in bounded memory."""
+    import dask.dataframe as dd
+    import pyarrow as pa
     import pyarrow.parquet as pq
 
-    node_stats = {}
-    endpoint_columns = [
-        "channel",
-        "src_vox_x",
-        "src_vox_y",
-        "src_vox_z",
-        "dst_vox_x",
-        "dst_vox_y",
-        "dst_vox_z",
-        "src_x",
-        "src_y",
-        "src_z",
-        "dst_x",
-        "dst_y",
-        "dst_z",
-        "src_radius",
-        "dst_radius",
-    ]
-
-    parquet_file = pq.ParquetFile(graph_parquet)
-    for batch in parquet_file.iter_batches(
-        batch_size=batch_size, columns=endpoint_columns
-    ):
-        batch_df = batch.to_pandas()
-        if batch_df.empty:
-            continue
-        _accumulate_endpoint_nodes(batch_df, "src", node_stats)
-        _accumulate_endpoint_nodes(batch_df, "dst", node_stats)
-
-    if not node_stats:
-        return _empty_nodes()
-
-    nodes = pd.DataFrame(
-        (
-            {
-                "channel": channel,
-                "vox_x": vox_x,
-                "vox_y": vox_y,
-                "vox_z": vox_z,
-                "x": x_sum / count,
-                "y": y_sum / count,
-                "z": z_sum / count,
-                "radius": radius_sum / count,
-            }
-            for (channel, vox_x, vox_y, vox_z), (
-                x_sum,
-                y_sum,
-                z_sum,
-                radius_sum,
-                count,
-            ) in node_stats.items()
-        )
+    source_ddf = dd.read_parquet(
+        graph_parquet,
+        columns=[
+            "channel",
+            "src_vox_x",
+            "src_vox_y",
+            "src_vox_z",
+            "src_x",
+            "src_y",
+            "src_z",
+            "src_radius",
+            "dst_vox_x",
+            "dst_vox_y",
+            "dst_vox_z",
+            "dst_x",
+            "dst_y",
+            "dst_z",
+            "dst_radius",
+        ],
+        split_row_groups=True,
     )
-    nodes = nodes.sort_values(by=["channel", "vox_z", "vox_y", "vox_x"]).reset_index(
-        drop=True
+    src_nodes = source_ddf[
+        ["channel", "src_vox_x", "src_vox_y", "src_vox_z", "src_x", "src_y", "src_z", "src_radius"]
+    ].rename(
+        columns={
+            "src_vox_x": "vox_x",
+            "src_vox_y": "vox_y",
+            "src_vox_z": "vox_z",
+            "src_x": "x",
+            "src_y": "y",
+            "src_z": "z",
+            "src_radius": "radius",
+        }
     )
-    nodes["node_id"] = nodes.index.astype("int64")
-    return nodes[NODE_COLUMNS]
+    dst_nodes = source_ddf[
+        ["channel", "dst_vox_x", "dst_vox_y", "dst_vox_z", "dst_x", "dst_y", "dst_z", "dst_radius"]
+    ].rename(
+        columns={
+            "dst_vox_x": "vox_x",
+            "dst_vox_y": "vox_y",
+            "dst_vox_z": "vox_z",
+            "dst_x": "x",
+            "dst_y": "y",
+            "dst_z": "z",
+            "dst_radius": "radius",
+        }
+    )
+    nodes_ddf = dd.concat([src_nodes, dst_nodes], interleave_partitions=True)
+    nodes_ddf = (
+        nodes_ddf.groupby(["channel", "vox_x", "vox_y", "vox_z"])[
+            ["x", "y", "z", "radius"]
+        ]
+        .mean()
+        .reset_index()
+    )
+
+    node_id_offset = 0
+    writer = None
+    try:
+        for delayed_part in nodes_ddf.to_delayed():
+            nodes_df = delayed_part.compute()
+            if nodes_df.empty:
+                continue
+            nodes_df = nodes_df.sort_values(
+                by=["channel", "vox_z", "vox_y", "vox_x"]
+            ).reset_index(drop=True)
+            n_rows = len(nodes_df)
+            nodes_df["node_id"] = range(node_id_offset, node_id_offset + n_rows)
+            node_id_offset += n_rows
+            node_table = pa.Table.from_pandas(
+                nodes_df[NODE_COLUMNS], preserve_index=False
+            )
+            if writer is None:
+                writer = pq.ParquetWriter(nodes_parquet, node_table.schema)
+            writer.write_table(node_table)
+    finally:
+        if writer is not None:
+            writer.close()
+
+    if node_id_offset == 0:
+        _empty_nodes().to_parquet(nodes_parquet, index=False)
 
 
 def build_nodes_table(edge_df):
@@ -259,102 +261,98 @@ def build_edges_table(edge_df, nodes_df):
 
 
 def write_edges_table_from_parquet(
-    graph_parquet, nodes_df, edges_parquet, batch_size=PARQUET_BATCH_SIZE
+    graph_parquet, nodes_parquet, edges_parquet, batch_size=PARQUET_BATCH_SIZE
 ):
-    """Stream edge parquet and write edge table with mapped node IDs."""
+    """Map edges to node IDs with Dask and write output parquet."""
     import pyarrow as pa
     import pyarrow.parquet as pq
+    import dask.dataframe as dd
 
-    if nodes_df.empty:
-        _empty_edges().to_parquet(edges_parquet, index=False)
-        return
+    edges_ddf = dd.read_parquet(
+        graph_parquet,
+        columns=[
+            "channel",
+            "src_vox_x",
+            "src_vox_y",
+            "src_vox_z",
+            "dst_vox_x",
+            "dst_vox_y",
+            "dst_vox_z",
+            "edge_length",
+        ],
+        split_row_groups=True,
+    )
+    nodes_lookup = dd.read_parquet(
+        nodes_parquet,
+        columns=["node_id", "channel", "vox_x", "vox_y", "vox_z"],
+        split_row_groups=True,
+    )
+    src_lookup = nodes_lookup.rename(
+        columns={"vox_x": "src_vox_x", "vox_y": "src_vox_y", "vox_z": "src_vox_z", "node_id": "src_node_id"}
+    )
+    dst_lookup = nodes_lookup.rename(
+        columns={"vox_x": "dst_vox_x", "vox_y": "dst_vox_y", "vox_z": "dst_vox_z", "node_id": "dst_node_id"}
+    )
 
-    node_lookup = {
-        (int(row.channel), int(row.vox_x), int(row.vox_y), int(row.vox_z)): int(
-            row.node_id
-        )
-        for row in nodes_df.itertuples(index=False)
-    }
+    edges_with_nodes = edges_ddf.merge(
+        src_lookup,
+        on=["channel", "src_vox_x", "src_vox_y", "src_vox_z"],
+        how="left",
+    ).merge(
+        dst_lookup,
+        on=["channel", "dst_vox_x", "dst_vox_y", "dst_vox_z"],
+        how="left",
+    )
 
-    parquet_file = pq.ParquetFile(graph_parquet)
-    columns = [
-        "channel",
-        "src_vox_x",
-        "src_vox_y",
-        "src_vox_z",
-        "dst_vox_x",
-        "dst_vox_y",
-        "dst_vox_z",
-        "edge_length",
-    ]
+    missing_src = edges_with_nodes["src_node_id"].isna().any().compute()
+    missing_dst = edges_with_nodes["dst_node_id"].isna().any().compute()
+    if missing_src or missing_dst:
+        raise ValueError("Could not map all edge endpoints to node IDs.")
+
     edge_id_offset = 0
     writer = None
-    wrote_any = False
-
     try:
-        for batch in parquet_file.iter_batches(batch_size=batch_size, columns=columns):
-            batch_df = batch.to_pandas()
-            if batch_df.empty:
+        for delayed_part in edges_with_nodes.to_delayed():
+            edge_df = delayed_part.compute()
+            if edge_df.empty:
                 continue
-
-            channels = batch_df["channel"].astype("int64").to_numpy()
-            src_vox_x = batch_df["src_vox_x"].astype("int64").to_numpy()
-            src_vox_y = batch_df["src_vox_y"].astype("int64").to_numpy()
-            src_vox_z = batch_df["src_vox_z"].astype("int64").to_numpy()
-            dst_vox_x = batch_df["dst_vox_x"].astype("int64").to_numpy()
-            dst_vox_y = batch_df["dst_vox_y"].astype("int64").to_numpy()
-            dst_vox_z = batch_df["dst_vox_z"].astype("int64").to_numpy()
-
-            try:
-                src_node_id = [
-                    node_lookup[(c, sx, sy, sz)]
-                    for c, sx, sy, sz in zip(channels, src_vox_x, src_vox_y, src_vox_z)
-                ]
-                dst_node_id = [
-                    node_lookup[(c, dx, dy, dz)]
-                    for c, dx, dy, dz in zip(channels, dst_vox_x, dst_vox_y, dst_vox_z)
-                ]
-            except KeyError as err:
-                raise ValueError("Could not map all edge endpoints to node IDs.") from err
-
-            n_rows = len(batch_df)
-            edge_df = pd.DataFrame(
-                {
-                    "edge_id": range(edge_id_offset, edge_id_offset + n_rows),
-                    "channel": channels,
-                    "src_node_id": src_node_id,
-                    "dst_node_id": dst_node_id,
-                    "edge_length": batch_df["edge_length"].to_numpy(),
-                    "src_vox_x": src_vox_x,
-                    "src_vox_y": src_vox_y,
-                    "src_vox_z": src_vox_z,
-                    "dst_vox_x": dst_vox_x,
-                    "dst_vox_y": dst_vox_y,
-                    "dst_vox_z": dst_vox_z,
-                }
-            )
+            edge_df = edge_df.reset_index(drop=True)
+            n_rows = len(edge_df)
+            edge_df["edge_id"] = range(edge_id_offset, edge_id_offset + n_rows)
             edge_id_offset += n_rows
-
+            edge_df["src_node_id"] = edge_df["src_node_id"].astype("int64")
+            edge_df["dst_node_id"] = edge_df["dst_node_id"].astype("int64")
             edge_table = pa.Table.from_pandas(edge_df[EDGE_COLUMNS], preserve_index=False)
             if writer is None:
                 writer = pq.ParquetWriter(edges_parquet, edge_table.schema)
             writer.write_table(edge_table)
-            wrote_any = True
     finally:
         if writer is not None:
             writer.close()
 
-    if not wrote_any:
+    if edge_id_offset == 0:
         _empty_edges().to_parquet(edges_parquet, index=False)
 
 
 if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+
+    script_dir = Path(__file__).resolve().parent
+    if str(script_dir) not in sys.path:
+        sys.path.append(str(script_dir))
+    from dask_setup import get_dask_client
+
     graph_parquet = snakemake.input.graph_parquet
     _validate_input_parquet_columns(graph_parquet)
-    nodes_df = build_nodes_table_from_parquet(graph_parquet)
-    nodes_df.to_parquet(snakemake.output.nodes_parquet, index=False)
-    write_edges_table_from_parquet(
-        graph_parquet,
-        nodes_df,
-        snakemake.output.edges_parquet,
-    )
+    scheduler = snakemake.config.get("dask_scheduler", "threads")
+    with get_dask_client(scheduler, snakemake.threads):
+        write_nodes_table_from_parquet(
+            graph_parquet,
+            snakemake.output.nodes_parquet,
+        )
+        write_edges_table_from_parquet(
+            graph_parquet,
+            snakemake.output.nodes_parquet,
+            snakemake.output.edges_parquet,
+        )

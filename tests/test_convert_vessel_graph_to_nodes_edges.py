@@ -109,10 +109,11 @@ def test_streaming_nodes_edges_parquet_roundtrip(tmp_path):
     edge_df.to_parquet(graph_parquet, index=False)
 
     convert_mod._validate_input_parquet_columns(graph_parquet)
-    nodes_df = convert_mod.build_nodes_table_from_parquet(graph_parquet, batch_size=1)
-    nodes_df.to_parquet(nodes_parquet, index=False)
+    convert_mod.write_nodes_table_from_parquet(
+        graph_parquet, nodes_parquet, batch_size=1
+    )
     convert_mod.write_edges_table_from_parquet(
-        graph_parquet, nodes_df, edges_parquet, batch_size=1
+        graph_parquet, nodes_parquet, edges_parquet, batch_size=1
     )
 
     out_nodes = pd.read_parquet(nodes_parquet)
