@@ -63,6 +63,16 @@ parse_args:
      - MBMv3
      - turone
 
+  --via-template:
+    help: "Intermediate template for multi-step registration. Subject is first registered to this template, then this template is registered to the final --template. Transforms are concatenated to produce a single subject-to-template composite warp. (default: %(default)s)"
+    default: null
+    choices:
+      - ABAv3
+      - DSURQE
+      - gubra
+      - MBMv3
+      - turone
+
   --atlas_segs:
     help: "Atlas segmentations to use with the chosen template (default: predefined list or all)"
     default: null
