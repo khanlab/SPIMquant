@@ -37,7 +37,7 @@ def annotate_nodes_with_connected_components(nodes_df, edges_df):
     rank = [0] * len(node_ids)
 
     def find(i):
-        """Return root index with path compression for near-constant lookups."""
+        """Return root index with path compression for amortized near-constant lookups."""
         while parent[i] != i:
             parent[i] = parent[parent[i]]
             i = parent[i]

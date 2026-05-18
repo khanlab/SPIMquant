@@ -405,11 +405,12 @@ if __name__ == "__main__":
 
     graph_parquet = snakemake.input.graph_parquet
     _validate_input_parquet_columns(graph_parquet)
-    nodes_output = getattr(
-        snakemake.output,
-        "nodes_raw_parquet",
-        getattr(snakemake.output, "nodes_parquet"),
-    )
+    if hasattr(snakemake.output, "nodes_raw_parquet"):
+        # Supports the newer vessel rule that writes intermediate raw nodes.
+        nodes_output = snakemake.output.nodes_raw_parquet
+    else:
+        # Backward compatibility for direct/script usage expecting nodes_parquet.
+        nodes_output = snakemake.output.nodes_parquet
     scheduler = snakemake.config.get("dask_scheduler", "threads")
     with get_dask_client(scheduler, snakemake.threads):
         write_nodes_table_from_parquet(
