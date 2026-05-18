@@ -37,12 +37,14 @@ def annotate_nodes_with_connected_components(nodes_df, edges_df):
     rank = [0] * len(node_ids)
 
     def find(i):
+        """Return root index with path compression for near-constant lookups."""
         while parent[i] != i:
             parent[i] = parent[parent[i]]
             i = parent[i]
         return i
 
     def union(i, j):
+        """Merge two sets using union-by-rank to keep trees shallow."""
         root_i = find(i)
         root_j = find(j)
         if root_i == root_j:
