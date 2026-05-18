@@ -30,7 +30,17 @@ INPUT_EDGE_COLUMNS = [
     "edge_length",
 ]
 
-NODE_COLUMNS = ["node_id", "channel", "vox_x", "vox_y", "vox_z", "x", "y", "z", "radius"]
+NODE_COLUMNS = [
+    "node_id",
+    "channel",
+    "vox_x",
+    "vox_y",
+    "vox_z",
+    "x",
+    "y",
+    "z",
+    "radius",
+]
 EDGE_COLUMNS = [
     "edge_id",
     "channel",
@@ -107,7 +117,16 @@ def write_nodes_table_from_parquet(
         split_row_groups=True,
     )
     src_nodes = source_ddf[
-        ["channel", "src_vox_x", "src_vox_y", "src_vox_z", "src_x", "src_y", "src_z", "src_radius"]
+        [
+            "channel",
+            "src_vox_x",
+            "src_vox_y",
+            "src_vox_z",
+            "src_x",
+            "src_y",
+            "src_z",
+            "src_radius",
+        ]
     ].rename(
         columns={
             "src_vox_x": "vox_x",
@@ -120,7 +139,16 @@ def write_nodes_table_from_parquet(
         }
     )
     dst_nodes = source_ddf[
-        ["channel", "dst_vox_x", "dst_vox_y", "dst_vox_z", "dst_x", "dst_y", "dst_z", "dst_radius"]
+        [
+            "channel",
+            "dst_vox_x",
+            "dst_vox_y",
+            "dst_vox_z",
+            "dst_x",
+            "dst_y",
+            "dst_z",
+            "dst_radius",
+        ]
     ].rename(
         columns={
             "dst_vox_x": "vox_x",
@@ -175,7 +203,16 @@ def build_nodes_table(edge_df):
         return _empty_nodes()
 
     src_nodes = edge_df[
-        ["channel", "src_vox_x", "src_vox_y", "src_vox_z", "src_x", "src_y", "src_z", "src_radius"]
+        [
+            "channel",
+            "src_vox_x",
+            "src_vox_y",
+            "src_vox_z",
+            "src_x",
+            "src_y",
+            "src_z",
+            "src_radius",
+        ]
     ].rename(
         columns={
             "src_vox_x": "vox_x",
@@ -188,7 +225,16 @@ def build_nodes_table(edge_df):
         }
     )
     dst_nodes = edge_df[
-        ["channel", "dst_vox_x", "dst_vox_y", "dst_vox_z", "dst_x", "dst_y", "dst_z", "dst_radius"]
+        [
+            "channel",
+            "dst_vox_x",
+            "dst_vox_y",
+            "dst_vox_z",
+            "dst_x",
+            "dst_y",
+            "dst_z",
+            "dst_radius",
+        ]
     ].rename(
         columns={
             "dst_vox_x": "vox_x",
@@ -216,9 +262,9 @@ def build_edges_table(edge_df, nodes_df):
     if edge_df.empty:
         return _empty_edges()
 
-    node_lookup = nodes_df[
-        ["node_id", "channel", "vox_x", "vox_y", "vox_z"]
-    ].rename(columns={"vox_x": "src_vox_x", "vox_y": "src_vox_y", "vox_z": "src_vox_z"})
+    node_lookup = nodes_df[["node_id", "channel", "vox_x", "vox_y", "vox_z"]].rename(
+        columns={"vox_x": "src_vox_x", "vox_y": "src_vox_y", "vox_z": "src_vox_z"}
+    )
     edges = edge_df[
         [
             "channel",
@@ -255,9 +301,9 @@ def build_edges_table(edge_df, nodes_df):
 
     edges["src_node_id"] = edges["src_node_id"].astype("int64")
     edges["dst_node_id"] = edges["dst_node_id"].astype("int64")
-    edges = edges.sort_values(
-        by=["channel", "src_node_id", "dst_node_id"]
-    ).reset_index(drop=True)
+    edges = edges.sort_values(by=["channel", "src_node_id", "dst_node_id"]).reset_index(
+        drop=True
+    )
     edges["edge_id"] = edges.index.astype("int64")
     return edges[EDGE_COLUMNS]
 
@@ -290,10 +336,20 @@ def write_edges_table_from_parquet(
         split_row_groups=True,
     )
     src_lookup = nodes_lookup.rename(
-        columns={"vox_x": "src_vox_x", "vox_y": "src_vox_y", "vox_z": "src_vox_z", "node_id": "src_node_id"}
+        columns={
+            "vox_x": "src_vox_x",
+            "vox_y": "src_vox_y",
+            "vox_z": "src_vox_z",
+            "node_id": "src_node_id",
+        }
     )
     dst_lookup = nodes_lookup.rename(
-        columns={"vox_x": "dst_vox_x", "vox_y": "dst_vox_y", "vox_z": "dst_vox_z", "node_id": "dst_node_id"}
+        columns={
+            "vox_x": "dst_vox_x",
+            "vox_y": "dst_vox_y",
+            "vox_z": "dst_vox_z",
+            "node_id": "dst_node_id",
+        }
     )
 
     edges_with_nodes = edges_ddf.merge(
@@ -330,7 +386,9 @@ def write_edges_table_from_parquet(
             edge_id_offset += n_rows
             edge_df["src_node_id"] = edge_df["src_node_id"].astype("int64")
             edge_df["dst_node_id"] = edge_df["dst_node_id"].astype("int64")
-            edge_table = pa.Table.from_pandas(edge_df[EDGE_COLUMNS], preserve_index=False)
+            edge_table = pa.Table.from_pandas(
+                edge_df[EDGE_COLUMNS], preserve_index=False
+            )
             if writer is None:
                 writer = pq.ParquetWriter(edges_parquet, edge_table.schema)
             writer.write_table(edge_table)

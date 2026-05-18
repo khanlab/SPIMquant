@@ -184,9 +184,9 @@ rule vessel_graph_to_nodes_edges:
             suffix="edges.parquet",
             **inputs["spim"].wildcards,
         ),
-    threads: 4
+    threads: 128
     resources:
-        mem_mb=16000,
-        runtime=60,
+        mem_mb=256000,
+        runtime=360,
     script:
         "../scripts/convert_vessel_graph_to_nodes_edges.py"
