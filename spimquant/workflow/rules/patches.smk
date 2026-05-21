@@ -23,13 +23,13 @@ Patches are named with atlas abbreviation and patch number for easy identificati
 rule create_spim_patches:
     """Create patches from SPIM zarr data based on atlas regions.
 
-    This rule extracts fixed-size patches from the SPIM zarr data at locations
-    sampled from specified atlas regions. Patches are saved as NIfTI files
-    named with the atlas, label abbreviation, and patch number.
+This rule extracts fixed-size patches from the SPIM zarr data at locations
+sampled from specified atlas regions. Patches are saved as NIfTI files
+named with the atlas, label abbreviation, and patch number.
 
-    Level in the output file is the resolution of the patches, (e.g. level 0)
-    but level in the dseg input is the (downsampled) registration_level.
-    """
+Level in the output file is the resolution of the patches, (e.g. level 0)
+but level in the dseg input is the (downsampled) registration_level.
+"""
     input:
         spim=inputs["spim"].path,
         dseg=bids(
@@ -42,14 +42,6 @@ rule create_spim_patches:
             **inputs["spim"].wildcards,
         ),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    params:
-        patch_size=config.get("patch_size", [256, 256, 256]),
-        n_patches=config.get("n_patches_per_label", 10),
-        patch_labels=config.get("patch_labels", None),
-        hires_level=0,  #input is the raw data
-        seed=config.get("patch_seed", 42),
-        zarrnii_kwargs=zarrnii_in_kwargs,
-        patch_uint8=not config.get("no_patch_uint8", False),
     output:
         patches_dir=directory(
             bids(
@@ -68,6 +60,14 @@ rule create_spim_patches:
     resources:
         mem_mb=32000,
         runtime=30,
+    params:
+        patch_size=config.get("patch_size", [256, 256, 256]),
+        n_patches=config.get("n_patches_per_label", 10),
+        patch_labels=config.get("patch_labels", None),
+        hires_level=0,  #input is the raw data
+        seed=config.get("patch_seed", 42),
+        zarrnii_kwargs=zarrnii_in_kwargs,
+        patch_uint8=not config.get("no_patch_uint8", False),
     script:
         "../scripts/create_patches.py"
 
@@ -75,10 +75,10 @@ rule create_spim_patches:
 rule create_mask_patches:
     """Create patches from segmentation mask zarr data based on atlas regions.
 
-    This rule extracts fixed-size patches from the cleaned segmentation mask
-    zarr data at locations sampled from specified atlas regions. Patches are
-    saved as NIfTI files named with the atlas, label abbreviation, and patch number.
-    """
+This rule extracts fixed-size patches from the cleaned segmentation mask
+zarr data at locations sampled from specified atlas regions. Patches are
+saved as NIfTI files named with the atlas, label abbreviation, and patch number.
+"""
     input:
         mask=bids(
             root=root,
@@ -99,13 +99,6 @@ rule create_mask_patches:
             **inputs["spim"].wildcards,
         ),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    params:
-        patch_size=config.get("patch_size", [256, 256, 256]),
-        n_patches=config.get("n_patches_per_label", 10),
-        patch_labels=config.get("patch_labels", None),
-        seed=config.get("patch_seed", 42),
-        hires_level=config["segmentation_level"],
-        patch_uint8=not config.get("no_patch_uint8", False),
     output:
         patches_dir=directory(
             bids(
@@ -124,6 +117,13 @@ rule create_mask_patches:
     resources:
         mem_mb=32000,
         runtime=30,
+    params:
+        patch_size=config.get("patch_size", [256, 256, 256]),
+        n_patches=config.get("n_patches_per_label", 10),
+        patch_labels=config.get("patch_labels", None),
+        seed=config.get("patch_seed", 42),
+        hires_level=config["segmentation_level"],
+        patch_uint8=not config.get("no_patch_uint8", False),
     script:
         "../scripts/create_patches.py"
 
@@ -131,10 +131,10 @@ rule create_mask_patches:
 rule create_corrected_spim_patches:
     """Create patches from corrected SPIM zarr data based on atlas regions.
 
-    This rule extracts fixed-size patches from the intensity-corrected SPIM
-    zarr data at locations sampled from specified atlas regions. Patches are
-    saved as NIfTI files named with the atlas, label abbreviation, and patch number.
-    """
+This rule extracts fixed-size patches from the intensity-corrected SPIM
+zarr data at locations sampled from specified atlas regions. Patches are
+saved as NIfTI files named with the atlas, label abbreviation, and patch number.
+"""
     input:
         corrected=bids(
             root=work,
@@ -155,13 +155,6 @@ rule create_corrected_spim_patches:
             **inputs["spim"].wildcards,
         ),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    params:
-        patch_size=config.get("patch_size", [256, 256, 256]),
-        n_patches=config.get("n_patches_per_label", 10),
-        patch_labels=config.get("patch_labels", None),
-        seed=config.get("patch_seed", 42),
-        hires_level=config["segmentation_level"],
-        patch_uint8=not config.get("no_patch_uint8", False),
     output:
         patches_dir=directory(
             bids(
@@ -180,6 +173,13 @@ rule create_corrected_spim_patches:
     resources:
         mem_mb=32000,
         runtime=30,
+    params:
+        patch_size=config.get("patch_size", [256, 256, 256]),
+        n_patches=config.get("n_patches_per_label", 10),
+        patch_labels=config.get("patch_labels", None),
+        seed=config.get("patch_seed", 42),
+        hires_level=config["segmentation_level"],
+        patch_uint8=not config.get("no_patch_uint8", False),
     script:
         "../scripts/create_patches.py"
 
@@ -187,10 +187,10 @@ rule create_corrected_spim_patches:
 rule create_imaris_crops:
     """Create high-resolution Imaris datasets from SPIM data based on atlas region bounding boxes.
 
-    This rule extracts crops from SPIM zarr data based on bounding boxes of
-    specified atlas regions. Crops are saved as Imaris datasets using zarrnii's
-    to_imaris() function. Level defaults to 0 for high-resolution output.
-    """
+This rule extracts crops from SPIM zarr data based on bounding boxes of
+specified atlas regions. Crops are saved as Imaris datasets using zarrnii's
+to_imaris() function. Level defaults to 0 for high-resolution output.
+"""
     input:
         spim=inputs["spim"].path,
         dseg=bids(
@@ -203,10 +203,6 @@ rule create_imaris_crops:
             **inputs["spim"].wildcards,
         ),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    params:
-        crop_labels=config.get("crop_labels", None),
-        hires_level=0,  # input is the raw data
-        zarrnii_kwargs=zarrnii_in_kwargs,
     output:
         crops_dir=directory(
             bids(
@@ -224,5 +220,9 @@ rule create_imaris_crops:
     resources:
         mem_mb=32000,
         runtime=60,
+    params:
+        crop_labels=config.get("crop_labels", None),
+        hires_level=0,  # input is the raw data
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/create_imaris_crops.py"

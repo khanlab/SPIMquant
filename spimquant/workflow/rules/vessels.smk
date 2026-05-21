@@ -12,12 +12,6 @@ rule run_vesselfm:
     input:
         spim=inputs["spim"].path,
         model_path="resources/models/vesselfm.pt",
-    params:
-        zarrnii_kwargs=zarrnii_in_kwargs,
-        vesselfm_kwargs=lambda wildcards, input: {
-            "chunk_size": (1, 128, 128, 128),
-            "model_path": input.model_path,
-        },
     output:
         mask=bids(
             root=root,
@@ -34,6 +28,12 @@ rule run_vesselfm:
         cpus_per_gpu=32,
         mem_mb=64000,
         runtime=lambda wildcards: max(1, int(200.0 / (3.0 ** float(wildcards.level)))),  # rough estimate, clamped to >=1
+    params:
+        zarrnii_kwargs=zarrnii_in_kwargs,
+        vesselfm_kwargs=lambda wildcards, input: {
+            "chunk_size": (1, 128, 128, 128),
+            "model_path": input.model_path,
+        },
     script:
         "../scripts/vesselfm.py"
 
@@ -41,12 +41,12 @@ rule run_vesselfm:
 rule signed_distance_transform:
     """Compute signed distance transform from a binary mask.
 
-    Applies the chamfer distance transform (distance_transform_cdt from scipy)
-    to a binary mask using dask map_overlap for chunked, parallel processing.
-    The output is a signed distance transform computed as dt_outside - dt_inside,
-    where negative values indicate the interior and positive values indicate
-    the exterior of the mask.
-    """
+Applies the chamfer distance transform (distance_transform_cdt from scipy)
+to a binary mask using dask map_overlap for chunked, parallel processing.
+The output is a signed distance transform computed as dt_outside - dt_inside,
+where negative values indicate the interior and positive values indicate
+the exterior of the mask.
+"""
     input:
         mask=bids(
             root=root,
@@ -57,8 +57,6 @@ rule signed_distance_transform:
             suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
-    params:
-        overlap_depth=32,
     output:
         dist=bids(
             root=root,
@@ -74,6 +72,8 @@ rule signed_distance_transform:
         mem_mb=256000,
         disk_mb=2097152,
         runtime=360,
+    params:
+        overlap_depth=32,
     script:
         "../scripts/signed_distance_transform.py"
 
@@ -90,8 +90,6 @@ rule skeletonize_vessels_mask:
             suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
-    params:
-        overlap_depth=32,
     output:
         mask=bids(
             root=root,
@@ -107,6 +105,8 @@ rule skeletonize_vessels_mask:
         mem_mb=256000,
         disk_mb=2097152,
         runtime=360,
+    params:
+        overlap_depth=32,
     script:
         "../scripts/skeletonize_vessels_mask.py"
 
@@ -132,8 +132,6 @@ rule vessel_skeleton_graph:
             suffix="dist.ozx",
             **inputs["spim"].wildcards,
         ),
-    params:
-        overlap_depth=32,
     output:
         graph_parquet=bids(
             root=root,
@@ -149,6 +147,8 @@ rule vessel_skeleton_graph:
         mem_mb=256000,
         disk_mb=2097152,
         runtime=360,
+    params:
+        overlap_depth=32,
     script:
         "../scripts/skeleton_graph_from_sdt.py"
 
@@ -190,3 +190,58 @@ rule vessel_graph_to_nodes_edges:
         runtime=360,
     script:
         "../scripts/convert_vessel_graph_to_nodes_edges.py"
+
+
+rule map_atlas_to_vessel_nodes:
+    """Map atlas regions to vessel nodes using physical coordinates."""
+    input:
+        nodes_parquet=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            suffix="nodes.parquet",
+            **inputs["spim"].wildcards,
+        ),
+        dseg=bids(
+            root=root,
+            datatype="parc",
+            seg="{seg}",
+            level="{level}",
+            from_="{template}",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
+    output:
+        nodes_parquet=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            seg="{seg}",
+            from_="{template}",
+            suffix="nodes.parquet",
+            **inputs["spim"].wildcards,
+        ),
+        counts_tsv=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            seg="{seg}",
+            from_="{template}",
+            suffix="nodecounts.tsv",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 4
+    resources:
+        mem_mb=32000,
+        runtime=15,
+    params:
+        coord_column_names=["x", "y", "z"],
+    script:
+        "../scripts/map_atlas_to_vessel_nodes.py"
