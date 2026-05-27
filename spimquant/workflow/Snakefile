@@ -51,21 +51,31 @@ else:
 include: "rules/common.smk"
 
 
-zarrnii_in_kwargs = {}
+spim_json_overrides = {
+    str(spim_path): get_spim_json_overrides(spim_path) for spim_path in inputs["spim"].expand()
+}
+zarrnii_cli_kwargs = {}
+
+
+def zarrnii_in_kwargs(wildcards, input):
+    spim_path = str(getattr(input, "spim", input[0]))
+    kwargs = dict(spim_json_overrides.get(spim_path, {}))
+    kwargs.update(zarrnii_cli_kwargs)
+    return kwargs
 
 if config["set_channel_labels"]:
     print(
         f"Using set_channel_labels override at data import: {config['set_channel_labels']}"
     )
     stains = config["set_channel_labels"]
-    zarrnii_in_kwargs["set_channel_labels"] = stains
+    zarrnii_cli_kwargs["set_channel_labels"] = stains
 else:
     stains = get_stains_all_subjects()
 
 
 if config["orientation"]:
     print(f"Using orientation to override at data import: {config['orientation']}")
-    zarrnii_in_kwargs["orientation"] = config["orientation"]
+    zarrnii_cli_kwargs["orientation"] = config["orientation"]
 
 stain_for_reg = None
 
