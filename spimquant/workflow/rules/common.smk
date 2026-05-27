@@ -65,6 +65,8 @@ def get_stains_all_subjects():
 
 def get_spim_json_path(spim_path):
     spim_path = str(spim_path)
+    if spim_path.endswith(".ome.zarr.zip"):
+        return spim_path[: -len(".ome.zarr.zip")] + ".json"
     if spim_path.endswith(".ome.zarr"):
         return spim_path[: -len(".ome.zarr")] + ".json"
     return str(Path(spim_path).with_suffix(".json"))
@@ -76,12 +78,19 @@ def _normalize_channel_labels(value):
     if isinstance(value, str):
         return [value]
     if isinstance(value, list):
-        channels = [str(item) for item in value if item is not None]
+        channels = [
+            str(item)
+            for item in value
+            if isinstance(item, (str, int, float))
+        ]
         return channels or None
     return None
 
 
 def _extract_channels_from_json(metadata):
+    """Extract channel labels from sidecar keys in this order:
+    set_channel_labels, channel_labels, stains, stain_channels, staining, omero.channels[*].label.
+    """
     for key in ("set_channel_labels", "channel_labels", "stains", "stain_channels"):
         channels = _normalize_channel_labels(metadata.get(key))
         if channels:
@@ -94,9 +103,11 @@ def _extract_channels_from_json(metadata):
     omero_channels = metadata.get("omero", {}).get("channels")
     if isinstance(omero_channels, list):
         labels = [
-            str(channel.get("label"))
+            str(label)
             for channel in omero_channels
-            if isinstance(channel, dict) and channel.get("label")
+            if isinstance(channel, dict)
+            for label in [channel.get("label")]
+            if isinstance(label, (str, int, float))
         ]
         if labels:
             return labels
