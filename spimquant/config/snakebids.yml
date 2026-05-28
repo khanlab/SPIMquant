@@ -77,7 +77,7 @@ parse_args:
     default: null
 
   --set_channel_labels:
-    help: "Set or override channel labels for input data. Note: this is required if using imaris as input"
+    help: "Set or override channel labels for input data. When absent, channel labels are read from OME-Zarr metadata and overridden by _SPIM.json sidecars if present. CLI values take highest precedence."
     default: null
     action: store
     nargs: '+'
@@ -202,7 +202,7 @@ parse_args:
     default: 100
 
   --orientation:
-    help: "Forcefully set the orientation of the input OME Zarr. Only use this if the orientation in the zarr metadata is incorrect and not easily changed. Note, this orientation string is defined in XYZ, with the letter of the increasing direction. Blaze data stitched with SPIMprep should be RPI, Imaris stitched data should be RAI, and Lifecanvas stitched data should be RAS. "
+    help: "Forcefully set the orientation of the input OME Zarr. Only use this if the orientation in the zarr metadata is incorrect and not easily changed. When absent, orientation is read from OME-Zarr metadata and overridden by _SPIM.json sidecars if present. CLI values take highest precedence. Note, this orientation string is defined in XYZ, with the letter of the increasing direction. Blaze data stitched with SPIMprep should be RPI, Imaris stitched data should be RAI, and Lifecanvas stitched data should be RAS. "
     default: null
     
 
