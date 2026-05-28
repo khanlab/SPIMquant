@@ -1,12 +1,12 @@
 
 rule fieldfrac:
     """Calculate field fraction from binary mask.
-    
-    Computes the fraction of brain tissue occupied by the segmented pathology at each
-    voxel by downsampling the high-resolution mask. The output resolution (level) can
-    differ from the input mask resolution, with the downsampling factor calculated
-    automatically. Field fraction values range from 0-100.
-    """
+
+Computes the fraction of brain tissue occupied by the segmented pathology at each
+voxel by downsampling the high-resolution mask. The output resolution (level) can
+differ from the input mask resolution, with the downsampling factor calculated
+automatically. Field fraction values range from 0-100.
+"""
     input:
         mask=bids(
             root=root,
@@ -17,8 +17,6 @@ rule fieldfrac:
             suffix="mask.ozx",
             **inputs["spim"].wildcards,
         ),
-    params:
-        hires_level=config["segmentation_level"],
     output:
         fieldfrac_nii=bids(
             root=root,
@@ -33,6 +31,8 @@ rule fieldfrac:
     resources:
         mem_mb=16000,
         runtime=30,
+    params:
+        hires_level=config["segmentation_level"],
     script:
         "../scripts/fieldfrac.py"
 
