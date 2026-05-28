@@ -10,7 +10,7 @@ rule import_vesselfm_model:
 
 rule run_vesselfm:
     input:
-        spim=inputs["spim"].path,
+        spim=segmentation_spim_input,
         model_path="resources/models/vesselfm.pt",
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,

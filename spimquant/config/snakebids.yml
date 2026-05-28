@@ -125,6 +125,12 @@ parse_args:
     type: int
     default: 0
 
+  --segmentation_rechunk_size:
+    help: "Optional chunk size (z y x) to write an intermediate rechunked SPIM OME-Zarr for segmentation/vessel steps. Provide 3 integers to enable."
+    default: null
+    nargs: 3
+    type: int
+
   --no_segmentation:
     help: "Skip segmentation and quantification of stains, i.e. perform registration only (default: %(default)s)"
     action: store_true

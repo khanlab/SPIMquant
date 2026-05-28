@@ -21,6 +21,20 @@ wildcard_constraints:
     template="[a-zA-Z0-9]+",
 
 
+segmentation_spim_input = (
+    bids(
+        root=work,
+        datatype="seg",
+        level="{level}",
+        desc="rechunked",
+        suffix="SPIM.ome.zarr",
+        **inputs["spim"].wildcards,
+    )
+    if config["segmentation_rechunk_size"] is not None
+    else inputs["spim"].path
+)
+
+
 rule get_downsampled_nii:
     """Convert OME-Zarr to NIfTI at specified resolution level.
     
@@ -48,6 +62,35 @@ rule get_downsampled_nii:
         runtime=15,
     script:
         "../scripts/ome_zarr_to_nii.py"
+
+
+rule rechunk_spim_for_segmentation:
+    input:
+        spim=inputs["spim"].path,
+    params:
+        zarrnii_kwargs=zarrnii_in_kwargs,
+        chunk_size=config["segmentation_rechunk_size"],
+    output:
+        rechunked=temp(
+            directory(
+                bids(
+                    root=work,
+                    datatype="seg",
+                    level="{level}",
+                    desc="rechunked",
+                    suffix="SPIM.ome.zarr",
+                    **inputs["spim"].wildcards,
+                )
+            ),
+            group_jobs=True,
+        ),
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    resources:
+        mem_mb=256000,
+        disk_mb=2097152,
+        runtime=90,
+    script:
+        "../scripts/rechunk_spim.py"
 
 
 localrules:

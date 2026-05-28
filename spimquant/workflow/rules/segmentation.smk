@@ -26,7 +26,7 @@ Outputs include:
 rule gaussian_biasfield:
     """simple bias field correction with gaussian"""
     input:
-        spim=inputs["spim"].path,
+        spim=segmentation_spim_input,
     output:
         corrected=temp(
             directory(
@@ -71,7 +71,7 @@ rule gaussian_biasfield:
 rule n4_biasfield:
     """N4 bias field correction with antspyx"""
     input:
-        spim=inputs["spim"].path,
+        spim=segmentation_spim_input,
     output:
         corrected=temp(
             directory(
