@@ -51,7 +51,7 @@ pyarrow = ">=18.0.0,<19"
 
 [tool.pixi.pypi-dependencies]
 spimquant = { path = ".", editable = true }
-zarrnii = ">=0.19.4,<0.20.0"
+zarrnii = ">=0.19.7,<0.20.0"
 #zarrnii = { git = "https://github.com/khanlab/zarrnii", rev = "main",  editable = true }
 #zarrnii = { path = "../zarrnii", editable = true }
 vesselfm = { git = "https://github.com/khanlab/vesselfm", rev = "504baab" }
