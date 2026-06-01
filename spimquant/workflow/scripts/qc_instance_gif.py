@@ -70,6 +70,7 @@ def _load_channel_images(spim_path, channels, level):
             spim_path,
             level=level,
             channel_labels=[ch],
+            **snakemake.params.zarrnii_kwargs,
         )
     return imgs
 
@@ -94,6 +95,7 @@ def _global_norms(imgs, channels):
                     snakemake.input.spim,
                     level=(base_level + extra),
                     channel_labels=[ch],
+                    **snakemake.params.zarrnii_kwargs,
                 )
                 arr = coarse.data.compute()
                 break

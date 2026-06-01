@@ -159,6 +159,7 @@ def main():
         # get cropped images for this label
         bbox_min, bbox_max = atlas.get_region_bounding_box(region_ids=label_id)
         center_coord = tuple((x + y) / 2 for x, y in zip(bbox_min, bbox_max))
+
         spim_crop = spim_img.crop_centered(
             center_coord,
             patch_size=(snakemake.params.patch_size, snakemake.params.patch_size, 1),
@@ -170,6 +171,9 @@ def main():
 
         spim_sl = spim_crop.data[0, :, :].squeeze().compute()
         spim_sl = _apply_fixed_percentile_norm(spim_sl, glob_lo, glob_hi)
+
+
+
         mask_sl = mask_crop.data[0, :, :].squeeze().compute()
         cached_slices.append((label_name, spim_sl, mask_sl))
 
@@ -181,6 +185,7 @@ def main():
         ax.set_title(label_name, fontsize=7, pad=2)
         ax.set_xticks([])
         ax.set_yticks([])
+
 
     # Hide unused axes
     for i in range(n_rois, n_rows * n_cols):

@@ -17,6 +17,7 @@ if __name__ == "__main__":
             channel_labels=[snakemake.wildcards.stain],
             level=hires_level,
             downsample_near_isotropic=True,
+            chunks=(256,256,256),
             **snakemake.params.zarrnii_kwargs,
         )
 
