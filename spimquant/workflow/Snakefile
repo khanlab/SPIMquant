@@ -56,7 +56,6 @@ spim_json_overrides = {
     str(spim_path): get_spim_json_overrides(spim_path)
     for spim_path in inputs["spim"].expand()
 }
-print(spim_json_overrides)
 zarrnii_cli_kwargs = {}
 
 
