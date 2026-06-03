@@ -213,6 +213,11 @@ parse_args:
       - distributed
     default: distributed
 
+  --qc_instance_seg:
+    help: "Generate instance-level QC outputs, including animated gifs (default: %(default)s)"
+    action: store_true
+    default: False
+
   --qc_roi_zoom_bg_n4:
     help: "Use n4 bias-field corrected OME-Zarr as background image in the ROI zoom montage QC figures instead of the raw SPIM (only effective when --correction_method n4) (default: %(default)s)"
     action: store_true

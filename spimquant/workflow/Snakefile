@@ -940,7 +940,7 @@ rule all_qc:
             stain=stains_for_seg,
             desc=config["seg_method"],
         )
-        if do_seg
+        if do_seg and config["qc_instance_seg"]
         else [],
         # Colocalization instance GIFs (per atlas seg, per seg method)
         inputs["spim"].expand(
@@ -968,7 +968,7 @@ rule all_qc:
             template=config["template"],
             desc=config["seg_method"],
         )
-        if do_coloc
+        if do_coloc and config["qc_instance_seg"]
         else [],
 
 
