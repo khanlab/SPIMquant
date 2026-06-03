@@ -51,21 +51,45 @@ else:
 include: "rules/common.smk"
 
 
-zarrnii_in_kwargs = {}
+# prepopulate json sidecar metadata for every spim input
+spim_json_overrides = {
+    str(spim_path): get_spim_json_overrides(spim_path)
+    for spim_path in inputs["spim"].expand()
+}
+print(spim_json_overrides)
+zarrnii_cli_kwargs = {}
 
-if config["set_channel_labels"]:
-    print(
-        f"Using set_channel_labels override at data import: {config['set_channel_labels']}"
-    )
-    stains = config["set_channel_labels"]
-    zarrnii_in_kwargs["set_channel_labels"] = stains
+
+def get_zarrnii_in_kwargs(wildcards, input):
+    spim_input = getattr(input, "spim", None)
+    if spim_input is None:
+        # Some rules may pass positional input lists; use the first entry as SPIM input.
+        if len(input) == 0:
+            raise ValueError(
+                f"Unable to resolve SPIM input path for zarrnii kwargs for wildcards: {wildcards}."
+                "Make sure the zarrnii input for the rule is named spim, or is the first positional input."
+            )
+        spim_input = input[0]
+    spim_path = str(spim_input)
+    kwargs = dict(spim_json_overrides.get(spim_path, {}))
+    # CLI options are highest precedence and intentionally override sidecar values.
+    kwargs.update(zarrnii_cli_kwargs)
+    return kwargs
+
+
+zarrnii_in_kwargs = get_zarrnii_in_kwargs
+
+if config["sample_staining"]:
+    print(f"Using sample_staining override at data import: {config['sample_staining']}")
+    stains = config["sample_staining"]
+    zarrnii_cli_kwargs["set_channel_labels"] = stains
 else:
     stains = get_stains_all_subjects()
 
 
 if config["orientation"]:
     print(f"Using orientation to override at data import: {config['orientation']}")
-    zarrnii_in_kwargs["orientation"] = config["orientation"]
+    zarrnii_cli_kwargs["orientation"] = config["orientation"]
 
 stain_for_reg = None
 
