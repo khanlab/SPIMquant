@@ -172,8 +172,6 @@ def main():
         spim_sl = spim_crop.data[0, :, :].squeeze().compute()
         spim_sl = _apply_fixed_percentile_norm(spim_sl, glob_lo, glob_hi)
 
-
-
         mask_sl = mask_crop.data[0, :, :].squeeze().compute()
         cached_slices.append((label_name, spim_sl, mask_sl))
 
@@ -185,7 +183,6 @@ def main():
         ax.set_title(label_name, fontsize=7, pad=2)
         ax.set_xticks([])
         ax.set_yticks([])
-
 
     # Hide unused axes
     for i in range(n_rois, n_rows * n_cols):
