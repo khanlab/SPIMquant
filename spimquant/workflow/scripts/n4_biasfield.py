@@ -4,7 +4,7 @@ if __name__ == "__main__":
     from zarrnii import ZarrNii
     from zarrnii.plugins import N4BiasFieldCorrection
 
-    with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
+    with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads, threads_per_worker=16):
 
         hires_level = int(snakemake.wildcards.level)
         proc_level = int(snakemake.params.proc_level)
@@ -20,17 +20,23 @@ if __name__ == "__main__":
             chunks=(256,256,256),
             **snakemake.params.zarrnii_kwargs,
         )
+        znimg_lowres = ZarrNii.from_file(
+            snakemake.input.spim,
+            channel_labels=[snakemake.wildcards.stain],
+            level=proc_level,
+            downsample_near_isotropic=True,
+            **snakemake.params.zarrnii_kwargs,
+        )
+
 
         print("compute bias field correction")
 
-        adjusted_chunk = int(
-            snakemake.params.target_chunk_size / (2**adjusted_downsample_factor)
-        )
 
         # Apply bias field correction
         znimg_corrected = znimg.apply_scaled_processing(
             N4BiasFieldCorrection(shrink_factor=snakemake.params.shrink_factor),
-            downsample_factor=adjusted_downsample_factor,
+            lowres_znimg=znimg_lowres,
+            method="map_blocks"
         )
 
         # write to ome_zarr
