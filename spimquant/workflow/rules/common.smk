@@ -65,6 +65,8 @@ def get_stains_all_subjects():
 
 def get_spim_json_path(spim_path):
     spim_path = str(spim_path)
+    if spim_path.endswith(".ozx"):
+        return spim_path[: -len(".ozx")] + ".json"
     if spim_path.endswith(".ome.zarr.zip"):
         return spim_path[: -len(".ome.zarr.zip")] + ".json"
     if spim_path.endswith(".ome.zarr"):
@@ -78,39 +80,16 @@ def _normalize_channel_labels(value):
     if isinstance(value, str):
         return [value]
     if isinstance(value, list):
-        channels = [
-            str(item)
-            for item in value
-            if isinstance(item, (str, int, float))
-        ]
+        channels = [str(item) for item in value if isinstance(item, (str, int, float))]
         return channels or None
     return None
 
 
 def _extract_channels_from_json(metadata):
-    """Extract channel labels from sidecar keys in this order:
-    set_channel_labels, channel_labels, stains, stain_channels, staining, omero.channels[*].label.
-    """
-    for key in ("set_channel_labels", "channel_labels", "stains", "stain_channels"):
-        channels = _normalize_channel_labels(metadata.get(key))
-        if channels:
-            return channels
-
-    staining = _normalize_channel_labels(metadata.get("staining"))
-    if staining:
-        return staining
-
-    omero_channels = metadata.get("omero", {}).get("channels")
-    if isinstance(omero_channels, list):
-        labels = [
-            str(label)
-            for channel in omero_channels
-            if isinstance(channel, dict)
-            for label in [channel.get("label")]
-            if isinstance(label, (str, int, float))
-        ]
-        if labels:
-            return labels
+    """Extract channel labels from sidecar keys, using "SampleStaining" key"""
+    channels = _normalize_channel_labels(metadata.get("SampleStaining"))
+    if channels:
+        return channels
 
     return None
 
@@ -129,7 +108,7 @@ def get_spim_json_overrides(spim_path):
     if channels:
         overrides["set_channel_labels"] = channels
 
-    orientation = metadata.get("orientation")
+    orientation = metadata.get("OrientationStringXYZ")
     if orientation:
         overrides["orientation"] = str(orientation)
 

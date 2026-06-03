@@ -51,9 +51,12 @@ else:
 include: "rules/common.smk"
 
 
+# prepopulate json sidecar metadata for every spim input
 spim_json_overrides = {
-    str(spim_path): get_spim_json_overrides(spim_path) for spim_path in inputs["spim"].expand()
+    str(spim_path): get_spim_json_overrides(spim_path)
+    for spim_path in inputs["spim"].expand()
 }
+print(spim_json_overrides)
 zarrnii_cli_kwargs = {}
 
 
@@ -63,7 +66,8 @@ def get_zarrnii_in_kwargs(wildcards, input):
         # Some rules may pass positional input lists; use the first entry as SPIM input.
         if len(input) == 0:
             raise ValueError(
-                f"Unable to resolve SPIM input path for zarrnii kwargs for wildcards: {wildcards}"
+                f"Unable to resolve SPIM input path for zarrnii kwargs for wildcards: {wildcards}."
+                "Make sure the zarrnii input for the rule is named spim, or is the first positional input."
             )
         spim_input = input[0]
     spim_path = str(spim_input)
@@ -75,11 +79,9 @@ def get_zarrnii_in_kwargs(wildcards, input):
 
 zarrnii_in_kwargs = get_zarrnii_in_kwargs
 
-if config["set_channel_labels"]:
-    print(
-        f"Using set_channel_labels override at data import: {config['set_channel_labels']}"
-    )
-    stains = config["set_channel_labels"]
+if config["sample_staining"]:
+    print(f"Using sample_staining override at data import: {config['sample_staining']}")
+    stains = config["sample_staining"]
     zarrnii_cli_kwargs["set_channel_labels"] = stains
 else:
     stains = get_stains_all_subjects()
