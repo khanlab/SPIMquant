@@ -42,4 +42,6 @@ if __name__ == "__main__":
         )
 
         # write to final ome_zarr
-        znimg_cleaned.to_ome_zarr(snakemake.output.cleaned_mask, max_layer=5)
+        znimg_cleaned.to_ome_zarr(snakemake.output.cleaned_mask,
+                                  match_scale_factors_from=snakemake.input.mask,
+                                  **snakemake.config['zarrnii_out_kwargs'])

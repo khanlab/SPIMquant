@@ -64,7 +64,7 @@ rule n4:
         ),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=32000,
         runtime=15,
     conda:
         "../envs/ants.yaml"
@@ -112,7 +112,7 @@ rule apply_mask_to_corrected:
         ),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=32000,
         runtime=15,
     conda:
         "../envs/c3d.yaml"
@@ -398,7 +398,7 @@ rule resample_labels_to_zarr:
             datatype="micr",
             desc="resampled",
             from_="{template}",
-            suffix="dseg.ozx",
+            suffix="dseg.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     threads: 10
@@ -457,7 +457,7 @@ rule affine_zarr_to_template_ome_zarr:
             desc="affine",
             space="{template}",
             stain="{stain}",
-            suffix="spim.ozx",
+            suffix="spim.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     threads: 32

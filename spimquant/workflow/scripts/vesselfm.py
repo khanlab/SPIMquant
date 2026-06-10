@@ -10,7 +10,6 @@ with get_dask_client("threads", snakemake.threads):
         level=int(snakemake.wildcards.level),
         channel_labels=[snakemake.wildcards.stain],
         downsample_near_isotropic=True,
-        chunks=(256, 256, 256),
         **snakemake.params.zarrnii_kwargs,
     )
     znimg_mask = znimg.segment(VesselFMPlugin, **snakemake.params.vesselfm_kwargs)
@@ -18,4 +17,7 @@ with get_dask_client("threads", snakemake.threads):
     znimg_mask = znimg_mask * 100
 
     with ProgressBar():
-        znimg_mask.to_ome_zarr(snakemake.output.mask, max_layer=5, zarr_format=2)
+        znimg_mask.to_ome_zarr(snakemake.output.mask,
+                               max_layer=5,
+                               match_scale_factors_from=snakemake.input.spim,
+                               **snakemake.config['zarrnii_out_kwargs'])

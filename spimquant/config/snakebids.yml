@@ -398,6 +398,18 @@ masking:
   gmm_bg_class: 1
   pre_atropos_downsampling: '50%'
 
+zarrnii_out_kwargs:
+  storage_options: 
+    chunks:
+      - 1
+      - 128
+      - 128
+      - 128
+    shards: 
+      - 1
+      - 1024
+      - 1024
+      - 1024
 
 reg_mri:
   rigidgreedy:

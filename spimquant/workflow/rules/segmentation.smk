@@ -119,15 +119,15 @@ histogram visualization of the threshold selection.
             **inputs["spim"].wildcards,
         ),
     output:
-        mask=bids(
+        mask=directory(bids(
             root=root,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
-        ),
+        )),
         thresholds_png=bids(
             root=root,
             datatype="seg",
@@ -178,15 +178,15 @@ separator (e.g. gmm+n2k2p5 → k=2.5).
             **inputs["spim"].wildcards,
         ),
     output:
-        mask=bids(
+        mask=directory(bids(
             root=root,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="gmm+n{n,[0-9]+}k{k,[0-9]+(?:p[0-9]+)?}",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
-        ),
+        )),
         thresholds_png=bids(
             root=root,
             datatype="seg",
@@ -228,15 +228,15 @@ Simpler alternative to multi-Otsu for cases where the threshold is known a prior
             **inputs["spim"].wildcards,
         ),
     output:
-        mask=bids(
+        mask=directory(bids(
             root=root,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="th{threshold,[0-9]+}",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
-        ),
+        )),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
@@ -261,28 +261,28 @@ a cleaned mask and an exclusion mask showing what was removed.
             stain="{stain}",
             level="{level}",
             desc="{desc}",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     output:
-        exclude_mask=bids(
+        exclude_mask=directory(bids(
             root=root,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="{desc}+cleaned",
-            suffix="excludemask.ozx",
+            suffix="excludemask.ome.zarr",
             **inputs["spim"].wildcards,
-        ),
-        cleaned_mask=bids(
+        )),
+        cleaned_mask=directory(bids(
             root=root,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="{desc}+cleaned",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
-        ),
+        )),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,

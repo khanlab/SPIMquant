@@ -86,7 +86,7 @@ rule create_mask_patches:
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
         dseg=bids(
