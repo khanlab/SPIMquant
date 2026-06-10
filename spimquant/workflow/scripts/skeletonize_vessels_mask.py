@@ -47,6 +47,8 @@ if __name__ == "__main__":
 
         with ProgressBar():
             # Match pyramid generation used by other mask-producing scripts.
-            znimg.to_ome_zarr(snakemake.output.mask,
-                                match_scale_factors_from=snakemake.input.mask,
-                                **snakemake.config['zarrnii_out_kwargs'])
+            znimg.to_ome_zarr(
+                snakemake.output.mask,
+                match_scale_factors_from=snakemake.input.mask,
+                **snakemake.config["zarrnii_out_kwargs"],
+            )

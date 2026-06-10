@@ -17,7 +17,9 @@ with get_dask_client("threads", snakemake.threads):
     znimg_mask = znimg_mask * 100
 
     with ProgressBar():
-        znimg_mask.to_ome_zarr(snakemake.output.mask,
-                               max_layer=5,
-                               match_scale_factors_from=snakemake.input.spim,
-                               **snakemake.config['zarrnii_out_kwargs'])
+        znimg_mask.to_ome_zarr(
+            snakemake.output.mask,
+            max_layer=5,
+            match_scale_factors_from=snakemake.input.spim,
+            **snakemake.config["zarrnii_out_kwargs"],
+        )

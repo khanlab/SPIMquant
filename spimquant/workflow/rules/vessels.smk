@@ -19,15 +19,17 @@ rule run_vesselfm:
             "model_path": input.model_path,
         },
     output:
-        mask=directory(bids(
-            root=root,
-            datatype="vessels",
-            stain="{stain}",
-            level="{level}",
-            desc="vesselfm",
-            suffix="mask.ome.zarr",
-            **inputs["spim"].wildcards,
-        )),
+        mask=directory(
+            bids(
+                root=root,
+                datatype="vessels",
+                stain="{stain}",
+                level="{level}",
+                desc="vesselfm",
+                suffix="mask.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
+        ),
     threads: 8
     resources:
         gpu=1,
@@ -60,15 +62,17 @@ rule signed_distance_transform:
     params:
         overlap_depth=32,
     output:
-        dist=directory(bids(
-            root=root,
-            datatype="vessels",
-            stain="{stain}",
-            level="{level}",
-            desc="{desc}",
-            suffix="dist.ome.zarr",
-            **inputs["spim"].wildcards,
-        )),
+        dist=directory(
+            bids(
+                root=root,
+                datatype="vessels",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}",
+                suffix="dist.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
+        ),
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
@@ -93,15 +97,17 @@ rule skeletonize_vessels_mask:
     params:
         overlap_depth=32,
     output:
-        mask=directory(bids(
-            root=root,
-            datatype="vessels",
-            stain="{stain}",
-            level="{level}",
-            desc="{desc}+skeleton",
-            suffix="mask.ome.zarr",
-            **inputs["spim"].wildcards,
-        )),
+        mask=directory(
+            bids(
+                root=root,
+                datatype="vessels",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}+skeleton",
+                suffix="mask.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
+        ),
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,

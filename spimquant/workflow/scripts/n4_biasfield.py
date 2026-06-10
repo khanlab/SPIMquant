@@ -4,10 +4,12 @@ if __name__ == "__main__":
     from zarrnii import ZarrNii
     from zarrnii.plugins import N4BiasFieldCorrection
 
-    is_imaris=snakemake.input.spim[-3:]=="ims"
+    is_imaris = snakemake.input.spim[-3:] == "ims"
 
     with get_dask_client(
-        snakemake.config["dask_scheduler"], snakemake.threads, threads_per_worker=16 if is_imaris else 2
+        snakemake.config["dask_scheduler"],
+        snakemake.threads,
+        threads_per_worker=16 if is_imaris else 2,
     ):
 
         hires_level = int(snakemake.wildcards.level)
@@ -32,13 +34,17 @@ if __name__ == "__main__":
         )
 
         print("compute bias field correction")
-        scaled_proc_kwargs={"lowres_znimg": znimg_lowres,"method":"map_blocks"} if is_imaris else {"downsample_factor": adjusted_downsample_factor}
+        scaled_proc_kwargs = (
+            {"lowres_znimg": znimg_lowres, "method": "map_blocks"}
+            if is_imaris
+            else {"downsample_factor": adjusted_downsample_factor}
+        )
         print(scaled_proc_kwargs)
 
         # Apply bias field correction
         znimg_corrected = znimg.apply_scaled_processing(
             N4BiasFieldCorrection(shrink_factor=snakemake.params.shrink_factor),
-            **scaled_proc_kwargs
+            **scaled_proc_kwargs,
         )
 
         # write to ome_zarr

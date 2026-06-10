@@ -119,6 +119,8 @@ if __name__ == "__main__":
         znimg.darr = sdt_darr
 
         with ProgressBar():
-            znimg.to_ome_zarr(snakemake.output.dist, 
-                              match_scale_factors_from=snakemake.input.mask,
-                              **snakemake.config['zarrnii_out_kwargs'])
+            znimg.to_ome_zarr(
+                snakemake.output.dist,
+                match_scale_factors_from=snakemake.input.mask,
+                **snakemake.config["zarrnii_out_kwargs"],
+            )

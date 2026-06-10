@@ -300,7 +300,7 @@ if __name__ == "__main__":
         znimg_mask = znimg_mask * 100
 
         znimg_mask.to_ome_zarr(
-            snakemake.output.mask, 
+            snakemake.output.mask,
             match_scale_factors_from=snakemake.input.corrected,
-            **snakemake.config['zarrnii_out_kwargs']
+            **snakemake.config["zarrnii_out_kwargs"],
         )
