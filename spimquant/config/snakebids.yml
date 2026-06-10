@@ -21,7 +21,9 @@ pybids_inputs:
   spim:
     filters:
       suffix: 'SPIM'
-      extension: 'ome.zarr'
+      extension:
+        - ome.zarr
+        - ims
       sample: brain
     wildcards:
       - subject
