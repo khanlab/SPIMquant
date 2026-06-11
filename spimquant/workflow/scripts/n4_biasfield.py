@@ -39,7 +39,7 @@ if __name__ == "__main__":
             if is_imaris
             else {"downsample_factor": adjusted_downsample_factor}
         )
-        print(scaled_proc_kwargs)
+        # scaled_proc_kwargs controls how apply_scaled_processing is performed
 
         # Apply bias field correction
         znimg_corrected = znimg.apply_scaled_processing(
