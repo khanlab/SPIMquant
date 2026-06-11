@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
         # write to ome_zarr
         znimg_corrected.to_ome_zarr(
-            snakemake.output.corrected, 
+            snakemake.output.corrected,
             match_scale_factors_from=snakemake.input.spim,
             **snakemake.config["zarrnii_out_kwargs"],
         )

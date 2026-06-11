@@ -393,14 +393,16 @@ rule resample_labels_to_zarr:
         label_name="dseg",
         scaling_method="nearest",
     output:
-        zarr=directory(bids(
-            root=root,
-            datatype="micr",
-            desc="resampled",
-            from_="{template}",
-            suffix="dseg.ome.zarr",
-            **inputs["spim"].wildcards,
-        )),
+        zarr=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="resampled",
+                from_="{template}",
+                suffix="dseg.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
+        ),
     threads: 10
     resources:
         mem_mb=16000,
@@ -451,15 +453,17 @@ rule affine_zarr_to_template_ome_zarr:
     params:
         ref_opts={"chunks": (1, 50, 50, 50)},
     output:
-        ome_zarr=directory(bids(
-            root=root,
-            datatype="micr",
-            desc="affine",
-            space="{template}",
-            stain="{stain}",
-            suffix="spim.ome.zarr",
-            **inputs["spim"].wildcards,
-        )),
+        ome_zarr=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="affine",
+                space="{template}",
+                stain="{stain}",
+                suffix="spim.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
+        ),
     threads: 32
     resources:
         mem_mb=16000,
