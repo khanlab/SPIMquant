@@ -4,7 +4,7 @@ if __name__ == "__main__":
     from zarrnii import ZarrNii
     from zarrnii.plugins import N4BiasFieldCorrection
 
-    is_imaris = snakemake.input.spim[-3:] == "ims"
+    is_imaris = str(snakemake.input.spim).lower().endswith(".ims")
 
     with get_dask_client(
         snakemake.config["dask_scheduler"],
