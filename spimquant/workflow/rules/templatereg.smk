@@ -64,7 +64,7 @@ rule n4:
         ),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=32000,
         runtime=15,
     conda:
         "../envs/ants.yaml"
@@ -112,7 +112,7 @@ rule apply_mask_to_corrected:
         ),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=32000,
         runtime=15,
     conda:
         "../envs/c3d.yaml"
@@ -393,13 +393,15 @@ rule resample_labels_to_zarr:
         label_name="dseg",
         scaling_method="nearest",
     output:
-        zarr=bids(
-            root=root,
-            datatype="micr",
-            desc="resampled",
-            from_="{template}",
-            suffix="dseg.ozx",
-            **inputs["spim"].wildcards,
+        zarr=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="resampled",
+                from_="{template}",
+                suffix="dseg.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
         ),
     threads: 10
     resources:
@@ -451,14 +453,16 @@ rule affine_zarr_to_template_ome_zarr:
     params:
         ref_opts={"chunks": (1, 50, 50, 50)},
     output:
-        ome_zarr=bids(
-            root=root,
-            datatype="micr",
-            desc="affine",
-            space="{template}",
-            stain="{stain}",
-            suffix="spim.ozx",
-            **inputs["spim"].wildcards,
+        ome_zarr=directory(
+            bids(
+                root=root,
+                datatype="micr",
+                desc="affine",
+                space="{template}",
+                stain="{stain}",
+                suffix="spim.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
         ),
     threads: 32
     resources:

@@ -90,7 +90,7 @@ Aspect ratio is corrected using voxel spacings from ``ZarrNii.get_zooms()``.
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -129,7 +129,7 @@ for isotropic display and physically correct aspect ratio.
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -188,7 +188,7 @@ one without (``desc-{desc}nomask_roimontage.png``).
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
         dseg_nii=bids(
@@ -275,7 +275,7 @@ and one without (``desc-{desc}nomask_vesselroimontage.png``).
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
         dseg_nii=bids(

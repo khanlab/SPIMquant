@@ -16,4 +16,8 @@ if __name__ == "__main__":
         znimg_mask = znimg_mask * 100
 
         # write to ome_zarr
-        znimg_mask.to_ome_zarr(snakemake.output.mask, max_layer=5)
+        znimg_mask.to_ome_zarr(
+            snakemake.output.mask,
+            match_scale_factors_from=snakemake.input.corrected,
+            **snakemake.config["zarrnii_out_kwargs"],
+        )

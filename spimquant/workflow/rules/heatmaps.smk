@@ -28,7 +28,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=32000,
         runtime=30,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
@@ -72,7 +72,7 @@ rule map_segstats_tsv_dseg_to_subject_nii:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=32000,
         runtime=30,
     script:
         "../scripts/map_tsv_dseg_to_nii.py"

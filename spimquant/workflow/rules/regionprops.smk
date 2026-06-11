@@ -7,7 +7,7 @@ rule compute_filtered_regionprops:
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -162,7 +162,7 @@ rule sample_at_vessel_sdt:
             stain="{stain}",
             level=config["segmentation_level"],
             desc=config["vessel_seg_method"],
-            suffix="dist.ozx",
+            suffix="dist.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     params:

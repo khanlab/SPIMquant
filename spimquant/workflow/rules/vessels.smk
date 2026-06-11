@@ -19,21 +19,23 @@ rule run_vesselfm:
             "model_path": input.model_path,
         },
     output:
-        mask=bids(
-            root=root,
-            datatype="vessels",
-            stain="{stain}",
-            level="{level}",
-            desc="vesselfm",
-            suffix="mask.ozx",
-            **inputs["spim"].wildcards,
+        mask=directory(
+            bids(
+                root=root,
+                datatype="vessels",
+                stain="{stain}",
+                level="{level}",
+                desc="vesselfm",
+                suffix="mask.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
         ),
-    threads: 32
+    threads: 8
     resources:
         gpu=1,
-        cpus_per_gpu=32,
-        mem_mb=64000,
-        runtime=lambda wildcards: max(1, int(200.0 / (3.0 ** float(wildcards.level)))),  # rough estimate, clamped to >=1
+        cpus_per_gpu=8,
+        mem_mb=256000,
+        runtime=lambda wildcards: max(1, int(400.0 / (3.0 ** float(wildcards.level)))),  # rough estimate, clamped to >=1
     script:
         "../scripts/vesselfm.py"
 
@@ -54,26 +56,28 @@ rule signed_distance_transform:
             stain="{stain}",
             level="{level}",
             desc="vesselfm",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     params:
         overlap_depth=32,
     output:
-        dist=bids(
-            root=root,
-            datatype="vessels",
-            stain="{stain}",
-            level="{level}",
-            desc="{desc}",
-            suffix="dist.ozx",
-            **inputs["spim"].wildcards,
+        dist=directory(
+            bids(
+                root=root,
+                datatype="vessels",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}",
+                suffix="dist.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
         ),
-    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
         disk_mb=2097152,
-        runtime=360,
+        runtime=720,
     script:
         "../scripts/signed_distance_transform.py"
 
@@ -87,26 +91,28 @@ rule skeletonize_vessels_mask:
             stain="{stain}",
             level="{level}",
             desc="{desc}",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     params:
         overlap_depth=32,
     output:
-        mask=bids(
-            root=root,
-            datatype="vessels",
-            stain="{stain}",
-            level="{level}",
-            desc="{desc}+skeleton",
-            suffix="mask.ozx",
-            **inputs["spim"].wildcards,
+        mask=directory(
+            bids(
+                root=root,
+                datatype="vessels",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}+skeleton",
+                suffix="mask.ome.zarr",
+                **inputs["spim"].wildcards,
+            )
         ),
-    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
         mem_mb=256000,
         disk_mb=2097152,
-        runtime=360,
+        runtime=720,
     script:
         "../scripts/skeletonize_vessels_mask.py"
 
@@ -120,7 +126,7 @@ rule vessel_skeleton_graph:
             stain="{stain}",
             level="{level}",
             desc="{desc}+skeleton",
-            suffix="mask.ozx",
+            suffix="mask.ome.zarr",
             **inputs["spim"].wildcards,
         ),
         sdt=bids(
@@ -129,7 +135,7 @@ rule vessel_skeleton_graph:
             stain="{stain}",
             level="{level}",
             desc="{desc}",
-            suffix="dist.ozx",
+            suffix="dist.ome.zarr",
             **inputs["spim"].wildcards,
         ),
     params:
