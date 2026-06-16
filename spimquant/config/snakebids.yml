@@ -409,9 +409,9 @@ zarrnii_out_kwargs:
       - 128
     shards: 
       - 1
-      - 1024
-      - 1024
-      - 1024
+      - 512
+      - 512
+      - 512
 
 reg_mri:
   rigidgreedy:
