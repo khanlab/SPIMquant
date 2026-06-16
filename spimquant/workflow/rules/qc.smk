@@ -84,13 +84,13 @@ Aspect ratio is corrected using voxel spacings from ``ZarrNii.get_zooms()``.
 """
     input:
         spim=inputs["spim"].path,
-        mask=bids(
+        mask=bids_oz_in(
             root=root,
             datatype="seg",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -123,13 +123,13 @@ for isotropic display and physically correct aspect ratio.
 """
     input:
         spim=inputs["spim"].path,
-        mask=bids(
+        mask=bids_oz_in(
             root=root,
             datatype="vessels",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -168,13 +168,13 @@ one without (``desc-{desc}nomask_roimontage.png``).
     input:
         **(
             {
-                "spim_n4": bids(
+                "spim_n4": bids_oz_in(
                     root=work,
                     datatype="seg",
                     stain="{stain}",
                     level=str(config["segmentation_level"]),
                     desc="correctedn4",
-                    suffix="SPIM.ome.zarr",
+                    suffix="SPIM.{ext}",
                     **inputs["spim"].wildcards,
                 )
             }
@@ -182,13 +182,13 @@ one without (``desc-{desc}nomask_roimontage.png``).
             else {}
         ),
         spim=inputs["spim"].path,
-        mask=bids(
+        mask=bids_oz_in(
             root=root,
             datatype="seg",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
         dseg_nii=bids(
@@ -255,13 +255,13 @@ and one without (``desc-{desc}nomask_vesselroimontage.png``).
     input:
         **(
             {
-                "spim_n4": bids(
+                "spim_n4": bids_oz_in(
                     root=work,
                     datatype="seg",
                     stain="{stain}",
                     level=str(config["segmentation_level"]),
                     desc="correctedn4",
-                    suffix="SPIM.ome.zarr",
+                    suffix="SPIM.{ext}",
                     **inputs["spim"].wildcards,
                 )
             }
@@ -269,13 +269,13 @@ and one without (``desc-{desc}nomask_vesselroimontage.png``).
             else {}
         ),
         spim=inputs["spim"].path,
-        mask=bids(
+        mask=bids_oz_in(
             root=root,
             datatype="vessels",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
         dseg_nii=bids(
@@ -419,13 +419,13 @@ segmentation pipeline.
 Only applicable when ``seg_method`` uses the ``otsu+k{}i{}`` pattern.
 """
     input:
-        corrected=bids(
+        corrected=bids_oz_in(
             root=work,
             datatype="seg",
             stain="{stain}",
             level=str(config["segmentation_level"]),
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.{ext}",
             **inputs["spim"].wildcards,
         ),
         thresholds_png=bids(

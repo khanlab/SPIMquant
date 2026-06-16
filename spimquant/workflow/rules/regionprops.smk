@@ -1,13 +1,13 @@
 rule compute_filtered_regionprops:
     """Calculate region props from filtered objects of segmentation."""
     input:
-        mask=bids(
+        mask=bids_oz_in(
             root=root,
             datatype="seg",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -156,13 +156,13 @@ rule sample_at_vessel_sdt:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-        scalar=bids(
+        scalar=bids_oz_in(
             root=root,
             datatype="vessels",
             stain="{stain}",
             level=config["segmentation_level"],
             desc=config["vessel_seg_method"],
-            suffix="dist.ome.zarr",
+            suffix="dist.{ext}",
             **inputs["spim"].wildcards,
         ),
     params:
