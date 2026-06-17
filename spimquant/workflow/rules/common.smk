@@ -66,8 +66,13 @@ def get_stains_all_subjects(ignore_stains=None):
         channels = channels - ignore_set
         stain_sets.append(channels)
 
-    if all(s == stain_sets[0] for s in stain_sets):
-        return sorted(stain_sets[0])
+    if not stain_sets:
+        raise ValueError(
+            "No SPIM inputs found. Check your filters or participant_label."
+        )
+    reference = stain_sets[0]
+    if all(s == reference for s in stain_sets):
+        return sorted(reference)
     else:
         raise ValueError(f"stains across subjects are not consistent: {stain_sets}")
 
