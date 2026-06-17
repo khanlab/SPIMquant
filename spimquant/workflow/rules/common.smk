@@ -74,7 +74,9 @@ def get_stains_all_subjects(ignore_stains=None):
     if all(s == reference for s in stain_sets):
         return sorted(reference)
     else:
-        raise ValueError(f"stains across subjects are not consistent: {stain_sets}")
+        raise ValueError(
+            f"Stains across subjects are not consistent: {stain_sets}\n\n Consider using --ignore-stains to ignore stains that are not consistent across subjects."
+        )
 
 
 def get_spim_json_path(spim_path):
