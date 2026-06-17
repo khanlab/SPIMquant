@@ -24,6 +24,16 @@ work = os.path.expandvars(config["work"]) if config["work"] is not None else roo
 # OME-Zarr store format: 'ome.zarr' (directory) or 'ozx' (zip file)
 zarr_store_ext = config.get("zarr_store_ext", "ozx")
 
+# Configure chunking and sharding for zarrnii output storage options
+_zarr_chunks = config.get("zarr_store_chunks", [1, 128, 128, 128])
+_zarr_shards = config.get("zarr_store_shards", None)
+
+config["zarrnii_out_kwargs"]["storage_options"]["chunks"] = tuple(_zarr_chunks)
+
+# Sharding is not supported with the ozx (zip) format
+if zarr_store_ext != "ozx" and _zarr_shards is not None:
+    config["zarrnii_out_kwargs"]["storage_options"]["shards"] = tuple(_zarr_shards)
+
 
 # Get input wildcards
 inputs = generate_inputs(
