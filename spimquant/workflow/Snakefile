@@ -83,7 +83,7 @@ if config["sample_staining"]:
     stains = config["sample_staining"]
     zarrnii_cli_kwargs["set_channel_labels"] = stains
 else:
-    stains = get_stains_all_subjects()
+    stains = get_stains_all_subjects(ignore_stains=config["ignore_stains"])
 
 
 if config["orientation"]:
