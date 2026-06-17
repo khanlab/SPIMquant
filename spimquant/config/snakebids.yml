@@ -84,6 +84,11 @@ parse_args:
     action: store
     nargs: '+'
 
+  --ignore_stains:
+    help: "Stain(s) to ignore when setting up the workflow. Can use this option to make the dataset staining uniform (e.g. by ignoring stains that are not present in all the subjects)."
+    default: null
+    action: store
+    nargs: '+'
 
   --stains_for_reg:
     help: "Possible stains to use for registration (will choose first available, in order)\n (default: %(default)s)"
@@ -121,12 +126,12 @@ parse_args:
     nargs: '+'
 
   --registration_level:
-    help: "Downsampling level to use for registration (level 0 is full res, level 1 is 50% size, ...) (default: 5)"
+    help: "Downsampling level to use for registration (level 0 is full res, level 1 is typically downsampled by 2, ...) (default: 5)"
     type: int
     default: 5
 
   --segmentation_level:
-    help: "Downsampling level to use for segmentation (including vessels) (level 0 is full res, level 1 is 50% size, ...) (default: 0)"
+    help: "Downsampling level to use for segmentation (including vessels) (level 0 is full res, level 1 is typically downsampled by 2, ...) (default: 0)"
     type: int
     default: 0
 

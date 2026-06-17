@@ -55,13 +55,28 @@ def get_template_for_reg(wildcards):
         return bids(root=root, template=wildcards.template, suffix=f"{suffix}.nii.gz")
 
 
-def get_stains_all_subjects():
-    stain_sets = [set(get_spim_channels(zarr)) for zarr in inputs["spim"].expand()]
+def get_stains_all_subjects(ignore_stains=None):
+    """Get stains across all subjects, optionally filtering out ignored stains."""
+    ignore_set = set(ignore_stains) if ignore_stains else set()
 
-    if all(s == stain_sets[0] for s in stain_sets):
-        return sorted(stain_sets[0])
+    stain_sets = []
+    for zarr in inputs["spim"].expand():
+        channels = set(get_spim_channels(zarr))
+        # Remove ignored stains
+        channels = channels - ignore_set
+        stain_sets.append(channels)
+
+    if not stain_sets:
+        raise ValueError(
+            "No SPIM inputs found. Check your filters or participant_label."
+        )
+    reference = stain_sets[0]
+    if all(s == reference for s in stain_sets):
+        return sorted(reference)
     else:
-        raise ValueError(f"stains across subjects are not consistent, {stain_sets}")
+        raise ValueError(
+            f"Stains across subjects are not consistent: {stain_sets}\n\n Consider using --ignore-stains to ignore stains that are not consistent across subjects."
+        )
 
 
 def get_spim_json_path(spim_path):
