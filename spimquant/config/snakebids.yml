@@ -241,6 +241,24 @@ parse_args:
     default: ozx
     dest: zarr_store_ext
 
+  --zarr-store-chunks:
+    help: "Chunk size (c, x, y, z) for intermediate OME-Zarr stores (default: %(default)s)"
+    default:
+      - 1
+      - 128
+      - 128
+      - 128
+    nargs: 4
+    type: int
+    dest: zarr_store_chunks
+
+  --zarr-store-shards:
+    help: "Shard size (c, x, y, z) for intermediate OME-Zarr stores. Disabled by default and when --zarr-store-ext is 'ozx'."
+    default: null
+    nargs: 4
+    type: int
+    dest: zarr_store_shards
+
   --sloppy:
     help: "Use low-quality parameters for speed (USE FOR TESTING ONLY)"
     action: store_true
@@ -414,12 +432,7 @@ masking:
   pre_atropos_downsampling: '50%'
 
 zarrnii_out_kwargs:
-  storage_options: 
-    chunks:
-      - 1
-      - 128
-      - 128
-      - 128
+  storage_options: {}
 
 reg_mri:
   rigidgreedy:
