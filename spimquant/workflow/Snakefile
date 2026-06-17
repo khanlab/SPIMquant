@@ -28,7 +28,9 @@ zarr_store_ext = config.get("zarr_store_ext", "ozx")
 _zarr_chunks = config.get("zarr_store_chunks", [1, 128, 128, 128])
 _zarr_shards = config.get("zarr_store_shards", None)
 
-config["zarrnii_out_kwargs"]["storage_options"]["chunks"] = tuple(_zarr_chunks)
+config.setdefault("zarrnii_out_kwargs", {}).setdefault("storage_options", {})[
+    "chunks"
+] = tuple(_zarr_chunks)
 
 # Sharding is not supported with the ozx (zip) format
 if zarr_store_ext != "ozx" and _zarr_shards is not None:

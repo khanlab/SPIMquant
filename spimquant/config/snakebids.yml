@@ -253,7 +253,7 @@ parse_args:
     dest: zarr_store_chunks
 
   --zarr-store-shards:
-    help: "Shard size (c, x, y, z) for intermediate OME-Zarr stores. Disabled when --zarr-store-ext is 'ozx'. (default: %(default)s)"
+    help: "Shard size (c, x, y, z) for intermediate OME-Zarr stores. Disabled by default and when --zarr-store-ext is 'ozx'."
     default: null
     nargs: 4
     type: int
