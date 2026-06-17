@@ -233,6 +233,14 @@ parse_args:
     action: store_true
     default: False
 
+  --zarr-store-ext:
+    help: "File format for intermediate OME-Zarr stores: 'ome.zarr' (directory) or 'ozx' (single zip file) (default: %(default)s)"
+    choices:
+      - ome.zarr
+      - ozx
+    default: ozx
+    dest: zarr_store_ext
+
   --sloppy:
     help: "Use low-quality parameters for speed (USE FOR TESTING ONLY)"
     action: store_true
@@ -412,11 +420,6 @@ zarrnii_out_kwargs:
       - 128
       - 128
       - 128
-    shards: 
-      - 1
-      - 1024
-      - 1024
-      - 1024
 
 reg_mri:
   rigidgreedy:

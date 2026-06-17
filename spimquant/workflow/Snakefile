@@ -21,6 +21,9 @@ configfile: "config/snakebids.yml"
 root = os.path.expandvars(config["root"])
 work = os.path.expandvars(config["work"]) if config["work"] is not None else root
 
+# OME-Zarr store format: 'ome.zarr' (directory) or 'ozx' (zip file)
+zarr_store_ext = config.get("zarr_store_ext", "ozx")
+
 
 # Get input wildcards
 inputs = generate_inputs(

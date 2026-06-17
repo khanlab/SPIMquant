@@ -29,30 +29,26 @@ rule gaussian_biasfield:
         spim=inputs["spim"].path,
     output:
         corrected=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="seg",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="correctedgaussian",
-                    suffix="SPIM.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
+            bids_oz_out(
+                root=work,
+                datatype="seg",
+                stain="{stain}",
+                level="{level}",
+                desc="correctedgaussian",
+                suffix="SPIM.{ext}",
+                **inputs["spim"].wildcards,
             ),
             group_jobs=True,
         ),
         biasfield=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="seg",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="gaussian",
-                    suffix="biasfield.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
+            bids_oz_out(
+                root=work,
+                datatype="seg",
+                stain="{stain}",
+                level="{level}",
+                desc="gaussian",
+                suffix="biasfield.{ext}",
+                **inputs["spim"].wildcards,
             ),
             group_jobs=True,
         ),
@@ -74,16 +70,14 @@ rule n4_biasfield:
         spim=inputs["spim"].path,
     output:
         corrected=temp(
-            directory(
-                bids(
-                    root=work,
-                    datatype="seg",
-                    stain="{stain}",
-                    level="{level}",
-                    desc="correctedn4",
-                    suffix="SPIM.ome.zarr",
-                    **inputs["spim"].wildcards,
-                )
+            bids_oz_out(
+                root=work,
+                datatype="seg",
+                stain="{stain}",
+                level="{level}",
+                desc="correctedn4",
+                suffix="SPIM.{ext}",
+                **inputs["spim"].wildcards,
             ),
             group_jobs=True,
         ),
@@ -109,26 +103,24 @@ selects which threshold index to use for creating the binary mask. Outputs a
 histogram visualization of the threshold selection.
 """
     input:
-        corrected=bids(
+        corrected=bids_oz_in(
             root=work,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.{ext}",
             **inputs["spim"].wildcards,
         ),
     output:
-        mask=directory(
-            bids(
-                root=root,
-                datatype="seg",
-                stain="{stain}",
-                level="{level}",
-                desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
-                suffix="mask.ome.zarr",
-                **inputs["spim"].wildcards,
-            )
+        mask=bids_oz_out(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="otsu+k{k,[0-9]+}i{i,[0-9]+}",
+            suffix="mask.{ext}",
+            **inputs["spim"].wildcards,
         ),
         thresholds_png=bids(
             root=root,
@@ -170,26 +162,24 @@ Method string format: gmm+n{n}k{k}, where k may use 'p' as decimal
 separator (e.g. gmm+n2k2p5 → k=2.5).
 """
     input:
-        corrected=bids(
+        corrected=bids_oz_in(
             root=work,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.{ext}",
             **inputs["spim"].wildcards,
         ),
     output:
-        mask=directory(
-            bids(
-                root=root,
-                datatype="seg",
-                stain="{stain}",
-                level="{level}",
-                desc="gmm+n{n,[0-9]+}k{k,[0-9]+(?:p[0-9]+)?}",
-                suffix="mask.ome.zarr",
-                **inputs["spim"].wildcards,
-            )
+        mask=bids_oz_out(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="gmm+n{n,[0-9]+}k{k,[0-9]+(?:p[0-9]+)?}",
+            suffix="mask.{ext}",
+            **inputs["spim"].wildcards,
         ),
         thresholds_png=bids(
             root=root,
@@ -222,26 +212,24 @@ Simpler alternative to multi-Otsu for cases where the threshold is known a prior
 
 """
     input:
-        corrected=bids(
+        corrected=bids_oz_in(
             root=work,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="corrected{method}".format(method=config["correction_method"]),
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.{ext}",
             **inputs["spim"].wildcards,
         ),
     output:
-        mask=directory(
-            bids(
-                root=root,
-                datatype="seg",
-                stain="{stain}",
-                level="{level}",
-                desc="th{threshold,[0-9]+}",
-                suffix="mask.ome.zarr",
-                **inputs["spim"].wildcards,
-            )
+        mask=bids_oz_out(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="th{threshold,[0-9]+}",
+            suffix="mask.{ext}",
+            **inputs["spim"].wildcards,
         ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
@@ -261,37 +249,33 @@ extend too close to the image boundaries (likely artifacts). Creates both
 a cleaned mask and an exclusion mask showing what was removed.
 """
     input:
-        mask=bids(
+        mask=bids_oz_in(
             root=root,
             datatype="seg",
             stain="{stain}",
             level="{level}",
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
     output:
-        exclude_mask=directory(
-            bids(
-                root=root,
-                datatype="seg",
-                stain="{stain}",
-                level="{level}",
-                desc="{desc}+cleaned",
-                suffix="excludemask.ome.zarr",
-                **inputs["spim"].wildcards,
-            )
+        exclude_mask=bids_oz_out(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+cleaned",
+            suffix="excludemask.{ext}",
+            **inputs["spim"].wildcards,
         ),
-        cleaned_mask=directory(
-            bids(
-                root=root,
-                datatype="seg",
-                stain="{stain}",
-                level="{level}",
-                desc="{desc}+cleaned",
-                suffix="mask.ome.zarr",
-                **inputs["spim"].wildcards,
-            )
+        cleaned_mask=bids_oz_out(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+cleaned",
+            suffix="mask.{ext}",
+            **inputs["spim"].wildcards,
         ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:

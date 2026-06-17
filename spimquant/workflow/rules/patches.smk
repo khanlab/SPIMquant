@@ -80,13 +80,13 @@ rule create_mask_patches:
     saved as NIfTI files named with the atlas, label abbreviation, and patch number.
     """
     input:
-        mask=bids(
+        mask=bids_oz_in(
             root=root,
             datatype="seg",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
         dseg=bids(
@@ -136,13 +136,13 @@ rule create_corrected_spim_patches:
     saved as NIfTI files named with the atlas, label abbreviation, and patch number.
     """
     input:
-        corrected=bids(
+        corrected=bids_oz_in(
             root=work,
             datatype="seg",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="corrected{corrmethod}",
-            suffix="SPIM.ome.zarr",
+            suffix="SPIM.{ext}",
             **inputs["spim"].wildcards,
         ),
         dseg=bids(

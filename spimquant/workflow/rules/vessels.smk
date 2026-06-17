@@ -19,16 +19,14 @@ rule run_vesselfm:
             "model_path": input.model_path,
         },
     output:
-        mask=directory(
-            bids(
-                root=root,
-                datatype="vessels",
-                stain="{stain}",
-                level="{level}",
-                desc="vesselfm",
-                suffix="mask.ome.zarr",
-                **inputs["spim"].wildcards,
-            )
+        mask=bids_oz_out(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="vesselfm",
+            suffix="mask.{ext}",
+            **inputs["spim"].wildcards,
         ),
     threads: 8
     resources:
@@ -50,28 +48,26 @@ rule signed_distance_transform:
     the exterior of the mask.
     """
     input:
-        mask=bids(
+        mask=bids_oz_in(
             root=root,
             datatype="vessels",
             stain="{stain}",
             level="{level}",
             desc="vesselfm",
-            suffix="mask.ome.zarr",
+            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
     params:
         overlap_depth=32,
     output:
-        dist=directory(
-            bids(
-                root=root,
-                datatype="vessels",
-                stain="{stain}",
-                level="{level}",
-                desc="{desc}",
-                suffix="dist.ome.zarr",
-                **inputs["spim"].wildcards,
-            )
+        dist=bids_oz_out(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}",
+            suffix="dist.{ext}",
+            **inputs["spim"].wildcards,
         ),
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
@@ -85,28 +81,26 @@ rule signed_distance_transform:
 rule skeletonize_vessels_mask:
     """Skeletonize a vessel mask using chunked overlap-aware processing."""
     input:
-        mask=bids(
+        mask=bids_oz_in(
             root=root,
             datatype="vessels",
             stain="{stain}",
             level="{level}",
             desc="{desc}",
-            suffix="mask.ome.zarr",
+            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
     params:
         overlap_depth=32,
     output:
-        mask=directory(
-            bids(
-                root=root,
-                datatype="vessels",
-                stain="{stain}",
-                level="{level}",
-                desc="{desc}+skeleton",
-                suffix="mask.ome.zarr",
-                **inputs["spim"].wildcards,
-            )
+        mask=bids_oz_out(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            suffix="mask.{ext}",
+            **inputs["spim"].wildcards,
         ),
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
@@ -120,22 +114,22 @@ rule skeletonize_vessels_mask:
 rule vessel_skeleton_graph:
     """Create a sparse vessel graph parquet from skeleton mask and SDT."""
     input:
-        skeleton=bids(
+        skeleton=bids_oz_in(
             root=root,
             datatype="vessels",
             stain="{stain}",
             level="{level}",
             desc="{desc}+skeleton",
-            suffix="mask.ome.zarr",
+            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
-        sdt=bids(
+        sdt=bids_oz_in(
             root=root,
             datatype="vessels",
             stain="{stain}",
             level="{level}",
             desc="{desc}",
-            suffix="dist.ome.zarr",
+            suffix="dist.{ext}",
             **inputs["spim"].wildcards,
         ),
     params:

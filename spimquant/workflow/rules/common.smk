@@ -7,6 +7,8 @@ This module provides shared helper functions used across multiple workflow rules
 - get_template_path(): Template file locator with optional cropping
 - get_template_for_reg(): Registration-specific template selector
 - get_stains_all_subjects(): Stain consistency validator across subjects
+- bids_oz_out(): bids() wrapper for OME-Zarr outputs (adds directory() when needed)
+- bids_oz_in(): bids() wrapper for OME-Zarr inputs
 
 These functions abstract away path complexity and ensure consistent file
 organization following BIDS conventions.
@@ -22,6 +24,33 @@ def resources_path(path):
         return path
     else:
         return str(Path(workflow.basedir).parent / "resources" / path)
+
+
+def bids_oz_out(**kwargs):
+    """Generate a bids path for an OME-Zarr output file.
+
+    Substitutes the ``{ext}`` placeholder in the suffix with the configured
+    ``zarr_store_ext`` value (``ome.zarr`` or ``ozx``).  When the extension is
+    ``ome.zarr`` the path is wrapped with ``directory()`` as required by
+    Snakemake for directory outputs; for single-file formats (e.g. ``ozx``)
+    the plain path string is returned.
+    """
+    suffix = kwargs.pop("suffix", "")
+    path = bids(**kwargs, suffix=suffix.replace("{ext}", zarr_store_ext))
+    if zarr_store_ext == "ome.zarr":
+        return directory(path)
+    return path
+
+
+def bids_oz_in(**kwargs):
+    """Generate a bids path for an OME-Zarr input file.
+
+    Substitutes the ``{ext}`` placeholder in the suffix with the configured
+    ``zarr_store_ext`` value (``ome.zarr`` or ``ozx``).  No ``directory()``
+    wrapping is applied because Snakemake does not require it for inputs.
+    """
+    suffix = kwargs.pop("suffix", "")
+    return bids(**kwargs, suffix=suffix.replace("{ext}", zarr_store_ext))
 
 
 def get_template_path(root, template, template_crop=None):
