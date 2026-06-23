@@ -29,6 +29,8 @@ rule rechunk_spim_to_work:
     threads: 32
     resources:
         mem_mb=64000,
+        # 2 TiB: rechunking copies the full multi-scale, multi-channel zarr to
+        # the work directory, which can be large for high-resolution datasets.
         disk_mb=2097152,
         runtime=120,
     params:

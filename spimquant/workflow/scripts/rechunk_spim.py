@@ -27,14 +27,20 @@ def _copy_rechunked(src_grp, dst_grp, chunks):
 
     Attributes are preserved on all groups and arrays.  Arrays are rechunked to
     the requested size (clamped to the array shape so no empty chunks exist at
-    boundaries).
+    boundaries).  If the chunks tuple has fewer dimensions than the array, the
+    array's existing chunk sizes are used for the remaining dimensions.
     """
     dst_grp.attrs.update(dict(src_grp.attrs))
     for key in src_grp:
         item = src_grp[key]
         if isinstance(item, zarr.Array):
-            # Clamp chunks so they never exceed the array dimension.
-            actual_chunks = tuple(min(c, s) for c, s in zip(chunks, item.shape))
+            n_dims = len(item.shape)
+            # Extend chunks to match array dimensionality using existing chunk
+            # sizes for any extra dimensions not covered by the config value.
+            padded_chunks = list(chunks) + list(item.chunks[len(chunks) :])
+            actual_chunks = tuple(
+                min(c, s) for c, s in zip(padded_chunks[:n_dims], item.shape)
+            )
             da_arr = da.from_zarr(item)
             dst_arr = dst_grp.create_array(
                 key,
@@ -68,5 +74,12 @@ if __name__ == "__main__":
         # Use zarr_format=2 to match the OME-NGFF v0.4/v0.5 format expected by ZarrNii.
         dst_group = zarr.open_group(dst_store, mode="w", zarr_format=2)
 
-        _copy_rechunked(src_group, dst_group, chunks)
-        zarr.consolidate_metadata(dst_store)
+        try:
+            _copy_rechunked(src_group, dst_group, chunks)
+            zarr.consolidate_metadata(dst_store)
+        finally:
+            # Close zip stores explicitly to flush file handles; directory stores
+            # do not require explicit closing but we call close() defensively.
+            for store in (src_store, dst_store):
+                if hasattr(store, "close"):
+                    store.close()
