@@ -55,6 +55,17 @@ parse_args:
     dest: work
     default: null
 
+  --use-work-zarr:
+    help: >
+      Copy input SPIM data to the work directory as an intermediate OME-Zarr
+      before segmentation and vessel processing. Use this option when input data
+      has suboptimal chunking or file format for processing (e.g. data on
+      network or cloud storage). Requires --work_dir to be set to a fast local
+      disk with sufficient storage capacity.
+    action: store_true
+    default: False
+    dest: use_work_zarr
+
   --template:
     help: "Template to use for SPIM registration\n"
     default: ABAv3

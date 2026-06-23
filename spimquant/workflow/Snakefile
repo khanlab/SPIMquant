@@ -21,6 +21,13 @@ configfile: "config/snakebids.yml"
 root = os.path.expandvars(config["root"])
 work = os.path.expandvars(config["work"]) if config["work"] is not None else root
 
+use_work_zarr = config.get("use_work_zarr", False)
+if use_work_zarr and config["work"] is None:
+    raise ValueError(
+        "--use-work-zarr requires --work_dir to be set. "
+        "Set --work_dir to a fast local disk with sufficient storage capacity."
+    )
+
 # OME-Zarr store format: 'ome.zarr' (directory) or 'ozx' (zip file)
 zarr_store_ext = config.get("zarr_store_ext", "ozx")
 
@@ -71,6 +78,32 @@ spim_json_overrides = {
     str(spim_path): get_spim_json_overrides(spim_path)
     for spim_path in inputs["spim"].expand()
 }
+
+# Path template for rechunked SPIM work zarr (multi-channel, all levels).
+# Always uses .ome.zarr directory format regardless of zarr_store_ext.
+work_zarr_path = bids(
+    root=work,
+    datatype="micr",
+    desc="rechunked",
+    suffix="SPIM.ome.zarr",
+    **inputs["spim"].wildcards,
+)
+
+if use_work_zarr:
+    # Pre-populate JSON-sidecar overrides for rechunked zarr paths so that
+    # get_zarrnii_in_kwargs works correctly when the rechunked zarr is the input.
+    for orig_path, rechunked_path in zip(
+        inputs["spim"].expand(),
+        inputs["spim"].expand(work_zarr_path),
+    ):
+        spim_json_overrides[str(rechunked_path)] = spim_json_overrides.get(
+            str(orig_path), {}
+        )
+
+# SPIM input for segmentation and vessel rules.
+# When --use-work-zarr is set, downstream rules read from the rechunked work zarr.
+spim_path_for_seg_vessels = work_zarr_path if use_work_zarr else inputs["spim"].path
+
 zarrnii_cli_kwargs = {}
 
 
@@ -1128,6 +1161,7 @@ rule all_group:
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
+include: "rules/rechunk.smk"
 include: "rules/vessels.smk"
 include: "rules/segmentation.smk"
 include: "rules/counts.smk"
