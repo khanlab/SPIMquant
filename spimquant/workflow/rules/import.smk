@@ -212,3 +212,28 @@ rule import_DSURQE_tsv:
         runtime=15,
     script:
         "../scripts/import_DSURQE_dseg_tsv.py"
+
+
+rule rechunk_spim_to_work:
+    """Copy input SPIM OME-Zarr to work directory with rechunking.
+
+    Uses zarrnii to get the full-res data, and write it locally, maintaining the same downsampling levels as the input, so that both versions remain compatible for downstream processing.
+    
+    The output is always an ome.zarr directory (not ozx), providing
+    fast random access for downstream segmentation and vessel processing.
+    """
+    input:
+        spim=inputs["spim"].path,
+    output:
+        spim=directory(work_zarr_path),
+    threads: 32
+    resources:
+        mem_mb=64000,
+        # 2 TiB: rechunking copies the full multi-scale, multi-channel zarr to
+        # the work directory, which can be large for high-resolution datasets.
+        disk_mb=2097152,
+        runtime=120,
+    params:
+        zarrnii_kwargs=zarrnii_in_kwargs,
+    script:
+        "../scripts/rechunk_spim.py"
