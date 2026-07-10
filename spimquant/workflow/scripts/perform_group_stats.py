@@ -254,8 +254,10 @@ def compute_contrast_for_metric(
           ``{metric}_mean_{level_a}``, ``{metric}_mean_{level_b}``,
           ``n_{level_a}``, ``n_{level_b}``.
     """
-    # Replace the placeholder with the actual (possibly backtick-quoted) column.
-    actual_formula = formula_template.replace("metric", f"`{metric}`")
+    # Replace the placeholder with Q("column") to safely handle metric names
+    # that contain special characters (e.g. '+', spaces) which patsy would
+    # otherwise misinterpret as formula operators when backtick-quoted.
+    actual_formula = formula_template.replace("metric", f'Q("{metric}")')
 
     # Filter to rows relevant for the raw-mean / Cohen's d calculation.
     grp_a = region_data[region_data[pairwise_factor] == level_a]
