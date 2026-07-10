@@ -232,14 +232,14 @@ if config.get("analysis_level") == "group":
                 _participants_df = _participants_df.query(_where_expr)
             except Exception as _exc:
                 raise ValueError(
-                    f"--group-stats-where expression is invalid: {_where_expr!r}\n"
+                    f"--group-stats-where expression is invalid: {_where_expr! r}\n"
                     f"Error: {_exc}"
                 ) from _exc
             _n_after = len(_participants_df)
             print(
                 f"[group-stats-where] Planning-time filter '{_where_expr}': "
                 f"{_n_before} rows → {_n_after} rows "
-                f"({_n_before - _n_after} excluded)."
+                f"({_n_before- _n_after} excluded)."
             )
             if _n_after == 0:
                 raise ValueError(
