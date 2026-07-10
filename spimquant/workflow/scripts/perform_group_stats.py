@@ -34,12 +34,12 @@ from patsy import dmatrix
 
 
 def apply_group_stats_filter(df, where_expr):
-    """Apply a pandas query expression to filter rows from a participants dataframe.
+    """Apply a pandas query expression to filter rows from a participants DataFrame.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Dataframe to filter (typically the merged segstats + participant metadata).
+        DataFrame to filter (typically the merged segstats + participant metadata).
     where_expr : str or None
         Pandas query expression string (e.g. ``"treatment in ['pbs','lecanemab']"``).
         Pass ``None`` or an empty string to skip filtering and return *df* unchanged.
@@ -47,7 +47,7 @@ def apply_group_stats_filter(df, where_expr):
     Returns
     -------
     pd.DataFrame
-        Filtered dataframe (a new object; the input is not modified).
+        Filtered DataFrame (a new object; the input is not modified).
 
     Raises
     ------

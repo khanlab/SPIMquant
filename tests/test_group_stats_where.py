@@ -1,11 +1,11 @@
-"""Tests for --group-stats-where filtering in perform_group_stats.py.
+"""Tests for --group-stats-where filtering in group statistics workflow.
 
 Covers:
 - apply_group_stats_filter passes through data unchanged when no expression given
 - apply_group_stats_filter reduces rows matching a valid expression
 - apply_group_stats_filter raises ValueError on an invalid expression
 - apply_group_stats_filter raises ValueError when all rows are excluded
-- Planning-time enumeration uses the filtered participants dataframe so that
+- Planning-time enumeration uses the filtered participants DataFrame so that
   contrast labels only cover the requested levels
 - Planning-time enumeration raises ValueError when fewer than 2 levels remain
 """
