@@ -85,7 +85,7 @@ def main():
 
     combined = load_tsvs_with_metadata(snakemake.input.segstats_tsvs, participants_df)
 
-    os.makedirs(os.path.dirname(snakemake.output.merged_tsv) or ".", exist_ok=True)
+    os.makedirs(Path(snakemake.output.merged_tsv).parent, exist_ok=True)
     combined.to_csv(snakemake.output.merged_tsv, sep="\t", index=False)
 
 
