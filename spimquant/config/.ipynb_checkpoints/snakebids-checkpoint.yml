@@ -236,7 +236,8 @@ templatereg:
     - 40
 
 masking:
-  gmm_k: 9
+  gmm_init_k: 9
+  gmm_min_k: 2
   gmm_bg_class: 1
   pre_atropos_downsampling: '50%'
 

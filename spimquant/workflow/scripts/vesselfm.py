@@ -5,7 +5,7 @@ from dask.diagnostics import ProgressBar
 from dask_setup import get_dask_client
 
 with get_dask_client("threads", snakemake.threads):
-    znimg = ZarrNii.from_ome_zarr(
+    znimg = ZarrNii.from_file(
         snakemake.input.spim,
         level=int(snakemake.wildcards.level),
         channel_labels=[snakemake.wildcards.stain],
@@ -17,4 +17,9 @@ with get_dask_client("threads", snakemake.threads):
     znimg_mask = znimg_mask * 100
 
     with ProgressBar():
-        znimg_mask.to_ome_zarr(snakemake.output.mask, max_layer=5, zarr_format=2)
+        znimg_mask.to_ome_zarr(
+            snakemake.output.mask,
+            max_layer=5,
+            match_scale_factors_from=snakemake.input.spim,
+            **snakemake.config["zarrnii_out_kwargs"],
+        )

@@ -32,7 +32,7 @@ rule get_downsampled_nii:
     input:
         spim=inputs["spim"].path,
     params:
-        zarrnii_kwargs={"orientation": config["orientation"]},
+        zarrnii_kwargs=zarrnii_in_kwargs,
     output:
         nii=bids(
             root=root,

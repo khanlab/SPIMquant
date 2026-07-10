@@ -7,11 +7,14 @@ This module provides shared helper functions used across multiple workflow rules
 - get_template_path(): Template file locator with optional cropping
 - get_template_for_reg(): Registration-specific template selector
 - get_stains_all_subjects(): Stain consistency validator across subjects
+- bids_oz_out(): bids() wrapper for OME-Zarr outputs (adds directory() when needed)
+- bids_oz_in(): bids() wrapper for OME-Zarr inputs
 
 These functions abstract away path complexity and ensure consistent file
 organization following BIDS conventions.
 """
 
+import json
 from pathlib import Path
 
 
@@ -21,6 +24,33 @@ def resources_path(path):
         return path
     else:
         return str(Path(workflow.basedir).parent / "resources" / path)
+
+
+def bids_oz_out(**kwargs):
+    """Generate a bids path for an OME-Zarr output file.
+
+    Substitutes the ``{ext}`` placeholder in the suffix with the configured
+    ``zarr_store_ext`` value (``ome.zarr`` or ``ozx``).  When the extension is
+    ``ome.zarr`` the path is wrapped with ``directory()`` as required by
+    Snakemake for directory outputs; for single-file formats (e.g. ``ozx``)
+    the plain path string is returned.
+    """
+    suffix = kwargs.pop("suffix", "")
+    path = bids(**kwargs, suffix=suffix.replace("{ext}", zarr_store_ext))
+    if zarr_store_ext == "ome.zarr":
+        return directory(path)
+    return path
+
+
+def bids_oz_in(**kwargs):
+    """Generate a bids path for an OME-Zarr input file.
+
+    Substitutes the ``{ext}`` placeholder in the suffix with the configured
+    ``zarr_store_ext`` value (``ome.zarr`` or ``ozx``).  No ``directory()``
+    wrapping is applied because Snakemake does not require it for inputs.
+    """
+    suffix = kwargs.pop("suffix", "")
+    return bids(**kwargs, suffix=suffix.replace("{ext}", zarr_store_ext))
 
 
 def get_template_path(root, template, template_crop=None):
@@ -54,16 +84,88 @@ def get_template_for_reg(wildcards):
         return bids(root=root, template=wildcards.template, suffix=f"{suffix}.nii.gz")
 
 
-def get_stains_all_subjects():
+def get_stains_all_subjects(ignore_stains=None):
+    """Get stains across all subjects, optionally filtering out ignored stains."""
+    ignore_set = set(ignore_stains) if ignore_stains else set()
 
-    stain_sets = [
-        set(ZarrNii.from_ome_zarr(zarr).list_channels())
-        for zarr in inputs["spim"].expand()
-    ]
-    if all(s == stain_sets[0] for s in stain_sets):
-        return list(stain_sets[0])
+    stain_sets = []
+    for zarr in inputs["spim"].expand():
+        channels = set(get_spim_channels(zarr))
+        # Remove ignored stains
+        channels = channels - ignore_set
+        stain_sets.append(channels)
+
+    if not stain_sets:
+        raise ValueError(
+            "No SPIM inputs found. Check your filters or participant_label."
+        )
+    reference = stain_sets[0]
+    if all(s == reference for s in stain_sets):
+        return sorted(reference)
     else:
-        raise ValueError(f"stains across subjects are not consistent, {stain_sets}")
+        raise ValueError(
+            f"Stains across subjects are not consistent: {stain_sets}\n\n Consider using --ignore-stains to ignore stains that are not consistent across subjects."
+        )
+
+
+def get_spim_json_path(spim_path):
+    spim_path = str(spim_path)
+    if spim_path.endswith(".ozx"):
+        return spim_path[: -len(".ozx")] + ".json"
+    if spim_path.endswith(".ome.zarr.zip"):
+        return spim_path[: -len(".ome.zarr.zip")] + ".json"
+    if spim_path.endswith(".ome.zarr"):
+        return spim_path[: -len(".ome.zarr")] + ".json"
+    return str(Path(spim_path).with_suffix(".json"))
+
+
+def _normalize_channel_labels(value):
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        channels = [str(item) for item in value if isinstance(item, (str, int, float))]
+        return channels or None
+    return None
+
+
+def _extract_channels_from_json(metadata):
+    """Extract channel labels from sidecar keys, using "SampleStaining" key"""
+    channels = _normalize_channel_labels(metadata.get("SampleStaining"))
+    if channels:
+        return channels
+
+    return None
+
+
+def get_spim_json_overrides(spim_path):
+    json_path = get_spim_json_path(spim_path)
+    json_file = Path(json_path)
+    if not json_file.exists():
+        return {}
+
+    with json_file.open() as fp:
+        metadata = json.load(fp)
+
+    overrides = {}
+    channels = _extract_channels_from_json(metadata)
+    if channels:
+        overrides["set_channel_labels"] = channels
+
+    orientation = metadata.get("OrientationStringXYZ")
+    if orientation:
+        overrides["orientation"] = str(orientation)
+
+    return overrides
+
+
+def get_spim_channels(spim_path):
+    overrides = get_spim_json_overrides(spim_path)
+    if "set_channel_labels" in overrides:
+        return overrides["set_channel_labels"]
+
+    return ZarrNii.from_file(spim_path).list_channels()
 
 
 def get_regionprops_parquet(wildcards):

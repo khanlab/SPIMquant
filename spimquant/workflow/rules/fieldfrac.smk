@@ -8,18 +8,17 @@ rule fieldfrac:
     automatically. Field fraction values range from 0-100.
     """
     input:
-        mask=bids(
+        mask=bids_oz_in(
             root=root,
             datatype="{datatype}",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ozx",
+            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
     params:
         hires_level=config["segmentation_level"],
-        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         fieldfrac_nii=bids(
             root=root,
@@ -75,7 +74,7 @@ rule map_fieldfrac_img_to_seg_tsv:
         ),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=32000,
         runtime=15,
     script:
         "../scripts/map_img_to_roi_tsv.py"

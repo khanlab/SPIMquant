@@ -30,8 +30,8 @@ if __name__ == "__main__":
 
         overlap_depth = snakemake.params.overlap_depth
 
-        znimg = ZarrNii.from_ome_zarr(
-            snakemake.input.mask, **snakemake.params.zarrnii_kwargs
+        znimg = ZarrNii.from_file(
+            snakemake.input.mask,
         )
 
         # Get physical voxel spacing from the ZarrNii scale metadata.
@@ -119,4 +119,8 @@ if __name__ == "__main__":
         znimg.darr = sdt_darr
 
         with ProgressBar():
-            znimg.to_ome_zarr(snakemake.output.dist, max_layer=5)
+            znimg.to_ome_zarr(
+                snakemake.output.dist,
+                match_scale_factors_from=snakemake.input.mask,
+                **snakemake.config["zarrnii_out_kwargs"],
+            )

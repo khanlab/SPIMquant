@@ -1,13 +1,13 @@
 rule compute_filtered_regionprops:
     """Calculate region props from filtered objects of segmentation."""
     input:
-        mask=bids(
+        mask=bids_oz_in(
             root=root,
             datatype="seg",
             stain="{stain}",
             level=config["segmentation_level"],
             desc="{desc}",
-            suffix="mask.ozx",
+            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
     params:
@@ -15,7 +15,6 @@ rule compute_filtered_regionprops:
             "regionprop_filters"
         ].get(wildcards.stain, config["regionprop_filters"]),
         output_properties=config["regionprop_outputs"],
-        zarrnii_kwargs={"orientation": config["orientation"]},
     output:
         regionprops_parquet=temp(
             bids(
@@ -157,19 +156,19 @@ rule sample_at_vessel_sdt:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-        scalar=bids(
+        scalar=bids_oz_in(
             root=root,
             datatype="vessels",
             stain="{stain}",
             level=config["segmentation_level"],
             desc=config["vessel_seg_method"],
-            suffix="dist.ozx",
+            suffix="dist.{ext}",
             **inputs["spim"].wildcards,
         ),
     params:
         coord_column_names=config["coord_column_names"],
-        col_name="sdt_{stain}",
-        zarrnii_kwargs={"orientation": config["orientation"], "level": 0},
+        col_name="vesseldist",
+        zarrnii_kwargs=zarrnii_in_kwargs,
     output:
         parquet=bids(
             root=root,

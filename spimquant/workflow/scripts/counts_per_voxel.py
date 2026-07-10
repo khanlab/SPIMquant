@@ -8,11 +8,12 @@ level = int(snakemake.wildcards.level)
 stain = snakemake.wildcards.stain
 
 with get_dask_client("threads", snakemake.threads):
-    img = ZarrNii.from_ome_zarr(
+    img = ZarrNii.from_file(
         snakemake.input.ref_spim,
         level=level,
         channel_labels=[stain],
         downsample_near_isotropic=True,
+        **snakemake.params.zarrnii_kwargs,
     )
 
     df = pd.read_parquet(snakemake.input.regionprops_parquet)

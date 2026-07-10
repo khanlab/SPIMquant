@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
 
-        znimg = ZarrNii.from_ome_zarr(
+        znimg = ZarrNii.from_file(
             snakemake.input.spim,
             channel_labels=[snakemake.wildcards.stain],
             level=hires_level,
@@ -31,4 +31,7 @@ if __name__ == "__main__":
             )
 
             # write to ome_zarr
-            znimg_corrected.to_ome_zarr(snakemake.output.corrected, max_layer=5)
+            znimg_corrected.to_ome_zarr(
+                snakemake.output.corrected,
+                match_scale_factors_from=snakemake.input.spim,
+            )

@@ -21,10 +21,9 @@ if __name__ == "__main__":
         hires_level = int(snakemake.wildcards.level)
         proc_level = int(snakemake.params.proc_level)
 
-        znimg = ZarrNii.from_ome_zarr(
+        znimg = ZarrNii.from_file(
             snakemake.input.mask,
             level=0,  # we load level 0 since we are already at the highres level
-            **snakemake.params.zarrnii_kwargs,
         )
 
         # perform cleaning of artifactual positives by
@@ -43,4 +42,8 @@ if __name__ == "__main__":
         )
 
         # write to final ome_zarr
-        znimg_cleaned.to_ome_zarr(snakemake.output.cleaned_mask, max_layer=5)
+        znimg_cleaned.to_ome_zarr(
+            snakemake.output.cleaned_mask,
+            match_scale_factors_from=snakemake.input.mask,
+            **snakemake.config["zarrnii_out_kwargs"],
+        )

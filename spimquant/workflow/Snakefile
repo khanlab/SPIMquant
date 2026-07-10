@@ -23,6 +23,21 @@ configfile: "config/snakebids.yml"
 root = os.path.expandvars(config["root"])
 work = os.path.expandvars(config["work"]) if config["work"] is not None else root
 
+# OME-Zarr store format: 'ome.zarr' (directory) or 'ozx' (zip file)
+zarr_store_ext = config.get("zarr_store_ext", "ozx")
+
+# Configure chunking and sharding for zarrnii output storage options
+_zarr_chunks = config.get("zarr_store_chunks", [1, 128, 128, 128])
+_zarr_shards = config.get("zarr_store_shards", None)
+
+config.setdefault("zarrnii_out_kwargs", {}).setdefault("storage_options", {})[
+    "chunks"
+] = tuple(_zarr_chunks)
+
+# Sharding is not supported with the ozx (zip) format
+if zarr_store_ext != "ozx" and _zarr_shards is not None:
+    config["zarrnii_out_kwargs"]["storage_options"]["shards"] = tuple(_zarr_shards)
+
 
 # Get input wildcards
 inputs = generate_inputs(
@@ -53,7 +68,44 @@ else:
 include: "rules/common.smk"
 
 
-stains = get_stains_all_subjects()
+# prepopulate json sidecar metadata for every spim input
+spim_json_overrides = {
+    str(spim_path): get_spim_json_overrides(spim_path)
+    for spim_path in inputs["spim"].expand()
+}
+zarrnii_cli_kwargs = {}
+
+
+def get_zarrnii_in_kwargs(wildcards, input):
+    spim_input = getattr(input, "spim", None)
+    if spim_input is None:
+        # Some rules may pass positional input lists; use the first entry as SPIM input.
+        if len(input) == 0:
+            raise ValueError(
+                f"Unable to resolve SPIM input path for zarrnii kwargs for wildcards: {wildcards}."
+                "Make sure the zarrnii input for the rule is named spim, or is the first positional input."
+            )
+        spim_input = input[0]
+    spim_path = str(spim_input)
+    kwargs = dict(spim_json_overrides.get(spim_path, {}))
+    # CLI options are highest precedence and intentionally override sidecar values.
+    kwargs.update(zarrnii_cli_kwargs)
+    return kwargs
+
+
+zarrnii_in_kwargs = get_zarrnii_in_kwargs
+
+if config["sample_staining"]:
+    print(f"Using sample_staining override at data import: {config['sample_staining']}")
+    stains = config["sample_staining"]
+    zarrnii_cli_kwargs["set_channel_labels"] = stains
+else:
+    stains = get_stains_all_subjects(ignore_stains=config["ignore_stains"])
+
+
+if config["orientation"]:
+    print(f"Using orientation to override at data import: {config['orientation']}")
+    zarrnii_cli_kwargs["orientation"] = config["orientation"]
 
 stain_for_reg = None
 
@@ -82,10 +134,13 @@ if stain_for_reg is None:
     raise ValueError(f"a stain for registration was not found in {stains}")
 
 
-stains_for_seg = list(set(config["stains_for_seg"]).intersection(set(stains)))
+stains_for_seg = sorted(list(set(config["stains_for_seg"]).intersection(set(stains))))
 
 # seg methods that use multi-Otsu thresholding (otsu+k{}i{} pattern)
 otsu_seg_methods = [m for m in config["seg_method"] if m.startswith("otsu+")]
+
+# seg methods that use GMM tail-thresholding (gmm+n{}k{} pattern)
+gmm_seg_methods = [m for m in config["seg_method"] if m.startswith("gmm+")]
 
 if len(stains_for_seg) == 0 or config["no_segmentation"]:
     do_seg = False
@@ -361,6 +416,48 @@ rule all_vessels:
             ),
             level=config["registration_level"],
             template=config["template"],
+            desc=config["vessel_seg_method"],
+            stain=stain_for_vessels,
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="vessels",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}+skeleton",
+                suffix="graph.parquet",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["segmentation_level"],
+            desc=config["vessel_seg_method"],
+            stain=stain_for_vessels,
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="vessels",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}+skeleton",
+                suffix="nodes.parquet",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["segmentation_level"],
+            desc=config["vessel_seg_method"],
+            stain=stain_for_vessels,
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="vessels",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}+skeleton",
+                suffix="edges.parquet",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["segmentation_level"],
             desc=config["vessel_seg_method"],
             stain=stain_for_vessels,
         ),
@@ -861,7 +958,7 @@ rule all_qc:
             stain=stains_for_seg,
             desc=config["seg_method"],
         )
-        if do_seg
+        if do_seg and config["qc_instance_seg"]
         else [],
         # Colocalization instance GIFs (per atlas seg, per seg method)
         inputs["spim"].expand(
@@ -889,6 +986,124 @@ rule all_qc:
             template=config["template"],
             desc=config["seg_method"],
         )
+        if do_coloc and config["qc_instance_seg"]
+        else [],
+
+
+rule all_tabular_sidecars:
+    """Target rule for JSON sidecar files alongside all non-temp tabular outputs."""
+    input:
+        # --- participant-level TSV sidecars ---
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="mergedsegstats.json",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+        )
+        if do_seg
+        else [],
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                seg="{seg}",
+                from_="{template}",
+                stain="{stain}",
+                level=config["registration_level"],
+                desc="{desc}",
+                suffix="regionpropstats.json",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            stain=stains_for_seg,
+        )
+        if do_seg
+        else [],
+        # --- participant-level parquet sidecars ---
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                desc="{desc}",
+                space="{template}",
+                suffix="regionprops.json",
+                **inputs["spim"].wildcards,
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+        )
+        if do_seg
+        else [],
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                desc="{desc}",
+                space="{template}",
+                suffix="coloc.json",
+                **inputs["spim"].wildcards,
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+        )
+        if do_coloc
+        else [],
+
+
+rule all_group_stats_tabular_sidecars:
+    """Target rule for JSON sidecar files alongside all non-temp tabular outputs."""
+    input:
+        # --- group-level TSV sidecars ---
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="groupstats.json",
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+        )
+        if do_seg
+        else [],
+        # --- group-level parquet sidecars ---
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                space="{template}",
+                desc="{desc}",
+                suffix="regionprops.json",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+        )
+        if do_seg
+        else [],
+        expand(
+            bids(
+                root=root,
+                datatype="group",
+                space="{template}",
+                desc="{desc}",
+                suffix="coloc.json",
+            ),
+            desc=config["seg_method"],
+            template=config["template"],
+        )
         if do_coloc
         else [],
 
@@ -902,12 +1117,14 @@ rule all_participant:
         rules.all_mri_reg.input if config["register_to_mri"] else [],
         rules.all_segment_coloc.input if do_coloc else [],
         rules.all_qc.input,
+        rules.all_tabular_sidecars.input,
 
 
 rule all_group:
     input:
         rules.all_group_stats.input if do_seg else [],
         rules.all_group_stats_coloc.input if do_coloc else [],
+        rules.all_group_stats_tabular_sidecars.input,
 
 
 include: "rules/import.smk"
@@ -923,6 +1140,7 @@ include: "rules/segstats.smk"
 include: "rules/patches.smk"
 include: "rules/groupstats.smk"
 include: "rules/qc.smk"
+include: "rules/sidecars.smk"
 
 
 if config["register_to_mri"]:

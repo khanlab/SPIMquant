@@ -74,10 +74,13 @@ rule pre_atropos:
 
 rule atropos_seg:
     """Perform tissue classification using Atropos (k-class GMM).
-    
+
     Uses ANTs Atropos to classify tissue into k intensity classes via Gaussian
     mixture modeling with Markov random field (MRF) spatial smoothing. Outputs
     a discrete segmentation and posterior probability maps for each class.
+
+    Automatically decrements k from init_k down to min_k if Atropos fails,
+    handling cases where the image lacks enough distinct intensity classes.
     """
     input:
         downsampled=rules.pre_atropos.output.downsampled,
@@ -85,6 +88,8 @@ rule atropos_seg:
     params:
         mrf_smoothing=0.3,
         mrf_radius="2x2x2",
+        init_k=config["masking"]["gmm_init_k"],
+        min_k=config["masking"]["gmm_min_k"],
     output:
         dseg=temp(
             bids(
@@ -93,7 +98,6 @@ rule atropos_seg:
                 stain="{stain}",
                 level="{level}",
                 desc="dsAtropos",
-                k="{k}",
                 suffix="dseg.nii",
                 **inputs["spim"].wildcards,
             ),
@@ -106,7 +110,6 @@ rule atropos_seg:
                     stain="{stain}",
                     level="{level}",
                     desc="Atropos",
-                    k="{k}",
                     suffix="posteriors",
                     **inputs["spim"].wildcards,
                 )
@@ -114,19 +117,12 @@ rule atropos_seg:
         ),
     conda:
         "../envs/ants.yaml"
-    shadow:
-        "minimal"
     threads: 16
     resources:
         mem_mb=32000,
         runtime=45,
-    shell:
-        "mkdir -p {output.posteriors_dir} && "
-        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
-        "Atropos -v -d 3 --initialization KMeans[{wildcards.k}] "
-        " --intensity-image {input.downsampled} "
-        " --output [{output.dseg},{output.posteriors_dir}/class-%02d.nii] "
-        " --mask-image {input.mask} --mrf [{params.mrf_smoothing},{params.mrf_radius}]"
+    script:
+        "../scripts/atropos_seg.py"
 
 
 rule post_atropos:
@@ -148,7 +144,6 @@ rule post_atropos:
                 stain="{stain}",
                 level="{level}",
                 desc="Atropos",
-                k="{k}",
                 suffix="dseg.nii",
                 **inputs["spim"].wildcards,
             ),
@@ -273,7 +268,6 @@ rule create_mask_from_gmm_and_prior:
             stain="{stain}",
             level="{level}",
             desc="Atropos",
-            k=config["masking"]["gmm_k"],
             suffix="dseg.nii",
             **inputs["spim"].wildcards,
         ),
@@ -285,8 +279,6 @@ rule create_mask_from_gmm_and_prior:
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    params:
-        k=config["masking"]["gmm_k"],
     output:
         mask=bids(
             root=root,
@@ -313,7 +305,6 @@ rule create_mask_from_gmm:
             stain="{stain}",
             level="{level}",
             desc="Atropos",
-            k=config["masking"]["gmm_k"],
             suffix="dseg.nii",
             **inputs["spim"].wildcards,
         ),

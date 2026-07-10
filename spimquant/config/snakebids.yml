@@ -21,7 +21,9 @@ pybids_inputs:
   spim:
     filters:
       suffix: 'SPIM'
-      extension: 'ome.zarr'
+      extension:
+        - ome.zarr
+        - ims
       sample: brain
     wildcards:
       - subject
@@ -76,6 +78,18 @@ parse_args:
       - right
     default: null
 
+  --sample_staining:
+    help: "Override sample staining for input data. When absent, sample staining are read from OME-Zarr channel_labels metadata and overridden by _SPIM.json sidecars (SampleStaining key) if present. CLI values take highest precedence."
+    default: null
+    action: store
+    nargs: '+'
+
+  --ignore_stains:
+    help: "Stain(s) to ignore when setting up the workflow. Can use this option to make the dataset staining uniform (e.g. by ignoring stains that are not present in all the subjects)."
+    default: null
+    action: store
+    nargs: '+'
+
   --stains_for_reg:
     help: "Possible stains to use for registration (will choose first available, in order)\n (default: %(default)s)"
     default: 
@@ -96,7 +110,10 @@ parse_args:
       - BetaAmyloid
       - AlphaSynuclein
       - Iba1
+      - NeuN
+      - Olig2
       - ChAT
+      - VAChT
     action: store
     nargs: '+'
 
@@ -109,12 +126,12 @@ parse_args:
     nargs: '+'
 
   --registration_level:
-    help: "Downsampling level to use for registration (level 0 is full res, level 1 is 50% size, ...) (default: 5)"
+    help: "Downsampling level to use for registration (level 0 is full res, level 1 is typically downsampled by 2, ...) (default: 5)"
     type: int
     default: 5
 
   --segmentation_level:
-    help: "Downsampling level to use for segmentation (including vessels) (level 0 is full res, level 1 is 50% size, ...) (default: 0)"
+    help: "Downsampling level to use for segmentation (including vessels) (level 0 is full res, level 1 is typically downsampled by 2, ...) (default: 0)"
     type: int
     default: 0
 
@@ -137,21 +154,41 @@ parse_args:
 
 
   --seg_method:
-    help: "Method to use for microscopy segmentation (e.g. plaques, protein deposits, cells) applied to 'stains_for_seg' channels, and used to calculate field fractions. "
-    default: 
-      - otsu+k3i2
+    help: >
+      Method(s) to use for microscopy segmentation (e.g. plaques, protein
+      deposits, cells) applied to 'stains_for_seg' channels.
+
+      Supported methods:
+
+      ``th<value>`` – simple fixed intensity threshold, e.g. ``th500`` applies
+      a threshold of 500.
+
+      ``otsu+k<k>i<i>`` – multi-level Otsu thresholding.  Fits k intensity
+      classes to the global histogram and uses threshold index i (0-based) as
+      the segmentation boundary.  Example: ``otsu+k3i2`` fits 3 classes and
+      selects the 2nd threshold (between the 2nd and 3rd class).
+
+      ``gmm+n<n>k<k>`` – Gaussian Mixture Model (GMM) tail-thresholding.
+      Fits a GMM with n components to the log1p-transformed global intensity
+      histogram, sorts the components by mean intensity ascending, and defines
+      the threshold from the highest-intensity component as
+      ``threshold = expm1(mean_n + k * sigma_n)``.  The float multiplier k
+      may be encoded with 'p' as a decimal separator to keep BIDS-compatible
+      filenames, e.g. ``gmm+n2k2p5`` → n=2, k=2.5.
+    default:
+      - gmm+n3k4
     nargs: '+'
 
   --seg_hist_percentile_range:
-    help: "Percentile range to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. Specify 2 numbers for the low and high percentiles (default: %(default)s)"
+    help: "Percentile range to use for histogram calculation in histogram-based segmentation methods (otsu+k{}i{} and gmm+n{}k{}). Specify 2 numbers for the low and high percentiles (default: %(default)s)"
     default:
       - 1
-      - 99
+      - 99.5
     nargs: 2
     type: float
 
   --seg_hist_bin_width:
-    help: "Bin width to use for histogram calculation in multiotsu segmentation. Only applicable when seg_method is otsu+k{}i{}. (default: %(default)s)"
+    help: "Bin width to use for histogram calculation in histogram-based segmentation methods (otsu+k{}i{} and gmm+n{}k{}). (default: %(default)s)"
     default: 1
     type: float
 
@@ -175,7 +212,7 @@ parse_args:
     default: 100
 
   --orientation:
-    help: "Forcefully set the orientation of the input OME Zarr. Only use this if the orientation in the zarr metadata is incorrect and not easily changed. Note, this orientation string is defined in XYZ, with the letter of the increasing direction. Blaze data stitched with SPIMprep should be RPI, Imaris stitched data should be RAI, and Lifecanvas stitched data should be RAS. "
+    help: "Forcefully set the orientation for all input SPIM datasets. When absent, orientation is read from OME-Zarr metadata and overridden by _SPIM.json sidecars if present (with the JSON key OrientationStringXYZ). CLI values take highest precedence. Note, this orientation string is defined in XYZ, with the letter of the increasing direction. Generally speaking, Blaze data stitched with SPIMprep should be RPI, Imaris stitched data should be RAI, and Lifecanvas stitched data should be RAS (though this may differ if brains are upside down, etc...) "
     default: null
     
 
@@ -186,10 +223,41 @@ parse_args:
       - distributed
     default: distributed
 
+  --qc_instance_seg:
+    help: "Generate instance-level QC outputs, including animated gifs (default: %(default)s)"
+    action: store_true
+    default: False
+
   --qc_roi_zoom_bg_n4:
     help: "Use n4 bias-field corrected OME-Zarr as background image in the ROI zoom montage QC figures instead of the raw SPIM (only effective when --correction_method n4) (default: %(default)s)"
     action: store_true
     default: False
+
+  --zarr-store-ext:
+    help: "File format for intermediate OME-Zarr stores: 'ome.zarr' (directory) or 'ozx' (single zip file) (default: %(default)s)"
+    choices:
+      - ome.zarr
+      - ozx
+    default: ozx
+    dest: zarr_store_ext
+
+  --zarr-store-chunks:
+    help: "Chunk size (c, x, y, z) for intermediate OME-Zarr stores (default: %(default)s)"
+    default:
+      - 1
+      - 256
+      - 256
+      - 256
+    nargs: 4
+    type: int
+    dest: zarr_store_chunks
+
+  --zarr-store-shards:
+    help: "Shard size (c, x, y, z) for intermediate OME-Zarr stores. Disabled by default and when --zarr-store-ext is 'ozx'."
+    default: null
+    nargs: 4
+    type: int
+    dest: zarr_store_shards
 
   --sloppy:
     help: "Use low-quality parameters for speed (USE FOR TESTING ONLY)"
@@ -250,8 +318,16 @@ parse_args:
     action: store
     nargs: '+'
 
+  --no_patch_uint8:
+    help: "Disable conversion of patch NIfTI files to uint8 using robust percentile scaling. By default, patches are converted to uint8 to avoid endianness issues in downstream applications (e.g. SyGlass). (default: %(default)s)"
+    action: store_true
+    default: False
+
   --model:
     help: "Statistical model formula in patsy/statsmodels format, with 'metric' as a placeholder for the response variable (e.g. 'metric ~ C(treatment) * C(genotype) + age'). Required for group-level analysis."
+
+  --contrast_column:
+    help: "Column name in participants.tsv to use for defining group contrasts (e.g., 'treatment', 'genotype'). Required for group-level statistical analysis."
     default: null
     type: str
 
@@ -282,9 +358,10 @@ templates:
     anat: https://zenodo.org/records/18906782/files/tpl-ABAv3_anat.nii.gz
     mask: https://zenodo.org/records/18906782/files/tpl-ABAv3_desc-brain_mask.nii.gz
     spim_templates: #sorted in priority order:
-      YoPro: https://zenodo.org/records/18749025/files/tpl-ABAv3_level-5_stain-YoPro_SPIM.nii.gz
-      Iba1: https://zenodo.org/records/18749025/files/tpl-ABAv3_level-5_stain-Iba1_SPIM.nii.gz
-      Abeta: https://zenodo.org/records/18749025/files/tpl-ABAv3_level-5_stain-Abeta_SPIM.nii.gz
+      YoPro: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-YoPro_SPIM.nii.gz
+      Iba1: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-Iba1_SPIM.nii.gz
+      CD31: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-CD31_SPIM.nii.gz
+      Abeta: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-Abeta_SPIM.nii.gz
     default_segs:
       - all
       - coarse
@@ -357,10 +434,13 @@ templatereg:
     - 40
 
 masking:
-  gmm_k: 9
+  gmm_init_k: 9
+  gmm_min_k: 2
   gmm_bg_class: 1
   pre_atropos_downsampling: '50%'
 
+zarrnii_out_kwargs:
+  storage_options: {}
 
 reg_mri:
   rigidgreedy:
@@ -433,3 +513,156 @@ stats_maps:
   - tstat
   - pval
   - cohensd
+
+# BIDS-style column descriptions for JSON sidecars produced alongside tabular outputs.
+# Each entry follows the BIDS sidecar structure:
+#   LongName  - human-readable full name
+#   Description - what the column contains
+#   Units     - physical/logical units (optional)
+# Dynamic columns (e.g. "{stain}+fieldfrac") are resolved at runtime by the
+# create_json_sidecar.py script.
+column_descriptions:
+  index:
+    LongName: Atlas region index
+    Description: Integer index of the brain atlas region (label value in the parcellation image).
+  name:
+    LongName: Atlas region name
+    Description: Human-readable name of the brain atlas region.
+  abbreviation:
+    LongName: Atlas region abbreviation
+    Description: Short abbreviation of the brain atlas region name.
+  nvoxels:
+    LongName: Number of voxels
+    Description: Total number of foreground voxels belonging to the segmented object or region.
+    Units: voxels
+  count:
+    LongName: Object count
+    Description: Number of segmented objects (e.g. plaques, cells) detected within the region.
+    Units: objects
+  volume:
+    LongName: Region volume
+    Description: Physical volume of the atlas region derived from the parcellation image.
+    Units: mm^3
+  density:
+    LongName: Object density
+    Description: Number of segmented objects per unit volume (count / volume).
+    Units: objects/mm^3
+  fieldfrac:
+    LongName: Field fraction
+    Description: >
+      Fraction of brain tissue occupied by the segmented pathology marker within the
+      atlas region, expressed as a percentage (0–100).
+    Units: percent
+  pos_x:
+    LongName: Centroid x-coordinate (subject space)
+    Description: X-axis coordinate of the object centroid in subject (image) space.
+    Units: voxels
+  pos_y:
+    LongName: Centroid y-coordinate (subject space)
+    Description: Y-axis coordinate of the object centroid in subject (image) space.
+    Units: voxels
+  pos_z:
+    LongName: Centroid z-coordinate (subject space)
+    Description: Z-axis coordinate of the object centroid in subject (image) space.
+    Units: voxels
+  template_x:
+    LongName: Centroid x-coordinate (template space)
+    Description: X-axis coordinate of the object centroid after transformation to template space.
+    Units: mm
+  template_y:
+    LongName: Centroid y-coordinate (template space)
+    Description: Y-axis coordinate of the object centroid after transformation to template space.
+    Units: mm
+  template_z:
+    LongName: Centroid z-coordinate (template space)
+    Description: Z-axis coordinate of the object centroid after transformation to template space.
+    Units: mm
+  stain:
+    LongName: Staining channel
+    Description: Name of the immunofluorescence or histochemical stain/channel associated with this object.
+  object_id:
+    LongName: Object identifier
+    Description: Unique identifier for each segmented object, composed of stain name and index.
+  object_id_a:
+    LongName: Object identifier (channel A)
+    Description: Unique identifier of the first object in a colocalization pair.
+  object_id_b:
+    LongName: Object identifier (channel B)
+    Description: Unique identifier of the second object in a colocalization pair.
+  stain_a:
+    LongName: Staining channel A
+    Description: Stain/channel name of the first object in a colocalization pair.
+  stain_b:
+    LongName: Staining channel B
+    Description: Stain/channel name of the second object in a colocalization pair.
+  radius_a:
+    LongName: Estimated radius (channel A)
+    Description: Estimated spherical radius of the first object, derived from its voxel count.
+    Units: voxels
+  radius_b:
+    LongName: Estimated radius (channel B)
+    Description: Estimated spherical radius of the second object, derived from its voxel count.
+    Units: voxels
+  nvoxels_a:
+    LongName: Number of voxels (channel A)
+    Description: Number of voxels of the first object in a colocalization pair.
+    Units: voxels
+  nvoxels_b:
+    LongName: Number of voxels (channel B)
+    Description: Number of voxels of the second object in a colocalization pair.
+    Units: voxels
+  distance:
+    LongName: Inter-object distance
+    Description: Euclidean distance between the centroids of two colocalized objects.
+    Units: voxels
+  overlapratio:
+    LongName: Overlap ratio
+    Description: >
+      Estimated overlap between two colocalized objects (1 – distance / sum_of_radii),
+      clamped to [0, 1]. Values closer to 1 indicate greater spatial overlap.
+  pos_coloc_x:
+    LongName: Colocalization x-coordinate (subject space)
+    Description: X-axis coordinate of the midpoint between two colocalized objects in subject space.
+    Units: voxels
+  pos_coloc_y:
+    LongName: Colocalization y-coordinate (subject space)
+    Description: Y-axis coordinate of the midpoint between two colocalized objects in subject space.
+    Units: voxels
+  pos_coloc_z:
+    LongName: Colocalization z-coordinate (subject space)
+    Description: Z-axis coordinate of the midpoint between two colocalized objects in subject space.
+    Units: voxels
+  template_coloc_x:
+    LongName: Colocalization x-coordinate (template space)
+    Description: X-axis coordinate of the colocalization midpoint in template space.
+    Units: mm
+  template_coloc_y:
+    LongName: Colocalization y-coordinate (template space)
+    Description: Y-axis coordinate of the colocalization midpoint in template space.
+    Units: mm
+  template_coloc_z:
+    LongName: Colocalization z-coordinate (template space)
+    Description: Z-axis coordinate of the colocalization midpoint in template space.
+    Units: mm
+  participant_id:
+    LongName: Participant identifier
+    Description: BIDS participant identifier (e.g. sub-01) for the subject contributing this row.
+  n_subjects:
+    LongName: Number of subjects
+    Description: Total number of subjects contributing data to this region estimate.
+  tstat:
+    LongName: t-statistic
+    Description: Two-sample Welch t-statistic comparing the two contrast groups for this metric.
+  pval:
+    LongName: p-value
+    Description: Two-tailed p-value of the t-test for this metric and region.
+  cohensd:
+    LongName: Cohen's d
+    Description: Effect size (Cohen's d) expressing the standardised mean difference between the two contrast groups.
+  vesseldist:
+    LongName: Distance to vessel boundary
+    Description: >
+      Signed distance from the object centroid to the nearest vessel boundary.
+      Negative values indicate the centroid is inside a vessel; positive values indicate
+      it is outside. Vessels are defined by the CD31 immunofluorescence channel.
+    Units: voxels

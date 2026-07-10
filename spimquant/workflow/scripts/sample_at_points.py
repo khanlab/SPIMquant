@@ -9,7 +9,7 @@ Parameters (via snakemake.params):
     coord_column_names: List of three column names for the x, y, z centroid
         coordinates in the regionprops table (e.g. ['pos_x', 'pos_y', 'pos_z']).
     col_name: Name of the new column
-    zarrnii_kwargs: Additional keyword arguments passed to ZarrNii.from_ome_zarr
+    zarrnii_kwargs: Additional keyword arguments passed to ZarrNii.from_file
         (e.g. {'orientation': 'RPI'}).
 
 Output (via snakemake.output):
@@ -46,7 +46,7 @@ if len(df) == 0:
     df.to_parquet(snakemake.output.parquet, index=False)
     print(f"Empty regionprops – wrote 0-row parquet with column '{col_name}'.")
 else:
-    znimg = ZarrNii.from_ome_zarr(snakemake.input.scalar, **zarrnii_kwargs)
+    znimg = ZarrNii.from_file(snakemake.input.scalar, **zarrnii_kwargs)
 
     # Physical centroid coordinates from the regionprops table (N × 3, XYZ order)
     coords_xyz = df[coord_cols].values.astype(float)

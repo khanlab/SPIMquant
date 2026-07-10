@@ -21,6 +21,7 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 from scipy.ndimage import zoom
+from dask_setup import get_dask_client
 
 
 def _estimate_global_percentiles(
@@ -51,13 +52,14 @@ def main():
     use_n4_bg = snakemake.params.get("use_n4_bg", False)
 
     spim_bg_path = snakemake.input.spim_n4 if use_n4_bg else snakemake.input.spim
-    spim_img = ZarrNii.from_ome_zarr(
+    spim_img = ZarrNii.from_file(
         spim_bg_path,
         level=snakemake.params.level,
         downsample_near_isotropic=True,
         channel_labels=[snakemake.wildcards.stain],
+        **snakemake.params.zarrnii_kwargs,
     )
-    mask_img = ZarrNii.from_ome_zarr(snakemake.input.mask, level=0)
+    mask_img = ZarrNii.from_file(snakemake.input.mask, level=0)
 
     atlas = ZarrNiiAtlas.from_files(snakemake.input.dseg_nii, snakemake.input.label_tsv)
 
@@ -67,11 +69,12 @@ def main():
     # but should be easy with ZarrNii image .scale
     aspect_axial = 1
 
-    spim_img_ds = ZarrNii.from_ome_zarr(
+    spim_img_ds = ZarrNii.from_file(
         spim_bg_path,
         level=(int(snakemake.params.level) + 5),
         downsample_near_isotropic=True,
         channel_labels=[snakemake.wildcards.stain],
+        **snakemake.params.zarrnii_kwargs,
     )
 
     # estimate once globally, from a coarse version of the full image
@@ -156,6 +159,7 @@ def main():
         # get cropped images for this label
         bbox_min, bbox_max = atlas.get_region_bounding_box(region_ids=label_id)
         center_coord = tuple((x + y) / 2 for x, y in zip(bbox_min, bbox_max))
+
         spim_crop = spim_img.crop_centered(
             center_coord,
             patch_size=(snakemake.params.patch_size, snakemake.params.patch_size, 1),
@@ -167,6 +171,7 @@ def main():
 
         spim_sl = spim_crop.data[0, :, :].squeeze().compute()
         spim_sl = _apply_fixed_percentile_norm(spim_sl, glob_lo, glob_hi)
+
         mask_sl = mask_crop.data[0, :, :].squeeze().compute()
         cached_slices.append((label_name, spim_sl, mask_sl))
 
