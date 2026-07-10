@@ -341,6 +341,10 @@ parse_args:
     default: null
     nargs: '+'
 
+  --group-stats-where:
+    help: "Pandas query expression applied to the participants.tsv rows before model fitting and contrast enumeration. Subjects not matching the expression are excluded from the inference cohort (model + contrasts). Example: \"treatment in ['pbs', 'lecanemab'] and qc_pass == 1\". Backward-compatible: omitting this option includes all subjects."
+    default: null
+
 
 #--- workflow specific configuration -- 
 

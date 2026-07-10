@@ -40,8 +40,8 @@ Perform group statistical analysis:
 
 ```bash
 pixi run spimquant /path/to/bids /path/to/output group \
-  --contrast_column treatment \
-  --contrast_values control drug \
+  --group-stats-model "metric ~ C(treatment) + age" \
+  --group-stats-pairwise treatment \
   --cores all
 ```
 
@@ -151,11 +151,32 @@ pixi run spimquant gs://bucket/bids /local/output participant --cores all
 When using `analysis_level group`:
 
 ```bash
+# Basic pairwise comparison between all levels of a factor
 pixi run spimquant /bids /output group \
-  --contrast_column treatment \        # Column in participants.tsv
-  --contrast_values control drug \     # Values to compare
+  --group-stats-model "metric ~ C(treatment) + age" \
+  --group-stats-pairwise treatment \
+  --cores all
+
+# Restrict the inference cohort with --group-stats-where
+# Only subjects with treatment pbs or lecanemab will be included in the model
+# and contrasts; subjects with treatment control or n/a are excluded entirely.
+pixi run spimquant /bids /output group \
+  --group-stats-model "metric ~ C(treatment) + age" \
+  --group-stats-pairwise treatment \
+  --group-stats-where "treatment in ['pbs', 'lecanemab']" \
+  --cores all
+
+# Stratified pairwise contrasts (within each genotype)
+pixi run spimquant /bids /output group \
+  --group-stats-model "metric ~ C(treatment) * C(genotype) + age" \
+  --group-stats-pairwise treatment \
+  --group-stats-within genotype \
   --cores all
 ```
+
+The `--group-stats-where` option accepts any [pandas query expression](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.query.html).
+It is applied at both planning time (to enumerate contrasts) and at runtime
+(before model fitting), so the inference cohort is consistent throughout.
 
 Generates:
 

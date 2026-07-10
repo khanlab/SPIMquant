@@ -47,6 +47,7 @@ rule perform_group_stats:
             wc.pairwise_contrast, {}
         ),
         within_factors=config.get("group_stats_within") or [],
+        group_stats_where=config.get("group_stats_where", None),
         metric_columns=expand(
             "{stain}+{metric}", stain=stains_for_seg, metric=config["seg_metrics"]
         ),
