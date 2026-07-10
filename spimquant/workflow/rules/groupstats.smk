@@ -40,6 +40,16 @@ rule perform_group_stats:
     resources:
         mem_mb=16000,
         runtime=10,
+    log:
+        bids(
+            root="logs",
+            datatype="group_stats",
+            seg="{seg}",
+            from_="{template}",
+            desc="{desc}",
+            contrast="{pairwise_contrast}",
+            suffix="groupstats.log",
+        ),
     params:
         model=config.get("group_stats_model", None),
         pairwise_contrast_info=lambda wc: pairwise_contrast_info.get(
