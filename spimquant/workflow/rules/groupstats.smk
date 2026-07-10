@@ -29,8 +29,7 @@ rule perform_group_stats:
         participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
     output:
         stats_tsv=bids(
-            root=root,
-            datatype="group",
+            root=group_stats_root,
             seg="{seg}",
             from_="{template}",
             desc="{desc}",
@@ -66,8 +65,7 @@ rule create_stats_heatmap:
     """
     input:
         stats_tsv=bids(
-            root=root,
-            datatype="group",
+            root=group_stats_root,
             seg="{seg}",
             from_="{template}",
             desc="{desc}",
@@ -77,8 +75,7 @@ rule create_stats_heatmap:
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     output:
         heatmap_png=bids(
-            root=root,
-            datatype="group",
+            root=group_stats_root,
             seg="{seg}",
             from_="{template}",
             desc="{desc}",
@@ -108,8 +105,7 @@ rule map_groupstats_to_template_nii:
     """
     input:
         tsv=bids(
-            root=root,
-            datatype="group",
+            root=group_stats_root,
             seg="{seg}",
             from_="{template}",
             desc="{desc}",
@@ -120,8 +116,7 @@ rule map_groupstats_to_template_nii:
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     output:
         nii=bids(
-            root=root,
-            datatype="group",
+            root=group_stats_root,
             seg="{seg}",
             space="{template}",
             desc="{desc}",
@@ -163,8 +158,7 @@ rule concat_subj_parquet:
         participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
     output:
         parquet=bids(
-            root=root,
-            datatype="group",
+            root=group_stats_root,
             space="{template}",
             desc="{desc}",
             suffix="{suffix,regionprops|coloc}.parquet",
@@ -183,16 +177,14 @@ rule group_counts_per_voxel:
     input:
         template=bids(root=root, template="{template}", suffix="anat.nii.gz"),
         regionprops_parquet=bids(
-            root=root,
-            datatype="group",
+            root=group_stats_root,
             space="{template}",
             desc="{desc}",
             suffix="regionprops.parquet",
         ),
     output:
         counts_nii=bids(
-            root=root,
-            datatype="group",
+            root=group_stats_root,
             space="{template}",
             level="{level}",
             desc="{desc}",
@@ -214,16 +206,14 @@ rule group_coloc_counts_per_voxel:
     input:
         template=bids(root=root, template="{template}", suffix="anat.nii.gz"),
         coloc_parquet=bids(
-            root=root,
-            datatype="group",
+            root=group_stats_root,
             space="{template}",
             desc="{desc}",
             suffix="coloc.parquet",
         ),
     output:
         counts_nii=bids(
-            root=root,
-            datatype="group",
+            root=group_stats_root,
             space="{template}",
             level="{level}",
             desc="{desc}",
@@ -263,8 +253,7 @@ rule concat_subj_segstats:
         participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
     output:
         merged_tsv=bids(
-            root=root,
-            datatype="group",
+            root=group_stats_root,
             seg="{seg}",
             from_="{template}",
             desc="{desc}",
