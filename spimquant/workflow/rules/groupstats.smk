@@ -39,7 +39,7 @@ rule perform_group_stats:
         ),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=16000,
         runtime=10,
     params:
         model=config.get("group_stats_model", None),
@@ -170,7 +170,7 @@ rule concat_subj_parquet:
         ),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=16000,
         runtime=10,
     script:
         "../scripts/concat_subj_parquet.py"
@@ -230,7 +230,7 @@ rule group_coloc_counts_per_voxel:
         ),
     threads: 16
     resources:
-        mem_mb=15000,
+        mem_mb=16000,
         runtime=10,
     params:
         coord_column_names=config["template_coloc_coord_column_names"],
@@ -248,13 +248,13 @@ rule concat_subj_segstats:
     export it to their own statistics tools.
     """
     input:
-        segstats_tsvs=inputs["spim"].expand(
+        segstats_tsvs=lambda wildcards: inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="tabular",
-                seg="{seg}",
-                from_="{template}",
-                desc="{desc}",
+                seg=wildcards.seg,
+                from_=wildcards.template,
+                desc=wildcards.desc,
                 suffix="mergedsegstats.tsv",
                 **inputs["spim"].wildcards,
             )
@@ -271,7 +271,7 @@ rule concat_subj_segstats:
         ),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=16000,
         runtime=10,
     script:
         "../scripts/concat_subj_segstats.py"
