@@ -10,10 +10,10 @@ metadata from participants.tsv to fit OLS models and compute pairwise contrasts.
 rule perform_group_stats:
     """Perform formula-based group statistical tests on segmentation statistics.
 
-Fits a single global OLS model per region/metric using the user-supplied
-formula, then computes pairwise contrast statistics (t-stat, p-value,
-Cohen's d) for the specified contrast using the model's covariance matrix.
-"""
+    Fits a single global OLS model per region/metric using the user-supplied
+    formula, then computes pairwise contrast statistics (t-stat, p-value,
+    Cohen's d) for the specified contrast using the model's covariance matrix.
+    """
     input:
         segstats_tsvs=lambda wildcards: inputs["spim"].expand(
             bids(
@@ -42,11 +42,11 @@ Cohen's d) for the specified contrast using the model's covariance matrix.
         mem_mb=1500,
         runtime=10,
     params:
-        model=config.get("model", None),
+        model=config.get("group_stats_model", None),
         pairwise_contrast_info=lambda wc: pairwise_contrast_info.get(
             wc.pairwise_contrast, {}
         ),
-        within_factors=config.get("within") or [],
+        within_factors=config.get("group_stats_within") or [],
         metric_columns=expand(
             "{stain}+{metric}", stain=stains_for_seg, metric=config["seg_metrics"]
         ),
@@ -60,9 +60,9 @@ Cohen's d) for the specified contrast using the model's covariance matrix.
 rule create_stats_heatmap:
     """Create heatmap visualizations from group statistics results.
 
-This rule takes the group statistics TSV and creates heatmaps for
-visualization of significant differences across brain regions.
-"""
+    This rule takes the group statistics TSV and creates heatmaps for
+    visualization of significant differences across brain regions.
+    """
     input:
         stats_tsv=bids(
             root=root,
@@ -102,9 +102,9 @@ visualization of significant differences across brain regions.
 rule map_groupstats_to_template_nii:
     """Map group statistics to template space as NIfTI files.
 
-This rule paints brain regions with statistical values (e.g., t-statistics,
-p-values) to create volumetric heatmaps for 3D visualization.
-"""
+    This rule paints brain regions with statistical values (e.g., t-statistics,
+    p-values) to create volumetric heatmaps for 3D visualization.
+    """
     input:
         tsv=bids(
             root=root,
@@ -142,11 +142,11 @@ p-values) to create volumetric heatmaps for 3D visualization.
 rule concat_subj_parquet:
     """Concatenate parquet files across all subjects.
 
-This rule collects regionprops.parquet or coloc.parquet files
-from all participants, adds a participant_id column to
-identify each subject's data, and merges with participant
-metadata from participants.tsv.
-"""
+    This rule collects regionprops.parquet or coloc.parquet files
+    from all participants, adds a participant_id column to
+    identify each subject's data, and merges with participant
+    metadata from participants.tsv.
+    """
     input:
         parquet_files=inputs["spim"].expand(
             bids(
@@ -178,7 +178,7 @@ metadata from participants.tsv.
 
 rule group_counts_per_voxel:
     """Calculate counts per voxel based on concatenated points
-in template space"""
+    in template space"""
     input:
         template=bids(root=root, template="{template}", suffix="anat.nii.gz"),
         regionprops_parquet=bids(
@@ -209,7 +209,7 @@ in template space"""
 
 rule group_coloc_counts_per_voxel:
     """Calculate counts per voxel based on concatenated coloc points
-in template space"""
+    in template space"""
     input:
         template=bids(root=root, template="{template}", suffix="anat.nii.gz"),
         coloc_parquet=bids(
@@ -236,3 +236,42 @@ in template space"""
         coord_column_names=config["template_coloc_coord_column_names"],
     script:
         "../scripts/coloc_per_voxel_template.py"
+
+
+rule concat_subj_segstats:
+    """Concatenate subject-level segstats TSV files across all participants.
+
+    Merges all individual per-subject mergedsegstats TSV files into a single
+    group-level TSV, adding a participant_id column and joining with participant
+    metadata from participants.tsv. This file is always produced at group
+    analysis level, regardless of whether contrasts are requested, so users can
+    export it to their own statistics tools.
+    """
+    input:
+        segstats_tsvs=inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="mergedsegstats.tsv",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+    output:
+        merged_tsv=bids(
+            root=root,
+            datatype="group",
+            seg="{seg}",
+            from_="{template}",
+            desc="{desc}",
+            suffix="allsubjects.tsv",
+        ),
+    threads: 1
+    resources:
+        mem_mb=1500,
+        runtime=10,
+    script:
+        "../scripts/concat_subj_segstats.py"

@@ -323,21 +323,16 @@ parse_args:
     action: store_true
     default: False
 
-  --model:
-    help: "Statistical model formula in patsy/statsmodels format, with 'metric' as a placeholder for the response variable (e.g. 'metric ~ C(treatment) * C(genotype) + age'). Required for group-level analysis."
+  --group-stats-model:
+    help: "Statistical model formula in patsy/statsmodels format, with 'metric' as a placeholder for the response variable (e.g. 'metric ~ C(treatment) * C(genotype) + age'). Required when using --group-stats-pairwise."
 
-  --contrast_column:
-    help: "Column name in participants.tsv to use for defining group contrasts (e.g., 'treatment', 'genotype'). Required for group-level statistical analysis."
-    default: null
-    type: str
-
-  --pairwise:
-    help: "Factor(s) in participants.tsv for which all pairwise comparisons should be computed. Can be specified multiple times (e.g. '--pairwise treatment --pairwise genotype')."
+  --group-stats-pairwise:
+    help: "Factor(s) in participants.tsv for which all pairwise comparisons should be computed. Can be specified multiple times (e.g. '--group-stats-pairwise treatment --group-stats-pairwise genotype'). Requires --group-stats-model."
     default: null
     nargs: '+'
 
-  --within:
-    help: "Factors defining strata within which pairwise contrasts are computed (e.g. '--within genotype sex'). All combinations of these factor levels will be used as separate strata."
+  --group-stats-within:
+    help: "Factors defining strata within which pairwise contrasts are computed (e.g. '--group-stats-within genotype sex'). All combinations of these factor levels will be used as separate strata."
     default: null
     nargs: '+'
 
