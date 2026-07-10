@@ -58,7 +58,7 @@ rule gaussian_biasfield:
         disk_mb=2097152,
         runtime=15,
     params:
-        proc_level=5,
+        proc_level=config["correction_level"],
         zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/gaussian_biasfield.py"
@@ -86,7 +86,7 @@ rule n4_biasfield:
         mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
         runtime=180,
     params:
-        proc_level=5,
+        proc_level=config["correction_level"],
         zarrnii_kwargs=zarrnii_in_kwargs,
         shrink_factor=16 if config["sloppy"] else 1,
         target_chunk_size=512,  #this sets the chunk size for this and downstream masks

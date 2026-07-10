@@ -152,6 +152,11 @@ parse_args:
       - n4
     default: n4
 
+  --correction_level:
+    help: "Pyramid level at which to perform bias field correction (default: %(default)s). Higher values (coarser resolution) may be needed for high-resolution datasets; lower values for low-resolution datasets."
+    default: 5
+    type: int
+
 
   --seg_method:
     help: >
