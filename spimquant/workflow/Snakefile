@@ -223,6 +223,30 @@ if config.get("analysis_level") == "group":
             )
         _participants_df = _pd.read_csv(_participants_tsv, sep="\t")
 
+        # Apply --group-stats-where filter at planning time so that only the
+        # subjects included in the inference cohort are used to enumerate levels.
+        _where_expr = config.get("group_stats_where") or None
+        if _where_expr:
+            _n_before = len(_participants_df)
+            try:
+                _participants_df = _participants_df.query(_where_expr)
+            except Exception as _exc:
+                raise ValueError(
+                    f"--group-stats-where expression is invalid: {_where_expr!r}\n"
+                    f"Error: {_exc}"
+                ) from _exc
+            _n_after = len(_participants_df)
+            print(
+                f"[group-stats-where] Planning-time filter '{_where_expr}': "
+                f"{_n_before} rows → {_n_after} rows "
+                f"({_n_before - _n_after} excluded)."
+            )
+            if _n_after == 0:
+                raise ValueError(
+                    f"--group-stats-where expression '{_where_expr}' excluded all "
+                    "rows from participants.tsv. No subjects remain for analysis."
+                )
+
         for _factor in _pairwise_factors:
             if _factor not in _participants_df.columns:
                 raise ValueError(
@@ -232,6 +256,15 @@ if config.get("analysis_level") == "group":
             _levels = sorted(
                 str(v) for v in _participants_df[_factor].dropna().unique()
             )
+
+            if len(_levels) < 2:
+                raise ValueError(
+                    f"Pairwise factor '{_factor}' has fewer than 2 levels after "
+                    f"applying --group-stats-where filter. "
+                    f"Remaining levels: {_levels}. "
+                    "At least 2 levels are required to form a contrast. "
+                    "Check --group-stats-where or participants.tsv."
+                )
 
             if _within_factors:
                 _within_level_lists = []

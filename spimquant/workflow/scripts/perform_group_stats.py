@@ -13,6 +13,12 @@ dict with keys:
   if non-empty the model is fit with *all* data but marginal means are
   evaluated at the given stratum values.
 
+Subject filtering via ``--group-stats-where``:
+An optional pandas query expression (``snakemake.params.group_stats_where``)
+is applied to the merged participant dataframe *before* model fitting.  This
+defines the inference cohort: subjects that do not match the expression are
+excluded from both model fitting and contrast enumeration.
+
 This is a Snakemake script that expects the ``snakemake`` object to be
 available, which is automatically provided when executed as part of a
 Snakemake workflow.
@@ -25,6 +31,57 @@ import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 from patsy import dmatrix
+
+
+def apply_group_stats_filter(df, where_expr):
+    """Apply a pandas query expression to filter rows from a participants dataframe.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe to filter (typically the merged segstats + participant metadata).
+    where_expr : str or None
+        Pandas query expression string (e.g. ``"treatment in ['pbs','lecanemab']"``).
+        Pass ``None`` or an empty string to skip filtering and return *df* unchanged.
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered dataframe (a new object; the input is not modified).
+
+    Raises
+    ------
+    ValueError
+        If *where_expr* is syntactically or semantically invalid, or if the
+        result is empty after filtering.
+    """
+    if not where_expr:
+        return df
+
+    n_before = len(df)
+    try:
+        filtered = df.query(where_expr)
+    except Exception as exc:
+        raise ValueError(
+            f"--group-stats-where expression is invalid: {where_expr!r}\n"
+            f"Error: {exc}"
+        ) from exc
+
+    n_after = len(filtered)
+    print(
+        f"[group-stats-where] Filter '{where_expr}': "
+        f"{n_before} rows → {n_after} rows "
+        f"({n_before - n_after} excluded)."
+    )
+
+    if n_after == 0:
+        raise ValueError(
+            f"--group-stats-where expression '{where_expr}' excluded all rows. "
+            "No subjects remain for analysis. Check the expression and "
+            "the participants.tsv columns."
+        )
+
+    return filtered
 
 
 def load_segstats_with_metadata(segstats_paths, participants_df):
@@ -278,6 +335,10 @@ def main():
     formula = snakemake.params.model
     contrast_info = snakemake.params.pairwise_contrast_info
     metrics = snakemake.params.metric_columns + snakemake.params.coloc_metric_columns
+    where_expr = snakemake.params.get("group_stats_where", None)
+
+    # Apply subject-level filter before model fitting and contrast evaluation.
+    combined_data = apply_group_stats_filter(combined_data, where_expr)
 
     if not formula:
         raise ValueError("No model formula supplied (--model is required).")
@@ -298,6 +359,19 @@ def main():
             raise ValueError(
                 f"Column '{col}' not found in data after merging with "
                 f"participants.tsv. Available columns: {list(combined_data.columns)}"
+            )
+
+    # Validate that both contrast levels are still present after filtering.
+    remaining_levels = set(
+        str(v) for v in combined_data[pairwise_factor].dropna().unique()
+    )
+    for level in (level_a, level_b):
+        if level not in remaining_levels:
+            raise ValueError(
+                f"Contrast level '{level}' for factor '{pairwise_factor}' is not "
+                f"present in the filtered data. Remaining levels: {sorted(remaining_levels)}. "
+                "Check --group-stats-where or ensure the requested level exists in "
+                "participants.tsv."
             )
 
     results = perform_model_based_contrast(
