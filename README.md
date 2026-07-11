@@ -118,7 +118,7 @@ SPIMquant supports group-level statistical analysis using a formula-based OLS mo
    ```
 
 This will generate (under `<output_dir>/group/<label>/`):
-- `*_allsubjects.tsv`: Merged ROI-level table for all subjects (with participant metadata) — export to your own stats tools
+- `*_allsubjects.tsv`: Merged ROI-level table for all subjects (with participant metadata) -- export to your own stats tools
 - `*_groupstats.tsv`: Statistical results per region (t-statistic, p-value, Cohen's d, group means) for each pairwise contrast
 - `*_groupstats.png`: Heatmap visualizations of statistical results
 - `*_groupstats.nii`: 3D volumetric maps of statistical values for visualization in neuroimaging software
