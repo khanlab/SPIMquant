@@ -178,13 +178,12 @@ The `--group-stats-where` option accepts any [pandas query expression](https://p
 It is applied at both planning time (to enumerate contrasts) and at runtime
 (before model fitting), so the inference cohort is consistent throughout.
 
-Generates:
+Generates (under `<output_dir>/group/<label>/`):
 
-- `*_groupstats.tsv`: Statistical test results
-- `*_groupstats.png`: Heatmap visualizations
-- `*_groupstats.nii`: 3D volumetric maps
-- `*_groupavgsegstats.tsv`: Group-averaged statistics
-- `*_groupavg.nii.gz`: Group-averaged maps
+- `*_allsubjects.tsv`: Merged per-subject ROI table with participant metadata (always produced)
+- `*_contrast-<label>_groupstats.tsv`: Statistical results per pairwise contrast
+- `*_contrast-<label>_groupstats.png`: Heatmap visualizations
+- `*_contrast-<label>_groupstats.nii`: 3D volumetric stat maps
 
 ## Configuration File
 
