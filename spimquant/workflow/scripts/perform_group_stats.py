@@ -155,7 +155,12 @@ def load_segstats_with_metadata(segstats_paths, participants_df, log):
         df = pd.read_csv(path, sep="\t")
         df["participant_id"] = subject_id
         all_data.append(df)
-        log.debug("Loaded segstats for %s: %d rows, %d cols", subject_id, df.shape[0], df.shape[1])
+        log.debug(
+            "Loaded segstats for %s: %d rows, %d cols",
+            subject_id,
+            df.shape[0],
+            df.shape[1],
+        )
 
     if not all_data:
         raise ValueError("No valid segstats files found")
@@ -380,14 +385,23 @@ def perform_model_based_contrast(
         One row per region with columns for each metric's statistics.
     """
     regions = data[["index", "name"]].drop_duplicates()
-    log.info("Computing contrasts for %d regions and %d metrics.", regions.shape[0], len(metrics))
+    log.info(
+        "Computing contrasts for %d regions and %d metrics.",
+        regions.shape[0],
+        len(metrics),
+    )
     rows = []
     n_nan_total = 0
     n_ok_total = 0
 
     for _, region in regions.iterrows():
         region_data = data[data["index"] == region["index"]].copy()
-        log.debug("Region '%s' (index=%s): %d rows.", region["name"], region["index"], len(region_data))
+        log.debug(
+            "Region '%s' (index=%s): %d rows.",
+            region["name"],
+            region["index"],
+            len(region_data),
+        )
 
         row = {"index": region["index"], "name": region["name"]}
 
@@ -525,7 +539,11 @@ def main():
             len(missing_metrics),
             missing_metrics,
         )
-    log.info("%d / %d requested metrics are present in the data.", len(present_metrics), len(metrics))
+    log.info(
+        "%d / %d requested metrics are present in the data.",
+        len(present_metrics),
+        len(metrics),
+    )
 
     results = perform_model_based_contrast(
         combined_data,
