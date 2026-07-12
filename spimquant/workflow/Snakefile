@@ -237,7 +237,7 @@ if config.get("analysis_level") == "group":
                 _participants_df = _participants_df.query(_where_expr)
             except Exception as _exc:
                 raise ValueError(
-                    f"--group-stats-where expression is invalid: {_where_expr! r}\n"
+                    f"--group-stats-where expression is invalid: {_where_expr}\n"
                     f"Error: {_exc}"
                 ) from _exc
             _n_after = len(_participants_df)
