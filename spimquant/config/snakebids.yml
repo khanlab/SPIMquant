@@ -328,15 +328,26 @@ parse_args:
     action: store_true
     default: False
 
-  --contrast_column:
-    help: "Column name in participants.tsv to use for defining group contrasts (e.g., 'treatment', 'genotype'). Required for group-level statistical analysis."
-    default: null
-    type: str
+  --group-stats-model:
+    help: "Statistical model formula in patsy/statsmodels format, with 'metric' as a placeholder for the response variable (e.g. 'metric ~ C(treatment) * C(genotype) + age'). Required when using --group-stats-pairwise."
 
-  --contrast_values:
-    help: "Two group values for contrast comparison (e.g., 'control' 'drug'). Used with --contrast_column for statistical testing. Provide exactly 2 values."
+  --group-stats-pairwise:
+    help: "Factor(s) in participants.tsv for which all pairwise comparisons should be computed. Can be specified multiple times (e.g. '--group-stats-pairwise treatment --group-stats-pairwise genotype'). Requires --group-stats-model."
     default: null
-    nargs: 2
+    nargs: '+'
+
+  --group-stats-within:
+    help: "Factors defining strata within which pairwise contrasts are computed (e.g. '--group-stats-within genotype sex'). All combinations of these factor levels will be used as separate strata."
+    default: null
+    nargs: '+'
+
+  --group-stats-where:
+    help: "Pandas query expression applied to the participants.tsv rows before model fitting and contrast enumeration. Subjects not matching the expression are excluded from the inference cohort (model + contrasts). Example: \"treatment in ['pbs', 'lecanemab'] and qc_pass == 1\". Backward-compatible: omitting this option includes all subjects."
+    default: null
+
+  --group-stats-label:
+    help: "Label for this group-stats run. Outputs are placed under group/{label}/ so that different analyses (e.g. different models or --group-stats-where filters) do not overwrite each other. (default: %(default)s)"
+    default: "1"
 
 
 #--- workflow specific configuration -- 

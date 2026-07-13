@@ -69,31 +69,59 @@ If your input BIDS dataset stores data in zarr zipstores (e.g. SPIM files ending
 
 ## Group-Level Statistical Analysis
 
-SPIMquant supports group-level statistical analysis to compare segmentation statistics (e.g., fieldfrac, density, volume) across groups of participants. 
+SPIMquant supports group-level statistical analysis using a formula-based OLS model (via [statsmodels](https://www.statsmodels.org/) / [patsy](https://patsy.readthedocs.io/)), comparing segmentation statistics (e.g., fieldfrac, density, volume) across groups of participants.
 
-1. First, create a `participants.tsv` file in your BIDS directory with participant metadata including a column for group assignments (e.g., 'treatment', 'genotype'):
+1. First, create a `participants.tsv` file in your BIDS directory with participant metadata including group assignment columns (e.g., `treatment`, `genotype`, `sex`, `age`):
    ```tsv
-   participant_id	treatment	age	sex
-   sub-01	control	12	M
-   sub-02	control	13	F
-   sub-03	drug	11	M
-   sub-04	drug	12	F
+   participant_id	treatment	genotype	sex	age
+   sub-01	vehicle	WT	M	12
+   sub-02	vehicle	WT	F	13
+   sub-03	drug	WT	M	11
+   sub-04	drug	WT	F	12
+   sub-05	vehicle	KO	M	12
+   sub-06	drug	KO	M	11
    ```
 
-2. Run group-level analysis specifying the contrast column and values:
+2. Run group-level analysis specifying the statistical model and pairwise contrasts:
    ```bash
    pixi run spimquant /path/to/bids/dir /path/to/output/dir group \
-     --contrast_column treatment \
-     --contrast_values control drug \
+     --group-stats-model "metric ~ C(treatment) + age" \
+     --group-stats-pairwise treatment \
      --cores all
    ```
 
-This will generate:
-- `*_groupstats.tsv`: Statistical test results (t-statistics, p-values, effect sizes) for each brain region
+   For more complex designs with interaction effects and stratified contrasts:
+   ```bash
+   pixi run spimquant /path/to/bids/dir /path/to/output/dir group \
+     --group-stats-model "metric ~ C(treatment) * C(genotype) * C(sex) + age" \
+     --group-stats-pairwise treatment \
+     --group-stats-within genotype sex \
+     --cores all
+   ```
+
+   To restrict the analysis cohort (e.g., exclude subjects not meeting QC criteria):
+   ```bash
+   pixi run spimquant /path/to/bids/dir /path/to/output/dir group \
+     --group-stats-model "metric ~ C(treatment) + age" \
+     --group-stats-pairwise treatment \
+     --group-stats-where "treatment in ['vehicle', 'drug'] and qc_pass == 1" \
+     --cores all
+   ```
+
+   Use `--group-stats-label` to name the analysis run so multiple analyses don't overwrite each other (default: `1`):
+   ```bash
+   pixi run spimquant /path/to/bids/dir /path/to/output/dir group \
+     --group-stats-label treatment_analysis \
+     --group-stats-model "metric ~ C(treatment) + age" \
+     --group-stats-pairwise treatment \
+     --cores all
+   ```
+
+This will generate (under `<output_dir>/group/<label>/`):
+- `*_allsubjects.tsv`: Merged ROI-level table for all subjects (with participant metadata) -- export to your own stats tools
+- `*_groupstats.tsv`: Statistical results per region (t-statistic, p-value, Cohen's d, group means) for each pairwise contrast
 - `*_groupstats.png`: Heatmap visualizations of statistical results
 - `*_groupstats.nii`: 3D volumetric maps of statistical values for visualization in neuroimaging software
-- `*_groupavgsegstats.tsv`: Group-averaged segmentation statistics for each contrast group and brain region
-- `*_groupavg.nii.gz`: 3D volumetric maps of group-averaged metrics (fieldfrac, density, volume) for each contrast group
 
 # Contributing
  We welcome contributions! Please refer to the [contributing guidelines](CONTRIBUTING.md) for more details on how to contribute.
