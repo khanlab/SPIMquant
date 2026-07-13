@@ -522,7 +522,7 @@ rule all_segment_coloc:
 
 rule all_mri_reg:
     input:
-        inputs["spim"].expand(
+        get_mri_reg_targets(
             bids(
                 root=root,
                 datatype="anat",
@@ -534,7 +534,7 @@ rule all_mri_reg:
             ),
             template=config["template"],
         ),
-        inputs["spim"].expand(
+        get_mri_reg_targets(
             bids(
                 root=root,
                 datatype="xfm",

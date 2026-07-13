@@ -168,6 +168,29 @@ def get_spim_channels(spim_path):
     return ZarrNii.from_file(spim_path).list_channels()
 
 
+def get_mri_reg_targets(pattern, **kwargs):
+    """Expand a target pattern for SPIM subjects that also have MRI data.
+
+    Uses ``inputs['mri']`` to determine which subjects have MRI data, then
+    filters ``inputs['spim']`` to those subjects before expanding *pattern*.
+    This prevents ``all_mri_reg`` from generating targets for SPIM subjects
+    that lack a corresponding MRI, which would cause downstream rules (e.g.
+    ``average_mri``) to fail with empty input lists.
+
+    Parameters
+    ----------
+    pattern:
+        A bids path string containing wildcards.
+    **kwargs:
+        Extra keyword arguments forwarded to :meth:`BidsComponent.expand`
+        (e.g. ``template=config["template"]``).
+    """
+    if "mri" not in inputs:
+        return []
+    mri_subjects = set(inputs["mri"].entities.get("subject", []))
+    return inputs["spim"].filter(subject=list(mri_subjects)).expand(pattern, **kwargs)
+
+
 def get_regionprops_parquet(wildcards):
     if do_vessels:
         return bids(
