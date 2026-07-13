@@ -188,7 +188,7 @@ def get_mri_reg_targets(pattern, **kwargs):
     if "mri" not in inputs:
         return []
     mri_subjects = set(inputs["mri"].entities.get("subject", []))
-    return inputs["spim"].filter(subject=list(mri_subjects)).expand(pattern, **kwargs)
+    return inputs["spim"].filter(subject=mri_subjects).expand(pattern, **kwargs)
 
 
 def get_regionprops_parquet(wildcards):
