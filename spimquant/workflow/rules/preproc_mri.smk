@@ -134,8 +134,6 @@ rule register_mri_to_first:
     resources:
         mem_mb=8000,
         runtime=10,
-    conda:
-        "../envs/c3d.yaml"
     shell:
         "if [ {wildcards.mrindex} -eq 0 ]; then "
         "  echo '1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1' > {output.xfm_ras}; "
@@ -306,8 +304,6 @@ rule rigid_nlin_reg_mri_to_template:
     resources:
         mem_mb=1500,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 6 -ia-image-centers -m {params.metric} -o {output.xfm_ras} && "
@@ -402,13 +398,10 @@ rule transform_template_mask_to_mri:
     resources:
         mem_mb=1500,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
     shell:
-        " c3d_affine_tool {input.xfm_ras} -inv -o inv_rigid.txt && "
         " greedy -threads {threads} -d 3 -ri NN -rf {input.ref} "
         "  -rm {input.mask} {output.mask} "
-        "  -r inv_rigid.txt {input.invwarp}"
+        "  -r {input.xfm_ras},-1 {input.invwarp}"
 
 
 rule apply_mri_brain_mask:
@@ -561,8 +554,6 @@ rule affine_nlin_reg_mri_to_spim:
     resources:
         mem_mb=32000,
         runtime=30,
-    conda:
-        "../envs/c3d.yaml"
     shell:
         "greedy -threads {threads} -d 3 -i {input.spim} {input.mri} "
         " -a -dof {params.dof} -ia-image-centers -m {params.metric_rigid} -o {output.xfm_ras} && "
@@ -665,8 +656,6 @@ rule compose_mri_to_spim_warp:
     resources:
         mem_mb=8000,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
     shell:
         "greedy -threads {threads} -d 3 -rf {input.ref} "
         "-rc {output.xfm_composite} -r {input.warp} {input.xfm_ras} && "
@@ -724,8 +713,6 @@ rule warp_mri_to_template_via_spim:
     resources:
         mem_mb=32000,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
         "  -rm {input.mri} {output.warped} "
@@ -783,8 +770,6 @@ rule warp_mri_brainmask_to_spim:
     resources:
         mem_mb=1500,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} -ri NN"
         "  -rm {input.mask} {output.mask} "

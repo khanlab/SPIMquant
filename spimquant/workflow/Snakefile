@@ -61,7 +61,12 @@ inputs = generate_inputs(
 if "mri" in inputs:
     suffixes = inputs["mri"].entities["suffix"]
     if len(suffixes) == 1:
-        mri_suffix = suffixes[0]
+        if "." in suffixes[0]:
+            mri_suffix = suffixes[0].split(".")[0]
+        else:
+            mri_suffix = suffixes[0]
+    elif len(suffixes) == 0:
+        raise ValueError(f"No MRI suffix found, check bids filters")
     else:
         raise ValueError(
             f"More than one MRI suffix found, use --filter-mri to narrow your search: {suffixes}"
@@ -624,7 +629,7 @@ rule all_segment_coloc:
 
 rule all_mri_reg:
     input:
-        inputs["spim"].expand(
+        get_mri_reg_targets(
             bids(
                 root=root,
                 datatype="anat",
@@ -636,7 +641,7 @@ rule all_mri_reg:
             ),
             template=config["template"],
         ),
-        inputs["spim"].expand(
+        get_mri_reg_targets(
             bids(
                 root=root,
                 datatype="xfm",
