@@ -104,9 +104,7 @@ def main():
     biasfield_paths = list(snakemake.input.biasfield)
     raw_path = snakemake.input.nii
 
-    assert len(png_paths) == n_combos, (
-        f"Expected {n_combos} PNGs, got {len(png_paths)}"
-    )
+    assert len(png_paths) == n_combos, f"Expected {n_combos} PNGs, got {len(png_paths)}"
     assert len(corrected_paths) == n_combos
     assert len(biasfield_paths) == n_combos
 
@@ -129,9 +127,7 @@ def main():
     # -----------------------------------------------------------------------
     # Build summary comparison table (2-D grid: rows=spline, cols=iters)
     # -----------------------------------------------------------------------
-    iters_header = "".join(
-        f"<th>Iters={i}</th>" for i in iters_list
-    )
+    iters_header = "".join(f"<th>Iters={i}</th>" for i in iters_list)
     summary_rows_html = []
     for spline in spline_spacings:
         cells = []
@@ -159,9 +155,7 @@ def main():
                 f"</td>"
             )
             cells.append(cell)
-        row_html = (
-            f"<tr><th>Spline={spline} mm</th>{''.join(cells)}</tr>"
-        )
+        row_html = f"<tr><th>Spline={spline} mm</th>{''.join(cells)}</tr>"
         summary_rows_html.append(row_html)
 
     summary_table_html = f"""
