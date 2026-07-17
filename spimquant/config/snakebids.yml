@@ -157,18 +157,18 @@ parse_args:
 
   --correction_level:
     help: "Pyramid level at which to perform bias field correction (default: %(default)s). Higher values (coarser resolution) may be needed for high-resolution datasets; lower values for low-resolution datasets."
-    default: 5
+    default: 6
     type: int
 
 
   --correction_n4_iters:
     help: "Number of iterations to use at each multi-res level (default: %(default)s). Higher values should provide more correction."
-    default: 100
+    default: 200
     type: int
 
   --correction_n4_spline_spacing:
     help: "Spline spacing (in mm) for the lowest-res grid, will halve 3 times for the total 4 multi-res levels (default: %(default)s). Decreasing this number allows for sharper correction fields."
-    default: 3.0
+    default: 2
     type: float
 
 

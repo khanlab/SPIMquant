@@ -160,8 +160,8 @@ rule n4_pre_quant_tune:
     output:
         corrected=temp(
             bids(
-                root=work,
-                datatype="qc",
+                root=root,
+                datatype="micr",
                 stain="{stain}",
                 level=str(config["correction_level"]),
                 desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
@@ -171,8 +171,8 @@ rule n4_pre_quant_tune:
         ),
         biasfield=temp(
             bids(
-                root=work,
-                datatype="qc",
+                root=root,
+                datatype="micr",
                 stain="{stain}",
                 level=str(config["correction_level"]),
                 desc="n4tuneSpline{n4_spline}Iters{n4_iters}",

@@ -484,8 +484,8 @@ to the ``qc`` datatype directory.
             **inputs["spim"].wildcards,
         ),
         corrected=bids(
-            root=work,
-            datatype="qc",
+            root=root,
+            datatype="micr",
             stain="{stain}",
             level=str(config["correction_level"]),
             desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
@@ -493,8 +493,8 @@ to the ``qc`` datatype directory.
             **inputs["spim"].wildcards,
         ),
         biasfield=bids(
-            root=work,
-            datatype="qc",
+            root=root,
+            datatype="micr",
             stain="{stain}",
             level=str(config["correction_level"]),
             desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
@@ -559,8 +559,8 @@ Written to the ``qc`` datatype directory for each subject / stain.
         ),
         corrected=expand(
             bids(
-                root=work,
-                datatype="qc",
+                root=root,
+                datatype="micr",
                 stain="{stain}",
                 level=str(config["correction_level"]),
                 desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
@@ -573,8 +573,8 @@ Written to the ``qc`` datatype directory for each subject / stain.
         ),
         biasfield=expand(
             bids(
-                root=work,
-                datatype="qc",
+                root=root,
+                datatype="micr",
                 stain="{stain}",
                 level=str(config["correction_level"]),
                 desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
