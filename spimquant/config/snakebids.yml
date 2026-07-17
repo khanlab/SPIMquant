@@ -2,6 +2,7 @@
 analysis_levels: &analysis_levels
  - participant
  - group
+ - tune_n4
 
 #mapping from analysis_level to set of target rules or files
 targets_by_analysis_level:
@@ -9,6 +10,8 @@ targets_by_analysis_level:
     - 'all_participant'  # if '', then the first rule is run
   group:
     - 'all_group'
+  tune_n4:
+    - 'all_n4_tune'
 
 # Configure components:
 # Each entry creates a new component that can be retreived within the workflow

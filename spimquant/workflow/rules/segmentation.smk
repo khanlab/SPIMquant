@@ -131,6 +131,76 @@ rule n4_pre_quant:
 ruleorder: n4_pre_quant > n4
 
 
+rule n4_pre_quant_tune:
+    """Grid-search over N4 parameters for parameter tuning QC.
+
+    Runs N4BiasFieldCorrection for a single (spline_spacing, iters) combination
+    encoded in the ``{n4_spline}`` and ``{n4_iters}`` wildcards.  Outputs are
+    temporary; they are consumed by ``qc_n4_tune_png`` and ``qc_n4_tune_report``
+    to produce the final PNG and HTML QC artefacts.
+    """
+    input:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level=str(config["correction_level"]),
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level=str(config["correction_level"]),
+            desc="brain",
+            suffix="mask.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        corrected=temp(
+            bids(
+                root=work,
+                datatype="qc",
+                stain="{stain}",
+                level=str(config["correction_level"]),
+                desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
+                suffix="corrected.nii.gz",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        biasfield=temp(
+            bids(
+                root=work,
+                datatype="qc",
+                stain="{stain}",
+                level=str(config["correction_level"]),
+                desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
+                suffix="biasfield.nii.gz",
+                **inputs["spim"].wildcards,
+            )
+        ),
+    params:
+        iters="{n4_iters}",
+        spline_spacing="{n4_spline}",
+        shrink_level=1,
+    threads: 16
+    resources:
+        mem_mb=32000,
+        runtime=15,
+    conda:
+        "../envs/ants.yaml"
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "N4BiasFieldCorrection -i {input.nii}"
+        " -c [{params.iters}x{params.iters}x{params.iters}x{params.iters},0.0]"
+        " -b [{params.spline_spacing},3]"
+        " -s {params.shrink_level}"
+        " -o [{output.corrected},{output.biasfield}]"
+        " -x {input.mask}"
+        " -d 3 -v "
+
+
 rule n4_biasfield:
     """N4 bias field correction with antspyx"""
     input:
