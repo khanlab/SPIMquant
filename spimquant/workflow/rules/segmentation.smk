@@ -64,10 +64,86 @@ rule gaussian_biasfield:
         "../scripts/gaussian_biasfield.py"
 
 
+rule n4_pre_quant:
+    """Apply N4 bias field correction to SPIM images.
+    
+    Uses ANTs N4BiasFieldCorrection to correct intensity inhomogeneities within
+    the brain mask. Outputs both the corrected image and the estimated bias field.
+    """
+    input:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level="{level}",
+            desc="brain",
+            suffix="mask.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        corrected=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="prequantN4",
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        biasfield=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="prequantN4",
+            suffix="biasfield.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    params:
+        iters=config["correction_n4_iters"],
+        spline_spacing=config["correction_n4_spline_spacing"],
+        shrink_level=1,  #shrink_level 1 since we use the correction_level to shrink
+    threads: 16
+    resources:
+        mem_mb=32000,
+        runtime=15,
+    conda:
+        "../envs/ants.yaml"
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "N4BiasFieldCorrection -i {input.nii}"
+        " -c [{params.iters}x{params.iters}x{params.iters}x{params.iters},0.0]"
+        " -b [{params.spline_spacing},3]"
+        " -s {params.shrink_level}"
+        " -o [{output.corrected},{output.biasfield}]"
+        " -x {input.mask}"
+        " -d 3 -v "
+
+
+ruleorder: n4_pre_quant > n4
+
+
 rule n4_biasfield:
     """N4 bias field correction with antspyx"""
     input:
         spim=inputs["spim"].path,
+        biasfield=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level=config["correction_level"],
+            desc="prequantN4",
+            suffix="biasfield.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
     output:
         corrected=temp(
             bids_oz_out(

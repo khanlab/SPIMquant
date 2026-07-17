@@ -158,6 +158,17 @@ parse_args:
     type: int
 
 
+  --correction_n4_iters:
+    help: "Number of iterations to use at each multi-res level (default: %(default)s). Higher values should provide more correction."
+    default: 100
+    type: int
+
+  --correction_n4_spline_spacing:
+    help: "Spline spacing (in mm) for the lowest-res grid, will halve 3 times for the total 4 multi-res levels (default: %(default)s). Decreasing this number allows for sharper correction fields."
+    default: 3.0
+    type: float
+
+
   --seg_method:
     help: >
       Method(s) to use for microscopy segmentation (e.g. plaques, protein
@@ -181,7 +192,7 @@ parse_args:
       may be encoded with 'p' as a decimal separator to keep BIDS-compatible
       filenames, e.g. ``gmm+n2k2p5`` → n=2, k=2.5.
     default:
-      - gmm+n3k4
+      - gmm+n3k1
     nargs: '+'
 
   --seg_hist_percentile_range:

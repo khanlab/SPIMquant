@@ -2,7 +2,7 @@ if __name__ == "__main__":
 
     from dask_setup import get_dask_client
     from zarrnii import ZarrNii
-    from zarrnii.plugins import N4BiasFieldCorrection
+    from zarrnii.plugins import N4BiasFieldApply
 
     is_imaris = str(snakemake.input.spim).lower().endswith(".ims")
 
@@ -25,25 +25,16 @@ if __name__ == "__main__":
             chunks=(256, 256, 256) if is_imaris else None,
             **snakemake.params.zarrnii_kwargs,
         )
-        znimg_lowres = ZarrNii.from_file(
-            snakemake.input.spim,
-            channel_labels=[snakemake.wildcards.stain],
-            level=proc_level,
-            downsample_near_isotropic=True,
-            **snakemake.params.zarrnii_kwargs,
-        )
+        znimg_lowres = ZarrNii.from_nifti(snakemake.input.biasfield, axes_order="ZYX")
 
         print("compute bias field correction")
-        scaled_proc_kwargs = (
-            {"lowres_znimg": znimg_lowres, "method": "map_blocks"}
-            if is_imaris
-            else {"downsample_factor": adjusted_downsample_factor}
-        )
+        scaled_proc_kwargs = {"lowres_znimg": znimg_lowres, "method": "map_blocks"}
+
         # scaled_proc_kwargs controls how apply_scaled_processing is performed
 
         # Apply bias field correction
         znimg_corrected = znimg.apply_scaled_processing(
-            N4BiasFieldCorrection(shrink_factor=snakemake.params.shrink_factor),
+            N4BiasFieldApply(log_space=False),
             **scaled_proc_kwargs,
         )
 
