@@ -460,6 +460,150 @@ Only applicable when ``seg_method`` uses the ``otsu+k{}i{}`` pattern.
         "../scripts/qc_otsu_threshold_sweep.py"
 
 
+rule qc_n4_tune_png:
+    """Per-combination N4 tuning QC figure.
+
+Generates a multi-panel PNG for a single (spline_spacing, iters) parameter
+combination showing:
+  - Middle axial, coronal, and sagittal slices for the uncorrected image,
+    the estimated bias field, and the corrected image (side by side).
+  - Intensity histograms for all three images with median and 99th-percentile
+    markers.
+  - Summary statistics table (min, max, mean, percentiles) for each image.
+
+One PNG is produced per subject / stain / parameter combination and written
+to the ``qc`` datatype directory.
+"""
+    input:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level=str(config["correction_level"]),
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        corrected=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level=str(config["correction_level"]),
+            desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
+            suffix="corrected.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        biasfield=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level=str(config["correction_level"]),
+            desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
+            suffix="biasfield.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        png=bids(
+            root=root,
+            datatype="qc",
+            stain="{stain}",
+            desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
+            suffix="n4tune.png",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 1
+    resources:
+        mem_mb=8000,
+        runtime=10,
+    params:
+        n4_spline="{n4_spline}",
+        n4_iters="{n4_iters}",
+    script:
+        "../scripts/qc_n4_tune_png.py"
+
+
+rule qc_n4_tune_report:
+    """HTML report aggregating N4 parameter tuning QC figures.
+
+Collects the per-combination PNG figures produced by ``qc_n4_tune_png`` and
+assembles them into a self-contained scrollable HTML report.  The report
+contains:
+  - A header summary table comparing key statistics (min, max, p50, p99,
+    bias field coefficient of variation) for every (spline_spacing, iters)
+    combination in the grid.
+  - One detailed row per combination with the embedded PNG and a per-image
+    statistics sub-table.
+
+Written to the ``qc`` datatype directory for each subject / stain.
+"""
+    input:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level=str(config["correction_level"]),
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        pngs=expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
+                suffix="n4tune.png",
+                **inputs["spim"].wildcards,
+            ),
+            n4_spline=_tune_n4_spline_spacings,
+            n4_iters=_tune_n4_iters_list,
+            allow_missing=True,
+        ),
+        corrected=expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level=str(config["correction_level"]),
+                desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
+                suffix="corrected.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            n4_spline=_tune_n4_spline_spacings,
+            n4_iters=_tune_n4_iters_list,
+            allow_missing=True,
+        ),
+        biasfield=expand(
+            bids(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                level=str(config["correction_level"]),
+                desc="n4tuneSpline{n4_spline}Iters{n4_iters}",
+                suffix="biasfield.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            n4_spline=_tune_n4_spline_spacings,
+            n4_iters=_tune_n4_iters_list,
+            allow_missing=True,
+        ),
+    output:
+        html=bids(
+            root=root,
+            datatype="qc",
+            stain="{stain}",
+            suffix="n4tunereport.html",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 1
+    resources:
+        mem_mb=8000,
+        runtime=15,
+    params:
+        spline_spacings=_tune_n4_spline_spacings,
+        iters_list=_tune_n4_iters_list,
+    script:
+        "../scripts/qc_n4_tune_report.py"
+
+
 rule qc_roi_summary:
     """Per-ROI summary QC: top-region bar plots for a single subject.
 

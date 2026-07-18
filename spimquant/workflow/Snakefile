@@ -316,6 +316,8 @@ if config.get("analysis_level") == "group":
 wildcard_constraints:
     stain="[a-zA-Z0-9]+",
     pairwise_contrast="[a-zA-Z0-9+_-]+",
+    n4_spline="[0-9]+",
+    n4_iters="[0-9]+",
 
 
 rule all_templatereg_deform_zooms:
@@ -412,6 +414,36 @@ rule all_otsu_hist_qc:
         )
         if (do_seg and len(otsu_seg_methods) > 0)
         else [],
+
+
+# Grid search values for N4 parameter tuning
+_tune_n4_spline_spacings = [str(s) for s in [1, 2, 3, 4, 5]]
+_tune_n4_iters_list = [str(i) for i in [50, 100, 200]]
+
+
+rule all_n4_tune:
+    """Target rule for N4 bias field correction parameter tuning.
+
+    Runs N4BiasFieldCorrection with a grid search over spline spacing
+    (1, 2, 3, 4, 5 mm) and iterations per level (50, 100, 200).  Produces one
+    HTML report per subject/stain showing visual comparisons (uncorrected,
+    bias field, corrected) and a quantitative summary table for all parameter
+    combinations.  PNG figures and the HTML report are written to the ``qc``
+    datatype folder for each subject.
+
+    Invoke with: ``spimquant <bids_dir> <out_dir> tune_n4``
+    """
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                suffix="n4tunereport.html",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains,
+        ),
 
 
 rule all_register:
