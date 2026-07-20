@@ -90,7 +90,7 @@ rule deform_fieldfrac_nii_to_template_nii:
             **inputs["spim"].wildcards,
         ),
         ref=rules.import_template_anat.output.anat,
-        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
+        xfm_composite=get_composite_warp,
     output:
         nii=bids(
             root=root,
