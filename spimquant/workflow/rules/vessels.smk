@@ -166,13 +166,13 @@ rule vessel_graph_to_nodes_edges:
             **inputs["spim"].wildcards,
         ),
     output:
-        nodes_parquet=bids(
+        nodes_raw_parquet=bids(
             root=root,
             datatype="vessels",
             stain="{stain}",
             level="{level}",
             desc="{desc}+skeleton",
-            suffix="nodes.parquet",
+            suffix="nodes_raw.parquet",
             **inputs["spim"].wildcards,
         ),
         edges_parquet=bids(
@@ -190,3 +190,42 @@ rule vessel_graph_to_nodes_edges:
         runtime=360,
     script:
         "../scripts/convert_vessel_graph_to_nodes_edges.py"
+
+
+rule vessel_graph_connected_components:
+    """Annotate vessel graph nodes with ranked connected-component labels."""
+    input:
+        nodes_parquet=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            suffix="nodes_raw.parquet",
+            **inputs["spim"].wildcards,
+        ),
+        edges_parquet=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            suffix="edges.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        nodes_parquet=bids(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}+skeleton",
+            suffix="nodes.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 16
+    resources:
+        mem_mb=64000,
+        runtime=360,
+    script:
+        "../scripts/annotate_vessel_graph_connected_components.py"
