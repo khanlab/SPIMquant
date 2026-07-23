@@ -9,6 +9,12 @@ uncorr = uncorr_img.get_fdata(dtype=np.float32)
 mask = mask_img.get_fdata(dtype=np.float32) > 0
 biasfield = biasfield_img.get_fdata(dtype=np.float32)
 
+if not mask.any():
+    raise ValueError(
+        f"Brain mask {snakemake.input.mask} contains no masked voxels; "
+        "cannot compute scale and offset."
+    )
+
 # Avoid division by zero in bias field
 epsilon = np.finfo(np.float32).eps
 biasfield_safe = np.maximum(biasfield, epsilon)

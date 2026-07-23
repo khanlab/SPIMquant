@@ -10,8 +10,16 @@ if __name__ == "__main__":
     scale_offset = {}
     with open(snakemake.input.scale_offset_params) as f:
         for line in f:
-            key, val = line.strip().split("=")
+            line = line.strip()
+            if not line or "=" not in line:
+                continue
+            key, val = line.split("=", 1)
             scale_offset[key.strip()] = float(val.strip())
+    if "scale" not in scale_offset or "offset" not in scale_offset:
+        raise ValueError(
+            f"scale_offset_params file {snakemake.input.scale_offset_params} "
+            "must contain 'scale' and 'offset' entries"
+        )
     scale = scale_offset["scale"]
     offset = scale_offset["offset"]
 
