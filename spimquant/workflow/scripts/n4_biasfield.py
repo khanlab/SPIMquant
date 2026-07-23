@@ -34,7 +34,9 @@ if __name__ == "__main__":
 
         # Apply bias field correction
         znimg_corrected = znimg.apply_scaled_processing(
-            N4BiasFieldApply(log_space=True),
+            N4BiasFieldApply(log_space=True,
+                             scale=#TODO get scale from txt file,
+                             offset=#TODO get scale from txt file),
             **scaled_proc_kwargs,
         )
 

@@ -127,6 +127,97 @@ rule n4_pre_quant:
         " -x {input.mask}"
         " -d 3 -v "
 
+rule calc_n4_rescaling:
+    """ calculate the linear intensity rescaling,
+     scale and offset, that n4 uses to rescale 
+     intensities back to the input min and max.
+     Does this by calculating the input min and max (within 
+     the masked region), then calculating the min and max in the image
+     input image divided by the bias field (also only within the masked 
+     region). Then use these min/max values to find the scale and offset 
+     (e.g. x*scale + offset) to apply to the divided image, so that the min and max
+     become the input min and max. """
+     input:
+        uncorr=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level="{level}",
+            desc="brain",
+            suffix="mask.nii.gz",
+            **inputs["spim"].wildcards,
+        biasfield=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="prequantN4",
+            suffix="biasfield.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        scale_offset_params=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="prequantN4",
+            suffix="scaleoffset.txt",
+            **inputs["spim"].wildcards,
+        ),
+    script:
+        "../scripts/calc_n4_rescaling.py" #TODO: make this script
+
+rule encode_mask_in_bias_field:
+    """Use -1 to encode the mask in the bias field"""
+    input:
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level="{level}",
+            desc="brain",
+            suffix="mask.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        biasfield=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="prequantN4",
+            suffix="biasfield.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        biasfield=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="prequantN4masked",
+            suffix="biasfield.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    resources:
+        mem_mb=32000,
+        runtime=15,
+    conda:
+        "../envs/c3d.yaml"
+    shell:
+        "c3d {input.mask} {input.biasfield} -multiply " 
+        " {input.mask} -replace 1 0 0 -1 "
+        " -add -o {output.biasfield}"
+
+
 
 ruleorder: n4_pre_quant > n4
 
@@ -210,8 +301,17 @@ rule n4_biasfield:
             datatype="micr",
             stain="{stain}",
             level=config["correction_level"],
-            desc="prequantN4",
+            desc="prequantN4masked",
             suffix="biasfield.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        scale_offset_params=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            desc="prequantN4",
+            suffix="scaleoffset.txt",
             **inputs["spim"].wildcards,
         ),
     output:
