@@ -129,15 +129,16 @@ rule n4_pre_quant:
 
 rule calc_n4_rescaling:
     """ calculate the linear intensity rescaling,
-     scale and offset, that n4 uses to rescale 
+     scale and offset, that n4 uses to rescale
      intensities back to the input min and max.
-     Does this by calculating the input min and max (within 
+     Does this by calculating the input min and max (within
      the masked region), then calculating the min and max in the image
-     input image divided by the bias field (also only within the masked 
-     region). Then use these min/max values to find the scale and offset 
+     input image divided by the bias field (also only within the masked
+     region). Then use these min/max values to find the scale and offset
      (e.g. x*scale + offset) to apply to the divided image, so that the min and max
      become the input min and max. """
-     input:
+
+    input:
         uncorr=bids(
             root=root,
             datatype="micr",
@@ -154,6 +155,7 @@ rule calc_n4_rescaling:
             desc="brain",
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
+        ),
         biasfield=bids(
             root=root,
             datatype="micr",
@@ -173,8 +175,11 @@ rule calc_n4_rescaling:
             suffix="scaleoffset.txt",
             **inputs["spim"].wildcards,
         ),
+    resources:
+        mem_mb=32000,
+        runtime=15,
     script:
-        "../scripts/calc_n4_rescaling.py" #TODO: make this script
+        "../scripts/calc_n4_rescaling.py"
 
 rule encode_mask_in_bias_field:
     """Use -1 to encode the mask in the bias field"""
