@@ -6,6 +6,15 @@ if __name__ == "__main__":
 
     is_imaris = str(snakemake.input.spim).lower().endswith(".ims")
 
+    # Read scale and offset from the pre-computed rescaling parameters file
+    scale_offset = {}
+    with open(snakemake.input.scale_offset_params) as f:
+        for line in f:
+            key, val = line.strip().split("=")
+            scale_offset[key.strip()] = float(val.strip())
+    scale = scale_offset["scale"]
+    offset = scale_offset["offset"]
+
     with get_dask_client(
         snakemake.config["dask_scheduler"],
         snakemake.threads,
@@ -32,11 +41,9 @@ if __name__ == "__main__":
 
         # scaled_proc_kwargs controls how apply_scaled_processing is performed
 
-        # Apply bias field correction
+        # Apply bias field correction with linear rescaling to restore input intensity range
         znimg_corrected = znimg.apply_scaled_processing(
-            N4BiasFieldApply(log_space=True,
-                             scale=#TODO get scale from txt file,
-                             offset=#TODO get scale from txt file),
+            N4BiasFieldApply(log_space=True, scale=scale, offset=offset),
             **scaled_proc_kwargs,
         )
 
