@@ -79,15 +79,6 @@ rule n4_pre_quant:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        mask=bids(
-            root=root,
-            datatype="micr",
-            stain=stain_for_reg,
-            level="{level}",
-            desc="brain",
-            suffix="mask.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
     output:
         corrected=bids(
             root=root,
@@ -124,7 +115,6 @@ rule n4_pre_quant:
         " -b [{params.spline_spacing},3]"
         " -s {params.shrink_level}"
         " -o [{output.corrected},{output.biasfield}]"
-        " -x {input.mask}"
         " -d 3 -v "
 
 
@@ -146,15 +136,6 @@ rule n4_pre_quant_tune:
             stain="{stain}",
             level=str(config["correction_level"]),
             suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        mask=bids(
-            root=root,
-            datatype="micr",
-            stain=stain_for_reg,
-            level=str(config["correction_level"]),
-            desc="brain",
-            suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
     output:
@@ -197,7 +178,6 @@ rule n4_pre_quant_tune:
         " -b [{params.spline_spacing},3]"
         " -s {params.shrink_level}"
         " -o [{output.corrected},{output.biasfield}]"
-        " -x {input.mask}"
         " -d 3 -v "
 
 
