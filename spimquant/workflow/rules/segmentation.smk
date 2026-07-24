@@ -214,6 +214,15 @@ rule n4_biasfield:
             suffix="biasfield.nii.gz",
             **inputs["spim"].wildcards,
         ),
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level=config["correction_level"],
+            desc="brain",
+            suffix="mask.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
     output:
         corrected=temp(
             bids_oz_out(
