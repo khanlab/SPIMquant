@@ -143,7 +143,7 @@ rule merge_into_segstats_tsv:
         ),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=16000,
         runtime=15,
     script:
         "../scripts/merge_into_segstats_tsv.py"

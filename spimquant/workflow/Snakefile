@@ -314,6 +314,7 @@ if config.get("analysis_level") == "group":
 
 
 wildcard_constraints:
+    acq="[a-zA-Z0-9]+",
     stain="[a-zA-Z0-9]+",
     pairwise_contrast="[a-zA-Z0-9+_-]+",
     n4_spline="[0-9]+",
