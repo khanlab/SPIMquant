@@ -1,23 +1,29 @@
 if __name__ == "__main__":
 
     from dask_setup import get_dask_client
+    from contextlib import ExitStack
     from zarrnii import ZarrNii
     from zarrnii.plugins import N4BiasFieldApply
     import tempfile
 
     is_imaris = str(snakemake.input.spim).lower().endswith(".ims")
 
-    with get_dask_client(
-        snakemake.config["dask_scheduler"],
-        snakemake.threads,
-        threads_per_worker=16 if is_imaris else 2,
-    ):
+    with ExitStack() as stack:
+
+        stack.enter_context(
+            get_dask_client(
+                snakemake.config["dask_scheduler"],
+                snakemake.threads,
+                threads_per_worker=16 if is_imaris else 2,
+            )
+        )
 
         hires_level = int(snakemake.wildcards.level)
         proc_level = int(snakemake.params.proc_level)
 
         unadjusted_downsample_factor = 2**proc_level
         adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
+
         znimg_in = ZarrNii.from_file(
             snakemake.input.spim,
             channel_labels=[snakemake.wildcards.stain],
@@ -27,34 +33,37 @@ if __name__ == "__main__":
             **snakemake.params.zarrnii_kwargs,
         )
 
-        # try first saving to /tmp
-        with tempfile.TemporaryDirectory(suffix=".ome.zarr") as temp_dir:
+        # only use temp zarr for imaris stores
+        if is_imaris:
+            temp_dir = stack.enter_context(
+                tempfile.TemporaryDirectory(suffix=".ome.zarr")
+            )
             znimg_in.to_ome_zarr(temp_dir)
             znimg = ZarrNii.from_file(temp_dir)
+        else:
+            znimg = znimg_in
 
-            znimg_lowres = ZarrNii.from_nifti(
-                snakemake.input.biasfield, axes_order="ZYX"
-            )
-            znimg_mask = ZarrNii.from_nifti(snakemake.input.mask, axes_order="ZYX")
+        znimg_lowres = ZarrNii.from_nifti(snakemake.input.biasfield, axes_order="ZYX")
+        znimg_mask = ZarrNii.from_nifti(snakemake.input.mask, axes_order="ZYX")
 
-            print("compute bias field correction")
-            scaled_proc_kwargs = {
-                "lowres_znimg": znimg_lowres,
-                "lowres_mask": znimg_mask,
-                "method": "map_blocks",
-            }
+        print("compute bias field correction")
+        scaled_proc_kwargs = {
+            "lowres_znimg": znimg_lowres,
+            "lowres_mask": znimg_mask,
+            "method": "map_blocks",
+        }
 
-            # scaled_proc_kwargs controls how apply_scaled_processing is performed
+        # scaled_proc_kwargs controls how apply_scaled_processing is performed
 
-            # Apply bias field correction
-            znimg_corrected = znimg.apply_scaled_processing(
-                N4BiasFieldApply(log_space=True),
-                **scaled_proc_kwargs,
-            )
+        # Apply bias field correction
+        znimg_corrected = znimg.apply_scaled_processing(
+            N4BiasFieldApply(log_space=True),
+            **scaled_proc_kwargs,
+        )
 
-            # write to ome_zarr
-            znimg_corrected.to_ome_zarr(
-                snakemake.output.corrected,
-                match_scale_factors_from=snakemake.input.spim,
-                **snakemake.config["zarrnii_out_kwargs"],
-            )
+        # write to ome_zarr
+        znimg_corrected.to_ome_zarr(
+            snakemake.output.corrected,
+            match_scale_factors_from=snakemake.input.spim,
+            **snakemake.config["zarrnii_out_kwargs"],
+        )
