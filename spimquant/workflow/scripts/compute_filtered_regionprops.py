@@ -5,7 +5,6 @@ region properties, and outputs region properties on these filtered objects
 """
 
 import os
-import shutil
 import tempfile
 import zipfile
 from dask_setup import get_dask_client
