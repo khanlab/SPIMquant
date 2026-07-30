@@ -28,8 +28,8 @@ rule compute_filtered_regionprops:
         ),
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=256000,
-        runtime=180,
+        mem_mb=500000,
+        runtime=360,
     script:
         "../scripts/compute_filtered_regionprops.py"
 
