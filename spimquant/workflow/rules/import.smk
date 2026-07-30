@@ -155,12 +155,14 @@ rule generic_lut_bids_to_itksnap:
 
 rule import_dseg:
     """Import atlas segmentation (dseg) file.
-    
+   
+    Resamples with nn
     Copies or downloads the atlas parcellation file for the specified template
     and segmentation scheme. The dseg file contains discrete labels corresponding
     to anatomical regions defined in the companion TSV file.
     """
     input:
+        ref=bids(root=root, template="{template}", suffix="anat.nii.gz"),
         dseg=lambda wildcards: storage(
             ancient(
                 resources_path(
@@ -176,8 +178,10 @@ rule import_dseg:
     resources:
         mem_mb=1500,
         runtime=15,
-    script:
-        "../scripts/copy_nii.py"
+    conda:
+        "../envs/c3d.yaml"
+    shell:
+        "c3d -interpolation NearestNeighbor {input.ref} {input.dseg} -reslice-identity -o {output.dseg}"
 
 
 rule import_lut_tsv:
