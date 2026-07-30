@@ -4,34 +4,31 @@ connected components on chunks with overlap, applies filters based on
 region properties, and outputs region properties on these filtered objects
 """
 
-import os
 import tempfile
 import zipfile
+from contextlib import contextmanager
+
 from dask_setup import get_dask_client
 from zarrnii import ZarrNii
 
-if __name__ == "__main__":
-    with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
 
-        # 1. Create a secure, temporary directory in the system default tempdir
+@contextmanager
+def get_zarr_path(mask_path):
+    """Yield the path to the OME-Zarr store, extracting from zip if needed."""
+    if mask_path.endswith(".ozx") or mask_path.endswith(".zip"):
         with tempfile.TemporaryDirectory(suffix=".ome.zarr") as temp_dir:
             print(f"Extracting zip archive to temporary directory: {temp_dir}")
-
-            # 2. Open and extract the entire input zip file safely
-            with zipfile.ZipFile(snakemake.input.mask, "r") as zip_ref:
+            with zipfile.ZipFile(mask_path, "r") as zip_ref:
                 zip_ref.extractall(temp_dir)
+            yield temp_dir
+    else:
+        yield mask_path
 
-            # 3. Locate the extracted directory/file path inside the temp folder
-            # OME-Zarr is usually a single top-level directory inside the zip.
-            extracted_contents = os.listdir(temp_dir)
-            if not extracted_contents:
-                raise ValueError("The input zip file is empty.")
 
-            # Direct path to the extracted .zarr directory structure
-            zarr_temp_path = os.path.join(temp_dir, extracted_contents[0])
-
-            # 4. Point ZarrNii to the unzipped DirectoryStore instead of the ZipStore
-            znimg = ZarrNii.from_file(temp_dir)
+if __name__ == "__main__":
+    with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
+        with get_zarr_path(snakemake.input.mask) as zarr_path:
+            znimg = ZarrNii.from_file(zarr_path, level=0)
 
             znimg.compute_region_properties(
                 output_path=snakemake.output.regionprops_parquet,
