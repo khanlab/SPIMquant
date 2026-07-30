@@ -471,7 +471,7 @@ rule affine_zarr_to_template_ome_zarr:
 
 rule deform_zarr_to_template_nii:
     input:
-        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
+        xfm_composite=get_composite_warp,
         ref_nii=get_template_for_reg,
     params:
         ome_zarr=inputs["spim"].path,
@@ -500,7 +500,7 @@ rule deform_zarr_to_template_nii:
 rule deform_to_template_nii_zoomed:
     input:
         ome_zarr=inputs["spim"].path,
-        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
+        xfm_composite=get_composite_warp,
         ref_nii=get_template_for_reg,
     params:
         flo_opts={},  #any additional flo znimg options
@@ -544,7 +544,7 @@ rule deform_spim_nii_to_template_nii:
             **inputs["spim"].wildcards,
         ),
         ref=rules.import_template_anat.output.anat,
-        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
+        xfm_composite=get_composite_warp,
     output:
         spim=bids(
             root=root,
@@ -585,7 +585,7 @@ rule deform_template_dseg_to_subject_nii:
             **inputs["spim"].wildcards,
         ),
         dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
-        xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
+        xfm_composite_inv=get_composite_warp_inv,
     output:
         dseg=bids(
             root=root,
@@ -679,15 +679,7 @@ rule registration_qc_report:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        warped_affine=bids(
-            root=root,
-            datatype="xfm",
-            space="{template}",
-            stain="{stain}",
-            desc="affinewarped",
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
+        warped_affine=get_affine_warped_for_qc,
         warped_deform=bids(
             root=root,
             datatype="micr",
@@ -697,7 +689,7 @@ rule registration_qc_report:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        warp=rules.compose_subject_to_template_warp.output.xfm_composite,
+        warp=get_composite_warp,
         dseg=lambda wildcards: bids(
             root=root,
             template=wildcards.template,
