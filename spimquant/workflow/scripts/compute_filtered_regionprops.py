@@ -1,6 +1,6 @@
 """Compute region properties from filtered segmentation masks using ZarrNii.
 This script reads a segmentation mask from an OME-Zarr file, performs
-connected components on chunks with overlap, applys filters based on 
+connected components on chunks with overlap, applies filters based on
 region properties, and outputs region properties on these filtered objects
 """
 
