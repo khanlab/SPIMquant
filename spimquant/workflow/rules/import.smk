@@ -55,7 +55,6 @@ localrules:
     import_template_spim,
     import_mask,
     generic_lut_bids_to_itksnap,
-    import_dseg,
     import_lut_tsv,
     import_DSURQE_tsv,
 
@@ -176,7 +175,7 @@ rule import_dseg:
         dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
     threads: 1
     resources:
-        mem_mb=1500,
+        mem_mb=16000,
         runtime=15,
     conda:
         "../envs/c3d.yaml"
