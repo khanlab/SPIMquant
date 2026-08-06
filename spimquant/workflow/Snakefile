@@ -1,4 +1,5 @@
 import os
+import yaml as _yaml
 from itertools import combinations as _combinations, product as _product
 
 import pandas as _pd
@@ -208,6 +209,23 @@ for seg in config["crop_atlas_segs"]:
         )
     else:
         crop_atlas_segs.append(seg)
+
+# Parse custom bounding box config for template-space crops
+bbox_configs = []
+bbox_cfgs_by_name = {}
+if config.get("bbox_config") is not None:
+    with open(config["bbox_config"]) as _bbox_fp:
+        _bbox_data = _yaml.safe_load(_bbox_fp)
+    bbox_configs = _bbox_data.get("bounding_boxes", [])
+    for _bbox in bbox_configs:
+        _name = _bbox["name"]
+        if _name in bbox_cfgs_by_name:
+            raise ValueError(
+                f"Duplicate bounding box name '{_name}' found in bbox_config. "
+                "All bounding box names must be unique."
+            )
+        bbox_cfgs_by_name[_name] = _bbox
+
 # Generate pairwise contrast labels from participants.tsv at planning time.
 # Contrasts are only enumerated when --group-stats-pairwise is supplied;
 # merged group TSVs are always produced at the group analysis level.

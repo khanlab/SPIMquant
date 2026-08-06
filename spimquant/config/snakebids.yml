@@ -342,6 +342,30 @@ parse_args:
     action: store_true
     default: False
 
+  --bbox_config:
+    help: >
+      Path to a YAML file defining custom bounding boxes for extracting cropped regions
+      at full resolution in template space. Each entry specifies a name, xyz coordinates
+      in template space (in mm by default), bounding box size in voxels, and the desired
+      isotropic output resolution in microns. A special entry with use_brain_mask: true
+      extracts the whole-brain region defined by the template brain mask.
+      Example YAML format:
+        bounding_boxes:
+          - name: entorhinal
+            x: 5.2
+            y: -2.3
+            z: -1.8
+            units: mm
+            size: [256, 256, 256]
+            resolution_um: 20
+            input_level: 0
+          - name: wholebrain
+            use_brain_mask: true
+            resolution_um: 100
+            input_level: 2
+    default: null
+    type: str
+
   --group-stats-model:
     help: "Statistical model formula in patsy/statsmodels format, with 'metric' as a placeholder for the response variable (e.g. 'metric ~ C(treatment) * C(genotype) + age'). Required when using --group-stats-pairwise."
 
