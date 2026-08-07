@@ -175,6 +175,40 @@ else:
         do_vessels = False
 
 
+# The LANTERN plaque ensemble is opt-in via --seg_method, but it is trained on
+# amyloid-beta only, so it is resolved to a single stain the same way vessels are
+# rather than being fanned out over every stain in stains_for_seg.
+do_plaques = do_seg and config["plaque_seg_method"] in config["seg_method"]
+
+stain_for_plaques = None
+
+if do_plaques:
+    for stain in config["stains_for_plaques"]:
+        if stain in stains_for_seg:
+            stain_for_plaques = stain
+            break
+
+    if stain_for_plaques is None:
+        raise ValueError(
+            f"--seg_method {config['plaque_seg_method']} was requested but none of "
+            f"{config['stains_for_plaques']} is in stains_for_seg ({stains_for_seg}). "
+            f"The LANTERN ensemble only segments amyloid-beta."
+        )
+
+# Methods applied to every stain in stains_for_seg. The plaque method is excluded
+# because it is stain-specific -- keeping it out of this list is what stops it from
+# entering the desc x stain expansions and the cross-stain aggregation, exactly as
+# vessel_seg_method stays out of them.
+#
+# If the plaque method was the ONLY one requested, the remaining stains must behave
+# exactly as if --seg_method had never been passed. That default is read back off
+# the CLI definition rather than restated here, so it cannot drift out of sync with
+# the actual default if the latter ever changes.
+seg_methods = [
+    m for m in config["seg_method"] if m != config["plaque_seg_method"]
+] or list(config["parse_args"]["--seg_method"]["default"])
+
+
 # atlas segmentations to use
 
 if config["atlas_segs"] is None:
@@ -540,6 +574,51 @@ rule all_vessels:
         ),
 
 
+rule all_plaques:
+    input:
+        inputs["spim"].expand(
+            bids_oz_in(
+                root=root,
+                datatype="seg",
+                stain="{stain}",
+                level="{level}",
+                desc=config["plaque_seg_method"],
+                suffix="probseg.{ext}",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["plaque_level"],
+            stain=stain_for_plaques,
+        ),
+        inputs["spim"].expand(
+            bids_oz_in(
+                root=root,
+                datatype="seg",
+                stain="{stain}",
+                level="{level}",
+                desc=config["plaque_seg_method"],
+                suffix="mask.{ext}",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["segmentation_level"],
+            stain=stain_for_plaques,
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="seg",
+                stain="{stain}",
+                level="{level}",
+                desc=config["plaque_seg_method"],
+                space="{template}",
+                suffix="fieldfrac.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["registration_level"],
+            template=config["template"],
+            stain=stain_for_plaques,
+        ),
+
+
 rule all_segment:
     input:
         inputs["spim"].expand(
@@ -553,7 +632,7 @@ rule all_segment:
                 **inputs["spim"].wildcards,
             ),
             seg=atlas_segs,
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
             suffix=config["seg_metrics"],
             stain=stains_for_seg,
@@ -585,7 +664,7 @@ rule all_segment:
             ),
             stain=stains_for_seg,
             level=config["registration_level"],
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
         ),
         inputs["spim"].expand(
@@ -600,7 +679,7 @@ rule all_segment:
             ),
             stain=stains_for_seg,
             level=config["registration_level"],
-            desc=config["seg_method"],
+            desc=seg_methods,
         ),
         inputs["spim"].expand(
             bids(
@@ -614,7 +693,7 @@ rule all_segment:
             ),
             stain=stains_for_seg,
             template=config["template"],
-            desc=config["seg_method"],
+            desc=seg_methods,
         ),
         expand(
             bids(
@@ -642,7 +721,7 @@ rule all_segment_coloc:
                 **inputs["spim"].wildcards,
             ),
             seg=atlas_segs,
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
             suffix=config["coloc_seg_metrics"],
         ),
@@ -655,7 +734,7 @@ rule all_segment_coloc:
                 suffix="coloccounts.nii.gz",
                 **inputs["spim"].wildcards,
             ),
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
         ),
 
@@ -721,7 +800,7 @@ rule all_spim_patches:
             stain=stains_for_seg,
             seg=patch_atlas_segs,
             template=config["template"],
-            desc=config["seg_method"],
+            desc=seg_methods,
             level=config["segmentation_level"],
         ),
 
@@ -759,7 +838,7 @@ rule all_group_stats:
                 suffix="groupstats.{ext}",
             ),
             seg=atlas_segs,
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
             pairwise_contrast=pairwise_contrast_labels,
             ext=["png", "tsv"],
@@ -776,7 +855,7 @@ rule all_group_stats:
                 suffix="{stat}.nii.gz",
             ),
             seg=atlas_segs,
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
             stain=stains_for_seg,
             metric=config["seg_metrics"],
@@ -792,7 +871,7 @@ rule all_group_stats:
                 desc="{desc}",
                 suffix="{stain}+count.nii.gz",
             ),
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
             level=range(4),
             stain=stains_for_seg,
@@ -813,7 +892,7 @@ rule all_group_stats_coloc:
                 suffix="{stat}.nii.gz",
             ),
             seg=atlas_segs,
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
             metric=config["coloc_seg_metrics"],
             stat=config["stats_maps"],
@@ -828,7 +907,7 @@ rule all_group_stats_coloc:
                 desc="{desc}",
                 suffix="coloccount.nii.gz",
             ),
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
             level=range(4),
         ),
@@ -859,7 +938,7 @@ rule all_qc:
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
-            desc=config["seg_method"],
+            desc=seg_methods,
         )
         if do_seg
         else [],
@@ -878,7 +957,7 @@ rule all_qc:
             seg=atlas_segs,
             template=config["template"],
             stain=stains_for_seg,
-            desc=config["seg_method"],
+            desc=seg_methods,
         )
         if do_seg
         else [],
@@ -897,7 +976,7 @@ rule all_qc:
             seg=atlas_segs,
             template=config["template"],
             stain=stains_for_seg,
-            desc=config["seg_method"],
+            desc=seg_methods,
         )
         if do_seg
         else [],
@@ -965,7 +1044,7 @@ rule all_qc:
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
-            desc=config["seg_method"],
+            desc=seg_methods,
         )
         if do_seg
         else [],
@@ -980,7 +1059,7 @@ rule all_qc:
                 **inputs["spim"].wildcards,
             ),
             stain=stains_for_seg,
-            desc=config["seg_method"],
+            desc=seg_methods,
         )
         if do_seg
         else [],
@@ -997,7 +1076,7 @@ rule all_qc:
             ),
             seg=atlas_segs,
             template=config["template"],
-            desc=config["seg_method"],
+            desc=seg_methods,
         )
         if do_seg
         else [],
@@ -1028,7 +1107,7 @@ rule all_qc:
             seg=atlas_segs,
             template=config["template"],
             stain=stains_for_seg,
-            desc=config["seg_method"],
+            desc=seg_methods,
         )
         if do_seg and config["qc_instance_seg"]
         else [],
@@ -1056,7 +1135,7 @@ rule all_qc:
             ],
             seg=atlas_segs,
             template=config["template"],
-            desc=config["seg_method"],
+            desc=seg_methods,
         )
         if do_coloc and config["qc_instance_seg"]
         else [],
@@ -1077,7 +1156,7 @@ rule all_tabular_sidecars:
                 **inputs["spim"].wildcards,
             ),
             seg=atlas_segs,
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
         )
         if do_seg
@@ -1095,7 +1174,7 @@ rule all_tabular_sidecars:
                 **inputs["spim"].wildcards,
             ),
             seg=atlas_segs,
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
             stain=stains_for_seg,
         )
@@ -1111,7 +1190,7 @@ rule all_tabular_sidecars:
                 suffix="regionprops.json",
                 **inputs["spim"].wildcards,
             ),
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
         )
         if do_seg
@@ -1125,7 +1204,7 @@ rule all_tabular_sidecars:
                 suffix="coloc.json",
                 **inputs["spim"].wildcards,
             ),
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
         )
         if do_coloc
@@ -1146,7 +1225,7 @@ rule all_group_stats_tabular_sidecars:
                 suffix="groupstats.json",
             ),
             seg=atlas_segs,
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
             pairwise_contrast=pairwise_contrast_labels,
         )
@@ -1162,7 +1241,7 @@ rule all_group_stats_tabular_sidecars:
                 suffix="allsubjects.json",
             ),
             seg=atlas_segs,
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
         )
         if do_seg
@@ -1175,7 +1254,7 @@ rule all_group_stats_tabular_sidecars:
                 desc="{desc}",
                 suffix="regionprops.json",
             ),
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
         )
         if do_seg
@@ -1187,7 +1266,7 @@ rule all_group_stats_tabular_sidecars:
                 desc="{desc}",
                 suffix="coloc.json",
             ),
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
         )
         if do_coloc
@@ -1207,7 +1286,7 @@ rule all_group_merged_tsvs:
                 suffix="allsubjects.tsv",
             ),
             seg=atlas_segs,
-            desc=config["seg_method"],
+            desc=seg_methods,
             template=config["template"],
         )
         if do_seg
@@ -1219,6 +1298,7 @@ rule all_participant:
     input:
         rules.all_register.input,
         rules.all_vessels.input if do_vessels else [],
+        rules.all_plaques.input if do_plaques else [],
         rules.all_segment.input if do_seg else [],
         rules.all_mri_reg.input if config["register_to_mri"] else [],
         rules.all_segment_coloc.input if do_coloc else [],
@@ -1240,6 +1320,7 @@ include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
 include: "rules/vessels.smk"
+include: "rules/plaques.smk"
 include: "rules/segmentation.smk"
 include: "rules/counts.smk"
 include: "rules/fieldfrac.smk"

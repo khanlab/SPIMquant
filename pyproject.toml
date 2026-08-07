@@ -54,6 +54,7 @@ spimquant = { path = ".", editable = true }
 zarrnii = ">=0.21.2,<0.22.0"
 #zarrnii = { path = "/nfs/khan/trainees/akhan488/apps/zarrnii", editable = true }
 vesselfm = { git = "https://github.com/khanlab/vesselfm", rev = "504baab" }
+dynamic-network-architectures = ">=0.4"
 h5py = ">=3.14.0"
 simpleitk = ">=2.4.0"
 pylibtiff = ">=0.7.0"

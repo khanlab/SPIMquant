@@ -6,8 +6,6 @@ environments:
     - url: https://conda.anaconda.org/bioconda/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
@@ -603,6 +601,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstandard-0.25.0-py312h5253ce2_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_6.conda
       - pypi: https://files.pythonhosted.org/packages/6f/4b/817da308fa1170da07ef01259585887a3bbb6ab80700b3e61ce4967301ec/dask_image-2025.11.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2f/e3/07a70c9b83e5446528dd5d222fdca88ab30efcb07094536a864546c0096f/dynamic_network_architectures-0.4.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/e9/1a19e42cd43cc1365e127db6aae85e1c671da1d9a5d746f4d34a50edb577/h5py-3.16.0-cp312-cp312-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ed/2f/1046d464ad1db29a4f6c70ba4e19b39baa8a6542c719eaa4e765108f07f1/hdf5plugin-6.0.0-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c0/47/7dbdec41b18f4c9aa90240c8804482a8c4ada6db3d2844e287695cd42109/imaris_ims_zarr-0.2.0-py3-none-any.whl
@@ -623,9 +623,12 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/f6/17/7468d6cb45b0c537b235bb910812bb248c581a50ffc5eeaeba342f6fdf2d/pylibtiff-0.7.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/2f/43/d7e2b9ad768c07b5473bea3ac7db9ca4d995c09399cbea3d4df1c0bd4955/rangehttpserver-1.4.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0b/35/1cceccc5fcb50fa2ed53e2aa278cd032f3902682a73e763fb1ac3be8e6fa/rich_argparse-1.8.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/28/50/f203ff3a3ddfe19308efc83c5a3a29ed02bf786732ec35e68bf9162f3365/safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c3/5d/5e017f59bbc06af5b9c78331036478b2ddb371d7ff810c559c36e5389904/simpleitk-2.5.4-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e8/ae/fa6cd331b364ad2bbc31652d025f5747d89cbb75576733dfdf8efe3e4d62/slicerator-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/14/7688e984cdd0be1438779825640b943574b89946ed868d76497b3cffb3d5/tensorstore-0.1.83-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/d6/14/fc04d491527b774ec7479897f5861959209de1480e4c4cd32ed098ff8bea/timm-1.0.22-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/17/8b/155f99042f9319bd7759536779b2a5b67cbd4f89c380854670850f89a2f4/torchvision-0.22.1-cp312-cp312-manylinux_2_28_x86_64.whl
       - pypi: git+https://github.com/khanlab/vesselfm?rev=504baab#504baabb253c2b6bf7d5a4037a93c2f590c9da51
       - pypi: https://files.pythonhosted.org/packages/c5/c1/9c64ed6c2d152b56482bb66297bfc03442d25449bfa91da7bf2e58a80f01/wasmtime-44.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/bd/4d/5e4df18906ddeb6e64af6712e72056c73ee926d402c0a5fd16feb72f6fe9/zarrnii-0.21.2-py3-none-any.whl
@@ -636,8 +639,6 @@ environments:
     - url: https://conda.anaconda.org/bioconda/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
@@ -1410,6 +1411,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstandard-0.25.0-py312h5253ce2_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_6.conda
       - pypi: https://files.pythonhosted.org/packages/6f/4b/817da308fa1170da07ef01259585887a3bbb6ab80700b3e61ce4967301ec/dask_image-2025.11.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/d8/ae/b8a29e6dd366327530390464bf7eee0e3b3bcb03deea98b1a6951edb68ba/dynamic_network_architectures-0.4.2.tar.gz
+      - pypi: https://files.pythonhosted.org/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ed/2f/1046d464ad1db29a4f6c70ba4e19b39baa8a6542c719eaa4e765108f07f1/hdf5plugin-6.0.0-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c0/47/7dbdec41b18f4c9aa90240c8804482a8c4ada6db3d2844e287695cd42109/imaris_ims_zarr-0.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/aa/57/0a3499479cb19d7e4b7fc38b2ba15c0ea20e1e88cb2b634b75dd3e9ff8b8/itk_core-5.4.6-cp311-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -1440,8 +1443,6 @@ environments:
     - url: https://conda.anaconda.org/bioconda/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
@@ -1677,18 +1678,27 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/57/d8/8d44036d7eb7b6a8ec4c5494ea0c8c8b94fbc0ed3991c1a7adf230df03bf/aiohttp-3.13.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/10/a1/510b0a7fadc6f43a6ce50152e69dbd86415240835868bb0bd9b5b88b1e06/aioitertools-0.13.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/76/641ae371508676492379f16e2fa48f4e2c11741bd63c48be4b12a6b09cba/aiosignal-1.4.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/3e/30/e900b21425a860e195f32e37657aa1f7c7f2b1bfb26f03ca209b90933c06/annotated_doc-0.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bf/4b/afc1fef8a43bafb139f57f73bbd70df82807af5934321e8112ae50668827/botocore-1.43.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/88/39/799be3f2f0f38cc727ee3b4f1445fe6d5e4133064ec2e4115069418a5bb6/cloudpickle-3.1.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/39/2a/6d2e9047d1fb243dbaa364b01e0297534b9ed7fd27dba1c9f361519cf69b/cuda_bindings-13.3.1-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/fc/b4/d088047afe39827556df21118cac9ffd20cc3f968c99a7681494d1eb333c/cuda_pathfinder-1.6.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/d1/c7/a79086a62c98befcdb8349656c6f114e2db3b8b2422f6e25c97a7f2a9a3c/cuda_toolkit-13.0.3.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4a/f3/00bb1e867fba351e2d784170955713bee200c43ea306c59f30bd7e748192/dask-2026.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/6f/4b/817da308fa1170da07ef01259585887a3bbb6ab80700b3e61ce4967301ec/dask_image-2025.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/84/d0/205d54408c08b13550c733c4b85429e7ead111c7f0014309637425520a9a/deprecated-1.3.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b9/77/2ff7aefc09cf1306a81cd7a46af34f80ebefef81a2e8329b94b58ad813ae/distributed-2026.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/d5/c5db1ea3394c6e1732fb3286b3bd878b59507a8f77d32a2cebda7d7b7cd4/donfig-0.8.1.post1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2f/e3/07a70c9b83e5446528dd5d222fdca88ab30efcb07094536a864546c0096f/dynamic_network_architectures-0.4.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c1/e8/72f8cef9fdfeffe06213fe8508039396ee48daa0e3259457ed766173bfd6/filelock-3.32.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/6a/bd/d91c5e39f490a49df14320f4e8c80161cfcce09f1e2cde1edd16a551abb3/frozenlist-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d5/0c/043d5e551459da400957a1395e0febbf771446ff34291afcbe3d8be2a279/fsspec-2026.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ce/a9/a780cc66f86335a6019f557a8aaca8fbb970728f0efd2430d15ff1beae0e/google_crc32c-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/9e/e9/1a19e42cd43cc1365e127db6aae85e1c671da1d9a5d746f4d34a50edb577/h5py-3.16.0-cp312-cp312-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ed/2f/1046d464ad1db29a4f6c70ba4e19b39baa8a6542c719eaa4e765108f07f1/hdf5plugin-6.0.0-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/67/4e/a28359bf1c1ecf11eba22123168c138698f7cb576ac678f5a2e16cd5da08/hf_xet-1.6.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/49/79/621a7dbb80c70974f73a597275351ebe03ce5bc65cb5f8f4acb5859252bc/huggingface_hub-1.16.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c0/47/7dbdec41b18f4c9aa90240c8804482a8c4ada6db3d2844e287695cd42109/imaris_ims_zarr-0.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8a/db/55a262f3606bebcae07cc14095338471ad7c0bbcaa37707e6f0ee49725b7/importlib_resources-7.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/aa/57/0a3499479cb19d7e4b7fc38b2ba15c0ea20e1e88cb2b634b75dd3e9ff8b8/itk_core-5.4.6-cp311-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -1706,11 +1716,27 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3a/cb/28ce52eb94390dda42599c98ea0204d74799e4d8047a0eb559b6fd648056/ml_dtypes-0.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/65/92/a5100f7185a800a5d29f8d14041f61475b9de465ffcc0f3b9fba606e4505/msgpack-1.1.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/f3/8d/5e5be3ced1d12966fefb5c4ea3b2a5b480afcea36406559442c6e31d4a48/multidict-6.7.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/48/c4/7748c764c297c2469f26902fa70d72dbf026219e2a7a5ce2dc53fc519eff/ngff_zarr-0.34.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3b/d7/601b6396b33536811668935faa790112266c70661be94555999be431f86f/nibabel-5.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/53/78c98ef5c8b2b784453487f3e4d6c017b20747c58b470393e230c78d18e8/numcodecs-0.16.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/3b/cd/154ca20c38269e05eff77c1464e6c1da89f50a6390b565e9d82e06bc11e1/nvidia_cublas-13.1.1.3-py3-none-manylinux_2_27_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/33/6d/737d164b4837a9bbd202f5ae3078975f0525a55730fe871d8ed4e3b952b0/nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/c3/68/483a78f5e8f31b08fb1bb671559968c0ca3a065ac7acabfc7cee55214fd6/nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/2e/24/d1558f3b68b1d26e706813b1d10aa1d785e4698c425af8db8edc3dced472/nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/6e/5e/edb9c0ae051602c3ccaffe424256463636d639e27d7f302dde9975ef9e7a/nvidia_cudnn_cu13-9.20.0.48-py3-none-manylinux_2_27_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/a8/2f/7b57e29836ea8714f81e9898409196f47d772d5ddedddf1592eadb8ab743/nvidia_cufft-12.0.0.61-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/3f/70/4f193de89a48b71714e74602ee14d04e4019ad36a5a9f20c425776e72cd6/nvidia_cufile-1.15.1.6-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/a5/9f/be0a41ca4a4917abf5cb9ae0daff1a6060cc5de950aec0396de9f3b52bc5/nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/5f/67/cba3777620cdacb99102da4042883709c41c709f4b6323c10781a9c3aa34/nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/fa/18/623c77619c31d62efd55302939756966f3ecc8d724a14dab2b75f1508850/nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/34/7d/2661f2fb3ac4302f3a246f5fc030213ac60c1fe0bce84f9783dbd831dbb7/nvidia_cusparselt_cu13-0.8.1-py3-none-manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/67/f4/58e4e91b6919367c7aafb8e36fce9aad1a3047e536bf7e2fd560927d3a4c/nvidia_nccl_cu13-2.29.7-py3-none-manylinux_2_18_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/f0/ee/580ca6f29dcab0221db8706badca1bbbb084f1975c4d4e83329c3a7e31f0/nvidia_nvjitlink-13.3.33-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/3c/35/a9bf80a609e74e3b000fef598933235c908fcefcef9026042b8e6dfde2a9/nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/f3/d86c845465a2723ad7e1e5c36dcd75ddb82898b3f53be47ebd429fb2fa5d/nvidia_nvtx-13.0.85-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/99/81/4c41331f59e64b2a5eaec1c03819d5791e4dde321694fbda661f873184da/ome_zarr-0.16.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/e7/40fb618334dcdf7c5a316c0e7343c5cd82d3d866edc100d98e29bc945ecd/partd-1.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/02/5bf3639f5b77e9b183011c08541c5039ba3d04f5316c70312b48a8e003a9/pims-0.7.tar.gz
@@ -1721,11 +1747,19 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/82/3b/64d4899d73f91ba49a8c18a8ff3f0ea8f1c1d75481760df8c68ef5235bf5/rich-15.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0b/35/1cceccc5fcb50fa2ed53e2aa278cd032f3902682a73e763fb1ac3be8e6fa/rich_argparse-1.8.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5d/a4/9d1ea10ebc9e028a289a72fec84da170689549a8102c8aacfcad26bc5035/s3fs-2026.4.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/28/50/f203ff3a3ddfe19308efc83c5a3a29ed02bf786732ec35e68bf9162f3365/safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c3/5d/5e017f59bbc06af5b9c78331036478b2ddb371d7ff810c559c36e5389904/simpleitk-2.5.4-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e8/ae/fa6cd331b364ad2bbc31652d025f5747d89cbb75576733dfdf8efe3e4d62/slicerator-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/02/be/5d2d47b1fb58943194fb59dcf222f7c4e35122ec0ffe8c36e18b5d728f0b/tblib-3.2.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/14/7688e984cdd0be1438779825640b943574b89946ed868d76497b3cffb3d5/tensorstore-0.1.83-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/d6/14/fc04d491527b774ec7479897f5861959209de1480e4c4cd32ed098ff8bea/timm-1.0.22-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/f3/82/fea946351658e6534db52d2cc12bc53087cbf87f9440c5f180f367c1950b/torch-2.13.0-cp312-cp312-manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/93/e4/e9b2495d0d57b9f60d63c57d0a910410a81b4b073bf70917bef815291119/torchvision-0.28.0-cp312-cp312-manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/c4/6f/fb96d15db6f36d6eae4cafb998c2e0353bf59d7c4ea1662d7497f269134a/triton-3.7.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/43/89/9518bc0c3929bee36b3a4a8e3daddd6e03f92f9961c66d4983b837160543/typer-0.27.1-py3-none-any.whl
       - pypi: git+https://github.com/khanlab/vesselfm?rev=504baab#504baabb253c2b6bf7d5a4037a93c2f590c9da51
       - pypi: https://files.pythonhosted.org/packages/c5/c1/9c64ed6c2d152b56482bb66297bfc03442d25449bfa91da7bf2e58a80f01/wasmtime-44.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/af/aa/ead46a88f9ec3a432a4832dfedb84092fc35af2d0ba40cd04aea3889f247/wrapt-2.1.2-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
@@ -1740,8 +1774,6 @@ environments:
     - url: https://conda.anaconda.org/bioconda/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
@@ -2365,6 +2397,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstandard-0.25.0-py312h5253ce2_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_6.conda
       - pypi: https://files.pythonhosted.org/packages/6f/4b/817da308fa1170da07ef01259585887a3bbb6ab80700b3e61ce4967301ec/dask_image-2025.11.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2f/e3/07a70c9b83e5446528dd5d222fdca88ab30efcb07094536a864546c0096f/dynamic_network_architectures-0.4.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/e9/1a19e42cd43cc1365e127db6aae85e1c671da1d9a5d746f4d34a50edb577/h5py-3.16.0-cp312-cp312-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ed/2f/1046d464ad1db29a4f6c70ba4e19b39baa8a6542c719eaa4e765108f07f1/hdf5plugin-6.0.0-py3-none-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c0/47/7dbdec41b18f4c9aa90240c8804482a8c4ada6db3d2844e287695cd42109/imaris_ims_zarr-0.2.0-py3-none-any.whl
@@ -2385,9 +2419,12 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/f6/17/7468d6cb45b0c537b235bb910812bb248c581a50ffc5eeaeba342f6fdf2d/pylibtiff-0.7.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/2f/43/d7e2b9ad768c07b5473bea3ac7db9ca4d995c09399cbea3d4df1c0bd4955/rangehttpserver-1.4.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0b/35/1cceccc5fcb50fa2ed53e2aa278cd032f3902682a73e763fb1ac3be8e6fa/rich_argparse-1.8.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/28/50/f203ff3a3ddfe19308efc83c5a3a29ed02bf786732ec35e68bf9162f3365/safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c3/5d/5e017f59bbc06af5b9c78331036478b2ddb371d7ff810c559c36e5389904/simpleitk-2.5.4-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e8/ae/fa6cd331b364ad2bbc31652d025f5747d89cbb75576733dfdf8efe3e4d62/slicerator-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/14/7688e984cdd0be1438779825640b943574b89946ed868d76497b3cffb3d5/tensorstore-0.1.83-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/d6/14/fc04d491527b774ec7479897f5861959209de1480e4c4cd32ed098ff8bea/timm-1.0.22-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/17/8b/155f99042f9319bd7759536779b2a5b67cbd4f89c380854670850f89a2f4/torchvision-0.22.1-cp312-cp312-manylinux_2_28_x86_64.whl
       - pypi: git+https://github.com/khanlab/vesselfm?rev=504baab#504baabb253c2b6bf7d5a4037a93c2f590c9da51
       - pypi: https://files.pythonhosted.org/packages/c5/c1/9c64ed6c2d152b56482bb66297bfc03442d25449bfa91da7bf2e58a80f01/wasmtime-44.0.0-py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/bd/4d/5e4df18906ddeb6e64af6712e72056c73ee926d402c0a5fd16feb72f6fe9/zarrnii-0.21.2-py3-none-any.whl
@@ -2644,6 +2681,11 @@ packages:
   - pkg:pypi/amply?source=hash-mapping
   size: 21899
   timestamp: 1734603085333
+- pypi: https://files.pythonhosted.org/packages/3e/30/e900b21425a860e195f32e37657aa1f7c7f2b1bfb26f03ca209b90933c06/annotated_doc-0.0.5-py3-none-any.whl
+  name: annotated-doc
+  version: 0.0.5
+  sha256: 117bac03a25ede5df5440e855b32d556049ca169ead221505badf432fed4b101
+  requires_python: '>=3.9'
 - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-doc-0.0.4-pyhcf101f3_0.conda
   sha256: cc9fbc50d4ee7ee04e49ee119243e6f1765750f0fd0b4d270d5ef35461b643b1
   md5: 52be5139047efadaeeb19c6a5103f92a
@@ -4187,6 +4229,17 @@ packages:
   - pkg:pypi/cryptography?source=hash-mapping
   size: 2534262
   timestamp: 1775637873338
+- pypi: https://files.pythonhosted.org/packages/39/2a/6d2e9047d1fb243dbaa364b01e0297534b9ed7fd27dba1c9f361519cf69b/cuda_bindings-13.3.1-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
+  name: cuda-bindings
+  version: 13.3.1
+  sha256: e32d08f71ebcdf00f0f41eab2eb37e8da94c8ed411cc9f7f7a019ce6b34abe3a
+  requires_dist:
+  - cuda-pathfinder>=1.4.2
+  - cuda-toolkit[nvfatbin,nvjitlink,nvrtc,nvvm]==13.* ; extra == 'all'
+  - cuda-toolkit[cufile]==13.* ; sys_platform == 'linux' and extra == 'all'
+  - cuda-toolkit==13.* ; extra == 'all'
+  - nvidia-cudla==13.* ; platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all'
+  requires_python: '>=3.10'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/cuda-crt-tools-12.6.85-ha770c72_0.conda
   sha256: 83b6f3332a17bc891f2ecdc9b1424658009e37e14e888d0bd0458b6aa4db59a2
   md5: 4ab193b5fcdcf8d7b094221e3977a112
@@ -4307,6 +4360,75 @@ packages:
   purls: []
   size: 10880815
   timestamp: 1732132210850
+- pypi: https://files.pythonhosted.org/packages/fc/b4/d088047afe39827556df21118cac9ffd20cc3f968c99a7681494d1eb333c/cuda_pathfinder-1.6.0-py3-none-any.whl
+  name: cuda-pathfinder
+  version: 1.6.0
+  sha256: 1503af579d8379c24bdd65528379bc57039b0455be9f5f9686cf8e473a1fce51
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/d1/c7/a79086a62c98befcdb8349656c6f114e2db3b8b2422f6e25c97a7f2a9a3c/cuda_toolkit-13.0.3.0-py2.py3-none-any.whl
+  name: cuda-toolkit
+  version: 13.0.3.0
+  sha256: d693caaa261214ddd7dbb60d68e71cbed884e68c2be7509778f3051da0b91c3f
+  requires_dist:
+  - nvidia-cublas==13.1.1.3.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-cccl==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-crt==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-culibos==13.0.85.* ; (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-cupti==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-cuxxfilt==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-nvcc==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-nvrtc==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-opencl==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-profiler-api==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-runtime==13.0.96.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-sanitizer-api==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cufft==12.0.0.61.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cufile==1.15.1.6.* ; (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-curand==10.4.0.35.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cusolver==12.0.4.66.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cusparse==12.6.3.3.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-npp==13.0.1.2.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvfatbin==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvjitlink>=13.0.88,<14 ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvjpeg==13.0.1.86.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvml-dev==13.0.87.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvptxcompiler==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvtx==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvvm==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-cccl==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cccl') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cccl') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cccl')
+  - nvidia-cuda-crt==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'crt') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'crt') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'crt')
+  - nvidia-cublas==13.1.1.3.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cublas') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cublas') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cublas')
+  - nvidia-cuda-nvrtc==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cublas') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cublas') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cublas')
+  - nvidia-cuda-runtime==13.0.96.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cudart') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cudart') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cudart')
+  - nvidia-cufft==12.0.0.61.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cufft') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cufft') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cufft')
+  - nvidia-nvjitlink>=13.0.88,<14 ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cufft') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cufft') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cufft')
+  - nvidia-cufile==1.15.1.6.* ; (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cufile') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cufile')
+  - nvidia-cuda-culibos==13.0.85.* ; (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'culibos') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'culibos')
+  - nvidia-cuda-cupti==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cupti') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cupti') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cupti')
+  - nvidia-curand==10.4.0.35.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'curand') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'curand') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'curand')
+  - nvidia-cublas==13.1.1.3.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cusolver') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cusolver') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cusolver')
+  - nvidia-cusolver==12.0.4.66.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cusolver') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cusolver') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cusolver')
+  - nvidia-cusparse==12.6.3.3.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cusolver') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cusolver') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cusolver')
+  - nvidia-nvjitlink>=13.0.88,<14 ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cusolver') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cusolver') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cusolver')
+  - nvidia-cusparse==12.6.3.3.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cusparse') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cusparse') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cusparse')
+  - nvidia-nvjitlink>=13.0.88,<14 ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cusparse') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cusparse') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cusparse')
+  - nvidia-cuda-cuxxfilt==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cuxxfilt') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cuxxfilt') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cuxxfilt')
+  - nvidia-npp==13.0.1.2.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'npp') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'npp') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'npp')
+  - nvidia-cuda-crt==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvcc') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvcc') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvcc')
+  - nvidia-cuda-nvcc==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvcc') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvcc') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvcc')
+  - nvidia-cuda-runtime==13.0.96.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvcc') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvcc') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvcc')
+  - nvidia-nvvm==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvcc') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvcc') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvcc')
+  - nvidia-nvfatbin==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvfatbin') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvfatbin') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvfatbin')
+  - nvidia-nvjitlink>=13.0.88,<14 ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvjitlink') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvjitlink') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvjitlink')
+  - nvidia-nvjpeg==13.0.1.86.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvjpeg') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvjpeg') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvjpeg')
+  - nvidia-nvml-dev==13.0.87.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvml') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvml') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvml')
+  - nvidia-nvptxcompiler==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvptxcompiler') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvptxcompiler') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvptxcompiler')
+  - nvidia-cuda-nvrtc==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvrtc') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvrtc') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvrtc')
+  - nvidia-nvtx==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvtx') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvtx') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvtx')
+  - nvidia-nvvm==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvvm') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvvm') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvvm')
+  - nvidia-cuda-opencl==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'opencl') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'opencl')
+  - nvidia-cuda-profiler-api==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'profiler') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'profiler') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'profiler')
+  - nvidia-cuda-sanitizer-api==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'sanitizer') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'sanitizer') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'sanitizer')
 - conda: https://conda.anaconda.org/conda-forge/noarch/cuda-version-12.6-h7480c83_3.conda
   sha256: fd9104d73199040285b6a6ad56322b38af04828fabbac1f5a268a83509358425
   md5: 1c8b99e65a4423b1e4ac2e4c76fb0978
@@ -4745,6 +4867,25 @@ packages:
   - pkg:pypi/dunamai?source=hash-mapping
   size: 30866
   timestamp: 1775597880526
+- pypi: https://files.pythonhosted.org/packages/d8/ae/b8a29e6dd366327530390464bf7eee0e3b3bcb03deea98b1a6951edb68ba/dynamic_network_architectures-0.4.2.tar.gz
+  name: dynamic-network-architectures
+  version: 0.4.2
+  sha256: f0f4cfa26e99e7c1cc44d3ac48ce802f109c403d109c4e4d813f682fa9d0ab84
+  requires_dist:
+  - torch>=1.6.0a0
+  - numpy
+  - timm
+  - einops
+- pypi: https://files.pythonhosted.org/packages/2f/e3/07a70c9b83e5446528dd5d222fdca88ab30efcb07094536a864546c0096f/dynamic_network_architectures-0.4.4-py3-none-any.whl
+  name: dynamic-network-architectures
+  version: 0.4.4
+  sha256: 7c51bc6518d5c3ee5449b81e00b4e140bb5fd26d035744c01538cdb47b55751d
+  requires_dist:
+  - torch>=1.6.0a0
+  - numpy
+  - timm<1.0.23
+  - einops
+  requires_python: '>=3.8'
 - conda: https://conda.anaconda.org/conda-forge/noarch/eido-0.2.5-pyhd8ed1ab_0.conda
   sha256: 6972edd5d9dffccd0afcbec077ef2f3a51abc6cc70060bcc818d02988b70983d
   md5: 679c2b63523ef75652e5690a39e0f0a2
@@ -4768,6 +4909,11 @@ packages:
   purls: []
   size: 1311364
   timestamp: 1773744756289
+- pypi: https://files.pythonhosted.org/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl
+  name: einops
+  version: 0.8.2
+  sha256: 54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193
+  requires_python: '>=3.9'
 - conda: https://conda.anaconda.org/conda-forge/noarch/email-validator-2.3.0-pyhd8ed1ab_0.conda
   sha256: c37320864c35ef996b0e02e289df6ee89582d6c8e233e18dc9983375803c46bb
   md5: 3bc0ac31178387e8ed34094d9481bfe8
@@ -5002,6 +5148,11 @@ packages:
   purls: []
   size: 2195198
   timestamp: 1776781721834
+- pypi: https://files.pythonhosted.org/packages/c1/e8/72f8cef9fdfeffe06213fe8508039396ee48daa0e3259457ed766173bfd6/filelock-3.32.2-py3-none-any.whl
+  name: filelock
+  version: 3.32.2
+  sha256: 87dd94cf281e586d135fa51132b8e3d9a598b316e90377a288663c9321036c82
+  requires_python: '>=3.10'
 - conda: https://conda.anaconda.org/conda-forge/noarch/filelock-3.29.0-pyhd8ed1ab_0.conda
   sha256: 6b471a18372bbd52bdf32fc965f71de3bc1b5219418b8e6b3875a67a7b08c483
   md5: 8fa8358d022a3a9bd101384a808044c6
@@ -6084,6 +6235,13 @@ packages:
   - pkg:pypi/heapdict?source=hash-mapping
   size: 10169
   timestamp: 1733762704231
+- pypi: https://files.pythonhosted.org/packages/67/4e/a28359bf1c1ecf11eba22123168c138698f7cb576ac678f5a2e16cd5da08/hf_xet-1.6.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: hf-xet
+  version: 1.6.0
+  sha256: d62671bb130879cef0ee4c9ebe47a14af6c66ec53e6d84dc15936e5ffdfac82f
+  requires_dist:
+  - pytest ; extra == 'tests'
+  requires_python: '>=3.8'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/hf-xet-1.5.0-py310hb823017_0.conda
   noarch: python
   sha256: b0f16f161bae4bdef033d56678a9eda4d07f5aa300db19d58e5e73acb3028b3d
@@ -6165,6 +6323,124 @@ packages:
   - pkg:pypi/httpx?source=hash-mapping
   size: 63082
   timestamp: 1733663449209
+- pypi: https://files.pythonhosted.org/packages/49/79/621a7dbb80c70974f73a597275351ebe03ce5bc65cb5f8f4acb5859252bc/huggingface_hub-1.16.1-py3-none-any.whl
+  name: huggingface-hub
+  version: 1.16.1
+  sha256: 64340de934b9ce37857ef85a82de72f5629e8a270f9119eabb12bf495eb53c22
+  requires_dist:
+  - filelock>=3.10.0
+  - fsspec>=2023.5.0
+  - hf-xet>=1.4.3,<2.0.0 ; platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'
+  - httpx>=0.23.0,<1
+  - packaging>=20.9
+  - pyyaml>=5.1
+  - tqdm>=4.42.1
+  - typer>=0.20.0
+  - typing-extensions>=4.1.0
+  - authlib>=1.3.2 ; extra == 'oauth'
+  - fastapi ; extra == 'oauth'
+  - httpx ; extra == 'oauth'
+  - itsdangerous ; extra == 'oauth'
+  - torch ; extra == 'torch'
+  - safetensors[torch] ; extra == 'torch'
+  - toml ; extra == 'fastai'
+  - fastai>=2.4 ; extra == 'fastai'
+  - fastcore>=1.3.27 ; extra == 'fastai'
+  - hf-xet>=1.4.3,<2.0.0 ; extra == 'hf-xet'
+  - mcp>=1.8.0 ; extra == 'mcp'
+  - authlib>=1.3.2 ; extra == 'testing'
+  - fastapi ; extra == 'testing'
+  - httpx ; extra == 'testing'
+  - itsdangerous ; extra == 'testing'
+  - jedi ; extra == 'testing'
+  - jinja2 ; extra == 'testing'
+  - pytest>=8.4.2 ; extra == 'testing'
+  - pytest-cov ; extra == 'testing'
+  - pytest-env ; extra == 'testing'
+  - pytest-xdist ; extra == 'testing'
+  - pytest-vcr ; extra == 'testing'
+  - pytest-asyncio ; extra == 'testing'
+  - pytest-rerunfailures<16.0 ; extra == 'testing'
+  - pytest-mock ; extra == 'testing'
+  - urllib3<2.0 ; extra == 'testing'
+  - soundfile ; extra == 'testing'
+  - pillow ; extra == 'testing'
+  - numpy ; extra == 'testing'
+  - duckdb ; extra == 'testing'
+  - fastapi ; extra == 'testing'
+  - gradio>=5.0.0 ; extra == 'gradio'
+  - requests ; extra == 'gradio'
+  - typing-extensions>=4.8.0 ; extra == 'typing'
+  - types-pyyaml ; extra == 'typing'
+  - types-simplejson ; extra == 'typing'
+  - types-toml ; extra == 'typing'
+  - types-tqdm ; extra == 'typing'
+  - types-urllib3 ; extra == 'typing'
+  - ruff>=0.9.0 ; extra == 'quality'
+  - mypy==1.15.0 ; extra == 'quality'
+  - libcst>=1.4.0 ; extra == 'quality'
+  - ty ; extra == 'quality'
+  - authlib>=1.3.2 ; extra == 'all'
+  - fastapi ; extra == 'all'
+  - httpx ; extra == 'all'
+  - itsdangerous ; extra == 'all'
+  - jedi ; extra == 'all'
+  - jinja2 ; extra == 'all'
+  - pytest>=8.4.2 ; extra == 'all'
+  - pytest-cov ; extra == 'all'
+  - pytest-env ; extra == 'all'
+  - pytest-xdist ; extra == 'all'
+  - pytest-vcr ; extra == 'all'
+  - pytest-asyncio ; extra == 'all'
+  - pytest-rerunfailures<16.0 ; extra == 'all'
+  - pytest-mock ; extra == 'all'
+  - urllib3<2.0 ; extra == 'all'
+  - soundfile ; extra == 'all'
+  - pillow ; extra == 'all'
+  - numpy ; extra == 'all'
+  - duckdb ; extra == 'all'
+  - fastapi ; extra == 'all'
+  - ruff>=0.9.0 ; extra == 'all'
+  - mypy==1.15.0 ; extra == 'all'
+  - libcst>=1.4.0 ; extra == 'all'
+  - ty ; extra == 'all'
+  - typing-extensions>=4.8.0 ; extra == 'all'
+  - types-pyyaml ; extra == 'all'
+  - types-simplejson ; extra == 'all'
+  - types-toml ; extra == 'all'
+  - types-tqdm ; extra == 'all'
+  - types-urllib3 ; extra == 'all'
+  - authlib>=1.3.2 ; extra == 'dev'
+  - fastapi ; extra == 'dev'
+  - httpx ; extra == 'dev'
+  - itsdangerous ; extra == 'dev'
+  - jedi ; extra == 'dev'
+  - jinja2 ; extra == 'dev'
+  - pytest>=8.4.2 ; extra == 'dev'
+  - pytest-cov ; extra == 'dev'
+  - pytest-env ; extra == 'dev'
+  - pytest-xdist ; extra == 'dev'
+  - pytest-vcr ; extra == 'dev'
+  - pytest-asyncio ; extra == 'dev'
+  - pytest-rerunfailures<16.0 ; extra == 'dev'
+  - pytest-mock ; extra == 'dev'
+  - urllib3<2.0 ; extra == 'dev'
+  - soundfile ; extra == 'dev'
+  - pillow ; extra == 'dev'
+  - numpy ; extra == 'dev'
+  - duckdb ; extra == 'dev'
+  - fastapi ; extra == 'dev'
+  - ruff>=0.9.0 ; extra == 'dev'
+  - mypy==1.15.0 ; extra == 'dev'
+  - libcst>=1.4.0 ; extra == 'dev'
+  - ty ; extra == 'dev'
+  - typing-extensions>=4.8.0 ; extra == 'dev'
+  - types-pyyaml ; extra == 'dev'
+  - types-simplejson ; extra == 'dev'
+  - types-toml ; extra == 'dev'
+  - types-tqdm ; extra == 'dev'
+  - types-urllib3 ; extra == 'dev'
+  requires_python: '>=3.10.0'
 - conda: https://conda.anaconda.org/conda-forge/noarch/huggingface_hub-1.14.0-pyhd8ed1ab_0.conda
   sha256: 7a6810ae5ff35c04e7160f748fb536ca2be3ffb0997ef15ac0dbb6db3e4e874d
   md5: a293e6cbdb2daaa9419c9c3432f10b31
@@ -9944,6 +10220,19 @@ packages:
   purls: []
   size: 491140
   timestamp: 1730581373280
+- pypi: https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl
+  name: mpmath
+  version: 1.3.0
+  sha256: a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c
+  requires_dist:
+  - pytest>=4.6 ; extra == 'develop'
+  - pycodestyle ; extra == 'develop'
+  - pytest-cov ; extra == 'develop'
+  - codecov ; extra == 'develop'
+  - wheel ; extra == 'develop'
+  - sphinx ; extra == 'docs'
+  - gmpy2>=2.1.0a4 ; platform_python_implementation != 'PyPy' and extra == 'gmpy'
+  - pytest>=4.6 ; extra == 'tests'
 - conda: https://conda.anaconda.org/conda-forge/noarch/mpmath-1.4.1-pyhd8ed1ab_0.conda
   sha256: 5bbf2f8179ec43d34d67ca8e4989d216c1bdb4b749fe6cb40e86ebf88c1b5300
   md5: 2e81b32b805f406d23ba61938a184081
@@ -10692,6 +10981,72 @@ packages:
   - pkg:pypi/numpydoc?source=hash-mapping
   size: 65801
   timestamp: 1764715638266
+- pypi: https://files.pythonhosted.org/packages/3b/cd/154ca20c38269e05eff77c1464e6c1da89f50a6390b565e9d82e06bc11e1/nvidia_cublas-13.1.1.3-py3-none-manylinux_2_27_x86_64.whl
+  name: nvidia-cublas
+  version: 13.1.1.3
+  sha256: 37936a16db8fe4ac1f065c2139360608a543a09275cb1a1af612e08cfa065436
+  requires_dist:
+  - nvidia-cuda-nvrtc
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/33/6d/737d164b4837a9bbd202f5ae3078975f0525a55730fe871d8ed4e3b952b0/nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_x86_64.whl
+  name: nvidia-cuda-cupti
+  version: 13.0.85
+  sha256: 4eb01c08e859bf924d222250d2e8f8b8ff6d3db4721288cf35d14252a4d933c8
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/c3/68/483a78f5e8f31b08fb1bb671559968c0ca3a065ac7acabfc7cee55214fd6/nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
+  name: nvidia-cuda-nvrtc
+  version: 13.0.88
+  sha256: ad9b6d2ead2435f11cbb6868809d2adeeee302e9bb94bcf0539c7a40d80e8575
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/2e/24/d1558f3b68b1d26e706813b1d10aa1d785e4698c425af8db8edc3dced472/nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: nvidia-cuda-runtime
+  version: 13.0.96
+  sha256: 7f82250d7782aa23b6cfe765ecc7db554bd3c2870c43f3d1821f1d18aebf0548
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/6e/5e/edb9c0ae051602c3ccaffe424256463636d639e27d7f302dde9975ef9e7a/nvidia_cudnn_cu13-9.20.0.48-py3-none-manylinux_2_27_x86_64.whl
+  name: nvidia-cudnn-cu13
+  version: 9.20.0.48
+  sha256: 0c45dd8eeb50b603f07995b1b300c62ffe6a1980482b82b3bcf94a4ca9d49304
+  requires_dist:
+  - nvidia-cublas
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/a8/2f/7b57e29836ea8714f81e9898409196f47d772d5ddedddf1592eadb8ab743/nvidia_cufft-12.0.0.61-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: nvidia-cufft
+  version: 12.0.0.61
+  sha256: 6c44f692dce8fd5ffd3e3df134b6cdb9c2f72d99cf40b62c32dde45eea9ddad3
+  requires_dist:
+  - nvidia-nvjitlink
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/3f/70/4f193de89a48b71714e74602ee14d04e4019ad36a5a9f20c425776e72cd6/nvidia_cufile-1.15.1.6-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: nvidia-cufile
+  version: 1.15.1.6
+  sha256: 08a3ecefae5a01c7f5117351c64f17c7c62efa5fffdbe24fc7d298da19cd0b44
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/a5/9f/be0a41ca4a4917abf5cb9ae0daff1a6060cc5de950aec0396de9f3b52bc5/nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_x86_64.whl
+  name: nvidia-curand
+  version: 10.4.0.35
+  sha256: 1aee33a5da6e1db083fe2b90082def8915f30f3248d5896bcec36a579d941bfc
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/5f/67/cba3777620cdacb99102da4042883709c41c709f4b6323c10781a9c3aa34/nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_x86_64.whl
+  name: nvidia-cusolver
+  version: 12.0.4.66
+  sha256: 0a759da5dea5c0ea10fd307de75cdeb59e7ea4fcb8add0924859b944babf1112
+  requires_dist:
+  - nvidia-cublas
+  - nvidia-nvjitlink
+  - nvidia-cusparse
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/fa/18/623c77619c31d62efd55302939756966f3ecc8d724a14dab2b75f1508850/nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: nvidia-cusparse
+  version: 12.6.3.3
+  sha256: 2b3c89c88d01ee0e477cb7f82ef60a11a4bcd57b6b87c33f789350b59759360b
+  requires_dist:
+  - nvidia-nvjitlink
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/34/7d/2661f2fb3ac4302f3a246f5fc030213ac60c1fe0bce84f9783dbd831dbb7/nvidia_cusparselt_cu13-0.8.1-py3-none-manylinux2014_x86_64.whl
+  name: nvidia-cusparselt-cu13
+  version: 0.8.1
+  sha256: 786ce87568c303fadb5afcc7102d454cd3040d75f6f8626f5db460d1871f4dd0
 - conda: https://conda.anaconda.org/conda-forge/noarch/nvidia-ml-py-13.595.45-pyhd8ed1ab_1.conda
   sha256: fb46556c423311638fbb26ed4b2a67cf598044919e42ab7571365a5b4ae3b663
   md5: dc8587ae654e96031728802016e8258c
@@ -10706,6 +11061,26 @@ packages:
   - pkg:pypi/nvidia-ml-py?source=hash-mapping
   size: 48878
   timestamp: 1775592349734
+- pypi: https://files.pythonhosted.org/packages/67/f4/58e4e91b6919367c7aafb8e36fce9aad1a3047e536bf7e2fd560927d3a4c/nvidia_nccl_cu13-2.29.7-py3-none-manylinux_2_18_x86_64.whl
+  name: nvidia-nccl-cu13
+  version: 2.29.7
+  sha256: edd81538446786ec3b73972543e53bb43bcaf0bfc8ef76cb679fcc390ffe136d
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/f0/ee/580ca6f29dcab0221db8706badca1bbbb084f1975c4d4e83329c3a7e31f0/nvidia_nvjitlink-13.3.33-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
+  name: nvidia-nvjitlink
+  version: 13.3.33
+  sha256: 26a6de7fb4c8fdaa7703d3dad720d6d427ddfea5c48a528fd97c11733ad830e5
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/3c/35/a9bf80a609e74e3b000fef598933235c908fcefcef9026042b8e6dfde2a9/nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: nvidia-nvshmem-cu13
+  version: 3.4.5
+  sha256: 290f0a2ee94c9f3687a02502f3b9299a9f9fe826e6d0287ee18482e78d495b80
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/c2/f3/d86c845465a2723ad7e1e5c36dcd75ddb82898b3f53be47ebd429fb2fa5d/nvidia_nvtx-13.0.85-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl
+  name: nvidia-nvtx
+  version: 13.0.85
+  sha256: 4936d1d6780fbe68db454f5e72a42ff64d1fd6397df9f363ae786930fd5c1cd4
+  requires_python: '>=3'
 - conda: https://conda.anaconda.org/conda-forge/noarch/oauthlib-3.3.1-pyhd8ed1ab_0.conda
   sha256: dfa8222df90736fa13f8896f5a573a50273af8347542d412c3bd1230058e56a5
   md5: d4f3f31ee39db3efecb96c0728d4bdbf
@@ -13062,6 +13437,48 @@ packages:
   - pkg:pypi/s3transfer?source=hash-mapping
   size: 65987
   timestamp: 1757487748738
+- pypi: https://files.pythonhosted.org/packages/28/50/f203ff3a3ddfe19308efc83c5a3a29ed02bf786732ec35e68bf9162f3365/safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  name: safetensors
+  version: 0.8.0
+  sha256: fd6f3f93c9a0a7cc2788ee63fb763353d4bd2e89b0751bc78fcf7dda00bea774
+  requires_dist:
+  - safetensors[torch] ; extra == 'all'
+  - safetensors[numpy] ; extra == 'all'
+  - safetensors[jax] ; extra == 'all'
+  - safetensors[paddlepaddle] ; extra == 'all'
+  - safetensors[convert] ; extra == 'all'
+  - safetensors[quality] ; extra == 'all'
+  - safetensors[testing] ; extra == 'all'
+  - safetensors[torch] ; extra == 'convert'
+  - huggingface-hub>=1.4 ; extra == 'convert'
+  - safetensors[all] ; extra == 'dev'
+  - safetensors[pinned-tf] ; extra == 'dev'
+  - safetensors[numpy] ; extra == 'jax'
+  - flax>=0.6.3 ; extra == 'jax'
+  - jax>=0.3.25 ; extra == 'jax'
+  - jaxlib>=0.3.25 ; extra == 'jax'
+  - mlx>=0.0.9 ; extra == 'mlx'
+  - numpy>=1.24.6 ; extra == 'numpy'
+  - safetensors[numpy] ; extra == 'paddlepaddle'
+  - paddlepaddle>=2.4.1 ; extra == 'paddlepaddle'
+  - safetensors[numpy] ; extra == 'pinned-tf'
+  - tensorflow==2.18.0 ; extra == 'pinned-tf'
+  - ruff ; extra == 'quality'
+  - safetensors[numpy] ; extra == 'tensorflow'
+  - tensorflow>=2.11.0 ; extra == 'tensorflow'
+  - safetensors[numpy] ; extra == 'testing'
+  - h5py>=3.7.0 ; extra == 'testing'
+  - setuptools-rust>=1.12.0 ; extra == 'testing'
+  - pytest>=9.0 ; extra == 'testing'
+  - pytest-benchmark>=5.2 ; extra == 'testing'
+  - hypothesis>=6.70.2 ; extra == 'testing'
+  - fsspec>=2024.6.0 ; extra == 'testing'
+  - s3fs>=2024.6.0 ; extra == 'testing'
+  - safetensors[numpy] ; extra == 'tf-nightly'
+  - tf-nightly ; extra == 'tf-nightly'
+  - safetensors[numpy] ; extra == 'torch'
+  - torch>=2.4 ; extra == 'torch'
+  requires_python: '>=3.10'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/safetensors-0.7.0-py312h0ccc70a_0.conda
   sha256: 59886c90dbfe388eee79c78256125ef2346a6d18058cf9769758c35f2e836a8c
   md5: c11270acf79465903f1508314c3e86fd
@@ -13327,6 +13744,11 @@ packages:
   purls: []
   size: 113547
   timestamp: 1756649518540
+- pypi: https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl
+  name: shellingham
+  version: 1.5.4
+  sha256: 7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686
+  requires_python: '>=3.7'
 - conda: https://conda.anaconda.org/conda-forge/noarch/shellingham-1.5.4-pyhd8ed1ab_2.conda
   sha256: 1d6534df8e7924d9087bd388fbac5bd868c5bf8971c36885f9f016da0657d22b
   md5: 83ea3a2ddb7a75c1b09cea582aa4f106
@@ -13918,8 +14340,9 @@ packages:
 - pypi: ./
   name: spimquant
   version: 0.1.0
-  sha256: 822584aa22bfc1737bd444f82c39ef79c6df0f880a359ab332a1a98155899064
+  sha256: 78e687dadf8c0111fa639960e2f1d8a830e2a15017815ec96243cd2f42a17604
   requires_python: '>=3.11'
+  editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/spirv-tools-2025.5-hb700be7_0.conda
   sha256: 7547142ab1352132adf98d555ed955badd96c9f277cbd054ae52f7edd6cf6cb8
   md5: 058d5f16eaa3018be91aa3508df00d7c
@@ -14051,6 +14474,15 @@ packages:
   purls: []
   size: 2619743
   timestamp: 1769664536467
+- pypi: https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
+  name: sympy
+  version: 1.14.0
+  sha256: e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5
+  requires_dist:
+  - mpmath>=1.1.0,<1.4
+  - pytest>=7.1.0 ; extra == 'dev'
+  - hypothesis>=6.70.0 ; extra == 'dev'
+  requires_python: '>=3.9'
 - conda: https://conda.anaconda.org/conda-forge/noarch/sympy-1.14.0-pyh2585a3b_106.conda
   sha256: 1c8057e6875eba958aa8b3c1a072dc9a75d013f209c26fd8125a5ebd3abbec0c
   md5: 32d866e43b25275f61566b9391ccb7b5
@@ -14268,6 +14700,17 @@ packages:
   - pkg:pypi/tifffile?source=hash-mapping
   size: 209916
   timestamp: 1777805970265
+- pypi: https://files.pythonhosted.org/packages/d6/14/fc04d491527b774ec7479897f5861959209de1480e4c4cd32ed098ff8bea/timm-1.0.22-py3-none-any.whl
+  name: timm
+  version: 1.0.22
+  sha256: 888981753e65cbaacfc07494370138b1700a27b1f0af587f4f9b47bc024161d0
+  requires_dist:
+  - torch
+  - torchvision
+  - pyyaml
+  - huggingface-hub
+  - safetensors
+  requires_python: '>=3.8'
 - conda: https://conda.anaconda.org/conda-forge/noarch/timm-1.0.27-pyhcf101f3_0.conda
   sha256: 77c69e2ea6d040200fd21e9b82889e9eb1fd4cade6b4eaa877b442af636e0654
   md5: 59a0c3968e59e6ce52855ef9bc9ff421
@@ -14357,6 +14800,29 @@ packages:
   - pkg:pypi/toolz?source=hash-mapping
   size: 53978
   timestamp: 1760707830681
+- pypi: https://files.pythonhosted.org/packages/f3/82/fea946351658e6534db52d2cc12bc53087cbf87f9440c5f180f367c1950b/torch-2.13.0-cp312-cp312-manylinux_2_28_x86_64.whl
+  name: torch
+  version: 2.13.0
+  sha256: 796633c4cdf0fe2cdced72d8f88f22e73dbcfce83132763162f6d4bff13b820b
+  requires_dist:
+  - filelock
+  - typing-extensions>=4.10.0
+  - setuptools>=77.0.3
+  - sympy>=1.13.3
+  - networkx>=2.5.1
+  - jinja2
+  - fsspec>=0.8.5
+  - cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3 ; sys_platform == 'linux'
+  - cuda-bindings>=13.0.3,<14 ; python_full_version < '3.15' and sys_platform == 'linux'
+  - nvidia-cudnn-cu13==9.20.0.48 ; sys_platform == 'linux'
+  - nvidia-cusparselt-cu13==0.8.1 ; sys_platform == 'linux'
+  - nvidia-nccl-cu13==2.29.7 ; sys_platform == 'linux'
+  - nvidia-nvshmem-cu13==3.4.5 ; sys_platform == 'linux'
+  - triton==3.7.1 ; python_full_version < '3.15' and sys_platform == 'linux'
+  - optree>=0.13.0 ; extra == 'optree'
+  - opt-einsum>=3.3 ; extra == 'opt-einsum'
+  - pyyaml ; extra == 'pyyaml'
+  requires_python: '>=3.10'
 - conda: https://conda.anaconda.org/conda-forge/noarch/torch_em-0.8.3-pyhd8ed1ab_0.conda
   sha256: 12b8b552f16f0115b62055f752b6bbde44363d5c36346a75097effd62cf814f4
   md5: 43f7a6f953343a444a35ccc99614170b
@@ -14397,6 +14863,28 @@ packages:
   - pkg:pypi/torchmetrics?source=hash-mapping
   size: 398600
   timestamp: 1773827733172
+- pypi: https://files.pythonhosted.org/packages/17/8b/155f99042f9319bd7759536779b2a5b67cbd4f89c380854670850f89a2f4/torchvision-0.22.1-cp312-cp312-manylinux_2_28_x86_64.whl
+  name: torchvision
+  version: 0.22.1
+  sha256: 699c2d70d33951187f6ed910ea05720b9b4aaac1dcc1135f53162ce7d42481d3
+  requires_dist:
+  - numpy
+  - torch==2.7.1
+  - pillow>=5.3.0,!=8.3.*
+  - gdown>=4.7.3 ; extra == 'gdown'
+  - scipy ; extra == 'scipy'
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/93/e4/e9b2495d0d57b9f60d63c57d0a910410a81b4b073bf70917bef815291119/torchvision-0.28.0-cp312-cp312-manylinux_2_28_x86_64.whl
+  name: torchvision
+  version: 0.28.0
+  sha256: 028a3d481b37d785605620d7cdad897064c5a55bae2aa1f2658766333e291940
+  requires_dist:
+  - numpy
+  - torch==2.13.0
+  - pillow>=5.3.0,!=8.3.*
+  - gdown>=4.7.3 ; extra == 'gdown'
+  - scipy ; extra == 'scipy'
+  requires_python: '>=3.10,!=3.14.1'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.24.0-cpu_py312_h56cfa8b_0.conda
   sha256: a22214010fd1f3398ad7ea8311e0d76b0f7750590b502b0a73f57c14ca806595
   md5: feb0c7bde000f25617408266492d2d2a
@@ -14482,6 +14970,26 @@ packages:
   - pkg:pypi/traitlets?source=hash-mapping
   size: 115165
   timestamp: 1778074251714
+- pypi: https://files.pythonhosted.org/packages/c4/6f/fb96d15db6f36d6eae4cafb998c2e0353bf59d7c4ea1662d7497f269134a/triton-3.7.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+  name: triton
+  version: 3.7.1
+  sha256: 7e40869937a68206ec70d7f25bb7ec6433cb083f9135e1f36dbd318dc449a728
+  requires_dist:
+  - importlib-metadata ; python_full_version < '3.10'
+  - cmake>=3.20,<4.0 ; extra == 'build'
+  - lit ; extra == 'build'
+  - autopep8 ; extra == 'tests'
+  - isort ; extra == 'tests'
+  - numpy ; extra == 'tests'
+  - pytest ; extra == 'tests'
+  - pytest-forked ; extra == 'tests'
+  - pytest-xdist ; extra == 'tests'
+  - scipy>=1.7.1 ; extra == 'tests'
+  - llnl-hatchet ; extra == 'tests'
+  - matplotlib ; extra == 'tutorials'
+  - pandas ; extra == 'tutorials'
+  - tabulate ; extra == 'tutorials'
+  requires_python: '>=3.10,<3.15'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/triton-3.3.0-cuda126py312hebffaa9_1.conda
   sha256: 7089c27a38fc3ec199af4d51fcbba33720281f3098e984c49a9f010805d2de84
   md5: a05b9a73fe6a9be82a2fc4af2b01e95f
@@ -14518,6 +15026,16 @@ packages:
   - pkg:pypi/truststore?source=hash-mapping
   size: 24279
   timestamp: 1766494826559
+- pypi: https://files.pythonhosted.org/packages/43/89/9518bc0c3929bee36b3a4a8e3daddd6e03f92f9961c66d4983b837160543/typer-0.27.1-py3-none-any.whl
+  name: typer
+  version: 0.27.1
+  sha256: 53150287edd11baeb4e4722c8e394fcdf8181c0ae89485cba8d25c778d5edd56
+  requires_dist:
+  - shellingham>=1.3.0
+  - rich>=13.8.0
+  - annotated-doc>=0.0.2
+  - colorama ; sys_platform == 'win32'
+  requires_python: '>=3.10'
 - conda: https://conda.anaconda.org/conda-forge/noarch/typer-0.25.1-pyhcf101f3_0.conda
   sha256: 18fc3a27bc995318d09142fe16d01ea454e76f377bf8f68db03b8b18f11085ed
   md5: ef114c2eb2ff19f6bf616c81f4710841

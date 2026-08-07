@@ -194,6 +194,18 @@ parse_args:
       ``threshold = expm1(mean_n + k * sigma_n)``.  The float multiplier k
       may be encoded with 'p' as a decimal separator to keep BIDS-compatible
       filenames, e.g. ``gmm+n2k2p5`` → n=2, k=2.5.
+
+      ``lantern`` – 5-fold LANTERN deep-learning ensemble for amyloid-beta
+      plaques.  Unlike the histogram-based methods above it reads raw
+      intensities (not the bias-field-corrected image) and runs at
+      ``plaque_level``; the mask at ``segmentation_level`` is that prediction
+      upsampled.  Requires a GPU.
+
+      Also unlike them, it is stain-specific: it runs only on the first stain
+      from ``stains_for_plaques``.  The remaining stains in ``stains_for_seg``
+      use the other methods given here, or -- if ``lantern`` was the only one --
+      this option's own default, so they behave exactly as if it had not been
+      passed.
     default:
       - gmm+n3k1
     nargs: '+'
@@ -447,6 +459,12 @@ templates:
 
 models:
   vesselfm: https://huggingface.co/bwittmann/vesselFM/resolve/main/vesselFM_base.pt
+  lantern_abeta:
+    fold0: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/main/fold0/seg_model.pt
+    fold1: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/main/fold1/seg_model.pt
+    fold2: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/main/fold2/seg_model.pt
+    fold3: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/main/fold3/seg_model.pt
+    fold4: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/main/fold4/seg_model.pt
 
 
   
@@ -523,6 +541,31 @@ vessel_seg_method: vesselfm
 
 vessel_metrics:
   - fieldfrac
+
+# LANTERN deep-learning plaque segmentation (opt in with --seg_method lantern).
+# The ensemble is scale-sensitive and was built for plaque_level; the mask at
+# segmentation_level is that prediction upsampled, not native inference.
+plaque_seg_method: lantern
+# The LANTERN ensemble is trained on amyloid-beta only, so unlike the
+# intensity-based methods it is not applied to every stain in stains_for_seg.
+# The first of these found is the one it runs on; the remaining stains are
+# segmented exactly as they would be if --seg_method had never been passed.
+stains_for_plaques:
+  - abeta
+  - Abeta
+  - BetaAmyloid
+plaque_level: 1
+plaque_n_folds: 5
+plaque_vote_threshold: 3
+plaque_tile: 128
+plaque_stride: 64
+plaque_batch_size: 8
+plaque_chunk: 512
+# GPUs per inference job. The ensemble is replicated onto each card and dask
+# blocks are handed to whichever card is free, so this scales one subject's
+# wall-clock rather than throughput across subjects. Clamped at runtime to the
+# number of visible devices.
+plaque_n_gpus: 2
 
 
 coloc_seg_metrics:
