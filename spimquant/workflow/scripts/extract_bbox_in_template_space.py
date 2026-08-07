@@ -5,8 +5,8 @@ box in template space at the desired isotropic resolution, saving as a NIfTI fil
 
 The reference volume in template space is constructed from the bounding box centre
 coordinates (RAS mm) and the target voxel size, then the floating SPIM zarr is
-pull-resampled to that reference using the composite inverse warp (template → subject)
-via zarrnii's block-wise interpolation.
+pull-resampled to that reference using the warp (subject →  template)
+via zarrnii's block-wise interpolation (ZarrNii apply_transform)
 
 A special case (use_brain_mask: true) uses the template brain mask to define the
 bounding box extent, enabling whole-brain resampling at arbitrary resolution.
@@ -39,18 +39,6 @@ Coordinate system notes
 * ``size`` = [nx, ny, nz] where nx/ny/nz are voxel counts along the R/A/S axes
   respectively.
 
-Transform pipeline
-------------------
-The block-wise resampling pipeline (ZYX voxel ordering throughout):
-
-1. ``ref ZYX vox → RAS mm`` via the reference ZYX affine from zarrnii
-   (``get_affine_matrix("ZYX")`` outputs (R, A, S) mm for both ZYX and XYZ order)
-2. ``composite_inv`` displacement: RAS template mm → RAS subject mm
-3. ``flo ZYX aff⁻¹``: RAS subject mm → flo ZYX vox
-
-No coordinate permutation is needed because zarrnii's ``get_affine_matrix("ZYX")``
-already maps ZYX voxel indices to (R, A, S) mm, which is what
-``DisplacementTransform`` expects.
 """
 
 import dask.array as da
@@ -58,8 +46,7 @@ import nibabel as nib
 import numpy as np
 from dask.diagnostics import ProgressBar
 from dask_setup import get_dask_client
-from zarrnii import AffineTransform, DisplacementTransform, ZarrNii
-from zarrnii.core import interp_by_block
+from zarrnii import DisplacementTransform, ZarrNii
 
 bbox_config = snakemake.params.bbox_config
 stain = snakemake.wildcards.stain
@@ -73,9 +60,6 @@ flo_znimg = ZarrNii.from_file(
     channel_labels=[stain],
     **zarrnii_kwargs,
 )
-
-# Load composite inverse warp (template → subject)
-disp_transform = DisplacementTransform.from_nifti(snakemake.input.xfm_composite_inv)
 
 # Build reference geometry (all coordinates in RAS mm order)
 resolution_um = bbox_config["resolution_um"]
@@ -131,18 +115,6 @@ else:
         ]
     )
 
-# Build reference ZarrNii using from_darr (ZYX axes_order, RAS orientation).
-#
-# from_darr(axes_order="ZYX", origin=(oz, oy, ox)) sets:
-#   translation = {"z": oz, "y": oy, "x": ox}
-# get_affine_matrix("ZYX") with RAS orientation uses reversed axcodes "SAR":
-#   R_mm = X_idx * sx + ox   (x ↔ R)
-#   A_mm = Y_idx * sy + oy   (y ↔ A)
-#   S_mm = Z_idx * sz + oz   (z ↔ S)
-#
-# So origin should be (S_start, A_start, R_start) = (origin_mm[2], origin_mm[1], origin_mm[0])
-# and the reference array shape is (C=1, Z=nz, Y=ny, X=nx).
-
 ref_darr = da.zeros((1, nz, ny, nx), dtype=np.float32, chunks=(1, 64, 64, 64))
 ref_znimg = ZarrNii.from_darr(
     ref_darr,
@@ -150,64 +122,15 @@ ref_znimg = ZarrNii.from_darr(
     orientation="RAS",
     spacing=(vox_size_mm, vox_size_mm, vox_size_mm),
     origin=(float(origin_mm[2]), float(origin_mm[1]), float(origin_mm[0])),
+    axes_units={"x": "millimeter", "y": "millimeter", "z": "millimeter"},
     channel_labels=[stain],
 )
 
-# Build transform chain (ZYX voxel space throughout):
-#
-# zarrnii's get_affine_matrix("ZYX") maps (Z_idx, Y_idx, X_idx) → (R_mm, A_mm, S_mm),
-# i.e. the output is in standard RAS physical order — exactly what DisplacementTransform
-# expects (it operates in RAS mm and uses the NIfTI affine to convert to disp-field
-# voxels).
-#
-#   Step 1: ref ZYX vox  ──(ref_zyx_aff)──►  RAS mm  (template space)
-#   Step 2: RAS mm       ──(disp_transform)──►  RAS mm  (subject space)
-#   Step 3: RAS mm       ──(inv flo_zyx_aff)──►  flo ZYX vox
+# Load composite warp (template → subject)
+composite_transform = DisplacementTransform.from_nifti(snakemake.input.xfm_composite)
 
-ref_zyx_aff = ref_znimg.get_affine_matrix("ZYX")
-flo_zyx_aff = flo_znimg.get_affine_matrix("ZYX")
 
-transforms = [
-    AffineTransform.from_array(ref_zyx_aff),  # ref ZYX vox → RAS mm
-    disp_transform,  # RAS template → RAS subject
-    AffineTransform.from_array(np.linalg.inv(flo_zyx_aff)),  # RAS mm → flo ZYX vox
-]
+out_znimg = flo_znimg.apply_transform(composite_transform, ref_znimg=ref_znimg)
 
-# Prefer direct zarr access to avoid nested dask compute() calls
-store_info = flo_znimg.get_zarr_store_info()
-if store_info is not None:
-    flo_store_path = str(store_info["store_path"])
-    flo_array_shape = store_info["array_shape"]
-    flo_dataset_path = store_info["dataset_path"]
-    flo_znimg_arg = None
-else:
-    # Fall back to in-memory path (legacy behaviour)
-    flo_store_path = None
-    flo_array_shape = None
-    flo_dataset_path = "0"
-    flo_znimg_arg = flo_znimg
-
-with get_dask_client("threads", snakemake.threads):
-    resampled = da.map_blocks(
-        interp_by_block,
-        ref_znimg.darr,
-        dtype=np.float32,
-        transforms=transforms,
-        flo_store_path=flo_store_path,
-        flo_array_shape=flo_array_shape,
-        flo_dataset_path=flo_dataset_path,
-        flo_znimg=flo_znimg_arg,
-    )
-
-    # Wrap result in ZarrNii with the same geometry as the reference
-    result_znimg = ZarrNii.from_darr(
-        resampled,
-        axes_order=ref_znimg.axes_order,
-        orientation=ref_znimg.xyz_orientation,
-        spacing=(vox_size_mm, vox_size_mm, vox_size_mm),
-        origin=(float(origin_mm[2]), float(origin_mm[1]), float(origin_mm[0])),
-        channel_labels=[stain],
-    )
-
-    with ProgressBar():
-        result_znimg.to_nifti(snakemake.output.nii)
+with ProgressBar():
+    out_znimg.to_nifti(snakemake.output.nii)

@@ -243,14 +243,13 @@ rule extract_bbox_crop:
     A special case (use_brain_mask: true) uses the template brain mask to define
     the bounding box extent, enabling whole-brain resampling at arbitrary resolution.
     """
-
     input:
         spim=inputs["spim"].path,
-        xfm_composite_inv=bids(
+        xfm_composite=bids(
             root=root,
             datatype="xfm",
-            from_="{template}",
-            to="subject",
+            from_="subject",
+            to="{template}",
             suffix="xfm.nii.gz",
             **inputs["spim"].wildcards,
         ),
@@ -285,33 +284,3 @@ rule extract_bbox_crop:
         runtime=60,
     script:
         "../scripts/extract_bbox_in_template_space.py"
-
-
-rule all_bbox_template_crops:
-    """Target rule to generate all custom bounding box crops in template space.
-
-    Expands over all bounding boxes defined in the --bbox_config YAML and all
-    stains present in the dataset.  Each bounding box produces one NIfTI file
-    per subject per stain at the resolution and input level specified in the
-    config.
-    """
-
-    input:
-        [
-            inputs["spim"].expand(
-                bids(
-                    root=root,
-                    datatype="micr",
-                    stain="{stain}",
-                    space="{template}",
-                    res=f"{bbox['resolution_um']}um",
-                    desc=bbox["name"],
-                    level=bbox.get("input_level", 0),
-                    suffix="SPIM.nii.gz",
-                    **inputs["spim"].wildcards,
-                ),
-                stain=stains,
-                template=config["template"],
-            )
-            for bbox in bbox_configs
-        ],
