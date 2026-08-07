@@ -226,3 +226,61 @@ rule create_imaris_crops:
         runtime=60,
     script:
         "../scripts/create_imaris_crops.py"
+
+
+rule extract_bbox_crop:
+    """Extract a user-defined bounding box crop from SPIM zarr data in template space.
+
+    Reads a bounding box specification from the bbox_config YAML (provided via
+    --bbox_config) and resamples the SPIM zarr data at the requested input level
+    to the bounding box in template space at the desired isotropic resolution.
+
+    The reference volume in template space is constructed from the bounding box
+    centre coordinates (RAS mm) and the target voxel size, then the floating SPIM
+    zarr is pull-resampled to that reference using the composite inverse warp
+    (template → subject) via zarrnii's block-wise interpolation.
+
+    A special case (use_brain_mask: true) uses the template brain mask to define
+    the bounding box extent, enabling whole-brain resampling at arbitrary resolution.
+    """
+    input:
+        spim=inputs["spim"].path,
+        xfm_composite=bids(
+            root=root,
+            datatype="xfm",
+            from_="subject",
+            to="{template}",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        brain_mask=lambda wildcards: (
+            bids(
+                root=root,
+                template=wildcards.template,
+                desc="brain",
+                suffix="mask.nii.gz",
+            )
+            if bbox_cfgs_by_name.get(wildcards.desc, {}).get("use_brain_mask", False)
+            else []
+        ),
+    params:
+        bbox_config=lambda wildcards: bbox_cfgs_by_name[wildcards.desc],
+        zarrnii_kwargs=zarrnii_in_kwargs,
+    output:
+        nii=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            space="{template}",
+            res="{res}um",
+            desc="{desc}",
+            level="{level}",
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 32
+    resources:
+        mem_mb=32000,
+        runtime=60,
+    script:
+        "../scripts/extract_bbox_in_template_space.py"

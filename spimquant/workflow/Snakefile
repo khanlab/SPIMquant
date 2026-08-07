@@ -1,4 +1,5 @@
 import os
+import yaml as _yaml
 from itertools import combinations as _combinations, product as _product
 
 import pandas as _pd
@@ -208,6 +209,26 @@ for seg in config["crop_atlas_segs"]:
         )
     else:
         crop_atlas_segs.append(seg)
+
+# Parse custom bounding box config for template-space crops
+bbox_configs = []
+bbox_cfgs_by_name = {}
+if config.get("bbox_config") is not None:
+    with open(config["bbox_config"]) as _bbox_fp:
+        _bbox_data = _yaml.safe_load(_bbox_fp)
+    bbox_configs = _bbox_data.get("bounding_boxes", [])
+    for _bbox in bbox_configs:
+        _name = _bbox["name"]
+        if _name in bbox_cfgs_by_name:
+            raise ValueError(
+                f"Duplicate bounding box name '{_name}' found in bbox_config. "
+                "All bounding box names must be unique."
+            )
+        bbox_cfgs_by_name[_name] = _bbox
+    do_bbox = True
+else:
+    do_bbox = False
+
 # Generate pairwise contrast labels from participants.tsv at planning time.
 # Contrasts are only enumerated when --group-stats-pairwise is supplied;
 # merged group TSVs are always produced at the group analysis level.
@@ -1214,6 +1235,35 @@ rule all_group_merged_tsvs:
         else [],
 
 
+rule all_bbox_template_crops:
+    """Target rule to generate all custom bounding box crops in template space.
+
+    Expands over all bounding boxes defined in the --bbox_config YAML and all
+    stains present in the dataset.  Each bounding box produces one NIfTI file
+    per subject per stain at the resolution and input level specified in the
+    config.
+    """
+    input:
+        [
+            inputs["spim"].expand(
+                bids(
+                    root=root,
+                    datatype="micr",
+                    stain="{stain}",
+                    space="{template}",
+                    res=f"{bbox['resolution_um']}um",
+                    desc=bbox["name"],
+                    level=bbox.get("input_level", 0),
+                    suffix="SPIM.nii.gz",
+                    **inputs["spim"].wildcards,
+                ),
+                stain=stains,
+                template=config["template"],
+            )
+            for bbox in bbox_configs
+        ],
+
+
 rule all_participant:
     default_target: True
     input:
@@ -1224,6 +1274,7 @@ rule all_participant:
         rules.all_segment_coloc.input if do_coloc else [],
         rules.all_qc.input,
         rules.all_tabular_sidecars.input,
+        rules.all_bbox_template_crops.input if do_bbox else [],
 
 
 rule all_group:
