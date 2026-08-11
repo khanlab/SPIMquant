@@ -220,15 +220,27 @@ else:
     seg_methods = list(config["parse_args"]["--seg_method"]["default"])
     stains_for_seg_methods = [s for s in stains_for_seg if s != stain_for_plaques]
 
-# Every method that produces a mask, plaque method included.
-all_seg_methods = seg_methods + ([config["plaque_seg_method"]] if do_plaques else [])
-
 
 def stains_for_desc(desc):
     """Stains that segmentation method `desc` produces a mask for."""
     if do_plaques and desc == config["plaque_seg_method"]:
         return [stain_for_plaques]
     return stains_for_seg_methods
+
+
+# Every method that produces a mask, plaque method included.
+#
+# Methods left with no stains are dropped. This is not hypothetical: requesting
+# only the plaque method on a single-stain dataset removes that stain from
+# stains_for_seg_methods and leaves the fallback generic method covering nothing.
+# Keeping it here would schedule cross-stain aggregations (mergedsegstats,
+# aggregated regionprops) with an empty input list, which fail at runtime rather
+# than at parse time.
+all_seg_methods = [
+    m
+    for m in seg_methods + ([config["plaque_seg_method"]] if do_plaques else [])
+    if stains_for_desc(m)
+]
 
 
 # Methods that segment two or more stains, and so can be colocalized across them.
