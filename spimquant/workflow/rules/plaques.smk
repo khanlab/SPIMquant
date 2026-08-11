@@ -68,6 +68,13 @@ rule run_lantern_plaques:
     threads: 8 * config["plaque_n_gpus"]
     resources:
         gpu=config["plaque_n_gpus"],
+        # Suppress the executor's default --ntasks-per-gpu=1. With --gpus=N that
+        # asks SLURM for N tasks, so srun launches the whole job N times, each task
+        # pinned to one GPU: the ensemble runs N times over the same volume, every
+        # copy sees a single device, and they race to write the same output store.
+        # Setting this to 0 skips the flag entirely (submit_string.py:82), leaving
+        # one task that sees all N GPUs -- which is what DevicePool expects.
+        tasks_per_gpu=0,
         cpus_per_gpu=8,
         mem_mb=256000,
         disk_mb=2097152,
