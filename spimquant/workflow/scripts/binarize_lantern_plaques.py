@@ -44,7 +44,7 @@ def main():
     if not 1 <= vote_threshold <= n_folds:
         raise ValueError(
             f"plaque_vote_threshold={vote_threshold} is out of range for an "
-            f"{n_folds}-fold ensemble; the vote map holds counts in 0..{n_folds}"
+            f"{n_folds}-fold ensemble; it must be between 1 and {n_folds}"
         )
 
     probseg = ZarrNii.from_file(snakemake.input.probseg, level=0)

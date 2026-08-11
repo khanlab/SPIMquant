@@ -103,6 +103,13 @@ def predict_volume(vol, nets, device, tile, stride, batch_size):
             region = votes[z : z + tile, y : y + tile, x : x + tile]
             # MAX, not sum: a plaque clipped at one tile edge is recovered by the
             # tile that contains it whole.
+            #
+            # Folds are summed WITHIN a tile (above) and tiles are combined with max
+            # (here). Those two steps do not commute -- max-then-sum would score a
+            # voxel higher when different folds find it from different tiles -- but
+            # this order is the one LANTERN's own inference uses
+            # (scripts/infer_wholebrain.py), and plaque_vote_threshold was calibrated
+            # under it. Swapping them would silently change what "3 of 5" means.
             np.maximum(region, batch_votes[j], out=region)
 
     return votes[: orig_shape[0], : orig_shape[1], : orig_shape[2]]
