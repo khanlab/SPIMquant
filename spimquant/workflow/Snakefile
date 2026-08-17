@@ -1,4 +1,5 @@
 import os
+import re as _re
 from itertools import combinations as _combinations, product as _product
 
 import pandas as _pd
@@ -6,6 +7,25 @@ from zarrnii import ZarrNii
 from snakemake.utils import format
 from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
 import snakebids
+import snakebids.core.input_generation as _snakebids_input_generation
+from bids import BIDSLayoutIndexer as _BIDSLayoutIndexer
+from bids.layout.validation import DEFAULT_LOCATIONS_TO_IGNORE as _DEFAULT_IGNORE
+
+
+# pybids descends into directory-based image containers (.ims, .ome.zarr) and
+# indexes every internal chunk file, which balloons indexing to millions of
+# rows and ~8 GB of RAM even though only the container path is a BIDS file.
+# snakebids does not expose the indexer's ignore patterns, so override the
+# constructor it uses to prune descent into containers. An explicit ignore list
+# replaces the pybids defaults, so they must be re-included.
+def _container_pruning_indexer(*args, **kwargs):
+    kwargs["ignore"] = list(_DEFAULT_IGNORE) + [
+        _re.compile(r".*\.(ims|ome\.zarr|zarr)/")
+    ]
+    return _BIDSLayoutIndexer(*args, **kwargs)
+
+
+_snakebids_input_generation.BIDSLayoutIndexer = _container_pruning_indexer
 
 # update v15 spec to add template entity
 spec = snakebids.paths.specs.v0_15_0()
