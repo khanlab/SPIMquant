@@ -34,6 +34,7 @@ pybids_inputs:
       - sample
       - acquisition
       - staining
+      - extension
   mri:
     filters:
       suffix: 'T2w'

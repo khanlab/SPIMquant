@@ -386,7 +386,7 @@ rule resample_labels_to_zarr:
         dseg=bids(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
         label_tsv=bids(root=root, template="{template}", desc="LR", suffix="dseg.tsv"),
         xfm_ras=rules.affine_reg.output.xfm_ras,
-        zarr_zip=inputs["spim"].path,
+        zarr_zip=spim_input,
     params:
         level_to_resample_to=0,
         max_downsampling_layers=config["ome_zarr"]["max_downsampling_layers"],
@@ -420,7 +420,7 @@ rule resample_labels_to_zarr:
 
 rule affine_zarr_to_template_nii:
     input:
-        ome_zarr=inputs["spim"].path,
+        ome_zarr=spim_input,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         ref_nii=get_template_for_reg,
     params:
@@ -445,7 +445,7 @@ rule affine_zarr_to_template_nii:
 
 rule affine_zarr_to_template_ome_zarr:
     input:
-        ome_zarr=inputs["spim"].path,
+        ome_zarr=spim_input,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         ref_nii=get_template_for_reg,
     params:
@@ -474,7 +474,7 @@ rule deform_zarr_to_template_nii:
         xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
         ref_nii=get_template_for_reg,
     params:
-        ome_zarr=inputs["spim"].path,
+        ome_zarr=spim_input,
         flo_opts={"level": 2},  #downsampling level to use (TODO: set this automatically based on ref resolution?)
         do_downsample=True,  #whether to perform further downsampling before transforming
         downsample_opts={"along_z": 4},  #could also be determined automatically 
@@ -499,7 +499,7 @@ rule deform_zarr_to_template_nii:
 
 rule deform_to_template_nii_zoomed:
     input:
-        ome_zarr=inputs["spim"].path,
+        ome_zarr=spim_input,
         xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
         ref_nii=get_template_for_reg,
     params:
@@ -612,7 +612,7 @@ rule deform_template_dseg_to_subject_nii:
 """ this rule needs updating - use atlas/seg wildcard and proper script
 rule deform_transform_labels_to_subj:
     input:
-        ref_ome_zarr=inputs["spim"].path,
+        ref_ome_zarr=spim_input,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         invwarp_nii=rules.deform_reg.output.invwarp,
         flo_nii=bids(

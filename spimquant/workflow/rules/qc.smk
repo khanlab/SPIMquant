@@ -51,7 +51,7 @@ cumulative distribution, and a summary-statistics panel including the
 saturation/clip fraction (percentage of voxels at the maximum bin).
 """
     input:
-        spim=inputs["spim"].path,
+        spim=spim_input,
     output:
         png=bids(
             root=root,
@@ -83,7 +83,7 @@ overlay, and a max-intensity projection column for each orientation.
 Aspect ratio is corrected using voxel spacings from ``ZarrNii.get_zooms()``.
 """
     input:
-        spim=inputs["spim"].path,
+        spim=spim_input,
         mask=bids_oz_in(
             root=root,
             datatype="seg",
@@ -122,7 +122,7 @@ vessel binary mask.  Loads data via ZarrNii with ``downsample_near_isotropic``
 for isotropic display and physically correct aspect ratio.
 """
     input:
-        spim=inputs["spim"].path,
+        spim=spim_input,
         mask=bids_oz_in(
             root=root,
             datatype="vessels",
@@ -181,7 +181,7 @@ one without (``desc-{desc}nomask_roimontage.png``).
             if _use_n4_bg
             else {}
         ),
-        spim=inputs["spim"].path,
+        spim=spim_input,
         mask=bids_oz_in(
             root=root,
             datatype="seg",
@@ -268,7 +268,7 @@ and one without (``desc-{desc}nomask_vesselroimontage.png``).
             if _use_n4_bg
             else {}
         ),
-        spim=inputs["spim"].path,
+        spim=spim_input,
         mask=bids_oz_in(
             root=root,
             datatype="vessels",
@@ -660,7 +660,7 @@ Inputs are the aggregated (all-stain) regionprops parquet in template space
 parcellation for atlas-label lookup.
 """
     input:
-        spim=inputs["spim"].path,
+        spim=spim_input,
         instance_parquet=bids(
             root=root,
             datatype="tabular",
@@ -730,7 +730,7 @@ two colocalized objects (subject-space ``pos_coloc_x/y/z``), with a circle
 marker drawn at the average radius of the pair.
 """
     input:
-        spim=inputs["spim"].path,
+        spim=spim_input,
         instance_parquet=bids(
             root=root,
             datatype="tabular",

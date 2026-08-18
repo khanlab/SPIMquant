@@ -28,7 +28,7 @@ rule run_lantern_plaques:
     changed downstream without re-running inference.
     """
     input:
-        spim=inputs["spim"].path,
+        spim=spim_input,
         models=expand(
             "resources/models/lantern-ki3-abeta/fold{fold}/seg_model.pt",
             fold=range(config["plaque_n_folds"]),
@@ -108,7 +108,7 @@ rule binarize_lantern_plaques:
             suffix="probseg.{ext}",
             **inputs["spim"].wildcards,
         ),
-        spim=inputs["spim"].path,
+        spim=spim_input,
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,
         n_folds=config["plaque_n_folds"],

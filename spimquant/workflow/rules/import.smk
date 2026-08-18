@@ -30,7 +30,7 @@ rule get_downsampled_nii:
     based on configuration.
     """
     input:
-        spim=inputs["spim"].path,
+        spim=spim_input,
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,
     output:

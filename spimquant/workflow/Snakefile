@@ -4,7 +4,14 @@ from itertools import combinations as _combinations, product as _product
 import pandas as _pd
 from zarrnii import ZarrNii
 from snakemake.utils import format
-from snakebids import bids, generate_inputs, get_wildcard_constraints, set_bids_spec
+from snakebids import (
+    BidsComponent,
+    BidsDataset,
+    bids,
+    generate_inputs,
+    get_wildcard_constraints,
+    set_bids_spec,
+)
 import snakebids
 
 # update v15 spec to add template entity
@@ -58,6 +65,38 @@ inputs = generate_inputs(
 )
 
 
+# The spim component is generated with `extension` as a wildcard so that one
+# path template covers datasets mixing image formats (e.g. .ims files alongside
+# .ome.zarr stores). Rules resolve each scan's concrete image path through
+# spim_input(); the component exposed to the rest of the workflow has the
+# extension stripped so it cannot leak into derived output templates.
+spim_raw = inputs["spim"]
+
+_spim_key_wildcards = [w for w in spim_raw.zip_lists if w != "extension"]
+_spim_path_lookup = {
+    tuple(spim_raw.zip_lists[w][i] for w in _spim_key_wildcards): path
+    for i, path in enumerate(spim_raw.expand())
+}
+
+
+def spim_input(wildcards):
+    """Concrete raw image path (whatever its extension) for a job's wildcards."""
+    return _spim_path_lookup[tuple(getattr(wildcards, w) for w in _spim_key_wildcards)]
+
+
+inputs = BidsDataset(
+    {
+        **inputs,
+        "spim": BidsComponent(
+            name=spim_raw.name,
+            path=spim_raw.path.replace("{extension}", ""),
+            zip_lists={w: spim_raw.zip_lists[w] for w in _spim_key_wildcards},
+        ),
+    },
+    layout=inputs.layout,
+)
+
+
 if "mri" in inputs:
     suffixes = inputs["mri"].entities["suffix"]
     if len(suffixes) == 1:
@@ -81,7 +120,7 @@ include: "rules/common.smk"
 # prepopulate json sidecar metadata for every spim input
 spim_json_overrides = {
     str(spim_path): get_spim_json_overrides(spim_path)
-    for spim_path in inputs["spim"].expand()
+    for spim_path in spim_raw.expand()
 }
 zarrnii_cli_kwargs = {}
 
