@@ -73,16 +73,30 @@ inputs = generate_inputs(
 spim_raw = inputs["spim"]
 
 _spim_key_wildcards = [w for w in spim_raw.zip_lists if w != "extension"]
-_spim_path_lookup = {
-    tuple(spim_raw.zip_lists[w][i] for w in _spim_key_wildcards): path
-    for i, path in enumerate(spim_raw.expand())
-}
+_spim_path_lookup = {}
+for i, path in enumerate(spim_raw.expand()):
+    key = tuple(spim_raw.zip_lists[w][i] for w in _spim_key_wildcards)
+    if key in _spim_path_lookup and _spim_path_lookup[key] != path:
+        raise ValueError(
+            "Ambiguous SPIM inputs: multiple files match the same BIDS entities "
+            f"{dict(zip(_spim_key_wildcards, key))}: "
+            f"{_spim_path_lookup[key]} and {path}. "
+            "Disambiguate by adjusting your BIDS filters."
+        )
+    _spim_path_lookup[key] = path
 
 
 def spim_input(wildcards):
     """Concrete raw image path (whatever its extension) for a job's wildcards."""
-    return _spim_path_lookup[tuple(getattr(wildcards, w) for w in _spim_key_wildcards)]
-
+    key = tuple(getattr(wildcards, w) for w in _spim_key_wildcards)
+    try:
+        return _spim_path_lookup[key]
+    except KeyError as e:
+        parts = ", ".join(f"{w}={getattr(wildcards, w)!r}" for w in _spim_key_wildcards)
+        raise ValueError(
+            f"Unable to resolve SPIM input for wildcards ({parts}). "
+            "This usually indicates mismatched wildcards or overly restrictive BIDS filters."
+        ) from e
 
 inputs = BidsDataset(
     {
