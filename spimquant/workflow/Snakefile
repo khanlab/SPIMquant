@@ -93,7 +93,7 @@ def spim_input(wildcards):
         return _spim_path_lookup[key]
     except KeyError as e:
         parts = ", ".join(
-            f"{w}={getattr(wildcards, w)! r}" for w in _spim_key_wildcards
+            f"{w}={repr(getattr(wildcards, w))}" for w in _spim_key_wildcards
         )
         raise ValueError(
             f"Unable to resolve SPIM input for wildcards ({parts}). "
