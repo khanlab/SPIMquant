@@ -461,11 +461,11 @@ templates:
 models:
   vesselfm: https://huggingface.co/bwittmann/vesselFM/resolve/main/vesselFM_base.pt
   lantern_abeta:
-    fold0: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/main/fold0/seg_model.pt
-    fold1: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/main/fold1/seg_model.pt
-    fold2: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/main/fold2/seg_model.pt
-    fold3: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/main/fold3/seg_model.pt
-    fold4: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/main/fold4/seg_model.pt
+    fold0: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/v2/fold0/seg_model.pt
+    fold1: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/v2/fold1/seg_model.pt
+    fold2: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/v2/fold2/seg_model.pt
+    fold3: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/v2/fold3/seg_model.pt
+    fold4: https://huggingface.co/apooladi/lantern-ki3-abeta/resolve/v2/fold4/seg_model.pt
 
 
   
