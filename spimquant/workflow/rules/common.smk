@@ -89,7 +89,7 @@ def get_stains_all_subjects(ignore_stains=None):
     ignore_set = set(ignore_stains) if ignore_stains else set()
 
     stain_sets = []
-    for zarr in inputs["spim"].expand():
+    for zarr in spim_raw.expand():
         channels = set(get_spim_channels(zarr))
         # Remove ignored stains
         channels = channels - ignore_set
