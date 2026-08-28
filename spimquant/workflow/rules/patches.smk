@@ -31,7 +31,7 @@ rule create_spim_patches:
     but level in the dseg input is the (downsampled) registration_level.
     """
     input:
-        spim=inputs["spim"].path,
+        spim=spim_input,
         dseg=bids(
             root=root,
             datatype="parc",
@@ -192,7 +192,7 @@ rule create_imaris_crops:
     to_imaris() function. Level defaults to 0 for high-resolution output.
     """
     input:
-        spim=inputs["spim"].path,
+        spim=spim_input,
         dseg=bids(
             root=root,
             datatype="parc",

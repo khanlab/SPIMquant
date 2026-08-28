@@ -1,7 +1,7 @@
 rule counts_per_voxel:
     """Calculate counts per voxel based on points"""
     input:
-        ref_spim=inputs["spim"].path,
+        ref_spim=spim_input,
         regionprops_parquet=bids(
             root=root,
             datatype="tabular",

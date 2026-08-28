@@ -10,7 +10,9 @@ This is a Snakemake script that expects the `snakemake` object to be available.
 import pandas as pd
 
 indiv_files = snakemake.input.indiv_tsvs
-coloc_file = getattr(snakemake.input, "coloc_tsv", None)
+# Single-stain methods resolve coloc_tsv to an empty list rather than dropping the
+# key, so an empty value has to be treated the same as a missing one.
+coloc_file = getattr(snakemake.input, "coloc_tsv", None) or None
 
 output_file = snakemake.output.merged_tsv
 stains = snakemake.params.stains  # list aligned to indiv_files
