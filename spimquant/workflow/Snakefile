@@ -92,11 +92,14 @@ def spim_input(wildcards):
     try:
         return _spim_path_lookup[key]
     except KeyError as e:
-        parts = ", ".join(f"{w}={getattr(wildcards, w)!r}" for w in _spim_key_wildcards)
+        parts = ", ".join(
+            f"{w}={getattr(wildcards, w)! r}" for w in _spim_key_wildcards
+        )
         raise ValueError(
             f"Unable to resolve SPIM input for wildcards ({parts}). "
             "This usually indicates mismatched wildcards or overly restrictive BIDS filters."
         ) from e
+
 
 inputs = BidsDataset(
     {
