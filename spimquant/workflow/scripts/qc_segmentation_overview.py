@@ -86,7 +86,9 @@ def main():
         while data.ndim > 3 and data.shape[0] == 1:
             data = data[0]
         if data.ndim != 3:
-            raise ValueError(f"expected a single-channel volume, got shape {img.data.shape}")
+            raise ValueError(
+                f"expected a single-channel volume, got shape {img.data.shape}"
+            )
         return data.compute()
 
     spim_data = _volume(spim_img)  # (X, Y, Z)
