@@ -80,8 +80,17 @@ def main():
     # Voxel dimensions (mm) for physical aspect-ratio correction
     zooms = spim_img.get_zooms()
 
-    spim_data = spim_img.data[0].compute()  # (X, Y, Z)
-    mask_data = mask_img.data[0].compute()  # (X, Y, Z), values 0–100
+    # Drop leading singleton axes (c, or t,c for stores with a time axis)
+    def _volume(img):
+        data = img.data
+        while data.ndim > 3 and data.shape[0] == 1:
+            data = data[0]
+        if data.ndim != 3:
+            raise ValueError(f"expected a single-channel volume, got shape {img.data.shape}")
+        return data.compute()
+
+    spim_data = _volume(spim_img)  # (X, Y, Z)
+    mask_data = _volume(mask_img)  # (X, Y, Z), values 0–100
 
     # Bring mask to the same grid as SPIM if needed
     if mask_data.shape != spim_data.shape:

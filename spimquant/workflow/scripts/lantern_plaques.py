@@ -306,11 +306,18 @@ def main():
             **snakemake.params.zarrnii_kwargs,
         )
 
-        if znimg.data.ndim != 4 or znimg.data.shape[0] != 1:
+        # Some acquisitions store a leading singleton time axis (t,c,z,y,x).
+        # Inference runs on (c,z,y,x); the axis is restored on output so the
+        # probseg keeps the same rank as its source store.
+        has_t = znimg.data.ndim == 5 and znimg.data.shape[0] == 1
+        data = znimg.data[0] if has_t else znimg.data
+
+        if data.ndim != 4 or data.shape[0] != 1:
             raise ValueError(
-                f"expected a single-channel (c,z,y,x) image, got shape {znimg.data.shape}"
+                f"expected a single-channel (c,z,y,x) or (1,c,z,y,x) image, "
+                f"got shape {znimg.data.shape}"
             )
-        data = znimg.data.rechunk(plan_chunks(znimg.data.shape, chunk, tile - stride))
+        data = data.rechunk(plan_chunks(data.shape, chunk, tile - stride))
 
         brain = build_brain_block_mask(snakemake.input.mask, data.shape, data.chunks)
 
@@ -341,7 +348,8 @@ def main():
         # float32 costs ~4 bytes/voxel, so a level-1 whole brain is ~100 GB raw; it
         # compresses hard, being overwhelmingly zero.
         znimg_prob = znimg.copy()
-        znimg_prob.data = votes.astype(np.float32) / float(n_folds)
+        prob = votes.astype(np.float32) / float(n_folds)
+        znimg_prob.data = prob[np.newaxis] if has_t else prob
 
         with ProgressBar():
             znimg_prob.to_ome_zarr(
