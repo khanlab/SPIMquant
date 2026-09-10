@@ -25,7 +25,17 @@ def get_dask_client(scheduler, threads, threads_per_worker=2):
         otherwise ``None``.
     """
     if scheduler == "distributed":
+        import dask
         from dask.distributed import Client, LocalCluster
+
+        # Return freed memory to the OS immediately. Without this, glibc
+        # retains freed allocations as "unmanaged" worker memory, which
+        # ratchets up until workers hit the 80% pause threshold and
+        # deadlock (paused workers never drop back below the resume
+        # threshold since the memory is never actually released).
+        dask.config.set(
+            {"distributed.nanny.pre-spawn-environ.MALLOC_TRIM_THRESHOLD_": 0}
+        )
 
         n_workers = max(1, int(threads // threads_per_worker))
         cluster = LocalCluster(

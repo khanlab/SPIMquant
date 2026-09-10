@@ -7,3 +7,4 @@ spimquant/workflow/scripts/experiment/
 .pixi
 *.egg-info
 site/
+spimquant/resources/imported/
