@@ -198,9 +198,10 @@ parse_args:
 
       ``lantern`` – 5-fold LANTERN deep-learning ensemble for amyloid-beta
       plaques.  Unlike the histogram-based methods above it reads raw
-      intensities (not the bias-field-corrected image) and runs at
-      ``plaque_level``; the mask at ``segmentation_level`` is that prediction
-      upsampled.  Requires a GPU.
+      intensities (not the bias-field-corrected image) and runs on the grid
+      nearest ``plaque_iso_res`` (~4 µm isotropic, the scale it was trained
+      at); the mask at ``segmentation_level`` is that prediction upsampled.
+      Requires a GPU.
 
       Also unlike them, it is stain-specific: it runs only on the first stain
       from ``stains_for_plaques``.  The remaining stains in ``stains_for_seg``
@@ -544,8 +545,9 @@ vessel_metrics:
   - fieldfrac
 
 # LANTERN deep-learning plaque segmentation (opt in with --seg_method lantern).
-# The ensemble is scale-sensitive and was built for plaque_level; the mask at
-# segmentation_level is that prediction upsampled, not native inference.
+# The ensemble is scale-sensitive and was trained at ~plaque_iso_res um
+# isotropic; the mask at segmentation_level is that prediction upsampled, not
+# native inference.
 plaque_seg_method: lantern
 # The LANTERN ensemble is trained on amyloid-beta only, so unlike the
 # intensity-based methods it is not applied to every stain in stains_for_seg.
@@ -556,6 +558,12 @@ stains_for_plaques:
   - Abeta
   - BetaAmyloid
 plaque_level: 1
+# Target inference resolution, in the units of the pyramid's scale metadata
+# (um for SPIMprep outputs). plaque_level is the starting -- and coarsest
+# allowed -- level: when any axis at that level is coarser than this target
+# (e.g. a pyramid that halves z per level as well as x/y), inference loads a
+# finer level and block-average downsamples per axis to land near-isotropic.
+plaque_iso_res: 4.0
 plaque_n_folds: 5
 plaque_vote_threshold: 3
 plaque_tile: 128

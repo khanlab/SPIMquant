@@ -16,9 +16,13 @@ rule import_lantern_abeta_fold:
 rule run_lantern_plaques:
     """Segment Abeta plaques with the 5-fold LANTERN ensemble.
 
-    Runs at config['plaque_level'] on RAW intensities -- the model was not
+    Runs on the grid nearest config['plaque_iso_res'] um isotropic (the scale
+    the ensemble was trained at), on RAW intensities -- the model was not
     trained on N4-corrected data, so this bypasses the bias-field chain that
-    the GMM and Otsu methods depend on.
+    the GMM and Otsu methods depend on. The level wildcard names the starting
+    pyramid level; on pyramids that downsample z as well as x/y the script
+    loads a finer level and downsamples per axis to land near-isotropic, so
+    the effective grid can be finer than the level in the filename.
 
     Tiles at 128^3 with stride 64 and combines overlapping tiles by max over
     votes. The low-res brain mask restricts inference to blocks that touch
@@ -44,6 +48,7 @@ rule run_lantern_plaques:
         ),
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,
+        iso_res=config["plaque_iso_res"],
         tile=config["plaque_tile"],
         stride=config["plaque_stride"],
         batch_size=config["plaque_batch_size"],

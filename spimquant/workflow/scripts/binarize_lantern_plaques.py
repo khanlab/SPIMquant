@@ -1,8 +1,8 @@
 """Threshold the LANTERN vote map and upsample it to the segmentation level.
 
-The ensemble runs at ``plaque_level`` because it is scale-sensitive and was built
-for that grid; the segmentation level output is therefore the upsampled
-prediction, NOT native inference at that level.
+The ensemble runs near ``plaque_iso_res`` um isotropic because it is
+scale-sensitive and was trained at that scale; the segmentation level output is
+therefore the upsampled prediction, NOT native inference at that level.
 
 Upsampling is exact replication (``da.repeat``) rather than interpolation, and
 the per-axis factors are derived from the shape ratio so this stays correct when
