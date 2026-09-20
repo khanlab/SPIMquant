@@ -15,10 +15,13 @@ def _find_repo_root(start: Path) -> Path:
     raise RuntimeError("Could not locate repository root from test path")
 
 
-def _load_lantern_module():
-    repo_root = _find_repo_root(Path(__file__).parent)
-    script_path = repo_root / "spimquant/workflow/scripts/lantern_plaques.py"
+REPO_ROOT = _find_repo_root(Path(__file__).parent)
+CONFIG_PATH = REPO_ROOT / "spimquant/config/snakebids.yml"
+RULE_PATH = REPO_ROOT / "spimquant/workflow/rules/plaques.smk"
+SCRIPT_PATH = REPO_ROOT / "spimquant/workflow/scripts/lantern_plaques.py"
 
+
+def _load_lantern_module():
     dask = types.ModuleType("dask")
     dask_array = types.ModuleType("dask.array")
     dask_diagnostics = types.ModuleType("dask.diagnostics")
@@ -61,7 +64,7 @@ def _load_lantern_module():
     zarrnii.ZarrNii = ZarrNii
     sys.modules.setdefault("zarrnii", zarrnii)
 
-    spec = spec_from_file_location("lantern_plaques", script_path)
+    spec = spec_from_file_location("lantern_plaques", SCRIPT_PATH)
     module = module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -114,7 +117,7 @@ def test_merge_mode_max_matches_existing_per_voxel_max_behavior():
     np.testing.assert_array_equal(merged, expected)
 
 
-def test_merge_mode_average_uniformly_averages_overlapping_tile_fractions():
+def test_merge_mode_average_uniformly_averages_vote_fractions_from_raw_votes():
     tile = 3
     volume_shape = (3, 3, 5)
     first_votes = np.full((tile, tile, tile), 5, dtype=np.uint8)
@@ -142,3 +145,13 @@ def test_merge_mode_gaussian_weights_tile_center_more_than_uniform_average():
     assert gaussian[2, 2, 2] > average[2, 2, 2]
     # Global x=4 lies at the edge of the first tile and the center of the second.
     assert gaussian[2, 2, 4] < average[2, 2, 4]
+
+
+def test_merge_mode_is_threaded_from_config_to_rule_and_script():
+    config_text = CONFIG_PATH.read_text()
+    rule_text = RULE_PATH.read_text()
+    script_text = SCRIPT_PATH.read_text()
+
+    assert "--merge_mode:" in config_text
+    assert 'merge_mode=config["merge_mode"]' in rule_text
+    assert "snakemake.params.merge_mode" in script_text
