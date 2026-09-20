@@ -84,7 +84,6 @@ def merge_tile_votes(
     batch,
     tile,
     merge_mode,
-    n_folds,
     weight_accum=None,
     importance_map=None,
 ):
@@ -96,10 +95,10 @@ def merge_tile_votes(
     that contains it whole, and it preserves the calibration of
     ``plaque_vote_threshold``.
 
-    ``average`` and ``gaussian`` instead combine per-tile *fractions* of folds
-    voting foreground across all overlapping tiles. ``average`` weights every
-    tile position uniformly, while ``gaussian`` down-weights tile edges and
-    emphasizes tile centers where the model had more surrounding context.
+    ``average`` and ``gaussian`` instead compute weighted averages of the raw
+    per-tile fold-vote counts over all overlapping tiles. ``average`` weights
+    every tile position uniformly, while ``gaussian`` down-weights tile edges
+    and emphasizes tile centers where the model had more surrounding context.
     """
     if merge_mode == "max":
         for j, (z, y, x) in enumerate(batch):
@@ -116,21 +115,20 @@ def merge_tile_votes(
     if merge_mode == "gaussian" and importance_map is None:
         raise ValueError("importance_map is required for gaussian merge")
 
-    scale = np.float32(1.0 / float(n_folds))
     for j, (z, y, x) in enumerate(batch):
         region = votes[z : z + tile, y : y + tile, x : x + tile]
         region_weights = weight_accum[z : z + tile, y : y + tile, x : x + tile]
-        tile_fraction = batch_votes[j].astype(np.float32) * scale
-        region += tile_fraction * weights
+        tile_votes = batch_votes[j].astype(np.float32)
+        region += tile_votes * weights
         region_weights += weights
 
 
 def predict_volume(vol, nets, device, tile, stride, batch_size, merge_mode):
     """Tiled 5-fold vote map for one 3D block.
 
-    Returns raw integer fold-vote counts for ``merge_mode="max"`` (matching the
-    historical behavior) and float32 vote fractions in ``[0, 1]`` for
-    ``average`` and ``gaussian``.
+    Returns vote counts on the historical ``[0, len(nets)]`` scale for all
+    merge modes: integer counts for ``max`` and float32 weighted-average counts
+    for ``average`` and ``gaussian``.
 
     The caller owns `device` exclusively for the duration of this call (see
     DevicePool), so no additional locking is needed here.
@@ -189,7 +187,6 @@ def predict_volume(vol, nets, device, tile, stride, batch_size, merge_mode):
             batch,
             tile,
             merge_mode,
-            n_folds,
             weight_accum=weight_accum,
             importance_map=importance_map,
         )
@@ -428,7 +425,8 @@ def main():
         # The fraction of folds voting foreground: float32 in [0, 1]. Under the
         # historical `max` merge it remains in {0, .2, .4, .6, .8, 1} for a 5-fold
         # ensemble, matching LANTERN's own whole-brain probmask; under `average`
-        # or `gaussian` it is a weighted mean of those per-tile fractions.
+        # or `gaussian` it is obtained by first computing a weighted-average vote
+        # count on the same 0..n_folds scale, then dividing by n_folds here.
         #
         # Deliberately a probability rather than the raw count or a 0-100 rescaling:
         # it is directly readable as model confidence in a viewer, and independent of
@@ -439,10 +437,7 @@ def main():
         # float32 costs ~4 bytes/voxel, so a level-1 whole brain is ~100 GB raw; it
         # compresses hard, being overwhelmingly zero.
         znimg_prob = znimg.copy()
-        if merge_mode == "max":
-            znimg_prob.data = votes.astype(np.float32) / float(n_folds)
-        else:
-            znimg_prob.data = votes.astype(np.float32)
+        znimg_prob.data = votes.astype(np.float32) / float(n_folds)
 
         with ProgressBar():
             znimg_prob.to_ome_zarr(

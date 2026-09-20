@@ -93,13 +93,12 @@ def _merge_two_tiles(tile, volume_shape, first_votes, second_votes, merge_mode):
         batch,
         tile,
         merge_mode,
-        n_folds=5,
         weight_accum=weight_accum,
         importance_map=importance_map,
     )
     if merge_mode == "max":
         return votes
-    return votes / np.maximum(weight_accum, 1e-8)
+    return votes / np.maximum(weight_accum, 1e-8) / 5.0
 
 
 def test_merge_mode_max_matches_existing_per_voxel_max_behavior():
