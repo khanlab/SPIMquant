@@ -5,6 +5,7 @@ import sys
 import types
 
 import numpy as np
+import pytest
 
 
 def _find_repo_root(start: Path) -> Path:
@@ -16,8 +17,6 @@ def _find_repo_root(start: Path) -> Path:
 
 
 REPO_ROOT = _find_repo_root(Path(__file__).parent)
-CONFIG_PATH = REPO_ROOT / "spimquant/config/snakebids.yml"
-RULE_PATH = REPO_ROOT / "spimquant/workflow/rules/plaques.smk"
 SCRIPT_PATH = REPO_ROOT / "spimquant/workflow/scripts/lantern_plaques.py"
 
 
@@ -147,11 +146,106 @@ def test_merge_mode_gaussian_weights_tile_center_more_than_uniform_average():
     assert gaussian[2, 2, 4] < average[2, 2, 4]
 
 
-def test_merge_mode_is_threaded_from_config_to_rule_and_script():
-    config_text = CONFIG_PATH.read_text()
-    rule_text = RULE_PATH.read_text()
-    script_text = SCRIPT_PATH.read_text()
+def test_main_threads_merge_mode_into_predict_volume(monkeypatch):
+    seen = {}
 
-    assert "--merge_mode:" in config_text
-    assert 'merge_mode=config["merge_mode"]' in rule_text
-    assert "snakemake.params.merge_mode" in script_text
+    class FakeData:
+        def __init__(self):
+            self.shape = (1, 2, 2, 2)
+            self.ndim = 4
+            self.chunks = ((1,), (2,), (2,), (2,))
+
+        def rechunk(self, chunks):
+            self.chunks = chunks
+            return self
+
+    class FakeZnimg:
+        def __init__(self):
+            self.data = FakeData()
+
+        def copy(self):
+            return FakeZnimg()
+
+        def to_ome_zarr(self, *args, **kwargs):
+            return None
+
+    class FakeZarrNii:
+        @staticmethod
+        def from_file(*args, **kwargs):
+            return FakeZnimg()
+
+    class FakeProgressBar:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    class FakePool:
+        def __init__(self, devices, model_paths):
+            self.nets = {devices[0]: [object()] * 5}
+            self._device = devices[0]
+
+        @contextmanager
+        def acquire(self):
+            yield self._device, self.nets[self._device]
+
+    @contextmanager
+    def fake_dask_client(*args, **kwargs):
+        yield None
+
+    def fake_predict_volume(vol, nets, device, tile, stride, batch_size, merge_mode):
+        seen["merge_mode"] = merge_mode
+        seen["tile"] = tile
+        seen["stride"] = stride
+        seen["batch_size"] = batch_size
+        return np.zeros_like(vol, dtype=np.float32)
+
+    def fake_vote_map(data, brain, predict, tile, stride):
+        predict(np.zeros((2, 2, 2), dtype=np.float32))
+        return np.zeros((1, 2, 2, 2), dtype=np.float32)
+
+    monkeypatch.setattr(lantern_plaques, "ZarrNii", FakeZarrNii)
+    monkeypatch.setattr(lantern_plaques, "ProgressBar", FakeProgressBar)
+    monkeypatch.setattr(lantern_plaques, "DevicePool", FakePool)
+    monkeypatch.setattr(lantern_plaques, "get_dask_client", fake_dask_client)
+    monkeypatch.setattr(lantern_plaques, "resolve_devices", lambda n: ["cpu"])
+    monkeypatch.setattr(
+        lantern_plaques, "build_brain_block_mask", lambda *args, **kwargs: "brain"
+    )
+    monkeypatch.setattr(lantern_plaques, "vote_map", fake_vote_map)
+    monkeypatch.setattr(lantern_plaques, "predict_volume", fake_predict_volume)
+    monkeypatch.setattr(
+        lantern_plaques,
+        "snakemake",
+        types.SimpleNamespace(
+            params=types.SimpleNamespace(
+                tile=128,
+                stride=64,
+                merge_mode="gaussian",
+                batch_size=8,
+                chunk=512,
+                n_gpus=1,
+                zarrnii_kwargs={},
+            ),
+            threads=1,
+            input=types.SimpleNamespace(
+                spim="input.ome.zarr",
+                mask="mask.nii.gz",
+                models=["fold0.pt"],
+            ),
+            output=types.SimpleNamespace(probseg="probseg.ome.zarr"),
+            wildcards=types.SimpleNamespace(level="1", stain="abeta"),
+            config={"zarrnii_out_kwargs": {}},
+        ),
+        raising=False,
+    )
+
+    lantern_plaques.main()
+
+    assert seen == {
+        "merge_mode": "gaussian",
+        "tile": 128,
+        "stride": 64,
+        "batch_size": 8,
+    }
