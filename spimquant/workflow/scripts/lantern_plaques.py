@@ -385,7 +385,7 @@ def vote_map(data, brain, predict, tile, stride):
 def main():
     tile = int(snakemake.params.tile)
     stride = int(snakemake.params.stride)
-    merge_mode = str(snakemake.params.merge_mode)
+    merge_mode = str(getattr(snakemake.params, "merge_mode", "max"))
     batch_size = int(snakemake.params.batch_size)
     chunk = int(snakemake.params.chunk)
     n_gpus = int(snakemake.params.n_gpus)
