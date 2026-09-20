@@ -28,7 +28,27 @@ Complete reference for SPIMquant configuration options.
 
 ## Segmentation Options
 
-<!-- TODO: Document segmentation configuration -->
+### LANTERN plaque inference
+
+When `seg_method` includes `lantern`, SPIMquant runs the 5-fold LANTERN
+amyloid-beta plaque ensemble on the first available stain from
+`stains_for_plaques`.
+
+Relevant configuration keys:
+
+- `plaque_level` — pyramid level at which LANTERN inference runs
+- `plaque_tile` / `plaque_stride` — 3D sliding-window tile size and stride
+- `plaque_vote_threshold` — downstream vote threshold used when binarizing the
+  probability map
+- `merge_mode` — how overlapping plaque tiles are merged:
+  - `max` — historical/default behavior; take the maximum per-voxel fold-vote
+    count over overlapping tiles
+  - `average` — uniformly average per-tile fold-vote fractions
+  - `gaussian` — Gaussian-weighted average that emphasizes tile centers over
+    tile edges
+
+See [Segmentation Methods](../howto/segmentation.md#lantern-plaques-seg_method-lantern)
+for usage guidance and trade-offs between the merge modes.
 
 ## Resource Management
 
