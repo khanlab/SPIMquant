@@ -157,6 +157,7 @@ parse_args:
     default: n4
 
   --merge_mode:
+    dest: plaque_merge_mode
     help: >
       How to merge overlapping LANTERN plaque tiles when ``seg_method`` includes
       ``lantern``. ``max`` preserves the current behavior by taking the maximum
@@ -572,7 +573,7 @@ stains_for_plaques:
 plaque_level: 1
 plaque_n_folds: 5
 plaque_vote_threshold: 3
-merge_mode: max
+plaque_merge_mode: max
 plaque_tile: 128
 plaque_stride: 64
 plaque_batch_size: 8

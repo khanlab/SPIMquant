@@ -47,7 +47,7 @@ rule run_lantern_plaques:
         zarrnii_kwargs=zarrnii_in_kwargs,
         tile=config["plaque_tile"],
         stride=config["plaque_stride"],
-        merge_mode=config.get("merge_mode", "max"),
+        merge_mode=config.get("plaque_merge_mode", "max"),
         batch_size=config["plaque_batch_size"],
         chunk=config["plaque_chunk"],
         n_gpus=config["plaque_n_gpus"],

@@ -40,7 +40,8 @@ Relevant configuration keys:
 - `plaque_tile` / `plaque_stride` — 3D sliding-window tile size and stride
 - `plaque_vote_threshold` — downstream vote threshold used when binarizing the
   probability map
-- `merge_mode` — how overlapping plaque tiles are merged:
+- `plaque_merge_mode` (CLI: `--merge_mode`) — how overlapping plaque tiles are
+  merged:
   - `max` — historical/default behavior; take the maximum per-voxel fold-vote
     count over overlapping tiles
   - `average` — uniformly average per-tile fold-vote fractions

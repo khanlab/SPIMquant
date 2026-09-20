@@ -95,7 +95,7 @@ Unlike the histogram-based methods above, it is:
 - **tile-based** — inference uses overlapping 3D tiles controlled by
   `plaque_tile` and `plaque_stride`
 
-Overlapping tiles are merged with `merge_mode`:
+Overlapping tiles are merged with `plaque_merge_mode` (CLI: `--merge_mode`):
 
 - `max` — preserves the historical LANTERN behavior by taking the maximum
   per-voxel fold-vote count over all overlapping tiles.  This remains the
@@ -111,7 +111,7 @@ Overlapping tiles are merged with `merge_mode`:
 ```yaml
 seg_method:
   - lantern
-merge_mode: gaussian
+plaque_merge_mode: gaussian
 plaque_vote_threshold: 3
 ```
 
