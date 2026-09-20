@@ -20,8 +20,9 @@ rule run_lantern_plaques:
     trained on N4-corrected data, so this bypasses the bias-field chain that
     the GMM and Otsu methods depend on.
 
-    Tiles at 128^3 with stride 64 and combines overlapping tiles by max over
-    votes. The low-res brain mask restricts inference to blocks that touch
+    Tiles at 128^3 with stride 64 and combines overlapping tiles using the
+    configured merge mode (`max` by default, to match the published LANTERN
+    inference). The low-res brain mask restricts inference to blocks that touch
     tissue, which is what makes whole-brain 5-fold inference tractable.
 
     Writes votes/n_folds rather than a binary mask, so the vote threshold can be
@@ -46,6 +47,7 @@ rule run_lantern_plaques:
         zarrnii_kwargs=zarrnii_in_kwargs,
         tile=config["plaque_tile"],
         stride=config["plaque_stride"],
+        merge_mode=config["merge_mode"],
         batch_size=config["plaque_batch_size"],
         chunk=config["plaque_chunk"],
         n_gpus=config["plaque_n_gpus"],

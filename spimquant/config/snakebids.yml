@@ -156,6 +156,20 @@ parse_args:
       - n4
     default: n4
 
+  --merge_mode:
+    help: >
+      How to merge overlapping LANTERN plaque tiles when ``seg_method`` includes
+      ``lantern``. ``max`` preserves the current behavior by taking the maximum
+      per-voxel fold-vote count across all overlapping tiles. ``average`` takes
+      a uniform average of per-tile fold-vote fractions. ``gaussian`` takes a
+      Gaussian-weighted average that down-weights tile edges and emphasizes tile
+      centers. (default: %(default)s)
+    choices:
+      - max
+      - average
+      - gaussian
+    default: max
+
   --correction_level:
     help: "Pyramid level at which to perform bias field correction (default: %(default)s). Higher values (coarser resolution) may be needed for high-resolution datasets; lower values for low-resolution datasets."
     default: 6
