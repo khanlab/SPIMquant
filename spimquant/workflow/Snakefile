@@ -715,7 +715,7 @@ rule all_plaques:
                 suffix="probseg.{ext}",
                 **inputs["spim"].wildcards,
             ),
-            level=config["plaque_level"],
+            level=max(config["plaque_level"],config["segmentation_level"]),
             stain=stain_for_plaques,
         ),
         inputs["spim"].expand(

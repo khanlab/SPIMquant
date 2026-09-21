@@ -59,12 +59,15 @@ def main():
     # attainable values rather than the exact fraction: 2.5/5 = 0.5 sits safely
     # between 0.4 and 0.6, so no float representation error can flip a voxel at the
     # boundary the way `>= 3/5` could.
-    binary = probseg.data >= (vote_threshold - 0.5) / n_folds
+#    binary = probseg.data >= (vote_threshold - 0.5) / n_folds
 
-    upsampled = upsample_nearest(binary, ref.data.shape)
+#    upsampled = upsample_nearest(binary, ref.data.shape)
 
-    znimg_mask = ref.copy()
-    znimg_mask.data = (upsampled * 100).astype(np.uint8)
+#    znimg_mask = ref.copy()
+#    znimg_mask.data = (upsampled * 100).astype(np.uint8)
+
+    upsampled = probseg.upsample(to_shape=ref.data.shape)
+    upsampled.data = ((upsampled.data > 0.5) * 100 ).astype(np.uint8)
 
     print(
         f"votes>={vote_threshold} of {n_folds} | "
@@ -73,7 +76,7 @@ def main():
     )
 
     with ProgressBar():
-        znimg_mask.to_ome_zarr(
+        upsampled.to_ome_zarr(
             snakemake.output.mask,
             max_layer=5,
             match_scale_factors_from=snakemake.input.spim,

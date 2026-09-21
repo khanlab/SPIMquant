@@ -105,7 +105,7 @@ rule binarize_lantern_plaques:
             root=root,
             datatype="seg",
             stain="{stain}",
-            level=config["plaque_level"],
+            level=max(config["plaque_level"],config["segmentation_level"]),
             desc=config["plaque_seg_method"],
             suffix="probseg.{ext}",
             **inputs["spim"].wildcards,

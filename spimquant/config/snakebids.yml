@@ -573,7 +573,7 @@ stains_for_plaques:
 plaque_level: 1
 plaque_n_folds: 5
 plaque_vote_threshold: 3
-plaque_merge_mode: max
+plaque_merge_mode: gaussian
 plaque_tile: 128
 plaque_stride: 64
 plaque_batch_size: 8
