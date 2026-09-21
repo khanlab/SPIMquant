@@ -110,3 +110,33 @@ def test_main_reads_tsv_files_input_key(tmp_path):
     assert list(merged["participant_id"]) == ["sub-01", "sub-02"]
     assert list(merged["count"]) == [3, 4]
     assert list(merged["treatment"]) == ["vehicle", "drug"]
+
+
+def test_main_accepts_legacy_segstats_tsvs_input_key(tmp_path):
+    participants_path = tmp_path / "participants.tsv"
+    pd.DataFrame({"participant_id": ["sub-01"], "treatment": ["vehicle"]}).to_csv(
+        participants_path, sep="\t", index=False
+    )
+
+    sub01_dir = tmp_path / "sub-01" / "tabular"
+    sub01_dir.mkdir(parents=True)
+    sub01_path = sub01_dir / "sub-01_desc-threshold_mergedsegstats.tsv"
+    output_path = tmp_path / "group" / "merged.tsv"
+
+    pd.DataFrame({"index": [1], "name": ["RegionA"], "count": [3]}).to_csv(
+        sub01_path, sep="\t", index=False
+    )
+
+    concat_mod.snakemake = SimpleNamespace(
+        input=SimpleNamespace(
+            participants_tsv=str(participants_path),
+            segstats_tsvs=[str(sub01_path)],
+        ),
+        output=SimpleNamespace(merged_tsv=str(output_path)),
+    )
+
+    concat_mod.main()
+
+    merged = pd.read_csv(output_path, sep="\t")
+    assert list(merged["participant_id"]) == ["sub-01"]
+    assert list(merged["count"]) == [3]

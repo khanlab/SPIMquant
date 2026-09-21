@@ -83,7 +83,11 @@ def main():
     if "participant_id" not in participants_df.columns:
         raise ValueError("participants.tsv must contain a 'participant_id' column")
 
-    combined = load_tsvs_with_metadata(snakemake.input.tsv_files, participants_df)
+    tsv_files = getattr(snakemake.input, "tsv_files", None)
+    if tsv_files is None:
+        tsv_files = snakemake.input.segstats_tsvs
+
+    combined = load_tsvs_with_metadata(tsv_files, participants_df)
 
     os.makedirs(Path(snakemake.output.merged_tsv).parent, exist_ok=True)
     combined.to_csv(snakemake.output.merged_tsv, sep="\t", index=False)
