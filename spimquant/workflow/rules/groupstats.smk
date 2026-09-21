@@ -275,3 +275,44 @@ rule concat_subj_segstats:
         runtime=10,
     script:
         "../scripts/concat_subj_segstats.py"
+
+
+rule concat_subj_regionpropstats:
+    """Concatenate subject-level regionpropstats TSV files across participants.
+
+    Merges all individual per-subject per-stain regionpropstats TSV files into a
+    single group-level TSV, adding a participant_id column and joining with
+    participant metadata from participants.tsv. This preserves atlas labels and
+    region-level summary statistics for downstream export and QC.
+    """
+    input:
+        segstats_tsvs=lambda wildcards: inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                seg=wildcards.seg,
+                from_=wildcards.template,
+                stain=wildcards.stain,
+                level=wildcards.level,
+                desc=wildcards.desc,
+                suffix="regionpropstats.tsv",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+    output:
+        merged_tsv=bids(
+            root=group_stats_root,
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}",
+            suffix="allsubjects_regionpropstats.tsv",
+        ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=10,
+    script:
+        "../scripts/concat_subj_segstats.py"
