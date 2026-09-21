@@ -26,7 +26,7 @@ rule perform_group_stats:
                 **inputs["spim"].wildcards,
             )
         ),
-        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+        participants_tsv=bids(root=config["bids_dir"], suffix="participants.tsv"),
     output:
         stats_tsv=bids(
             root=group_stats_root,
@@ -165,7 +165,7 @@ rule concat_subj_parquet:
             ),
             allow_missing=True,
         ),
-        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+        participants_tsv=bids(root=config["bids_dir"], suffix="participants.tsv"),
     output:
         parquet=bids(
             root=group_stats_root,
@@ -260,7 +260,7 @@ rule concat_subj_segstats:
                 **inputs["spim"].wildcards,
             )
         ),
-        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+        participants_tsv=bids(root=config["bids_dir"], suffix="participants.tsv"),
     output:
         merged_tsv=bids(
             root=group_stats_root,
@@ -299,7 +299,7 @@ rule concat_subj_regionpropstats:
                 **inputs["spim"].wildcards,
             )
         ),
-        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+        participants_tsv=bids(root=config["bids_dir"], suffix="participants.tsv"),
     output:
         merged_tsv=bids(
             root=group_stats_root,
