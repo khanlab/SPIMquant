@@ -1,5 +1,6 @@
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+from types import SimpleNamespace
 
 import pandas as pd
 
@@ -69,3 +70,43 @@ def test_load_tsvs_with_metadata_merges_regionpropstats_like_tables(tmp_path):
     assert list(combined["treatment"]) == ["vehicle", "vehicle", "drug", "drug"]
     assert "sex" in combined.columns
 
+
+def test_main_reads_tsv_files_input_key(tmp_path):
+    participants_path = tmp_path / "participants.tsv"
+    pd.DataFrame(
+        {
+            "participant_id": ["sub-01", "sub-02"],
+            "treatment": ["vehicle", "drug"],
+        }
+    ).to_csv(participants_path, sep="\t", index=False)
+
+    sub01_dir = tmp_path / "sub-01" / "tabular"
+    sub02_dir = tmp_path / "sub-02" / "tabular"
+    sub01_dir.mkdir(parents=True)
+    sub02_dir.mkdir(parents=True)
+
+    sub01_path = sub01_dir / "sub-01_desc-threshold_regionpropstats.tsv"
+    sub02_path = sub02_dir / "sub-02_desc-threshold_regionpropstats.tsv"
+    output_path = tmp_path / "group" / "merged.tsv"
+
+    pd.DataFrame({"index": [1], "name": ["RegionA"], "count": [3]}).to_csv(
+        sub01_path, sep="\t", index=False
+    )
+    pd.DataFrame({"index": [1], "name": ["RegionA"], "count": [4]}).to_csv(
+        sub02_path, sep="\t", index=False
+    )
+
+    concat_mod.snakemake = SimpleNamespace(
+        input=SimpleNamespace(
+            participants_tsv=str(participants_path),
+            tsv_files=[str(sub01_path), str(sub02_path)],
+        ),
+        output=SimpleNamespace(merged_tsv=str(output_path)),
+    )
+
+    concat_mod.main()
+
+    merged = pd.read_csv(output_path, sep="\t")
+    assert list(merged["participant_id"]) == ["sub-01", "sub-02"]
+    assert list(merged["count"]) == [3, 4]
+    assert list(merged["treatment"]) == ["vehicle", "drug"]
