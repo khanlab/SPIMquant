@@ -179,8 +179,6 @@ index	name	count	volume_mean	intensity_mean	...	participant_id	treatment	sex	age
 
 These tables preserve the atlas `index` / `name` labelling from the participant-level files while making it easy to compare per-stain region summaries across subjects in downstream tools.
 
-An accompanying **`*_allsubjects_regionpropstats.json`** sidecar describes each column.
-
 ### Statistical Results (per pairwise contrast)
 
 **`*_contrast-<label>_groupstats.tsv`**: Per-region statistics for one pairwise contrast.

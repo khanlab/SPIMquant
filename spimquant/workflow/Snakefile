@@ -1152,25 +1152,6 @@ rule all_group_stats_tabular_sidecars:
         )
         if do_seg and pairwise_contrast_labels
         else [],
-        # --- merged all-subjects regionpropstats TSV sidecars ---
-        expand(
-            bids(
-                root=group_stats_root,
-                seg="{seg}",
-                from_="{template}",
-                stain="{stain}",
-                level="{level}",
-                desc="{desc}",
-                suffix="allsubjects_regionpropstats.json",
-            ),
-            seg=atlas_segs,
-            desc=config["seg_method"],
-            template=config["template"],
-            stain=stains_for_seg,
-            level=[config["registration_level"]],
-        )
-        if do_seg
-        else [],
         # --- merged all-subjects TSV sidecars ---
         expand(
             bids(
