@@ -9,7 +9,7 @@ metadata from participants.tsv to fit OLS models and compute pairwise contrasts.
 
 def get_bids_root_file(filename):
     """Return a file path located at the root of the input BIDS dataset."""
-    return f"{str(config['bids_dir']).rstrip('/')}/{filename}"
+    return os.path.join(str(config["bids_dir"]), filename)
 
 
 rule perform_group_stats:
