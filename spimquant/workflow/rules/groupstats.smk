@@ -249,7 +249,7 @@ rule concat_subj_segstats:
     export it to their own statistics tools.
     """
     input:
-        segstats_tsvs=lambda wildcards: inputs["spim"].expand(
+        tsv_files=lambda wildcards: inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="tabular",
@@ -286,7 +286,7 @@ rule concat_subj_regionpropstats:
     region-level summary statistics for downstream export and QC.
     """
     input:
-        segstats_tsvs=lambda wildcards: inputs["spim"].expand(
+        tsv_files=lambda wildcards: inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="tabular",
