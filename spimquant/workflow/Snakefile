@@ -1214,6 +1214,30 @@ rule all_group_merged_tsvs:
         else [],
 
 
+rule all_group_merged_regionpropstats_tsvs:
+    """Target rule for group-level merged all-subjects regionpropstats TSV files."""
+    input:
+        expand(
+            bids(
+                root=group_stats_root,
+                seg="{seg}",
+                from_="{template}",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}",
+                suffix="allsubjects_regionpropstats.{ext}",
+            ),
+            seg=atlas_segs,
+            desc=config["seg_method"],
+            template=config["template"],
+            stain=stains_for_seg,
+            level=[config["registration_level"]],
+            ext=["json","tsv"],
+        )
+        if do_seg
+        else [],
+
+
 rule all_participant:
     default_target: True
     input:
@@ -1229,6 +1253,7 @@ rule all_participant:
 rule all_group:
     input:
         rules.all_group_merged_tsvs.input,
+        rules.all_group_merged_regionpropstats_tsvs.input,
         rules.all_group_stats.input if do_seg and pairwise_contrast_labels else [],
         rules.all_group_stats_coloc.input
         if do_coloc and pairwise_contrast_labels
