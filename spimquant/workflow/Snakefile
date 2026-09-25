@@ -1225,13 +1225,14 @@ rule all_group_merged_regionpropstats_tsvs:
                 stain="{stain}",
                 level="{level}",
                 desc="{desc}",
-                suffix="allsubjects_regionpropstats.tsv",
+                suffix="allsubjects_regionpropstats.{ext}",
             ),
             seg=atlas_segs,
             desc=config["seg_method"],
             template=config["template"],
             stain=stains_for_seg,
             level=[config["registration_level"]],
+            ext=["json","tsv"],
         )
         if do_seg
         else [],
