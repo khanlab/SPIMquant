@@ -169,7 +169,7 @@ parse_args:
       - max
       - average
       - gaussian
-    default: max
+    default: gaussian
 
   --correction_level:
     help: "Pyramid level at which to perform bias field correction (default: %(default)s). Higher values (coarser resolution) may be needed for high-resolution datasets; lower values for low-resolution datasets."
