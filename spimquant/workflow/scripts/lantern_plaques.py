@@ -19,8 +19,11 @@ Deviations from ``vesselfm.py``, and why:
 
 Inference contract (from the model card, must match training exactly):
   tiles of 128^3 at stride 64, per-tile 0.5/99.5 percentile clip then z-score,
-  softmax over 2 classes, foreground where class-1 probability >= 0.5 per fold,
-  overlapping tiles combined by MAX over votes.
+  softmax over 2 classes, foreground where class-1 probability >= 0.5 per fold.
+  Overlapping tiles are combined by ``merge_mode``: ``max`` preserves the
+  original LANTERN behavior, while ``average`` and ``gaussian`` provide more
+  conventional sliding-window averaging strategies that can reduce edge-driven
+  false positives.
 """
 
 import contextlib
@@ -58,8 +61,74 @@ def normalize_tiles(x):
     return out
 
 
-def predict_volume(vol, nets, device, tile, stride, batch_size):
-    """Tiled 5-fold vote map for one 3D block, as uint8 in [0, len(nets)].
+def gaussian_importance_map(tile, sigma_scale=0.125, eps=1e-8):
+    """Separable 3D Gaussian importance map for weighting overlapping tiles."""
+    if tile < 1:
+        raise ValueError(f"tile must be positive, got {tile}")
+    center = (tile - 1) / 2.0
+    coords = np.arange(tile, dtype=np.float32) - center
+    sigma = max(float(tile) * float(sigma_scale), eps)
+    kernel_1d = np.exp(-0.5 * (coords / sigma) ** 2).astype(np.float32)
+    kernel_1d /= np.max(kernel_1d)
+    weights = (
+        kernel_1d[:, None, None]
+        * kernel_1d[None, :, None]
+        * kernel_1d[None, None, :]
+    )
+    return np.maximum(weights, np.float32(eps))
+
+
+def merge_tile_votes(
+    votes,
+    batch_votes,
+    batch,
+    tile,
+    merge_mode,
+    weight_accum=None,
+    importance_map=None,
+):
+    """Merge one batch of per-tile fold votes into the running output volume.
+
+    ``merge_mode="max"`` preserves LANTERN's published behavior: each tile first
+    sums fold votes internally, then overlapping tiles combine by per-voxel max.
+    That makes a plaque clipped at one tile edge recoverable from another tile
+    that contains it whole, and it preserves the calibration of
+    ``plaque_vote_threshold``.
+
+    ``average`` and ``gaussian`` instead compute weighted averages of the raw
+    per-tile fold-vote counts over all overlapping tiles. ``average`` weights
+    every tile position uniformly, while ``gaussian`` down-weights tile edges
+    and emphasizes tile centers where the model had more surrounding context.
+    """
+    if merge_mode == "max":
+        for j, (z, y, x) in enumerate(batch):
+            region = votes[z : z + tile, y : y + tile, x : x + tile]
+            np.maximum(region, batch_votes[j], out=region)
+        return
+
+    if merge_mode not in {"average", "gaussian"}:
+        raise ValueError(f"unsupported merge_mode={merge_mode!r}")
+    if weight_accum is None:
+        raise ValueError("weight_accum is required for average/gaussian merge")
+
+    weights = 1.0 if merge_mode == "average" else importance_map
+    if merge_mode == "gaussian" and importance_map is None:
+        raise ValueError("importance_map is required for gaussian merge")
+
+    for j, (z, y, x) in enumerate(batch):
+        region = votes[z : z + tile, y : y + tile, x : x + tile]
+        region_weights = weight_accum[z : z + tile, y : y + tile, x : x + tile]
+        tile_votes = batch_votes[j].astype(np.float32)
+        region += tile_votes * weights
+        region_weights += weights
+
+
+def predict_volume(vol, nets, device, tile, stride, batch_size, merge_mode):
+    """Tiled 5-fold vote map for one 3D block.
+
+    Returns vote counts on the historical ``[0, len(nets)]`` scale for all
+    merge modes: integer counts for ``max`` and float32 weighted-average counts
+    for ``average`` and ``gaussian``.
 
     The caller owns `device` exclusively for the duration of this call (see
     DevicePool), so no additional locking is needed here.
@@ -70,7 +139,20 @@ def predict_volume(vol, nets, device, tile, stride, batch_size):
         # Blocks at the volume border can be thinner than one tile; pad, then crop back.
         vol = np.pad(vol, [(0, p) for p in pad], mode="edge")
 
-    votes = np.zeros(vol.shape, dtype=np.uint8)
+    if merge_mode == "max":
+        votes = np.zeros(vol.shape, dtype=np.uint8)
+        weight_accum = None
+        importance_map = None
+    elif merge_mode in {"average", "gaussian"}:
+        votes = np.zeros(vol.shape, dtype=np.float32)
+        weight_accum = np.zeros(vol.shape, dtype=np.float32)
+        importance_map = (
+            gaussian_importance_map(tile) if merge_mode == "gaussian" else None
+        )
+    else:
+        raise ValueError(f"unsupported merge_mode={merge_mode!r}")
+
+    n_folds = len(nets)
     coords = [
         (z, y, x)
         for z in tile_origins(vol.shape[0], tile, stride)
@@ -99,20 +181,24 @@ def predict_volume(vol, nets, device, tile, stride, batch_size):
                 batch_votes += (prob >= 0.5).to(torch.uint8)
         batch_votes = batch_votes.cpu().numpy()
 
-        for j, (z, y, x) in enumerate(batch):
-            region = votes[z : z + tile, y : y + tile, x : x + tile]
-            # MAX, not sum: a plaque clipped at one tile edge is recovered by the
-            # tile that contains it whole.
-            #
-            # Folds are summed WITHIN a tile (above) and tiles are combined with max
-            # (here). Those two steps do not commute -- max-then-sum would score a
-            # voxel higher when different folds find it from different tiles -- but
-            # this order is the one LANTERN's own inference uses
-            # (scripts/infer_wholebrain.py), and plaque_vote_threshold was calibrated
-            # under it. Swapping them would silently change what "3 of 5" means.
-            np.maximum(region, batch_votes[j], out=region)
+        merge_tile_votes(
+            votes,
+            batch_votes,
+            batch,
+            tile,
+            merge_mode,
+            weight_accum=weight_accum,
+            importance_map=importance_map,
+        )
 
-    return votes[: orig_shape[0], : orig_shape[1], : orig_shape[2]]
+    if merge_mode == "max":
+        return votes[: orig_shape[0], : orig_shape[1], : orig_shape[2]]
+    return (
+        votes[: orig_shape[0], : orig_shape[1], : orig_shape[2]]
+        / np.maximum(
+            weight_accum[: orig_shape[0], : orig_shape[1], : orig_shape[2]], 1e-8
+        )
+    ).astype(np.float32)
 
 
 def load_folds(model_paths, device):
@@ -252,6 +338,10 @@ def vote_map(data, brain, predict, tile, stride):
 
     An axis that fits in a single chunk gets no halo: there is no block boundary
     to bridge, and dask rejects a depth larger than the chunk.
+
+    The overlap-mapped result is always float32 so the weighted merge modes keep
+    their fractional precision. The legacy ``max`` path still remains exact
+    because small integer vote counts are represented exactly in float32.
     """
     halo = tile - stride
 
@@ -270,8 +360,8 @@ def vote_map(data, brain, predict, tile, stride):
 
     def segment_block(image_block, brain_block):
         if not brain_block.any():
-            return np.zeros(image_block.shape, dtype=np.uint8)
-        out = np.empty(image_block.shape, dtype=np.uint8)
+            return np.zeros(image_block.shape, dtype=np.float32)
+        out = np.empty(image_block.shape, dtype=np.float32)
         for c in range(image_block.shape[0]):
             out[c] = predict(image_block[c].astype(np.float32))
         return out
@@ -284,14 +374,15 @@ def vote_map(data, brain, predict, tile, stride):
         boundary="none",
         trim=True,
         allow_rechunk=False,
-        dtype=np.uint8,
-        meta=np.array([], dtype=np.uint8),
+        dtype=np.float32,
+        meta=np.array([], dtype=np.float32),
     )
 
 
 def main():
     tile = int(snakemake.params.tile)
     stride = int(snakemake.params.stride)
+    merge_mode = str(getattr(snakemake.params, "merge_mode", "max"))
     batch_size = int(snakemake.params.batch_size)
     chunk = int(snakemake.params.chunk)
     n_gpus = int(snakemake.params.n_gpus)
@@ -319,18 +410,23 @@ def main():
         print(
             f"loaded {n_folds} folds on each of {[str(d) for d in devices]}; "
             f"grid {data.shape} chunk {chunk} halo {tile - stride} "
-            f"tile {tile} stride {stride} batch {batch_size}",
+            f"tile {tile} stride {stride} batch {batch_size} merge {merge_mode}",
             flush=True,
         )
 
         def predict(vol):
             with pool.acquire() as (device, nets):
-                return predict_volume(vol, nets, device, tile, stride, batch_size)
+                return predict_volume(
+                    vol, nets, device, tile, stride, batch_size, merge_mode
+                )
 
         votes = vote_map(data, brain, predict, tile, stride)
 
-        # The fraction of folds voting foreground: float32 in {0, .2, .4, .6, .8, 1}
-        # for a 5-fold ensemble. Same form as LANTERN's own whole-brain probmask.
+        # The fraction of folds voting foreground: float32 in [0, 1]. Under the
+        # historical `max` merge it remains in {0, .2, .4, .6, .8, 1} for a 5-fold
+        # ensemble, matching LANTERN's own whole-brain probmask; under `average`
+        # or `gaussian` it is obtained by first computing a weighted-average vote
+        # count on the same 0..n_folds scale, then dividing by n_folds here.
         #
         # Deliberately a probability rather than the raw count or a 0-100 rescaling:
         # it is directly readable as model confidence in a viewer, and independent of
