@@ -621,7 +621,6 @@ def main():
             znimg_prob.to_ome_zarr(
                 snakemake.output.probseg,
                 max_layer=5,
-                match_scale_factors_from=snakemake.input.spim,
                 **snakemake.config["zarrnii_out_kwargs"],
             )
         print(
