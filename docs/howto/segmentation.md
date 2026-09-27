@@ -81,6 +81,50 @@ stain_defaults:
 
 **Limitations:** Can fail on images with unusual histograms (e.g. very sparse pathology that does not form a distinct peak) or when the background is very noisy.
 
+### LANTERN plaques (`seg_method: lantern`)
+
+The `lantern` method runs the 5-fold LANTERN amyloid-beta plaque ensemble on the
+raw SPIM image at `plaque_level`, then upsamples the resulting probability map to
+`segmentation_level` for downstream masking and quantification.
+
+Unlike the histogram-based methods above, it is:
+
+- **stain-specific** — it runs only on the first available stain from
+  `stains_for_plaques`
+- **GPU-based** — the workflow expects one or more visible CUDA devices
+- **tile-based** — inference uses overlapping 3D tiles controlled by
+  `plaque_tile` and `plaque_stride`
+
+Overlapping tiles are merged with `plaque_merge_mode` (CLI: `--merge_mode`):
+
+- `max` — preserves the historical LANTERN behavior by taking the maximum
+  per-voxel fold-vote count over all overlapping tiles.  This remains the
+  default for backward compatibility and preserves the calibration of
+  `plaque_vote_threshold`.
+- `average` — uniformly averages the per-tile fold-vote fractions across all
+  overlapping tiles.
+- `gaussian` — averages the per-tile fold-vote fractions with a Gaussian weight
+  map so tile centers contribute more than tile edges.
+
+**Example config keys:**
+
+```yaml
+seg_method:
+  - lantern
+plaque_merge_mode: gaussian
+plaque_vote_threshold: 3
+```
+
+**When to use:** `max` is the safest option when reproducing historical runs or
+relying on existing `plaque_vote_threshold` tuning.  `average` and `gaussian`
+are useful when you want a more conventional sliding-window merge that requires
+agreement across overlapping tiles rather than letting a single favorable tile
+dominate a voxel.
+
+**Limitations:** `average` and `gaussian` change the interpretation of overlap
+aggregation, so you may need to re-tune `plaque_vote_threshold` when opting into
+them.
+
 ---
 
 ## Post-Segmentation Cleaning
