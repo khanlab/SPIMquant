@@ -2,6 +2,7 @@ from dask.diagnostics import ProgressBar
 from dask_setup import get_dask_client
 from zarrnii import ZarrNii
 from zarrnii.plugins import GaussianBiasFieldCorrection
+from zarrnii_compat import drop_singleton_time
 
 if __name__ == "__main__":
     hires_level = int(snakemake.wildcards.level)
@@ -19,6 +20,8 @@ if __name__ == "__main__":
             downsample_near_isotropic=True,
             **snakemake.params.zarrnii_kwargs,
         )
+
+        znimg = drop_singleton_time(znimg)
 
         print("compute bias field correction")
         with ProgressBar():
