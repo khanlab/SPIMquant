@@ -245,6 +245,27 @@ parse_args:
     action: store_true
     default: False
 
+  --merge_mode:
+    dest: plaque_merge_mode
+    help: >
+      LANTERN only.  How the fold votes of overlapping inference tiles are
+      combined (every voxel is covered by up to 8 tiles at the default
+      stride).  ``average`` takes the mean over the tiles, so a tile that saw
+      the voxel at its edge with little context (e.g. at the brain surface)
+      is outvoted by the others.  ``gaussian`` is a weighted mean in which
+      tiles count more near their centre.  ``max`` keeps the highest count,
+      as published LANTERN inference does; it recovers plaques clipped at
+      one tile's edge but lets a single bad tile win, which shows up as
+      tiling artifacts.  Applies to the plaque and, for 3-class ensembles,
+      the class-2 channel alike.  With ``average``/``gaussian`` the vote map
+      is fractional and a voxel is plaque when its mean vote is at least
+      ``plaque_vote_threshold`` - 0.5.  (default: %(default)s)
+    choices:
+      - average
+      - gaussian
+      - max
+    default: average
+
   --seg_hist_percentile_range:
     help: "Percentile range to use for histogram calculation in histogram-based segmentation methods (otsu+k{}i{} and gmm+n{}k{}). Specify 2 numbers for the low and high percentiles (default: %(default)s)"
     default:
@@ -599,16 +620,24 @@ plaque_level: 1
 # downsamples per axis to land near-isotropic.
 plaque_iso_res: 4.0
 plaque_n_folds: 5
+# A voxel is plaque when at least this many folds vote for it. With a
+# fractional (average/gaussian) vote map the cut is the midpoint below it,
+# i.e. a mean vote of at least 2.5 for 3.
 plaque_vote_threshold: 3
 # 3-class ensembles: a voxel is class 2 ("annotated false positive") when at
 # least this many folds put their argmax on class 2. The model cards specify
-# "any fold", i.e. 1.
+# "any fold", i.e. 1. With average/gaussian merging this becomes a mean vote
+# of at least 0.5 over the overlapping tiles, so class 2 (and --label_filter)
+# is less aggressive than under max.
 plaque_fp_min_votes: 1
 # --label_filter: minimum size (near-iso voxels) of a class-2 component for
 # the plaque components touching it to be dropped from the level-0 mask.
 label_filter_size: 10
 plaque_tile: 128
 plaque_stride: 64
+# How overlapping tiles are combined: average, gaussian or max (see
+# --merge_mode, which sets this).
+plaque_merge_mode: average
 plaque_batch_size: 8
 plaque_chunk: 512
 # GPUs per inference job. The ensemble is replicated onto each card and dask

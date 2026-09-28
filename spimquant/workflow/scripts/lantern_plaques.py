@@ -3,9 +3,10 @@
 Runs a published LANTERN ensemble (``apooladi/lantern-<name>``, chosen with
 ``--lantern_config``; ``ki3-abeta`` by default) over the Abeta channel and
 writes the per-fold agreement map -- the fraction of folds voting foreground,
-so ``{0, .2, .4, .6, .8, 1}`` for five folds -- as an OME-Zarr.  Binarization
-is deliberately left to a downstream rule so the vote threshold can be changed
-without re-running inference.
+averaged over the overlapping tiles that saw each voxel (``{0, .2, .4, .6, .8,
+1}`` for five folds only under ``merge_mode="max"``) -- as an OME-Zarr.
+Binarization is deliberately left to a downstream rule so the vote threshold
+can be changed without re-running inference.
 
 Every fold is a decoder fine-tuned on the same frozen self-supervised encoder,
 so the encoder is run once per batch and its skip features are fed to each
@@ -44,12 +45,27 @@ Deviations from ``vesselfm.py``, and why:
 
 Inference contract (from the model cards, must match training exactly):
   tiles of 128^3 at stride 64, per-tile 0.5/99.5 percentile clip then z-score,
-  softmax over the classes, plaque where class-1 probability >= 0.5 per fold,
-  overlapping tiles combined by MAX over votes.  3-class ensembles (classes
-  background / plaque / "annotated false positive") additionally emit, as a
-  second output channel, the number of folds whose argmax is class 2 -- the
-  model card's rule is "class 2 where any fold's argmax is class 2", which is
-  that channel at >= 1 vote, and binarize_lantern_plaques applies it.
+  softmax over the classes, plaque where class-1 probability >= 0.5 per fold.
+  3-class ensembles (classes background / plaque / "annotated false positive")
+  additionally emit, as a second output channel, the number of folds whose
+  argmax is class 2 -- the model card's rule is "class 2 where any fold's
+  argmax is class 2", which is that channel at >= 1 vote, and
+  binarize_lantern_plaques applies it.
+
+Overlapping tiles (up to 8 per voxel at stride = tile/2) are combined by
+``merge_mode``, the one deliberate departure from the model cards:
+
+- ``max`` (the published LANTERN inference) keeps each voxel's highest
+  per-tile vote count.  It recovers a plaque clipped at one tile's edge, but a
+  tile that saw the voxel at its own edge, with little context (e.g. at the
+  brain surface), can vote 5/5 on its own and win -- the tiling artifacts.
+- ``average`` (default) takes the mean vote count over the tiles that ran, so
+  that tile is outvoted by the rest.
+- ``gaussian`` weights each tile by a Gaussian centred on it (sigma = tile/8,
+  as in nnU-Net) before averaging, so tile edges count least.
+
+The averaged modes give fractional counts; binarize_lantern_plaques cuts them
+at the midpoint below the requested vote threshold (2.5 for "3 of 5").
 """
 
 import contextlib
@@ -116,14 +132,72 @@ class TileCounter:
             self.skipped += skipped
 
 
+MERGE_MODES = ("average", "gaussian", "max")
+
+
+def gaussian_importance_map(tile, sigma_scale=0.125, eps=1e-8):
+    """Separable 3D Gaussian weight over one tile, 1 at its centre.
+
+    sigma = tile * sigma_scale (tile/8, as in nnU-Net's sliding window).  The
+    floor at `eps` keeps a tile's corners from weighing exactly zero, so a
+    voxel covered only by tile corners (at the volume border) still gets a
+    defined average.
+    """
+    coords = np.arange(tile, dtype=np.float32) - (tile - 1) / 2.0
+    kernel = np.exp(-0.5 * (coords / (tile * sigma_scale)) ** 2).astype(np.float32)
+    kernel /= kernel.max()
+    weights = kernel[:, None, None] * kernel[None, :, None] * kernel[None, None, :]
+    return np.maximum(weights, np.float32(eps))
+
+
+def merge_tile_votes(votes, weight, batch_votes, batch, tile, importance=None):
+    """Fold one batch of per-tile vote counts into a block's running result.
+
+    `votes` is (n_out, z, y, x) and `batch_votes` is (n_out, n_tiles, tile,
+    tile, tile), each tile's per-voxel count of folds voting for that channel.
+    With `weight` None (merge_mode="max") the running per-voxel maximum is
+    kept in uint8 `votes`.  Otherwise `votes` (float32) accumulates the
+    weighted counts and `weight` (z, y, x), shared by every channel, the
+    weights -- uniform when `importance` is None ("average"), else the
+    Gaussian map -- and predict_volume divides one by the other at the end.
+    """
+    for j, (z, y, x) in enumerate(batch):
+        window = (slice(z, z + tile), slice(y, y + tile), slice(x, x + tile))
+        region = votes[(slice(None),) + window]
+        if weight is None:
+            # Folds are summed WITHIN a tile (in predict_volume) and tiles are
+            # combined with max here. Those two steps do not commute --
+            # max-then-sum would score a voxel higher when different folds find
+            # it from different tiles -- but this order is the one LANTERN's own
+            # inference uses (scripts/infer_wholebrain.py), and
+            # plaque_vote_threshold was calibrated under it.
+            np.maximum(region, batch_votes[:, j], out=region)
+        elif importance is None:
+            region += batch_votes[:, j]
+            weight[window] += 1.0
+        else:
+            region += batch_votes[:, j] * importance
+            weight[window] += importance
+
+
 def predict_volume(
-    vol, nets, device, tile, stride, batch_size, brain=None, counter=None
+    vol,
+    nets,
+    device,
+    tile,
+    stride,
+    batch_size,
+    brain=None,
+    counter=None,
+    merge_mode="average",
 ):
-    """Tiled 5-fold vote maps for one 3D block, as uint8 in [0, len(nets)].
+    """Tiled 5-fold vote maps for one 3D block, as counts in [0, len(nets)].
 
     Returns an array of shape (n_out, *vol.shape): channel 0 counts the folds
     that call plaque (class-1 probability >= 0.5); for a 3-class ensemble
-    channel 1 counts the folds whose argmax is class 2.
+    channel 1 counts the folds whose argmax is class 2.  Overlapping tiles are
+    combined per `merge_mode` (see the module docstring): uint8 counts for
+    "max", float32 (weighted) mean counts for "average" and "gaussian".
 
     `brain`, if given, is a boolean array on the same grid as `vol`; tiles
     that contain no brain voxel are skipped and vote zero.  This is both the
@@ -145,7 +219,16 @@ def predict_volume(
             brain = np.pad(brain, [(0, p) for p in pad], mode="edge")
 
     n_out = 2 if nets[0].n_classes >= 3 else 1
-    votes = np.zeros((n_out,) + vol.shape, dtype=np.uint8)
+    if merge_mode == "max":
+        votes = np.zeros((n_out,) + vol.shape, dtype=np.uint8)
+        weight = importance = None
+    elif merge_mode in MERGE_MODES:
+        votes = np.zeros((n_out,) + vol.shape, dtype=np.float32)
+        weight = np.zeros(vol.shape, dtype=np.float32)
+        importance = gaussian_importance_map(tile) if merge_mode == "gaussian" else None
+    else:
+        raise ValueError(f"merge_mode must be one of {MERGE_MODES}, got {merge_mode!r}")
+    crop = (slice(None),) + tuple(slice(0, n) for n in orig_shape)
     coords = [
         (z, y, x)
         for z in tile_origins(vol.shape[0], tile, stride)
@@ -162,7 +245,7 @@ def predict_volume(
     if counter is not None:
         counter.add(len(coords), n_all - len(coords))
     if not coords:
-        return votes[:, : orig_shape[0], : orig_shape[1], : orig_shape[2]]
+        return votes[crop]
 
     for start in range(0, len(coords), batch_size):
         batch = coords[start : start + batch_size]
@@ -189,21 +272,13 @@ def predict_volume(
                 if n_out == 2:
                     batch_votes[1] += (prob.argmax(dim=1) == 2).to(torch.uint8)
         batch_votes = batch_votes.cpu().numpy()
+        merge_tile_votes(votes, weight, batch_votes, batch, tile, importance)
 
-        for j, (z, y, x) in enumerate(batch):
-            region = votes[:, z : z + tile, y : y + tile, x : x + tile]
-            # MAX, not sum: a plaque clipped at one tile edge is recovered by the
-            # tile that contains it whole.
-            #
-            # Folds are summed WITHIN a tile (above) and tiles are combined with max
-            # (here). Those two steps do not commute -- max-then-sum would score a
-            # voxel higher when different folds find it from different tiles -- but
-            # this order is the one LANTERN's own inference uses
-            # (scripts/infer_wholebrain.py), and plaque_vote_threshold was calibrated
-            # under it. Swapping them would silently change what "3 of 5" means.
-            np.maximum(region, batch_votes[:, j], out=region)
-
-    return votes[:, : orig_shape[0], : orig_shape[1], : orig_shape[2]]
+    if weight is not None:
+        # Voxels that no tile covered (every covering tile was skipped for having
+        # no brain) keep weight 0 and stay at 0 votes.
+        np.divide(votes, weight, out=votes, where=weight > 0)
+    return votes[crop]
 
 
 def share_encoder(nets, model_paths):
@@ -517,6 +592,9 @@ def main():
     batch_size = int(snakemake.params.batch_size)
     chunk = int(snakemake.params.chunk)
     n_gpus = int(snakemake.params.n_gpus)
+    merge_mode = str(snakemake.params.merge_mode)
+    if merge_mode not in MERGE_MODES:
+        raise ValueError(f"merge_mode must be one of {MERGE_MODES}, got {merge_mode!r}")
 
     devices = resolve_devices(n_gpus)
 
@@ -556,19 +634,29 @@ def main():
             f"loaded {n_folds} folds ({n_classes} classes) on each of "
             f"{[str(d) for d in devices]}; grid {data.shape} res {res_um} um "
             f"(from level {start_level}) chunk {chunk} halo {tile - stride} "
-            f"tile {tile} stride {stride} batch {batch_size}",
+            f"tile {tile} stride {stride} batch {batch_size} merge {merge_mode}",
             flush=True,
         )
 
         def predict(vol, brain_vol):
             with pool.acquire() as (device, nets):
                 return predict_volume(
-                    vol, nets, device, tile, stride, batch_size, brain_vol, counter
+                    vol,
+                    nets,
+                    device,
+                    tile,
+                    stride,
+                    batch_size,
+                    brain_vol,
+                    counter,
+                    merge_mode,
                 )
 
         # Votes are staged in a temporary zarr, block by block, then read back
-        # lazily for the pyramid writer below. uint8 and overwhelmingly zero, so
-        # it compresses to a small fraction of the ~1 byte/voxel nominal size.
+        # lazily for the pyramid writer below. Overwhelmingly zero, so it
+        # compresses to a small fraction of its nominal size: 1 byte/voxel of
+        # uint8 counts under max, 4 of float32 mean counts under the averaging
+        # modes.
         tmp_dir = tempfile.TemporaryDirectory(
             dir=snakemake.resources.tmpdir, suffix="_lantern_votes"
         )
@@ -578,7 +666,7 @@ def main():
             mode="w",
             shape=(len(out_labels),) + data.shape[1:],
             chunks=(1, chunk, chunk, chunk),
-            dtype=np.uint8,
+            dtype=np.uint8 if merge_mode == "max" else np.float32,
         )
         # Half the CPUs read (one process each, a couple of dask threads
         # inside), the rest of the budget is in-flight blocks waiting for or
@@ -600,9 +688,10 @@ def main():
             read.close()
         votes = da.from_zarr(tmp_store).rechunk((len(out_labels),) + block_chunks[1:])
 
-        # The fraction of folds voting each class: float32 in {0, .2, .4, .6, .8, 1}
-        # for a 5-fold ensemble, one channel per class beyond background. Same
-        # form as LANTERN's own whole-brain probmask.
+        # The fraction of folds voting each class, one channel per class beyond
+        # background: float32 in [0, 1], and in {0, .2, .4, .6, .8, 1} for a 5-fold
+        # ensemble under max merging (the same form as LANTERN's own whole-brain
+        # probmask).
         #
         # Deliberately a probability rather than the raw count or a 0-100 rescaling:
         # it is directly readable as model confidence in a viewer, and independent of

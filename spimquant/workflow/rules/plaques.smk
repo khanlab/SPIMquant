@@ -57,8 +57,9 @@ rule run_lantern_plaques:
     second channel with the fraction of folds calling class 2 (the
     "annotated false positive" class -- bright non-plaque structure).
 
-    Tiles at 128^3 with stride 64 and combines overlapping tiles by max over
-    votes. The low-res brain mask restricts inference to blocks that touch
+    Tiles at 128^3 with stride 64 and combines overlapping tiles with
+    --merge_mode (average by default; max is the published LANTERN
+    behaviour). The low-res brain mask restricts inference to blocks that touch
     tissue, which is what makes whole-brain 5-fold inference tractable. The
     folds share one frozen encoder, so it runs once per batch and only the
     five decoders are evaluated separately (see lantern_plaques.py).
@@ -89,6 +90,7 @@ rule run_lantern_plaques:
         iso_res=config["plaque_iso_res"],
         tile=config["plaque_tile"],
         stride=config["plaque_stride"],
+        merge_mode=config["plaque_merge_mode"],
         batch_size=config["plaque_batch_size"],
         chunk=config["plaque_chunk"],
         n_gpus=config["plaque_n_gpus"],

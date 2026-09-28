@@ -345,10 +345,14 @@ def main():
         )
     n_channels = votes.shape[0]
 
-    # probseg holds votes/n_folds. Compare against the MIDPOINT between adjacent
-    # attainable values rather than the exact fraction: 2.5/5 = 0.5 sits safely
-    # between 0.4 and 0.6, so no float representation error can flip a voxel at the
-    # boundary the way `>= 3/5` could.
+    # probseg holds votes/n_folds. Compare against the MIDPOINT below the requested
+    # count rather than the exact fraction. Under max merging the values are whole
+    # votes, and 2.5/5 = 0.5 sits safely between 0.4 and 0.6, so no float
+    # representation error can flip a voxel at the boundary the way `>= 3/5` could.
+    # Under average/gaussian merging the values are mean votes over the overlapping
+    # tiles and the midpoint is a real cut: "3 of 5" means a mean of at least 2.5
+    # (the cut the averaging was validated with), and fp_min_votes=1 a mean of at
+    # least 0.5.
     plaque = votes[0] >= (vote_threshold - 0.5) / n_folds
     fp = votes[1] >= (fp_min_votes - 0.5) / n_folds if n_channels >= 2 else None
 
