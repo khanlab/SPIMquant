@@ -142,19 +142,23 @@ def analyse_block(votes, item, plaque_thr, fp_thr, want_fp):
     idx, core, outer = item
     v = np.asarray(votes[(slice(None),) + outer])
     plaque = v[0] >= plaque_thr
+    fp = v[1] >= fp_thr if want_fp else None
     out = {"idx": idx}
-    if not plaque.any():
+    if plaque.any():
+        lab, n = ndi_label(plaque, structure=STRUCTURE)
+        out["plaque"] = _sparse(lab, outer, core)
+        out["n_plaque"] = int(n)
+    else:
         out["plaque"] = None
-        return out
-    lab, n = ndi_label(plaque, structure=STRUCTURE)
-    out["plaque"] = _sparse(lab, outer, core)
-    out["n_plaque"] = int(n)
-    if want_fp:
-        fp = v[1] >= fp_thr
+    # Class-2 is labelled even in blocks with no plaque: a class-2 component
+    # reaching into one would otherwise lose those voxels from its size and be
+    # cut at that block's border, and so could fall under label_filter_size.
+    if fp is not None and fp.any():
         flab, nf = ndi_label(fp, structure=STRUCTURE)
         out["fp"] = _sparse(flab, outer, core)
         out["n_fp"] = int(nf)
-        out["contacts"] = _contacts(lab, flab)
+        if out["plaque"] is not None:
+            out["contacts"] = _contacts(lab, flab)
     return out
 
 
