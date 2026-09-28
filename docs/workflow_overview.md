@@ -152,6 +152,8 @@ The `map_regionprops_to_atlas_rois` rule then joins each detected object's centr
 
 **Group level** (run with `analysis_level group`):
 
+- `concat_subj_segstats` always merges participant `mergedsegstats.tsv` files into `*_allsubjects.tsv`.
+- `concat_subj_regionpropstats` always merges participant `regionpropstats.tsv` files into per-stain `*_allsubjects_regionpropstats.tsv` tables that retain atlas labels.
 - `perform_group_stats` reads all participant `mergedsegstats.tsv` files, uses the `participants.tsv` contrast column, and performs statistical tests (t-test / Mann-Whitney) for each brain region.
 - `create_stats_heatmap` visualises the results as an annotated heatmap PNG.
 - Statistical maps are also written as NIfTI volumes (one voxel per brain region, coloured by effect size or p-value) for use in neuroimaging viewers.
