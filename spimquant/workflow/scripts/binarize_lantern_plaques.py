@@ -49,6 +49,8 @@ from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import connected_components
 from zarrnii import ZarrNii
 
+from zarrnii_compat import drop_singleton_time
+
 STRUCTURE = np.ones((3, 3, 3), dtype=bool)  # 26-connectivity, as regionprops uses
 OFFSETS = [o for o in itertools.product((-1, 0, 1), repeat=3) if o != (0, 0, 0)]
 
@@ -335,6 +337,10 @@ def main():
         channel_labels=[snakemake.wildcards.stain],
         **snakemake.params.zarrnii_kwargs,
     )
+    # The mask is built (c, z, y, x), so a 5D source's singleton time axis is
+    # dropped from the reference too -- the same 4D mask the GMM/Otsu path writes
+    # for such stores, since N4 correction drops it there.
+    ref = drop_singleton_time(ref)
 
     votes = probseg.data
     while votes.ndim > 4 and votes.shape[0] == 1:  # (t, c, z, y, x) -> (c, z, y, x)
