@@ -116,7 +116,9 @@ class TileCounter:
             self.skipped += skipped
 
 
-def predict_volume(vol, nets, device, tile, stride, batch_size, brain=None, counter=None):
+def predict_volume(
+    vol, nets, device, tile, stride, batch_size, brain=None, counter=None
+):
     """Tiled 5-fold vote maps for one 3D block, as uint8 in [0, len(nets)].
 
     Returns an array of shape (n_out, *vol.shape): channel 0 counts the folds
@@ -458,7 +460,9 @@ class BlockReader:
         self._pool.shutdown(wait=True)
 
 
-def run_blocks(shape, block_chunks, brain_of, read, predict, out, tile, stride, n_workers):
+def run_blocks(
+    shape, block_chunks, brain_of, read, predict, out, tile, stride, n_workers
+):
     """Predict every block that touches brain and write its votes into `out`.
 
     `shape` is that of the (c, z, y, x) inference array and `block_chunks`

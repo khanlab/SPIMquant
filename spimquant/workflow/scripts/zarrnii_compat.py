@@ -73,9 +73,7 @@ def load_near_isotropic(path, level, target_scale, **from_file_kwargs):
         targets = [_um_to_axis_units(znimg, target_scale, d) for d in spatial]
         if cap is None:
             cap = scales  # the requested level's own voxel size, per axis
-        if level == 0 or all(
-            s <= t * math.sqrt(2) for s, t in zip(scales, targets)
-        ):
+        if level == 0 or all(s <= t * math.sqrt(2) for s, t in zip(scales, targets)):
             break
         level -= 1
 

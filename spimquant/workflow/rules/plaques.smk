@@ -8,7 +8,7 @@ def lantern_model_spec():
     name, _, revision = str(config["lantern_config"]).partition("@")
     if not name:
         raise ValueError(
-            f"--lantern_config {config['lantern_config']!r}: expected <name>[@<revision>]"
+            f"--lantern_config {config['lantern_config']! r}: expected <name>[@<revision>]"
         )
     return name, (revision or "main")
 

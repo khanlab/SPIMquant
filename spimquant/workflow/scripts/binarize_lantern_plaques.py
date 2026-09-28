@@ -78,8 +78,12 @@ def block_plan(shape, block):
     plan = []
     counts = [max(1, -(-n // block)) for n in shape]
     for idx in itertools.product(*(range(c) for c in counts)):
-        core = tuple(slice(i * block, min((i + 1) * block, n)) for i, n in zip(idx, shape))
-        outer = tuple(slice(max(0, c.start - 1), min(n, c.stop + 1)) for c, n in zip(core, shape))
+        core = tuple(
+            slice(i * block, min((i + 1) * block, n)) for i, n in zip(idx, shape)
+        )
+        outer = tuple(
+            slice(max(0, c.start - 1), min(n, c.stop + 1)) for c, n in zip(core, shape)
+        )
         plan.append((idx, core, outer))
     return plan
 
@@ -174,8 +178,10 @@ def merge_labels(blocks, which):
             continue
         (ck, cl), (hk, hl) = b[which]
         off = offsets[b["idx"]]
-        core_keys.append(ck); core_gid.append(cl.astype(np.int64) + off)
-        halo_keys.append(hk); halo_gid.append(hl.astype(np.int64) + off)
+        core_keys.append(ck)
+        core_gid.append(cl.astype(np.int64) + off)
+        halo_keys.append(hk)
+        halo_gid.append(hl.astype(np.int64) + off)
     core_keys = np.concatenate(core_keys) if core_keys else np.zeros(0, np.int64)
     core_gid = np.concatenate(core_gid) if core_gid else np.zeros(0, np.int64)
     halo_keys = np.concatenate(halo_keys) if halo_keys else np.zeros(0, np.int64)
@@ -195,7 +201,16 @@ def merge_labels(blocks, which):
     return offsets, comp, core_keys, comp[core_gid]
 
 
-def filtered_plaque_mask(votes, plaque_thr, fp_thr, min_size, label_filter, label_filter_size, block, n_workers):
+def filtered_plaque_mask(
+    votes,
+    plaque_thr,
+    fp_thr,
+    min_size,
+    label_filter,
+    label_filter_size,
+    block,
+    n_workers,
+):
     """Plaque mask on the near-iso grid with the small and the class-2-touching
     components removed, as a lazy dask array built from the sparse survivors."""
     global _KEY_SHAPE
@@ -204,20 +219,36 @@ def filtered_plaque_mask(votes, plaque_thr, fp_thr, min_size, label_filter, labe
     plan = block_plan(shape, block)
     t0 = time.time()
     with ThreadPoolExecutor(max_workers=n_workers) as pool:
-        blocks = list(pool.map(lambda item: analyse_block(votes, item, plaque_thr, fp_thr, label_filter), plan))
+        blocks = list(
+            pool.map(
+                lambda item: analyse_block(
+                    votes, item, plaque_thr, fp_thr, label_filter
+                ),
+                plan,
+            )
+        )
     n_read = sum(1 for b in blocks if b.get("plaque") is not None)
-    print(f"  read + labelled {len(plan)} blocks ({n_read} with plaque) in {time.time() - t0:.0f} s", flush=True)
+    print(
+        f"  read + labelled {len(plan)} blocks ({n_read} with plaque) in {time.time() - t0:.0f} s",
+        flush=True,
+    )
 
     offsets, comp, core_keys, core_comp = merge_labels(blocks, "plaque")
     sizes = np.bincount(core_comp, minlength=comp.max() + 1)
     n_comp = int((sizes[1:] > 0).sum())
     drop = np.zeros(sizes.size, dtype=bool)
-    print(f"  plaque components: {n_comp}, voxels {core_keys.size} ({time.time() - t0:.0f} s)", flush=True)
+    print(
+        f"  plaque components: {n_comp}, voxels {core_keys.size} ({time.time() - t0:.0f} s)",
+        flush=True,
+    )
     if min_size > 0:
         small = (sizes > 0) & (sizes < min_size)
         small[0] = False
         drop |= small
-        print(f"  min_size={min_size}: dropping {int(small.sum())} components ({time.time() - t0:.0f} s)", flush=True)
+        print(
+            f"  min_size={min_size}: dropping {int(small.sum())} components ({time.time() - t0:.0f} s)",
+            flush=True,
+        )
     if label_filter:
         f_off, f_comp, _, f_core_comp = merge_labels(blocks, "fp")
         f_sizes = np.bincount(f_core_comp, minlength=f_comp.max() + 1)
@@ -237,16 +268,25 @@ def filtered_plaque_mask(votes, plaque_thr, fp_thr, min_size, label_filter, labe
             fc = f_comp[c[:, 1].astype(np.int64) + f_off[b["idx"]]]
             touching[pc[big[fc]]] = True
         drop |= touching
-        print(f"  label_filter: dropping {int(touching.sum())} plaque components touching them ({time.time() - t0:.0f} s)", flush=True)
+        print(
+            f"  label_filter: dropping {int(touching.sum())} plaque components touching them ({time.time() - t0:.0f} s)",
+            flush=True,
+        )
 
     keep = ~drop[core_comp]
     kept_keys = core_keys[keep]
-    print(f"  keeping {kept_keys.size} of {core_keys.size} plaque voxels ({time.time() - t0:.0f} s)", flush=True)
+    print(
+        f"  keeping {kept_keys.size} of {core_keys.size} plaque voxels ({time.time() - t0:.0f} s)",
+        flush=True,
+    )
 
     # Dense blocks on demand from the sorted survivor keys: no second read.
     Z, Y, X = _KEY_SHAPE
     counts = [max(1, -(-n // block)) for n in shape]
-    chunks = tuple(tuple(min(block, n - i * block) for i in range(c)) for n, c in zip(shape, counts))
+    chunks = tuple(
+        tuple(min(block, n - i * block) for i in range(c))
+        for n, c in zip(shape, counts)
+    )
 
     def fill(block_info=None):
         loc = block_info[None]["array-location"]
@@ -254,10 +294,17 @@ def filtered_plaque_mask(votes, plaque_thr, fp_thr, min_size, label_filter, labe
         (z0, z1), (y0, y1), (x0, x1) = loc
         lo = (z0 * Y + y0) * X + x0
         hi = ((z1 - 1) * Y + (y1 - 1)) * X + (x1 - 1)
-        sel = kept_keys[np.searchsorted(kept_keys, lo) : np.searchsorted(kept_keys, hi, side="right")]
+        sel = kept_keys[
+            np.searchsorted(kept_keys, lo) : np.searchsorted(
+                kept_keys, hi, side="right"
+            )
+        ]
         out = np.zeros(bshape, dtype=bool)
         if sel.size:
-            z = sel // (Y * X); r = sel - z * (Y * X); y = r // X; x = r - y * X
+            z = sel // (Y * X)
+            r = sel - z * (Y * X)
+            y = r // X
+            x = r - y * X
             m = (y >= y0) & (y < y1) & (x >= x0) & (x < x1)
             out[z[m] - z0, y[m] - y0, x[m] - x0] = True
         return out
@@ -293,7 +340,9 @@ def main():
     while votes.ndim > 4 and votes.shape[0] == 1:  # (t, c, z, y, x) -> (c, z, y, x)
         votes = votes[0]
     if votes.ndim != 4:
-        raise ValueError(f"expected a (c, z, y, x) probseg, got shape {probseg.data.shape}")
+        raise ValueError(
+            f"expected a (c, z, y, x) probseg, got shape {probseg.data.shape}"
+        )
     n_channels = votes.shape[0]
 
     # probseg holds votes/n_folds. Compare against the MIDPOINT between adjacent
