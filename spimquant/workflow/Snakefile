@@ -236,6 +236,20 @@ else:
 # rather than being fanned out over every stain in stains_for_seg.
 do_plaques = do_seg and config["plaque_seg_method"] in config["seg_method"]
 
+
+def _neariso_level_label(res_um):
+    """The ``level-`` entity for LANTERN outputs at the near-isotropic grid.
+
+    The ensemble runs on the grid nearest ``plaque_iso_res`` um isotropic,
+    which is only sometimes a native pyramid level (a pyramid that halves z
+    per level has no such level), so naming the output after a level number
+    would be wrong. ``neariso4`` for 4 um, ``neariso4p5`` for 4.5 um.
+    """
+    return "neariso" + f"{float(res_um):g}".replace(".", "p").replace("-", "m")
+
+
+plaque_level_label = _neariso_level_label(config["plaque_iso_res"])
+
 stain_for_plaques = None
 
 if do_plaques:
@@ -715,7 +729,7 @@ rule all_plaques:
                 suffix="probseg.{ext}",
                 **inputs["spim"].wildcards,
             ),
-            level=config["plaque_level"],
+            level=plaque_level_label,
             stain=stain_for_plaques,
         ),
         inputs["spim"].expand(

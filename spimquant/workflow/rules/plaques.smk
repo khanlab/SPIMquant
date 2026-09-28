@@ -1,12 +1,40 @@
-rule import_lantern_abeta_fold:
-    """Download one fold of the LANTERN Abeta plaque ensemble."""
+def lantern_model_spec():
+    """(name, revision) from --lantern_config, given as ``<name>[@<revision>]``.
+
+    ``name`` picks the Hugging Face repo ``apooladi/lantern-<name>``; every
+    repo under that prefix shares the lantern-ki3-abeta layout, so nothing
+    here is specific to one ensemble. ``revision`` defaults to ``main``.
+    """
+    name, _, revision = str(config["lantern_config"]).partition("@")
+    if not name:
+        raise ValueError(
+            f"--lantern_config {config['lantern_config']!r}: expected <name>[@<revision>]"
+        )
+    return name, (revision or "main")
+
+
+lantern_name, lantern_revision = lantern_model_spec()
+
+lantern_fold_path = "resources/models/lantern-{name}/{revision}/fold{fold}/seg_model.pt"
+
+
+rule import_lantern_fold:
+    """Download one fold of a LANTERN plaque ensemble.
+
+    Wildcard-driven so that switching --lantern_config (or its revision) is a
+    different target, never a stale cached checkpoint under the same path.
+    """
     input:
         model=lambda wildcards: storage(
-            config["models"]["lantern_abeta"][f"fold{wildcards.fold}"]
+            config["models"]["lantern"].format(
+                name=wildcards.name, revision=wildcards.revision, fold=wildcards.fold
+            )
         ),
     output:
-        "resources/models/lantern-ki3-abeta/fold{fold}/seg_model.pt",
+        lantern_fold_path,
     wildcard_constraints:
+        name="[A-Za-z0-9_.-]+",
+        revision="[A-Za-z0-9_.-]+",
         fold="[0-9]+",
     localrule: True
     shell:
@@ -14,19 +42,26 @@ rule import_lantern_abeta_fold:
 
 
 rule run_lantern_plaques:
-    """Segment Abeta plaques with the 5-fold LANTERN ensemble.
+    """Segment Abeta plaques with a 5-fold LANTERN ensemble (--lantern_config).
 
     Runs on the grid nearest config['plaque_iso_res'] um isotropic (the scale
     the ensemble was trained at), on RAW intensities -- the model was not
     trained on N4-corrected data, so this bypasses the bias-field chain that
-    the GMM and Otsu methods depend on. The level wildcard names the starting
+    the GMM and Otsu methods depend on. config['plaque_level'] is the starting
     pyramid level; on pyramids that downsample z as well as x/y the script
-    loads a finer level and downsamples per axis to land near-isotropic, so
-    the effective grid can be finer than the level in the filename.
+    loads a finer level and downsamples per axis to land near-isotropic. The
+    output is therefore named for the grid (level-neariso4), not a level.
+
+    The probseg has one channel per predicted class beyond background: for a
+    binary ensemble just the plaque vote fraction; for a 3-class ensemble a
+    second channel with the fraction of folds calling class 2 (the
+    "annotated false positive" class -- bright non-plaque structure).
 
     Tiles at 128^3 with stride 64 and combines overlapping tiles by max over
     votes. The low-res brain mask restricts inference to blocks that touch
-    tissue, which is what makes whole-brain 5-fold inference tractable.
+    tissue, which is what makes whole-brain 5-fold inference tractable. The
+    folds share one frozen encoder, so it runs once per batch and only the
+    five decoders are evaluated separately (see lantern_plaques.py).
 
     Writes votes/n_folds rather than a binary mask, so the vote threshold can be
     changed downstream without re-running inference.
@@ -34,7 +69,9 @@ rule run_lantern_plaques:
     input:
         spim=spim_input,
         models=expand(
-            "resources/models/lantern-ki3-abeta/fold{fold}/seg_model.pt",
+            lantern_fold_path,
+            name=lantern_name,
+            revision=lantern_revision,
             fold=range(config["plaque_n_folds"]),
         ),
         mask=bids(
@@ -48,6 +85,7 @@ rule run_lantern_plaques:
         ),
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,
+        start_level=config["plaque_level"],
         iso_res=config["plaque_iso_res"],
         tile=config["plaque_tile"],
         stride=config["plaque_stride"],
@@ -59,7 +97,7 @@ rule run_lantern_plaques:
             root=root,
             datatype="seg",
             stain="{stain}",
-            level="{level}",
+            level=plaque_level_label,
             desc=config["plaque_seg_method"],
             suffix="probseg.{ext}",
             **inputs["spim"].wildcards,
@@ -87,7 +125,7 @@ rule run_lantern_plaques:
             1,
             int(
                 2880.0
-                / (3.0 ** float(wildcards.level))
+                / (3.0 ** float(config["plaque_level"]))
                 / float(config["plaque_n_gpus"])
             ),
         ),
@@ -101,14 +139,19 @@ rule binarize_lantern_plaques:
 
     Emits 0/100 at config['segmentation_level'], matching the segmentation.smk
     mask convention, so the standard fieldfrac / regionprops / counts / segstats
-    chain consumes it unchanged.
+    chain consumes it unchanged. Only the plaque channel of the probseg reaches
+    this mask; the class-2 channel of a 3-class ensemble is used, when
+    --label_filter is set, to drop plaque components that touch a large
+    class-2 component, and --min_size drops plaque components smaller than
+    that many near-iso voxels. Both filters are decided on the near-iso grid
+    (connected components there, 26-connectivity) before upsampling.
     """
     input:
         probseg=bids_oz_in(
             root=root,
             datatype="seg",
             stain="{stain}",
-            level=config["plaque_level"],
+            level=plaque_level_label,
             desc=config["plaque_seg_method"],
             suffix="probseg.{ext}",
             **inputs["spim"].wildcards,
@@ -119,6 +162,10 @@ rule binarize_lantern_plaques:
         n_folds=config["plaque_n_folds"],
         vote_threshold=config["plaque_vote_threshold"],
         target_level=config["segmentation_level"],
+        min_size=config["min_size"],
+        label_filter=config["label_filter"],
+        label_filter_size=config["label_filter_size"],
+        fp_min_votes=config["plaque_fp_min_votes"],
     output:
         mask=bids_oz_out(
             root=root,
@@ -133,8 +180,13 @@ rule binarize_lantern_plaques:
         stain=stain_for_plaques or "^$",
     threads: 32
     resources:
-        mem_mb=64000,
+        # Component filtering reads the near-iso probseg once in 512^3 blocks
+        # (one per thread in flight, ~1.3 GB each with labels) and keeps only
+        # the sparse plaque voxels. Measured on a 45 G-voxel grid with 32
+        # threads: 5 min / 42 GB peak for a binary ensemble, 12 min / 63 GB
+        # for a 3-class one with --label_filter, before the upsample/write.
+        mem_mb=120000,
         disk_mb=2097152,
-        runtime=180,
+        runtime=240,
     script:
         "../scripts/binarize_lantern_plaques.py"
