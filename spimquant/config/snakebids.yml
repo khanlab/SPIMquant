@@ -221,9 +221,11 @@ parse_args:
       ``lantern-ki3-abeta`` (``fold<k>/seg_model.pt`` ResEncLUNet
       checkpoints for k in 0..plaque_n_folds-1), so any of them works here.
       ``<revision>`` is a tag, branch or commit of that repo and defaults to
-      ``main``.  Examples: ``ki3-abeta``, ``mapt-abeta``, ``ki3-abeta@v2``.
+      ``main`` when omitted; the default ensemble is pinned to the ``v2`` tag so
+      a new upload cannot silently change results.  Examples:
+      ``ki3-abeta@v2``, ``mapt_a-abeta``, ``ki3-abeta@main``.
       (default: %(default)s)
-    default: ki3-abeta
+    default: ki3-abeta@v2
     type: str
 
   --min_size:

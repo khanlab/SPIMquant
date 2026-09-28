@@ -1,7 +1,7 @@
 """5-fold LANTERN ensemble Abeta plaque segmentation.
 
 Runs a published LANTERN ensemble (``apooladi/lantern-<name>``, chosen with
-``--lantern_config``; ``ki3-abeta`` by default) over the Abeta channel and
+``--lantern_config``; ``ki3-abeta@v2`` by default) over the Abeta channel and
 writes the per-fold agreement map -- the fraction of folds voting foreground,
 averaged over the overlapping tiles that saw each voxel (``{0, .2, .4, .6, .8,
 1}`` for five folds only under ``merge_mode="max"``) -- as an OME-Zarr.
