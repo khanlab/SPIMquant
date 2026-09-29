@@ -37,7 +37,7 @@ Used when `--seg_method` includes `lantern`.  See [Segmentation Methods](../howt
 | CLI option | Config key | Default | Meaning |
 |---|---|---|---|
 | `--lantern_config` | `lantern_config` | `ki3-abeta@v2` | Ensemble to run, as `<name>[@<revision>]` → Hugging Face repo `apooladi/lantern-<name>` |
-| `--merge_mode` | `plaque_merge_mode` | `average` | How overlapping tiles' votes are combined: `average`, `gaussian` or `max` |
+| `--merge_mode` | `plaque_merge_mode` | `gaussian` | How overlapping tiles' votes are combined: `average`, `gaussian` or `max` |
 | `--min_size` | `min_size` | `4` | Drop plaque components smaller than this many inference-grid voxels (0 disables) |
 | `--label_filter` | `label_filter` | off | 3-class ensembles: drop plaques touching a large "false positive" component |
 | | `stains_for_plaques` | `abeta`, `Abeta`, `BetaAmyloid` | LANTERN runs on the first of these present in the data |
