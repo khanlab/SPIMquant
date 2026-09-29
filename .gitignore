@@ -7,3 +7,8 @@ spimquant/workflow/scripts/experiment/
 .pixi
 *.egg-info
 site/
+spimquant/resources/imported
+# snakemake workdir artifacts (downloaded model weights)
+/resources/
+# local pixi/GPU activation dump
+.activate_gpu

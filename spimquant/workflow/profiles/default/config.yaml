@@ -1,1 +1,2 @@
 use-conda: True
+latency-wait: 10

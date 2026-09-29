@@ -68,24 +68,35 @@ rule transform_regionprops_to_template:
         "../scripts/transform_regionprops_to_template.py"
 
 
+def get_regionprops_parquets_to_aggregate(wildcards):
+    """Per-stain regionprops for the stains this method actually segmented.
+
+    Cannot be resolved at parse time: a single-stain method such as the plaque
+    ensemble aggregates over only its own stain, not all of stains_for_seg.
+    """
+    paths = expand(
+        bids(
+            root=root,
+            datatype="tabular",
+            stain="{stain}",
+            desc="{desc}",
+            space="{template}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+        stain=stains_for_desc(wildcards.desc),
+        allow_missing=True,
+    )
+    return [path.format(**wildcards) for path in paths]
+
+
 rule aggregate_regionprops_across_stains:
     """Aggregate transformed regionprops across stains."""
     input:
-        regionprops_parquets=expand(
-            bids(
-                root=root,
-                datatype="tabular",
-                stain="{stain}",
-                desc="{desc}",
-                space="{template}",
-                suffix="regionprops.parquet",
-                **inputs["spim"].wildcards,
-            ),
-            stain=stains_for_seg,
-            allow_missing=True,
-        ),
+        regionprops_parquets=get_regionprops_parquets_to_aggregate,
     params:
-        stains=stains_for_seg,
+        # must stay aligned with regionprops_parquets, which is per-method
+        stains=lambda wildcards: stains_for_desc(wildcards.desc),
     output:
         regionprops_aggregated_parquet=bids(
             root=root,

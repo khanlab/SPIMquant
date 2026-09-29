@@ -26,7 +26,7 @@ Outputs include:
 rule gaussian_biasfield:
     """simple bias field correction with gaussian"""
     input:
-        spim=inputs["spim"].path,
+        spim=spim_input,
     output:
         corrected=temp(
             bids_oz_out(
@@ -204,7 +204,7 @@ rule n4_pre_quant_tune:
 rule n4_biasfield:
     """N4 bias field correction with antspyx"""
     input:
-        spim=inputs["spim"].path,
+        spim=spim_input,
         biasfield=bids(
             root=root,
             datatype="micr",

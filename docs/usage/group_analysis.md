@@ -14,6 +14,7 @@ Group analysis performs statistical comparisons of:
 Results are provided as:
 
 - Merged per-subject ROI tables for export to external stats tools
+- Merged per-stain region-property ROI tables retaining atlas labels
 - Statistical tables per pairwise contrast (t-statistics, p-values, Cohen's d, group means)
 - Heatmap visualizations
 - 3D volumetric stat maps
@@ -165,6 +166,19 @@ Useful for exporting to R, Python (pandas/seaborn), or GraphPad Prism for custom
 
 An accompanying **`*_allsubjects.json`** sidecar describes each column.
 
+### Merged Region-Property Tables (always produced)
+
+**`*_allsubjects_regionpropstats.tsv`**: All subject-level `regionpropstats.tsv` files for one atlas, stain, and level concatenated into a single file, joined with participant metadata from `participants.tsv`.
+
+```tsv
+index	name	count	volume_mean	intensity_mean	...	participant_id	treatment	sex	age
+0	Isocortex	152	102.3	0.84	...	sub-01	vehicle	M	12
+0	Isocortex	189	118.7	0.91	...	sub-03	drug	M	11
+...
+```
+
+These tables preserve the atlas `index` / `name` labelling from the participant-level files while making it easy to compare per-stain region summaries across subjects in downstream tools.
+
 ### Statistical Results (per pairwise contrast)
 
 **`*_contrast-<label>_groupstats.tsv`**: Per-region statistics for one pairwise contrast.
@@ -259,6 +273,7 @@ pixi run spimquant /bids /output group --cores all
 ```
 
 This always runs when `analysis_level=group` and produces `*_allsubjects.tsv` for all subjects.
+It also produces `*_allsubjects_regionpropstats.tsv` for each atlas/stain combination.
 
 ## Interpreting Results
 

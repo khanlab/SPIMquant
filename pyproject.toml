@@ -79,6 +79,13 @@ features = ["runtime"]
 [tool.pixi.environments.gpu]
 features = ["runtime", "gpu"]
 
+# Scoped to `runtime` rather than the workspace-global pypi-dependencies: it is a
+# torch package, and putting it at workspace level pulls a PyPI torch + CUDA stack
+# into the lint-only `dev-only` environment, which has no other torch dependency.
+[tool.pixi.feature.runtime.pypi-dependencies]
+dynamic-network-architectures = ">=0.4"
+
+
 [tool.pixi.feature.gpu.system-requirements]
 cuda = "12.0"
 
