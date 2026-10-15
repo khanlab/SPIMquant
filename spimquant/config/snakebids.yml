@@ -118,6 +118,7 @@ parse_args:
       - Olig2
       - ChAT
       - VAChT
+      - Thy1GFP
     action: store
     nargs: '+'
 
