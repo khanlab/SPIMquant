@@ -149,8 +149,9 @@ rule affine_reg:
     """Perform affine registration to template using greedy.
     
     Registers subject SPIM to template space using 12-DOF affine transformation.
-    Uses normalized mutual information (NMI) as the similarity metric and outputs
-    both the transformation matrix and warped image for QC.
+    Uses normalized mutual information (NMI) as the similarity metric. The
+    transformation matrix is kept (not temp) so that later runs can reuse it via
+    --reuse_derivatives; the warped image for QC is made by apply_affine_reg.
     """
     input:
         template=get_template_for_reg,
@@ -166,28 +167,15 @@ rule affine_reg:
     params:
         iters="10x0x0" if config["sloppy"] else "100x100",
     output:
-        xfm_ras=temp(
-            bids(
-                root=root,
-                datatype="xfm",
-                from_="subject",
-                to="{template}",
-                type_="ras",
-                desc="affine",
-                suffix="xfm.txt",
-                **inputs["spim"].wildcards,
-            )
-        ),
-        warped=temp(
-            bids(
-                root=root,
-                datatype="xfm",
-                space="{template}",
-                stain=stain_for_reg,
-                desc="affinewarped",
-                suffix="SPIM.nii.gz",
-                **inputs["spim"].wildcards,
-            )
+        xfm_ras=bids(
+            root=root,
+            datatype="xfm",
+            from_="subject",
+            to="{template}",
+            type_="ras",
+            desc="affine",
+            suffix="xfm.txt",
+            **inputs["spim"].wildcards,
         ),
     log:
         bids(
@@ -203,10 +191,47 @@ rule affine_reg:
         runtime=15,
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
-        " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
-        " greedy -threads {threads} -d 3 -rf {input.template} "
+        " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters}"
+
+
+rule apply_affine_reg:
+    """Warp the subject SPIM to template space with the affine transform, for QC.
+
+    Kept separate from affine_reg so the QC image can be made from a reused
+    affine transform without re-running (and overwriting) the registration.
+    """
+    input:
+        template=get_template_for_reg,
+        subject=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level=config["registration_level"],
+            desc=config["templatereg"]["desc"],
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        xfm_ras=rules.affine_reg.output.xfm_ras,
+    output:
+        warped=temp(
+            bids(
+                root=root,
+                datatype="xfm",
+                space="{template}",
+                stain=stain_for_reg,
+                desc="affinewarped",
+                suffix="SPIM.nii.gz",
+                **inputs["spim"].wildcards,
+            )
+        ),
+    threads: 32
+    resources:
+        mem_mb=16000,
+        runtime=15,
+    shell:
+        "greedy -threads {threads} -d 3 -rf {input.template} "
         "  -rm {input.subject} {output.warped} "
-        "  -r {output.xfm_ras}"
+        "  -r {input.xfm_ras}"
 
 
 rule convert_ras_to_itk:

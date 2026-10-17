@@ -22,6 +22,7 @@ nav:
   - How-To Guides:
       - Segmentation Methods: howto/segmentation.md
       - MRI Registration: howto/mri_registration.md
+      - Reusing Previous Outputs: howto/reuse_derivatives.md
   - Reference:
       - CLI Reference: reference/cli_reference.md
       - Output Files: reference/outputs.md
