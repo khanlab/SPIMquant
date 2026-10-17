@@ -1508,6 +1508,7 @@ rule all_group:
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
+include: "rules/reuse.smk"
 include: "rules/vessels.smk"
 include: "rules/plaques.smk"
 include: "rules/segmentation.smk"
