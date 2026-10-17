@@ -6,6 +6,10 @@ rule fieldfrac:
     voxel by downsampling the high-resolution mask. The output resolution (level) can
     differ from the input mask resolution, with the downsampling factor calculated
     automatically. Field fraction values range from 0-100.
+
+    The output is written on the grid of the SPIM image at the same level (the
+    grid the atlas parcellation is warped onto), so the two can be compared
+    voxel for voxel.
     """
     input:
         mask=bids_oz_in(
@@ -15,6 +19,14 @@ rule fieldfrac:
             level=config["segmentation_level"],
             desc="{desc}",
             suffix="mask.{ext}",
+            **inputs["spim"].wildcards,
+        ),
+        ref=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level="{level}",
+            suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
     params:
