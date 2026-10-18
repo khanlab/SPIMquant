@@ -27,6 +27,30 @@ SPIMquant is computationally intensive and requires:
 
 ## Installation Steps
 
+There are two ways to install SPIMquant: as a conda package, if you only
+want to run it, or from a clone of the repository, if you want to modify it
+or use the development tools.
+
+### Option A: Install the conda package
+
+Install [pixi](https://pixi.prefix.dev/latest/installation/) (see step 1
+below), then:
+
+```bash
+pixi global install \
+  --channel https://prefix.dev/conda-forge \
+  --channel https://prefix.dev/bioconda \
+  --channel https://prefix.dev/akhanf/khanlab \
+  spimquant
+
+spimquant --help
+```
+
+The package is also installable with conda, mamba or micromamba from the
+same three channels.
+
+### Option B: Install from the repository
+
 ### 1. Install pixi
 
 If you don't have pixi installed, install it using:

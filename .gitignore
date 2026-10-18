@@ -12,3 +12,6 @@ spimquant/resources/imported
 /resources/
 # local pixi/GPU activation dump
 .activate_gpu
+.ipynb_checkpoints/
+# conda packages built by pixi publish
+*.conda
