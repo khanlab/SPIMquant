@@ -11,4 +11,4 @@ dependencies:
     - torch==2.5.1
     # khanlab fork; multi-stain templates need the per-channel template saving
     # in build_template.py (template_{epoch}_ch-{c}.nii.gz)
-    - fireants @ git+https://github.com/khanlab/FireANTs@f551add7a2467cb2130009b54a59b8a96b3cab7c
+    - fireants @ git+https://github.com/khanlab/FireANTs@a812cd1b16837ed3c0f62675eaa9d8e67f2a4ee9
