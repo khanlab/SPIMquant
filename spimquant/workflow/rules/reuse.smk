@@ -25,7 +25,7 @@ if reuse_root:
     reuse_root = os.path.abspath(os.path.expandvars(reuse_root))
     if not os.path.isdir(reuse_root):
         raise ValueError(f"--reuse_derivatives: '{reuse_root}' is not a directory")
-    if reuse_root == os.path.abspath(root):
+    if os.path.realpath(reuse_root) == os.path.realpath(root):
         raise ValueError(
             "--reuse_derivatives must be a different dataset from the output directory"
         )
