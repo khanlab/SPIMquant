@@ -211,7 +211,7 @@ rule apply_affine_reg:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        xfm_ras=rules.affine_reg.output.xfm_ras,
+        xfm_ras=str(rules.affine_reg.output.xfm_ras),
     output:
         warped=temp(
             bids(
@@ -292,7 +292,7 @@ rule deform_reg:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        xfm_ras=rules.affine_reg.output.xfm_ras,
+        xfm_ras=str(rules.affine_reg.output.xfm_ras),
     params:
         iters="10x0x0" if config["sloppy"] else "100x50",
         metric="NMI",
@@ -410,7 +410,7 @@ rule resample_labels_to_zarr:
     input:
         dseg=bids(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
         label_tsv=bids(root=root, template="{template}", desc="LR", suffix="dseg.tsv"),
-        xfm_ras=rules.affine_reg.output.xfm_ras,
+        xfm_ras=str(rules.affine_reg.output.xfm_ras),
         zarr_zip=spim_input,
     params:
         level_to_resample_to=0,
@@ -446,7 +446,7 @@ rule resample_labels_to_zarr:
 rule affine_zarr_to_template_nii:
     input:
         ome_zarr=spim_input,
-        xfm_ras=rules.affine_reg.output.xfm_ras,
+        xfm_ras=str(rules.affine_reg.output.xfm_ras),
         ref_nii=get_template_for_reg,
     params:
         ref_opts={"chunks": (1, 50, 50, 50)},
@@ -471,7 +471,7 @@ rule affine_zarr_to_template_nii:
 rule affine_zarr_to_template_ome_zarr:
     input:
         ome_zarr=spim_input,
-        xfm_ras=rules.affine_reg.output.xfm_ras,
+        xfm_ras=str(rules.affine_reg.output.xfm_ras),
         ref_nii=get_template_for_reg,
     params:
         ref_opts={"chunks": (1, 50, 50, 50)},
@@ -496,7 +496,9 @@ rule affine_zarr_to_template_ome_zarr:
 
 rule deform_zarr_to_template_nii:
     input:
-        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
+        xfm_composite=str(
+            rules.compose_subject_to_template_warp.output.xfm_composite
+        ),
         ref_nii=get_template_for_reg,
     params:
         ome_zarr=spim_input,
@@ -525,7 +527,9 @@ rule deform_zarr_to_template_nii:
 rule deform_to_template_nii_zoomed:
     input:
         ome_zarr=spim_input,
-        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
+        xfm_composite=str(
+            rules.compose_subject_to_template_warp.output.xfm_composite
+        ),
         ref_nii=get_template_for_reg,
     params:
         flo_opts={},  #any additional flo znimg options
@@ -569,7 +573,9 @@ rule deform_spim_nii_to_template_nii:
             **inputs["spim"].wildcards,
         ),
         ref=rules.import_template_anat.output.anat,
-        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
+        xfm_composite=str(
+            rules.compose_subject_to_template_warp.output.xfm_composite
+        ),
     output:
         spim=bids(
             root=root,
@@ -610,7 +616,9 @@ rule deform_template_dseg_to_subject_nii:
             **inputs["spim"].wildcards,
         ),
         dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
-        xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
+        xfm_composite_inv=str(
+            rules.compose_subject_to_template_warp.output.xfm_composite_inv
+        ),
     output:
         dseg=bids(
             root=root,
@@ -722,7 +730,7 @@ rule registration_qc_report:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        warp=rules.compose_subject_to_template_warp.output.xfm_composite,
+        warp=str(rules.compose_subject_to_template_warp.output.xfm_composite),
         dseg=lambda wildcards: bids(
             root=root,
             template=wildcards.template,

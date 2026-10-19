@@ -698,7 +698,9 @@ rule warp_mri_to_template_via_spim:
         ),
         ref=rules.import_template_anat.output.anat,
         xfm_composite_mri_to_spim=rules.compose_mri_to_spim_warp.output.xfm_composite,
-        xfm_composite_spim_to_template=rules.compose_subject_to_template_warp.output.xfm_composite,
+        xfm_composite_spim_to_template=str(
+            rules.compose_subject_to_template_warp.output.xfm_composite
+        ),
     output:
         warped=bids(
             root=root,
