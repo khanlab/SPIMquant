@@ -634,9 +634,9 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/dynamic-network-architectures-0.4.4-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/imaris-ims-zarr-0.2.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/ngff-zarr-0.34.0-pyh4616a5c_0.conda
-      - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.0-pyh4616a5c_0.conda
-      - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.21.5-pyh4616a5c_0.conda
-      - conda_source: spimquant[6ee24ba2] @ .
+      - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
+      - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.21.6-pyh4616a5c_0.conda
+      - conda_source: spimquant[30d2a5bd] @ .
   dev:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -1413,9 +1413,9 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/dynamic-network-architectures-0.4.4-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/imaris-ims-zarr-0.2.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/ngff-zarr-0.34.0-pyh4616a5c_0.conda
-      - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.0-pyh4616a5c_0.conda
-      - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.21.5-pyh4616a5c_0.conda
-      - conda_source: spimquant[6ee24ba2] @ .
+      - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
+      - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.21.6-pyh4616a5c_0.conda
+      - conda_source: spimquant[30d2a5bd] @ .
   dev-only:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -2223,9 +2223,9 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/dynamic-network-architectures-0.4.4-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/imaris-ims-zarr-0.2.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/ngff-zarr-0.34.0-pyh4616a5c_0.conda
-      - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.0-pyh4616a5c_0.conda
-      - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.21.5-pyh4616a5c_0.conda
-      - conda_source: spimquant[6ee24ba2] @ .
+      - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
+      - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.21.6-pyh4616a5c_0.conda
+      - conda_source: spimquant[30d2a5bd] @ .
 packages:
 - conda: https://conda.anaconda.org/bioconda/noarch/snakebids-0.15.0-pyhdfd78af_0.conda
   sha256: 20f87c7eb7de89801639e5a700154eb4a456e4fc0445dd4828b2bb57021b575b
@@ -14688,9 +14688,9 @@ packages:
   run_exports: {}
   size: 113642
   timestamp: 1792390838036
-- conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.0-pyh4616a5c_0.conda
-  sha256: 4e2d8aeb8caae32388ec65ea3716f0e284be7f561ee771002f8f65832cae95fd
-  md5: 6a913b188cba8a789836933accce4410
+- conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
+  sha256: c0f805dc6eb5073217f9b0c53f2956fd36e0e324feb77b56c3deea2c0fd829cd
+  md5: 29867cefcf1b7e17de0d1242a15668fb
   depends:
   - pytorch
   - monai >=1.5.2,<2
@@ -14715,11 +14715,11 @@ packages:
   - python >=3.11
   - python *
   run_exports: {}
-  size: 70315
-  timestamp: 1792392088673
-- conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.21.5-pyh4616a5c_0.conda
-  sha256: 1f3e9f0d2657a517052afefaae4209ca7301240b5dd8665c0969073dc67b6d96
-  md5: aa4b2aea1eedc5b864986dfac15052a6
+  size: 70296
+  timestamp: 1792393284138
+- conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.21.6-pyh4616a5c_0.conda
+  sha256: be8fde8dd18032e3b5460dfec59f7d3140fb118ac03e3d7e4cb9d733b3cb9feb
+  md5: 3f5d5a17c040bc206d1e73bf3ca95581
   depends:
   - dask-image
   - itk >=5.3.0
@@ -14743,9 +14743,9 @@ packages:
   - tifffile >=2024.1.30
   license: MIT
   run_exports: {}
-  size: 127751
-  timestamp: 1792391313684
-- conda_source: spimquant[6ee24ba2] @ .
+  size: 127748
+  timestamp: 1792392976566
+- conda_source: spimquant[30d2a5bd] @ .
   variants:
     target_platform: noarch
   depends:
@@ -14760,7 +14760,7 @@ packages:
   - gcsfs >=2025.5.1,<2026
   - s3fs >=2025.5.1,<2026
   - universal-pathlib >=0.2.6,<0.3
-  - zarrnii >=0.21.5,<0.22.0
+  - zarrnii >=0.21.6,<0.22.0
   - zarr >=3.1.6,<4
   - dask >=2026.3.0
   - h5py >=3.14.0
@@ -14776,7 +14776,7 @@ packages:
   - matplotlib >=3.7.0,<4
   - seaborn >=0.12.0,<1
   - nilearn >=0.12.1,<0.13
-  - vesselfm >=0.2.0
+  - vesselfm >=0.2.1
   - dynamic-network-architectures >=0.4
   - monai >=1.5.2,<2
   - hydra-core >=1.3.2,<2
