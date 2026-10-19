@@ -179,7 +179,9 @@ class ResEncLUNet(nn.Module):
         """
         if self.cond is not None:
             if raw_mean is None or raw_std is None:
-                raise ValueError("the bottleneck conditioner needs raw_mean and raw_std")
+                raise ValueError(
+                    "the bottleneck conditioner needs raw_mean and raw_std"
+                )
             skips = list(skips)
             skips[-1] = self.cond(skips[-1], raw_mean, raw_std)
         return self.decoder(skips)
