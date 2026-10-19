@@ -7,6 +7,11 @@ metadata from participants.tsv to fit OLS models and compute pairwise contrasts.
 """
 
 
+def get_bids_root_file(filename):
+    """Return a file path located at the root of the input BIDS dataset."""
+    return os.path.join(str(config["bids_dir"]), filename)
+
+
 rule perform_group_stats:
     """Perform formula-based group statistical tests on segmentation statistics.
 
@@ -26,7 +31,7 @@ rule perform_group_stats:
                 **inputs["spim"].wildcards,
             )
         ),
-        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+        participants_tsv=get_bids_root_file("participants.tsv"),
     output:
         stats_tsv=bids(
             root=group_stats_root,
@@ -165,7 +170,7 @@ rule concat_subj_parquet:
             ),
             allow_missing=True,
         ),
-        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+        participants_tsv=get_bids_root_file("participants.tsv"),
     output:
         parquet=bids(
             root=group_stats_root,
@@ -249,7 +254,7 @@ rule concat_subj_segstats:
     export it to their own statistics tools.
     """
     input:
-        segstats_tsvs=lambda wildcards: inputs["spim"].expand(
+        tsv_files=lambda wildcards: inputs["spim"].expand(
             bids(
                 root=root,
                 datatype="tabular",
@@ -260,7 +265,7 @@ rule concat_subj_segstats:
                 **inputs["spim"].wildcards,
             )
         ),
-        participants_tsv=os.path.join(config["bids_dir"], "participants.tsv"),
+        participants_tsv=get_bids_root_file("participants.tsv"),
     output:
         merged_tsv=bids(
             root=group_stats_root,
@@ -268,6 +273,47 @@ rule concat_subj_segstats:
             from_="{template}",
             desc="{desc}",
             suffix="allsubjects.tsv",
+        ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=10,
+    script:
+        "../scripts/concat_subj_segstats.py"
+
+
+rule concat_subj_regionpropstats:
+    """Concatenate subject-level regionpropstats TSV files across participants.
+
+    Merges all individual per-subject per-stain regionpropstats TSV files into a
+    single group-level TSV, adding a participant_id column and joining with
+    participant metadata from participants.tsv. This preserves atlas labels and
+    region-level summary statistics for downstream export and QC.
+    """
+    input:
+        tsv_files=lambda wildcards: inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                seg=wildcards.seg,
+                from_=wildcards.template,
+                stain=wildcards.stain,
+                level=wildcards.level,
+                desc=wildcards.desc,
+                suffix="regionpropstats.tsv",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        participants_tsv=get_bids_root_file("participants.tsv"),
+    output:
+        merged_tsv=bids(
+            root=group_stats_root,
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}",
+            suffix="allsubjects_regionpropstats.tsv",
         ),
     threads: 1
     resources:

@@ -19,11 +19,22 @@ from pathlib import Path
 
 
 def resources_path(path):
-    """Get path relative to the resources folder"""
+    """Get path relative to the resources folder.
+
+    Remote URLs pass through untouched unless the file has been
+    pre-downloaded into resources/imported/ (matching basename), in which
+    case the local copy is used. This skips the storage plugin's remote
+    existence check at DAG-build time, which fails on hosts without
+    internet access or when zenodo rate-limits the burst of checks.
+    """
+    resources = Path(workflow.basedir).parent / "resources"
     if path.startswith(("http://", "https://")):
+        local = resources / "imported" / Path(path).name
+        if local.exists():
+            return str(local)
         return path
     else:
-        return str(Path(workflow.basedir).parent / "resources" / path)
+        return str(resources / path)
 
 
 def bids_oz_out(**kwargs):
@@ -89,7 +100,7 @@ def get_stains_all_subjects(ignore_stains=None):
     ignore_set = set(ignore_stains) if ignore_stains else set()
 
     stain_sets = []
-    for zarr in inputs["spim"].expand():
+    for zarr in spim_raw.expand():
         channels = set(get_spim_channels(zarr))
         # Remove ignored stains
         channels = channels - ignore_set

@@ -1,71 +1,156 @@
 [project]
-authors = [{name = "Ali R. Khan", email = "alik@robarts.ca"}]
-name = "SPIMquant"
-requires-python = ">= 3.11"
-version = "0.1.0"
-scripts = { spimquant = "spimquant.run:app.run" }
+name = "spimquant"
+dynamic = ["version"]
+description = "BIDS App for quantifying SPIM (lightsheet) microscopy data"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Ali R. Khan", email = "alik@robarts.ca" }]
+requires-python = ">=3.11,<3.14"
+# Dependencies are conda packages, declared once in [tool.pixi.package.run-dependencies]
+dependencies = []
+
+[project.scripts]
+spimquant = "spimquant.run:app.run"
 
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+tag_regex = "^v(?P<version>.+)$"
+fallback_version = "0.0.0.dev0"
+version_scheme = "no-guess-dev"
+local_scheme = "no-local-version"
+
+[tool.hatch.build.targets.wheel]
+packages = ["spimquant"]
+
+
+# ----------------------------------------------------------------------
+# Pixi workspace
+# ----------------------------------------------------------------------
 
 [tool.pixi.workspace]
-channels = ["conda-forge", "bioconda"]
-platforms = ["linux-64"]
+channels = ["conda-forge", "bioconda", "https://prefix.dev/akhanf/khanlab"]
+# all inline tables, as snakefmt's toml parser rejects mixed arrays
+platforms = [
+    { platform = "linux-64" },
+    { name = "linux-64-cuda", platform = "linux-64", cuda = "12.0" },
+]
+preview = ["pixi-build"]
 
-[tool.pixi.feature.runtime.dependencies]
+
+# ----------------------------------------------------------------------
+# Conda package
+#
+# The run-dependencies below are the single list of runtime dependencies:
+# they are what the published package requires, and the pixi environments
+# get them by depending on this package from source (see the runtime
+# feature), which pixi installs in editable mode.
+# ----------------------------------------------------------------------
+
+[tool.pixi.package]
+name = "spimquant"
+# set from the release tag by the publish workflow
+version = "0.0.0.dev0"
+publish = true
+
+[tool.pixi.package.build.backend]
+name = "pixi-build-python"
+version = "*"
+channels = ["conda-forge"]
+
+[tool.pixi.package.host-dependencies]
+hatchling = "*"
+hatch-vcs = "*"
+
+[tool.pixi.package.run-dependencies]
 snakemake = ">=9.5.1,<10"
 snakebids = ">=0.15.0,<0.16"
 snakemake-storage-plugin-s3 = ">=0.3.3,<0.4"
 snakemake-storage-plugin-gcs = ">=1.1.4,<2"
+snakemake-storage-plugin-fs = ">=1.1.2,<2"
+snakemake-storage-plugin-http = ">=0.3.0,<0.4.0"
+snakemake-executor-plugin-slurm = ">=1.4.0,<2"
+conda = ">=25.5.0,<26"
 gcsfs = ">=2025.5.1,<2026"
 s3fs = ">=2025.5.1,<2026"
 universal-pathlib = ">=0.2.6,<0.3"
+# image I/O and processing
+zarrnii = ">=0.21.6,<0.22.0"
 zarr = ">=3.1.6,<4"
 dask = ">=2026.3.0"
-conda = ">=25.5.0,<26"
-snakemake-executor-plugin-slurm = ">=1.4.0,<2"
-snakemake-storage-plugin-fs = ">=1.1.2,<2"
-snakemake-storage-plugin-http = ">=0.3.0,<0.4.0"
+h5py = ">=3.14.0"
+simpleitk = ">=2.4.0"
+nibabel = ">=5.3.2,<6"
+scipy = ">=1.11.0,<2"
+scikit-image = ">=0.26.0,<0.27"
+scikit-learn = ">=1.8.0,<2"
+skan = ">=0.13.1,<0.14"
 greedyreg = "==0.0.20250712"
 antspyx = "==0.6.1"
-markdown-it-py = "<4"
-docutils = "<0.22"
-scipy = ">=1.11.0,<2"
+pyarrow = ">=18.0.0,<19"
+# QC and reports
 matplotlib = ">=3.7.0,<4"
 seaborn = ">=0.12.0,<1"
 nilearn = ">=0.12.1,<0.13"
+# deep learning segmentation (vesselFM, LANTERN)
+vesselfm = ">=0.2.1"
+dynamic-network-architectures = ">=0.4"
 monai = ">=1.5.2,<2"
 hydra-core = ">=1.3.2,<2"
-scikit-image = ">=0.26.0,<0.27"
-scikit-learn = ">=1.8.0,<2"
-tqdm = ">=4.67.2,<5"
-lightning = ">=2.6.0,<3"
-wandb = ">=0.24.1,<0.25"
-tensorboard = ">=2.20.0,<3"
-huggingface_hub = ">=1.3.7,<2"
-nibabel = ">=5.3.2,<6"
-gpustat = ">=1.1.1,<2"
 omegaconf = ">=2.3.0,<3"
-pyarrow = ">=18.0.0,<19"
+lightning = ">=2.6.0,<3"
+huggingface_hub = ">=1.3.7,<2"
+tensorboard = ">=2.20.0,<3"
+wandb = ">=0.24.1,<0.25"
+gpustat = ">=1.1.1,<2"
+tqdm = ">=4.67.2,<5"
 
-[tool.pixi.pypi-dependencies]
-spimquant = { path = ".", editable = true }
-zarrnii = ">=0.21.2,<0.22.0"
-#zarrnii = { path = "/nfs/khan/trainees/akhan488/apps/zarrnii", editable = true }
-vesselfm = { git = "https://github.com/khanlab/vesselfm", rev = "504baab" }
-h5py = ">=3.14.0"
-simpleitk = ">=2.4.0"
-pylibtiff = ">=0.7.0"
+[tool.pixi.package.run-constraints]
+# pins on transitive dependencies (snakemake reports)
+markdown-it-py = "<4"
+docutils = "<0.22"
 
+
+# ----------------------------------------------------------------------
+# Runtime environments
+# ----------------------------------------------------------------------
+
+[tool.pixi.feature.runtime.dependencies]
+spimquant = { path = "." }
+
+# the CUDA platform is only solved for the gpu environment
+[tool.pixi.feature.cpu]
+platforms = ["linux-64"]
+
+[tool.pixi.feature.gpu]
+platforms = ["linux-64-cuda"]
+
+[tool.pixi.feature.gpu.dependencies]
+cuda-version = "12.6.*"
+pytorch-gpu = "*"
+
+
+# ----------------------------------------------------------------------
+# Development
+# ----------------------------------------------------------------------
 
 [tool.pixi.feature.dev.dependencies]
-black   = ">=24.0.0, <25.0.0"
-isort   = ">=5.10.1, <6.0.0"
-snakefmt = ">=0.10.0, <0.11.0"
-pytest  = "*"
+# snakefmt 0.10 fails on python 3.13
+python = ">=3.11,<3.13"
+black = ">=24.0.0,<25.0.0"
+isort = ">=5.10.1,<6.0.0"
+snakefmt = ">=0.10.0,<0.11.0"
+pytest = "*"
 jupyterlab = ">=4.4.7,<5"
 
+[tool.pixi.feature.dev.tasks]
+quality_check = "isort --profile black spimquant/*.py -c && black spimquant --check && snakefmt spimquant --check"
+quality_fix = "isort --profile black spimquant/*.py && black spimquant && snakefmt spimquant"
 
 [tool.pixi.feature.vis.dependencies]
 napari = ">=0.6.6,<0.7"
@@ -73,32 +158,13 @@ napari-ome-zarr = ">=0.6.1,<0.7"
 pyqt = ">=5.15.11,<6"
 micro_sam = ">=1.6.2,<2"
 
-[tool.pixi.environments.default]
-features = ["runtime"]
 
-[tool.pixi.environments.gpu]
-features = ["runtime", "gpu"]
+# ----------------------------------------------------------------------
+# Environments
+# ----------------------------------------------------------------------
 
-[tool.pixi.feature.gpu.system-requirements]
-cuda = "12.0"
-
-[tool.pixi.feature.gpu.dependencies]
-cuda-version = "12.6.*"
-pytorch-gpu = "*"
-
-
-
-[tool.pixi.environments.dev]
-features = ["runtime", "dev", "vis"]
-
-
-[tool.pixi.environments.dev-only]
-features = ["dev"]
-
-[tool.pixi.tasks]
-quality_check = "isort --profile black spimquant/*.py -c && black spimquant --check && snakefmt spimquant --check"
-quality_fix = "isort --profile black spimquant/*.py && black spimquant  && snakefmt spimquant"
-
-[tool.pixi.dependencies]
-pip = ">=25.3,<26"
-skan = ">=0.13.1,<0.14"
+[tool.pixi.environments]
+default = ["runtime", "cpu"]
+gpu = ["runtime", "gpu"]
+dev = ["runtime", "dev", "vis", "cpu"]
+dev-only = { features = ["dev", "cpu"], no-default-feature = true }

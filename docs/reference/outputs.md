@@ -35,6 +35,8 @@ output/spimquant/
 │       ├── *_from-subject_to-<template>_xfm.nii.gz
 │       └── *_from-<template>_to-subject_xfm.nii.gz
 └── group/                                 # Group-level outputs (no subject subdirectory)
+    ├── *_seg-<seg>_from-<template>_desc-<desc>_allsubjects.tsv
+    ├── *_seg-<seg>_from-<template>_stain-<stain>_level-<N>_desc-<desc>_allsubjects_regionpropstats.tsv
     ├── *_seg-<seg>_from-<template>_desc-<desc>_groupstats.tsv
     └── *_seg-<seg>_from-<template>_desc-<desc>_groupstats.png
 ```
@@ -212,6 +214,18 @@ See [Imaris Crops](../howto/imaris_crops.md) for exporting patches to Imaris for
 ## Group-Level Outputs
 
 Group-level outputs are produced when running `analysis_level group` and are stored directly under `output/spimquant/group/`.
+
+### Merged Subject Table (`group/`)
+
+**Filename pattern:** `*_seg-<seg>_from-<template>_desc-<desc>_allsubjects.tsv`
+
+One row per subject × brain region containing the merged per-region metrics used for downstream group analysis, with participant metadata from `participants.tsv` joined onto every row.
+
+### Merged Region-Properties Subject Table (`group/`)
+
+**Filename pattern:** `*_seg-<seg>_from-<template>_stain-<stain>_level-<N>_desc-<desc>_allsubjects_regionpropstats.tsv`
+
+One row per subject × brain region containing the per-stain region-property summary statistics carried forward from the participant-level `regionpropstats.tsv` files. These merged tables retain atlas `index` / `name` labels and add participant metadata columns, making them useful for downstream QC and custom analysis.
 
 ### Group Statistics Table (`group/`)
 

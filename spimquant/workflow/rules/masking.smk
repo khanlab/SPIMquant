@@ -22,7 +22,10 @@ rule pre_atropos:
     
     Downsamples and preprocesses the SPIM image for efficient tissue classification.
     Applies log transformation and intensity normalization to improve GMM convergence.
-    Also creates an initial foreground mask to restrict computation to brain regions.
+    Also creates a mask of non-zero voxels, so that zero padding (e.g. from partial
+    acquisitions) is excluded -- otherwise it forms a zero-variance class that
+    makes Atropos fail with a singular covariance. Intensities are not clipped
+    after stretching, for the same reason.
     """
     input:
         nii=bids(
@@ -69,7 +72,9 @@ rule pre_atropos:
     conda:
         "../envs/c3d.yaml"
     shell:
-        "c3d {input.nii} -resample {params.downsampling} -shift 1 -log -stretch 2% 98% 0 100 -clip 0 100 -o {output.downsampled} -scale 0 -shift 1 -o {output.mask}"
+        "c3d {input.nii} -resample {params.downsampling} -as RESAMPLED "
+        " -shift 1 -log -stretch 2% 98% 0 100 -o {output.downsampled} "
+        " -push RESAMPLED -thresh 0 0 0 1 -o {output.mask}"
 
 
 rule atropos_seg:
@@ -256,10 +261,12 @@ rule affine_transform_template_mask_to_subject:
 
 rule create_mask_from_gmm_and_prior:
     """Create final brain mask by combining GMM classes with template prior.
-    
+
     Combines tissue classification results from Atropos with the template-derived
-    brain mask to create a refined brain mask. Uses both intensity-based tissue
-    classification and spatial prior information for improved accuracy.
+    brain mask voxel-wise: the blurred template mask gives prior odds of brain,
+    and each GMM class contributes a likelihood ratio estimated from how often it
+    occurs in the confident brain core vs confident background. This does not
+    assume the background is the darkest class (e.g. agar-embedded samples).
     """
     input:
         tissue_dseg=bids(
@@ -279,6 +286,11 @@ rule create_mask_from_gmm_and_prior:
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    params:
+        prior_sigma_mm=config["masking"]["prior_sigma_mm"],
+        margin_mm=config["masking"]["prior_margin_mm"],
+        grow_mm=config["masking"]["grow_mm"],
+        grow_min_lr=config["masking"]["grow_min_lr"],
     output:
         mask=bids(
             root=root,

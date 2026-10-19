@@ -32,8 +32,21 @@ if __name__ == "__main__":
             znimg_ds = ZarrNii.from_file(snakemake.input.corrected)
 
         data_ds = znimg_ds.data.compute().ravel().astype(np.float32)
-        range_lo = float(np.percentile(data_ds, pct_lo))
-        range_hi = float(np.percentile(data_ds, pct_hi))
+
+        # Exclude exact-zero voxels (masked-out background) from the range
+        # estimate: when the brain mask is applied to the corrected image the
+        # zeros dominate the FOV, dragging the upper percentile down to tissue
+        # levels and cutting the bright tail out of the histogram entirely.
+        # Since range_lo then sits above zero, the background is also excluded
+        # from the histogram (and hence the Otsu thresholds) below.
+        data_nonzero = data_ds[data_ds > 0]
+        if data_nonzero.size == 0:
+            raise ValueError(
+                "Corrected image contains no nonzero voxels; cannot estimate "
+                "an intensity range for Otsu thresholding."
+            )
+        range_lo = float(np.percentile(data_nonzero, pct_lo))
+        range_hi = float(np.percentile(data_nonzero, pct_hi))
         print(
             f"  📊 percentile range [{pct_lo}%, {pct_hi}%]: [{range_lo:.3f}, {range_hi:.3f}]"
         )

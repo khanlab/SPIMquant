@@ -149,6 +149,33 @@ rule merge_into_segstats_tsv:
         "../scripts/merge_into_segstats_tsv.py"
 
 
+def get_coloc_reference_fieldfrac(wildcards):
+    """Fieldfrac table used only to recover ROI volume, so count becomes density.
+
+    Colocalization is cross-stain, so every stain this method segmented carries the
+    same ROI volume column and the first one is an arbitrary but stable choice.
+    Which stains a method segments depends on the method -- the plaque method covers
+    only its own stain -- so this cannot be resolved at parse time.
+    """
+    stains = stains_for_desc(wildcards.desc)
+    if not stains:
+        raise ValueError(
+            f"--seg_method {wildcards.desc} segments no stains, so colocalization "
+            f"statistics cannot be computed for it"
+        )
+    return bids(
+        root=root,
+        datatype="tabular",
+        seg="{seg}",
+        from_="{template}",
+        stain=stains[0],
+        level=config["registration_level"],
+        desc="{desc}",
+        suffix="fieldfracstats.tsv",
+        **inputs["spim"].wildcards,
+    ).format(**wildcards)
+
+
 rule merge_into_colocsegstats_tsv:
     """ also includes fieldfracstats.tsv to obtain the volume to turn count into density"""
     input:
@@ -170,17 +197,7 @@ rule merge_into_colocsegstats_tsv:
             suffix="coloccountstats.tsv",
             **inputs["spim"].wildcards,
         ),
-        fieldfrac_tsv=bids(
-            root=root,
-            datatype="tabular",
-            seg="{seg}",
-            from_="{template}",
-            stain=stains_for_seg[0],
-            level=config["registration_level"],
-            desc="{desc}",
-            suffix="fieldfracstats.tsv",
-            **inputs["spim"].wildcards,
-        ),
+        fieldfrac_tsv=get_coloc_reference_fieldfrac,
     params:
         columns_to_drop=["fieldfrac"],
     output:
@@ -203,44 +220,54 @@ rule merge_into_colocsegstats_tsv:
         "../scripts/merge_into_segstats_tsv.py"
 
 
-def get_coloc_tsv_input_kwargs():
-    """return coloc_tsv only if we have multiple stains to segment"""
-    if len(stains_for_seg) == 1:
-        return {}
-    else:
-        return {
-            "coloc_tsv": bids(
-                root=root,
-                datatype="tabular",
-                seg="{seg}",
-                from_="{template}",
-                desc="{desc}",
-                suffix="colocsegstats.tsv",
-                **inputs["spim"].wildcards,
-            )
-        }
+def get_coloc_tsv_input(wildcards):
+    """Colocalization table, only for methods that segment two or more stains.
+
+    Single-stain methods (the plaque ensemble) have nothing to colocalize, so this
+    resolves to an empty list and the merge falls back to the per-stain tables.
+    """
+    if wildcards.desc not in coloc_seg_methods:
+        return []
+    return bids(
+        root=root,
+        datatype="tabular",
+        seg="{seg}",
+        from_="{template}",
+        desc="{desc}",
+        suffix="colocsegstats.tsv",
+        **inputs["spim"].wildcards,
+    ).format(**wildcards)
+
+
+def get_indiv_segstats_tsvs(wildcards):
+    """Per-stain segstats tables for the stains this method actually segmented."""
+    paths = expand(
+        bids(
+            root=root,
+            datatype="tabular",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            level=config["registration_level"],
+            desc="{desc}",
+            suffix="segstats.tsv",
+            **inputs["spim"].wildcards,
+        ),
+        stain=stains_for_desc(wildcards.desc),
+        allow_missing=True,
+    )
+    # Input functions are handed to snakemake verbatim, so the remaining wildcards
+    # have to be substituted here rather than left for the usual resolution pass.
+    return [path.format(**wildcards) for path in paths]
 
 
 rule merge_indiv_and_coloc_segstats_tsv:
     input:
-        **get_coloc_tsv_input_kwargs(),
-        indiv_tsvs=expand(
-            bids(
-                root=root,
-                datatype="tabular",
-                seg="{seg}",
-                from_="{template}",
-                stain="{stain}",
-                level=config["registration_level"],
-                desc="{desc}",
-                suffix="segstats.tsv",
-                **inputs["spim"].wildcards,
-            ),
-            stain=stains_for_seg,
-            allow_missing=True,
-        ),
+        coloc_tsv=get_coloc_tsv_input,
+        indiv_tsvs=get_indiv_segstats_tsvs,
     params:
-        stains=stains_for_seg,
+        # must stay aligned with indiv_tsvs, which is per-method
+        stains=lambda wildcards: stains_for_desc(wildcards.desc),
     output:
         merged_tsv=bids(
             root=root,

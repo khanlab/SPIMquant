@@ -4,6 +4,7 @@ if __name__ == "__main__":
     from contextlib import ExitStack
     from zarrnii import ZarrNii
     from zarrnii.plugins import N4BiasFieldApply
+    from zarrnii_compat import drop_singleton_time
     import tempfile
 
     is_imaris = str(snakemake.input.spim).lower().endswith(".ims")
@@ -42,6 +43,8 @@ if __name__ == "__main__":
             znimg = ZarrNii.from_file(temp_dir)
         else:
             znimg = znimg_in
+
+        znimg = drop_singleton_time(znimg)
 
         znimg_lowres = ZarrNii.from_nifti(snakemake.input.biasfield, axes_order="ZYX")
         znimg_mask = ZarrNii.from_nifti(snakemake.input.mask, axes_order="ZYX")
