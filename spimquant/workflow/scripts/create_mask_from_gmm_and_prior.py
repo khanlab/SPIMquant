@@ -59,7 +59,9 @@ for i in tissue_labels:
     p_brain = ((tissue_vol[core] == i).sum() + 1) / (n_core + len(tissue_labels))
     p_bg = ((tissue_vol[outside] == i).sum() + 1) / (n_outside + len(tissue_labels))
     log_lr[i] = np.log(p_brain / p_bg)
-    print(f"i={i}, P(class|brain)={p_brain:.4f}, P(class|bg)={p_bg:.4f}, LR={np.exp(log_lr[i]):.3g}")
+    print(
+        f"i={i}, P(class|brain)={p_brain:.4f}, P(class|bg)={p_bg:.4f}, LR={np.exp(log_lr[i]):.3g}"
+    )
 
 # spatial prior: blurred template mask
 spatial_prior = ndimage.gaussian_filter(
@@ -80,9 +82,7 @@ if n_comp > 1:
 grow_iters = int(np.round(grow_mm / zooms.min()))
 if grow_iters > 0:
     candidates = out_mask | (log_lr[tissue_vol] >= np.log(grow_min_lr)) & classified
-    out_mask = ndimage.binary_dilation(
-        out_mask, iterations=grow_iters, mask=candidates
-    )
+    out_mask = ndimage.binary_dilation(out_mask, iterations=grow_iters, mask=candidates)
 
 out_mask = ndimage.binary_fill_holes(out_mask) & classified
 
