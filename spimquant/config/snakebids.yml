@@ -219,14 +219,25 @@ parse_args:
       Which LANTERN ensemble ``--seg_method lantern`` runs, as
       ``<name>[@<revision>]``.  ``<name>`` selects the Hugging Face repo
       ``apooladi/lantern-<name>``; every such repo is laid out like
-      ``lantern-ki3-abeta`` (``fold<k>/seg_model.pt`` ResEncLUNet
-      checkpoints for k in 0..plaque_n_folds-1), so any of them works here.
-      ``<revision>`` is a tag, branch or commit of that repo and defaults to
-      ``main`` when omitted; the default ensemble is pinned to the ``v2`` tag so
-      a new upload cannot silently change results.  Examples:
-      ``ki3-abeta@v2``, ``mapt_a-abeta``, ``ki3-abeta@main``.
+      ``lantern-abeta`` (``fold<k>/seg_model.pt`` ResEncLUNet checkpoints for
+      k in 0..plaque_n_folds-1), so any of them works here.  ``<revision>`` is
+      a tag, branch or commit of that repo and defaults to ``main`` when
+      omitted.
+
+      The default, ``abeta``, is trained on every hand-reviewed amyloid-beta
+      patch LANTERN has (178 patches from 68 mice, pooled over the lecanemab,
+      vaccine, ApoE, fibrinogen and MAPT/APOE cohorts) rather than on one
+      cohort, so it is the one to use unless a cohort-specific model is
+      wanted.  It is binary -- background / plaque, with no "annotated false
+      positive" class, so ``--label_filter`` does not apply to it -- and it
+      carries a bottleneck conditioner, which the inference script detects
+      from the checkpoints and feeds without further configuration.  Its repo
+      carries no tag, so this default tracks ``main``: pass an explicit
+      revision (``abeta@<commit>``) to pin a run against a later upload.
+      The cohort-specific siblings are ``ki3-abeta@v2`` (lecanemab, pinned)
+      and ``mapt_a-abeta`` / ``mapt_b-abeta`` / ``mapt_c-abeta``.
       (default: %(default)s)
-    default: ki3-abeta@v2
+    default: abeta
     type: str
 
   --min_size:
@@ -267,7 +278,7 @@ parse_args:
       - average
       - gaussian
       - max
-    default: average
+    default: gaussian
 
   --seg_hist_percentile_range:
     help: "Percentile range to use for histogram calculation in histogram-based segmentation methods (otsu+k{}i{} and gmm+n{}k{}). Specify 2 numbers for the low and high percentiles (default: %(default)s)"
@@ -668,7 +679,7 @@ plaque_tile: 128
 plaque_stride: 64
 # How overlapping tiles are combined: average, gaussian or max (see
 # --merge_mode, which sets this).
-plaque_merge_mode: average
+plaque_merge_mode: gaussian
 plaque_batch_size: 8
 plaque_chunk: 512
 # GPUs per inference job. The ensemble is replicated onto each card and dask

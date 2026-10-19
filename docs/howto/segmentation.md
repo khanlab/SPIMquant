@@ -83,7 +83,7 @@ stain_defaults:
 
 ### LANTERN plaques (`--seg_method lantern`)
 
-A 5-fold deep-learning ensemble for amyloid-beta plaques, downloaded from Hugging Face (`apooladi/lantern-<name>`, chosen with `--lantern_config`, default `ki3-abeta@v2`).  Unlike the methods above it:
+A 5-fold deep-learning ensemble for amyloid-beta plaques, downloaded from Hugging Face (`apooladi/lantern-<name>`, chosen with `--lantern_config`, default `abeta`).  Unlike the methods above it:
 
 - reads **raw** intensities, not the bias-field-corrected image;
 - runs on the grid nearest `plaque_iso_res` (~4 µm isotropic, the scale it was trained at); the mask at `segmentation_level` is that prediction upsampled;
@@ -92,11 +92,15 @@ A 5-fold deep-learning ensemble for amyloid-beta plaques, downloaded from Huggin
 
 Inference slides 128³ tiles over the volume at a stride of 64 (`plaque_tile`, `plaque_stride`), so each voxel is seen by up to 8 overlapping tiles.  Each of the 5 folds votes plaque / not plaque in every tile, and `--merge_mode` (config key `plaque_merge_mode`) decides how the tiles' vote counts are combined:
 
-- `average` (default) — the mean over the tiles.  A tile that saw the voxel at its own edge, with little surrounding context (e.g. at the brain surface), is outvoted by the others.
-- `gaussian` — a weighted mean in which each tile counts most near its centre and least near its edges.
+- `gaussian` (default) — a weighted mean in which each tile counts most near its centre and least near its edges.
+- `average` — the plain mean over the tiles.  A tile that saw the voxel at its own edge, with little surrounding context (e.g. at the brain surface), is outvoted by the others.
 - `max` — the highest count, as in the published LANTERN inference.  It recovers a plaque clipped at one tile's edge, but a single tile's confident mistake wins, which shows up as tiling artifacts.
 
 The workflow saves the fold-vote fraction (`probseg`) and thresholds it downstream, so the threshold can be changed without re-running inference.  A voxel is plaque when at least `plaque_vote_threshold` of `plaque_n_folds` folds vote for it (default 3 of 5).  With `average`/`gaussian` the votes are fractional, and the cut is the midpoint below the threshold: a mean of at least 2.5 votes for the default.
+
+**Which ensemble.** The default `abeta` is trained on every hand-reviewed amyloid-beta patch LANTERN has — 178 patches from 68 mice, pooled across the lecanemab, vaccine, ApoE, fibrinogen and MAPT/APOE cohorts — so it is the general-purpose choice.  The cohort-specific siblings (`ki3-abeta@v2` for lecanemab, `mapt_a-abeta` / `mapt_b-abeta` / `mapt_c-abeta`) remain available and run unchanged.  `abeta` is binary, so `--label_filter` does not apply to it; the MAPT ensembles are 3-class.  Its Hugging Face repo carries no tag, so the default tracks `main` — pass `abeta@<commit>` to pin a run against a later upload.
+
+**Bottleneck conditioner.** Per-tile clip-and-z-score normalisation deliberately removes each tile's absolute brightness, which also hides information a plaque segmenter can use.  `abeta` therefore takes two extra inputs per tile — the mean and standard deviation of its **raw** intensities, as `log1p` and standardised with per-fold constants stored in the checkpoints — projects them to 32 features and mixes them into the network's bottleneck.  Nothing needs configuring: the script reads whether an ensemble wants them from the checkpoints themselves, measures them on each tile before normalisation, and errors out rather than guessing if a checkpoint and its metadata disagree.  Ensembles without a conditioner are unaffected.
 
 Two optional filters run on the inference grid before upsampling:
 
@@ -106,12 +110,12 @@ Two optional filters run on the inference grid before upsampling:
 **Example:**
 
 ```bash
-pixi run spimquant /bids /output participant --seg_method gmm+n3k1 lantern --merge_mode average
+pixi run spimquant /bids /output participant --seg_method gmm+n3k1 lantern
 ```
 
 **When to use:** Amyloid-beta plaque segmentation where intensity-based thresholds struggle, e.g. with variable staining or bright non-plaque structure.  Passing both `gmm+n3k1` and `lantern` gives a like-for-like comparison on the same channel.
 
-**Limitations:** Amyloid-beta only, needs a GPU, and results are only as good as the match between your data and the ensemble's training data.  `plaque_vote_threshold` was calibrated for `max` merging; `average` was checked at the 2.5 cut above.  Keep `segmentation_level` at or finer than `plaque_level`.
+**Limitations:** Amyloid-beta only, needs a GPU, and results are only as good as the match between your data and the ensemble's training data.  `plaque_vote_threshold` was calibrated for `max` merging; the averaging modes (`gaussian`, the default, and `average`) take the midpoint cut described above rather than a separately recalibrated threshold.  Keep `segmentation_level` at or finer than `plaque_level`.
 
 ---
 
