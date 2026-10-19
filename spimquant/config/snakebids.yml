@@ -537,6 +537,10 @@ masking:
   gmm_min_k: 2
   gmm_bg_class: 1
   pre_atropos_downsampling: '50%'
+  prior_sigma_mm: 0.2 # blurring of the affine-warped template mask, to allow for registration error
+  prior_margin_mm: 0.3 # erode/dilate prior by this much to define confident brain/background for class likelihoods
+  grow_mm: 1.0 # max distance to grow the mask into strongly brain-like classes (0 to disable)
+  grow_min_lr: 20 # min brain:background likelihood ratio of a class for growing into it
 
 zarrnii_out_kwargs:
   storage_options: {}
