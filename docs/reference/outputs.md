@@ -141,6 +141,25 @@ A downsampled NIfTI image where each voxel value is the **number of detected obj
 
 ---
 
+### Vessel Mask (`vessels/`)
+
+**Filename pattern:** `*_stain-<stain>_level-<N>_desc-vesselfm_mask.ozx`
+
+Binary vessel mask (0/100) from VesselFM, computed on the vessel stain (the first of `--stains_for_vessels` present, CD31 by default). Each vessel mask also gets a signed distance map (`_dist.ozx`), a skeleton (`desc-vesselfm+skeleton_mask.ozx`), a skeleton graph (`+skeleton_{graph,nodes,edges}.parquet`) and field-fraction maps in subject and template space.
+
+With `--vessels_all_stains`, VesselFM also runs on the registration stain and every segmentation stain, giving one `desc-vesselfm` mask per stain. A majority-vote consensus is added on the vessel stain:
+
+**Filename pattern:** `*_stain-<vessel stain>_level-<N>_desc-vesselfm+vote_mask.ozx`
+
+A voxel is `100` when more than half of the per-stain masks mark it as vessel (two of three on a YoPro/Abeta/CD31 dataset; both, when there are only two stains). The vote mask gets the same derived files as the other masks (`desc-vesselfm+vote_dist.ozx`, `desc-vesselfm+vote+skeleton_*`, field fraction and QC).
+
+!!! note "The `+vote` output breaks the per-stain pattern"
+    Every other vessel file is computed from the channel named in its `stain-` entity. The `+vote` mask is the one exception: there is a **single** vote file per subject, combined from all the per-stain masks, and it is named after the vessel stain only because it shares that stain's voxel grid. So `stain-CD31` holds two masks, `desc-vesselfm` (from CD31) and `desc-vesselfm+vote` (from all stains). Anything that collects files by `stain-` alone should also filter on `desc`.
+
+The `vesseldist` column in the object tables is always sampled from the plain vessel-stain distance map (`desc-vesselfm`), never from the vote.
+
+---
+
 ### Region-Properties Statistics Table (`tabular/`)
 
 **Filename pattern:** `*_seg-<seg>_from-<template>_stain-<stain>_level-<N>_desc-<desc>_regionpropstats.tsv`
