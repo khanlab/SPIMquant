@@ -175,8 +175,7 @@ defaults to `0`.
 
 Set `use_brain_mask: true` instead of coordinates and `size` to derive the box
 extent from the selected template's brain mask. Each `name` must be unique;
-it is used as the output's `desc` label. See the [Imaris Crops guide](../howto/imaris_crops.md)
-for related crop workflows.
+it is used as the output's `desc` label.
 
 ### Cloud Storage
 
