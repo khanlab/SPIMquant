@@ -136,6 +136,48 @@ pixi run spimquant ... --registration_stain YOPRO
 pixi run spimquant ... --segmentation_method threshold
 ```
 
+### Custom Template-Space Crops
+
+Use `--bbox_config` to provide a YAML file describing custom bounding boxes. During
+a participant-level run, SPIMquant writes one NIfTI crop per bounding box, subject,
+and available stain, resampled into the selected template space.
+
+```bash
+pixi run spimquant /path/to/bids /path/to/output participant \
+  --bbox_config /path/to/bounding_boxes.yml \
+  --cores all
+```
+
+The YAML file must contain a `bounding_boxes` list. For example:
+
+```yaml
+bounding_boxes:
+  - name: entorhinal
+    x: 5.2
+    y: -2.3
+    z: -1.8
+    units: mm
+    size: [256, 256, 256]
+    resolution_um: 20
+    input_level: 0
+  - name: wholebrain
+    use_brain_mask: true
+    resolution_um: 100
+    input_level: 2
+```
+
+For explicit boxes, `x`, `y`, and `z` specify the box centre in template-space
+RAS coordinates (Right, Anterior, Superior); `units` may be `mm` (default) or
+`um`. `size` gives voxel counts along the R, A, and S axes, respectively, and
+defaults to `[256, 256, 256]`. `resolution_um` sets the isotropic output voxel
+size in microns. `input_level` selects the input OME-Zarr pyramid level and
+defaults to `0`.
+
+Set `use_brain_mask: true` instead of coordinates and `size` to derive the box
+extent from the selected template's brain mask. Each `name` must be unique;
+it is used as the output's `desc` label. See the [Imaris Crops guide](../howto/imaris_crops.md)
+for related crop workflows.
+
 ### Cloud Storage
 
 ```bash
