@@ -38,6 +38,47 @@ rule run_vesselfm:
         "../scripts/vesselfm.py"
 
 
+rule vote_vessel_masks:
+    """Majority vote of the per-stain VesselFM masks.
+
+    Writes 100 where more than half of the source masks are foreground, else 0,
+    keeping the 0/100 mask convention so the downstream vessel rules read it like
+    any other mask. All sources come from one acquisition at one level, so they
+    share a voxel grid. The output carries the vessel stain's name, and the method
+    is marked in desc (e.g. ``vesselfm+vote``).
+    """
+    input:
+        masks=expand(
+            bids_oz_in(
+                root=root,
+                datatype="vessels",
+                stain="{src}",
+                level="{level}",
+                desc=config["vessel_seg_method"],
+                suffix="mask.{ext}",
+                **inputs["spim"].wildcards,
+            ),
+            src=vesselfm_stains,
+            allow_missing=True,
+        ),
+    output:
+        mask=bids_oz_out(
+            root=root,
+            datatype="vessels",
+            stain="{stain}",
+            level="{level}",
+            desc=vessel_vote_desc,
+            suffix="mask.{ext}",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 64 if config["dask_scheduler"] == "distributed" else 32
+    resources:
+        mem_mb=128000,
+        runtime=180,
+    script:
+        "../scripts/vote_vessel_masks.py"
+
+
 rule signed_distance_transform:
     """Compute signed distance transform from a binary mask.
 
@@ -53,7 +94,7 @@ rule signed_distance_transform:
             datatype="vessels",
             stain="{stain}",
             level="{level}",
-            desc="vesselfm",
+            desc="{desc}",
             suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),

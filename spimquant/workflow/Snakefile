@@ -230,6 +230,36 @@ else:
     if stain_for_vessels is None:
         do_vessels = False
 
+# Stains VesselFM runs on. By default only the vessel stain; with
+# --vessels_all_stains also the registration stain and every segmentation stain.
+vesselfm_stains = [stain_for_vessels] if do_vessels else []
+if do_vessels and config["vessels_all_stains"]:
+    vesselfm_stains = list(
+        dict.fromkeys([stain_for_reg, *stains_for_seg, stain_for_vessels])
+    )
+
+# A consensus needs at least two masks to vote on. The vote mask keeps the vessel
+# stain's name and marks the method in desc, so stain- always names a real channel.
+do_vessel_vote = len(vesselfm_stains) > 1
+vessel_vote_desc = f"{config['vessel_seg_method']}+vote"
+
+
+def vessel_expand(paths, **wildcards):
+    """Expand `paths` over every (desc, stain) vessel-mask pair.
+
+    One pair per VesselFM stain with the plain method desc, plus the majority-vote
+    mask on the vessel stain when `do_vessel_vote`. Mirrors `seg_expand`. Without
+    --vessels_all_stains this returns exactly the single vessel-stain expansion.
+    """
+    out = inputs["spim"].expand(
+        paths, desc=[config["vessel_seg_method"]], stain=vesselfm_stains, **wildcards
+    )
+    if do_vessel_vote:
+        out += inputs["spim"].expand(
+            paths, desc=[vessel_vote_desc], stain=[stain_for_vessels], **wildcards
+        )
+    return out
+
 
 # The LANTERN plaque ensemble is opt-in via --seg_method, but it is trained on
 # amyloid-beta only, so it is resolved to a single stain the same way vessels are
@@ -657,7 +687,7 @@ rule all_register:
 
 rule all_vessels:
     input:
-        inputs["spim"].expand(
+        vessel_expand(
             bids(
                 root=root,
                 datatype="vessels",
@@ -670,10 +700,8 @@ rule all_vessels:
             ),
             level=config["registration_level"],
             template=config["template"],
-            desc=config["vessel_seg_method"],
-            stain=stain_for_vessels,
         ),
-        inputs["spim"].expand(
+        vessel_expand(
             bids(
                 root=root,
                 datatype="vessels",
@@ -684,10 +712,8 @@ rule all_vessels:
                 **inputs["spim"].wildcards,
             ),
             level=config["segmentation_level"],
-            desc=config["vessel_seg_method"],
-            stain=stain_for_vessels,
         ),
-        inputs["spim"].expand(
+        vessel_expand(
             bids(
                 root=root,
                 datatype="vessels",
@@ -698,10 +724,8 @@ rule all_vessels:
                 **inputs["spim"].wildcards,
             ),
             level=config["segmentation_level"],
-            desc=config["vessel_seg_method"],
-            stain=stain_for_vessels,
         ),
-        inputs["spim"].expand(
+        vessel_expand(
             bids(
                 root=root,
                 datatype="vessels",
@@ -712,8 +736,6 @@ rule all_vessels:
                 **inputs["spim"].wildcards,
             ),
             level=config["segmentation_level"],
-            desc=config["vessel_seg_method"],
-            stain=stain_for_vessels,
         ),
 
 
@@ -1104,7 +1126,7 @@ rule all_qc:
         if do_seg
         else [],
         # Vessel overview figures
-        inputs["spim"].expand(
+        vessel_expand(
             bids(
                 root=root,
                 datatype="qc",
@@ -1113,13 +1135,11 @@ rule all_qc:
                 suffix="vesselslices.png",
                 **inputs["spim"].wildcards,
             ),
-            stain=stain_for_vessels,
-            desc=config["vessel_seg_method"],
         )
         if do_vessels
         else [],
         # Vessel ROI zoom montage (per atlas)
-        inputs["spim"].expand(
+        vessel_expand(
             bids(
                 root=root,
                 datatype="qc",
@@ -1132,13 +1152,11 @@ rule all_qc:
             ),
             seg=atlas_segs,
             template=config["template"],
-            stain=stain_for_vessels,
-            desc=config["vessel_seg_method"],
         )
         if do_vessels
         else [],
         # Vessel ROI zoom montage - no mask overlay
-        inputs["spim"].expand(
+        vessel_expand(
             bids(
                 root=root,
                 datatype="qc",
@@ -1151,8 +1169,6 @@ rule all_qc:
             ),
             seg=atlas_segs,
             template=config["template"],
-            stain=stain_for_vessels,
-            desc=config["vessel_seg_method"],
         )
         if do_vessels
         else [],

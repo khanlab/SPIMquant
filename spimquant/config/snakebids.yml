@@ -149,6 +149,11 @@ parse_args:
     action: store_true
     default: False
 
+  --vessels_all_stains:
+    help: "Also run vessel segmentation on the registration stain and every segmentation stain, and add a majority-vote consensus mask (desc '<vessel_seg_method>+vote') on the vessel stain. Each extra stain adds a GPU job (default: %(default)s)"
+    action: store_true
+    default: False
+
   --correction_method:
     help: "Method to use for intensity non-uniformity correction, prior to performing segmentation (default: %(default)s)"
     choices: 
