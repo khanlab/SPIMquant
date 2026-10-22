@@ -142,15 +142,30 @@ pytorch-gpu = "*"
 [tool.pixi.feature.dev.dependencies]
 # snakefmt 0.10 fails on python 3.13
 python = ">=3.11,<3.13"
-black = ">=24.0.0,<25.0.0"
-isort = ">=5.10.1,<6.0.0"
-snakefmt = ">=0.10.0,<0.11.0"
-pytest = "*"
+ruff = ">=0.16.9,<0.17"
+pytest = ">=9,<10"
+snakefmt = ">=2,<3"
 jupyterlab = ">=4.4.7,<5"
 
+
 [tool.pixi.feature.dev.tasks]
-quality_check = "isort --profile black spimquant/*.py -c && black spimquant --check && snakefmt spimquant --check"
-quality_fix = "isort --profile black spimquant/*.py && black spimquant && snakefmt spimquant"
+quality_check = "ruff check spimquant && snakefmt spimquant --check"
+quality_fix = "ruff check --fix spimquant && ruff format spimquant && snakefmt spimquant"
+
+
+# ----------------------------------------------------------------------
+# Ruff
+# ----------------------------------------------------------------------
+
+[tool.ruff]
+builtins = ["snakemake"]
+
+[tool.ruff.lint]
+ignore = ["SIM115"] # for logging redirect
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-single-line = false
 
 [tool.pixi.feature.vis.dependencies]
 napari = ">=0.6.6,<0.7"
