@@ -143,7 +143,7 @@ jobs:
 - Install additional dependencies: `pip install zarrnii ngff-zarr dask`
 
 *Issue: "No storage provider found"*
-- Install storage plugins: `pip install snakemake-storage-plugin-http`
+- Install storage plugins: `pip install snakemake-storage-plugin-cached-http`
 
 *Issue: Rules not classified correctly*
 - Check the rule names in your Snakefile
