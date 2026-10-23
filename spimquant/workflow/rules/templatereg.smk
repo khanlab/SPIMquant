@@ -267,7 +267,16 @@ rule deform_reg:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        xfm_ras=rules.affine_reg.output.xfm_ras,
+        xfm_ras=bids(
+            root=root,
+            datatype="xfm",
+            from_="subject",
+            to="{template}",
+            type_="ras",
+            desc="affine",
+            suffix="xfm.txt",
+            **inputs["spim"].wildcards,
+        ),
     output:
         warp=temp(
             bids(
@@ -380,98 +389,16 @@ rule compose_subject_to_template_warp:
         " -r {input.subject} -t {input.invwarp} [{input.xfm_itk},1]"
 
 
-rule resample_labels_to_zarr:
-    """TODO: add required OME metadata"""
-    input:
-        dseg=bids(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
-        label_tsv=bids(root=root, template="{template}", desc="LR", suffix="dseg.tsv"),
-        xfm_ras=rules.affine_reg.output.xfm_ras,
-        zarr_zip=spim_input,
-    output:
-        zarr=bids_oz_out(
-            root=root,
-            datatype="micr",
-            desc="resampled",
-            from_="{template}",
-            suffix="dseg.{ext}",
-            **inputs["spim"].wildcards,
-        ),
-    log:
-        bids(
-            root="logs",
-            datatype="resample_labels_to_zarr",
-            space="{template}",
-            suffix="log.txt",
-            **inputs["spim"].wildcards,
-        ),
-    threads: 10
-    resources:
-        mem_mb=16000,
-        disk_mb=2097152,
-        runtime=15,
-    params:
-        level_to_resample_to=0,
-        max_downsampling_layers=config["ome_zarr"]["max_downsampling_layers"],
-        label_name="dseg",
-        scaling_method="nearest",
-    script:
-        "../scripts/resample_labels_to_zarr.py"
-
-
-rule affine_zarr_to_template_nii:
-    input:
-        ome_zarr=spim_input,
-        xfm_ras=rules.affine_reg.output.xfm_ras,
-        ref_nii=get_template_for_reg,
-    output:
-        nii=bids(
-            root=root,
-            datatype="micr",
-            desc="affine",
-            space="{template}",
-            stain="{stain}",
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-    threads: 32
-    resources:
-        mem_mb=16000,
-        runtime=15,
-    params:
-        ref_opts={"chunks": (1, 50, 50, 50)},
-    script:
-        "../scripts/affine_to_template_nii.py"
-
-
-rule affine_zarr_to_template_ome_zarr:
-    input:
-        ome_zarr=spim_input,
-        xfm_ras=rules.affine_reg.output.xfm_ras,
-        ref_nii=get_template_for_reg,
-    output:
-        ome_zarr=bids_oz_out(
-            root=root,
-            datatype="micr",
-            desc="affine",
-            space="{template}",
-            stain="{stain}",
-            suffix="spim.{ext}",
-            **inputs["spim"].wildcards,
-        ),
-    threads: 32
-    resources:
-        mem_mb=16000,
-        disk_mb=2097152,
-        runtime=15,
-    params:
-        ref_opts={"chunks": (1, 50, 50, 50)},
-    script:
-        "../scripts/affine_to_template_ome_zarr.py"
-
-
 rule deform_zarr_to_template_nii:
     input:
-        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
+        xfm_composite=bids(
+            root=root,
+            datatype="xfm",
+            from_="subject",
+            to="{template}",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
         ref_nii=get_template_for_reg,
     output:
         nii=bids(
@@ -500,7 +427,14 @@ rule deform_zarr_to_template_nii:
 rule deform_to_template_nii_zoomed:
     input:
         ome_zarr=spim_input,
-        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
+        xfm_composite=bids(
+            root=root,
+            datatype="xfm",
+            from_="subject",
+            to="{template}",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
         ref_nii=get_template_for_reg,
     output:
         nii=bids(
@@ -544,7 +478,14 @@ rule deform_spim_nii_to_template_nii:
             **inputs["spim"].wildcards,
         ),
         ref=rules.import_template_anat.output.anat,
-        xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
+        xfm_composite=bids(
+            root=root,
+            datatype="xfm",
+            from_="subject",
+            to="{template}",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
     output:
         spim=bids(
             root=root,
@@ -585,7 +526,14 @@ rule deform_template_dseg_to_subject_nii:
             **inputs["spim"].wildcards,
         ),
         dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
-        xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
+        xfm_composite_inv=bids(
+            root=root,
+            datatype="xfm",
+            from_="{template}",
+            to="subject",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
     output:
         dseg=bids(
             root=root,
@@ -640,7 +588,14 @@ rule registration_qc_report:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        warp=rules.compose_subject_to_template_warp.output.xfm_composite,
+        warp=bids(
+            root=root,
+            datatype="xfm",
+            from_="subject",
+            to="{template}",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
         dseg=lambda wildcards: bids(
             root=root,
             template=wildcards.template,

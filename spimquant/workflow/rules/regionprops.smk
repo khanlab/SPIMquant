@@ -45,7 +45,14 @@ rule transform_regionprops_to_template:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-        xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
+        xfm_composite_inv=bids(
+            root=root,
+            datatype="xfm",
+            from_="{template}",
+            to="subject",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
     output:
         regionprops_transformed_parquet=temp(
             bids(
