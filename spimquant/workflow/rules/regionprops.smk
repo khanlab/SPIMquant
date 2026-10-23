@@ -10,11 +10,6 @@ rule compute_filtered_regionprops:
             suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
-    params:
-        region_filters=lambda wildcards: config["stain_defaults"][
-            "regionprop_filters"
-        ].get(wildcards.stain, config["regionprop_filters"]),
-        output_properties=config["regionprop_outputs"],
     output:
         regionprops_parquet=temp(
             bids(
@@ -30,6 +25,11 @@ rule compute_filtered_regionprops:
     resources:
         mem_mb=500000,
         runtime=360,
+    params:
+        region_filters=lambda wildcards: config["stain_defaults"][
+            "regionprop_filters"
+        ].get(wildcards.stain, config["regionprop_filters"]),
+        output_properties=config["regionprop_outputs"],
     script:
         "../scripts/compute_filtered_regionprops.py"
 
@@ -46,8 +46,6 @@ rule transform_regionprops_to_template:
             **inputs["spim"].wildcards,
         ),
         xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
-    params:
-        coord_column_names=config["coord_column_names"],
     output:
         regionprops_transformed_parquet=temp(
             bids(
@@ -64,6 +62,8 @@ rule transform_regionprops_to_template:
     resources:
         mem_mb=16000,
         runtime=15,
+    params:
+        coord_column_names=config["coord_column_names"],
     script:
         "../scripts/transform_regionprops_to_template.py"
 
@@ -94,9 +94,6 @@ rule aggregate_regionprops_across_stains:
     """Aggregate transformed regionprops across stains."""
     input:
         regionprops_parquets=get_regionprops_parquets_to_aggregate,
-    params:
-        # must stay aligned with regionprops_parquets, which is per-method
-        stains=lambda wildcards: stains_for_desc(wildcards.desc),
     output:
         regionprops_aggregated_parquet=bids(
             root=root,
@@ -110,13 +107,16 @@ rule aggregate_regionprops_across_stains:
     resources:
         mem_mb=1500,
         runtime=15,
+    params:
+        # must stay aligned with regionprops_parquets, which is per-method
+        stains=lambda wildcards: stains_for_desc(wildcards.desc),
     script:
         "../scripts/aggregate_regionprops_across_stains.py"
 
 
 rule colocalize_regionprops:
     """Perform colocalization analysis across channel pairs.
-    
+
     Optional parameters (with defaults in script):
         - search_radius_multiplier: 1.0 (controls search distance)
         - overlap_threshold: 0.0 (minimum overlap to record)
@@ -130,11 +130,6 @@ rule colocalize_regionprops:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-    params:
-        coord_column_names=config["coord_column_names"],
-        template_coord_column_names=config["template_coord_column_names"],
-        search_radius_multiplier=1.0,
-        overlap_threshold=0.0,
     output:
         coloc_parquet=bids(
             root=root,
@@ -148,6 +143,11 @@ rule colocalize_regionprops:
     resources:
         mem_mb=64000,
         runtime=180,
+    params:
+        coord_column_names=config["coord_column_names"],
+        template_coord_column_names=config["template_coord_column_names"],
+        search_radius_multiplier=1.0,
+        overlap_threshold=0.0,
     script:
         "../scripts/compute_colocalization.py"
 
@@ -176,10 +176,6 @@ rule sample_at_vessel_sdt:
             suffix="dist.{ext}",
             **inputs["spim"].wildcards,
         ),
-    params:
-        coord_column_names=config["coord_column_names"],
-        col_name="vesseldist",
-        zarrnii_kwargs=zarrnii_in_kwargs,
     output:
         parquet=bids(
             root=root,
@@ -194,5 +190,9 @@ rule sample_at_vessel_sdt:
     resources:
         mem_mb=32000,
         runtime=360,
+    params:
+        coord_column_names=config["coord_column_names"],
+        col_name="vesseldist",
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/sample_at_points.py"

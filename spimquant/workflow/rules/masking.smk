@@ -2,7 +2,7 @@
 Brain masking workflow for SPIMquant.
 
 This module creates brain tissue masks using Gaussian mixture modeling (Atropos)
-combined with template-derived priors. The masks separate brain tissue from 
+combined with template-derived priors. The masks separate brain tissue from
 background and are used in subsequent intensity correction and registration steps.
 
 Key workflow stages:
@@ -19,7 +19,7 @@ tissue classification results, improving mask quality especially at brain bounda
 
 rule pre_atropos:
     """Prepare image for Atropos segmentation.
-    
+
     Downsamples and preprocesses the SPIM image for efficient tissue classification.
     Applies log transformation and intensity normalization to improve GMM convergence.
     Also creates a mask of non-zero voxels, so that zero padding (e.g. from partial
@@ -35,12 +35,6 @@ rule pre_atropos:
             level="{level}",
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
-        ),
-    params:
-        downsampling=(
-            "10%"
-            if config["sloppy"]
-            else config["masking"]["pre_atropos_downsampling"]
         ),
     output:
         downsampled=temp(
@@ -65,12 +59,18 @@ rule pre_atropos:
                 **inputs["spim"].wildcards,
             ),
         ),
+    conda:
+        "../envs/c3d.yaml"
     threads: 1
     resources:
         mem_mb=3000,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
+    params:
+        downsampling=(
+            "10%"
+            if config["sloppy"]
+            else config["masking"]["pre_atropos_downsampling"]
+        ),
     shell:
         "c3d {input.nii} -resample {params.downsampling} -as RESAMPLED "
         " -shift 1 -log -stretch 2% 98% 0 100 -o {output.downsampled} "
@@ -90,11 +90,6 @@ rule atropos_seg:
     input:
         downsampled=rules.pre_atropos.output.downsampled,
         mask=rules.pre_atropos.output.mask,
-    params:
-        mrf_smoothing=0.3,
-        mrf_radius="2x2x2",
-        init_k=config["masking"]["gmm_init_k"],
-        min_k=config["masking"]["gmm_min_k"],
     output:
         dseg=temp(
             bids(
@@ -126,6 +121,11 @@ rule atropos_seg:
     resources:
         mem_mb=32000,
         runtime=45,
+    params:
+        mrf_smoothing=0.3,
+        mrf_radius="2x2x2",
+        init_k=config["masking"]["gmm_init_k"],
+        min_k=config["masking"]["gmm_min_k"],
     script:
         "../scripts/atropos_seg.py"
 
@@ -153,19 +153,19 @@ rule post_atropos:
                 **inputs["spim"].wildcards,
             ),
         ),
+    conda:
+        "../envs/c3d.yaml"
     threads: 1
     resources:
         mem_mb=3000,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
     shell:
         "c3d -interpolation NearestNeighbor {input.ref} {input.dseg} -reslice-identity -o {output.dseg}"
 
 
 rule init_affine_reg:
     """Perform initial affine registration for obtaining mask priors.
-    
+
     Registers subject SPIM to template using 12-DOF affine transformation.
     This initial alignment enables template brain masks to be warped to subject
     space as priors for brain masking, even before final registration.
@@ -180,8 +180,6 @@ rule init_affine_reg:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    params:
-        iters="10x0x0" if config["sloppy"] else "100x100",
     output:
         xfm_ras=temp(
             bids(
@@ -217,6 +215,8 @@ rule init_affine_reg:
     resources:
         mem_mb=16000,
         runtime=15,
+    params:
+        iters="10x0x0" if config["sloppy"] else "100x100",
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
@@ -286,11 +286,6 @@ rule create_mask_from_gmm_and_prior:
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    params:
-        prior_sigma_mm=config["masking"]["prior_sigma_mm"],
-        margin_mm=config["masking"]["prior_margin_mm"],
-        grow_mm=config["masking"]["grow_mm"],
-        grow_min_lr=config["masking"]["grow_min_lr"],
     output:
         mask=bids(
             root=root,
@@ -307,6 +302,11 @@ rule create_mask_from_gmm_and_prior:
     resources:
         mem_mb=4000,
         runtime=15,
+    params:
+        prior_sigma_mm=config["masking"]["prior_sigma_mm"],
+        margin_mm=config["masking"]["prior_margin_mm"],
+        grow_mm=config["masking"]["grow_mm"],
+        grow_min_lr=config["masking"]["grow_min_lr"],
     script:
         "../scripts/create_mask_from_gmm_and_prior.py"
 
@@ -322,8 +322,6 @@ rule create_mask_from_gmm:
             suffix="dseg.nii",
             **inputs["spim"].wildcards,
         ),
-    params:
-        bg_label=config["masking"]["gmm_bg_class"],
     output:
         mask=bids(
             root=root,
@@ -334,12 +332,14 @@ rule create_mask_from_gmm:
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    conda:
+        "../envs/c3d.yaml"
     threads: 1
     resources:
         mem_mb=4000,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
+    params:
+        bg_label=config["masking"]["gmm_bg_class"],
     shell:
         "c3d {input} -threshold {params.bg_label} {params.bg_label} 0 1 -o {output}"
 
@@ -378,11 +378,11 @@ rule reslice_mask_to_level:
         ),
     wildcard_constraints:
         level=config["correction_level"],
+    conda:
+        "../envs/c3d.yaml"
     threads: 1
     resources:
         mem_mb=3000,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
     shell:
         "c3d -interpolation NearestNeighbor {input.ref} {input.mask} -reslice-identity -o {output.mask}"

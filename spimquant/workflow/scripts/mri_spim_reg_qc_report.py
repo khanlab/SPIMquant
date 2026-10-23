@@ -1,8 +1,8 @@
 """
 MRI to SPIM Registration Quality Control Report Generator
 
-This script generates an HTML report with comprehensive quality control 
-visualizations for MRI to SPIM registration, including comparisons of SPIM 
+This script generates an HTML report with comprehensive quality control
+visualizations for MRI to SPIM registration, including comparisons of SPIM
 and transformed MRI images, overlay visualizations, and warp field visualizations.
 """
 

@@ -66,7 +66,7 @@ rule gaussian_biasfield:
 
 rule n4_pre_quant:
     """Apply N4 bias field correction to SPIM images.
-    
+
     Uses ANTs N4BiasFieldCorrection to correct intensity inhomogeneities within
     the brain mask. Outputs both the corrected image and the estimated bias field.
     """
@@ -107,16 +107,16 @@ rule n4_pre_quant:
             suffix="biasfield.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    params:
-        iters=config["correction_n4_iters"],
-        spline_spacing=config["correction_n4_spline_spacing"],
-        shrink_level=1,  #shrink_level 1 since we use the correction_level to shrink
+    conda:
+        "../envs/ants.yaml"
     threads: 16
     resources:
         mem_mb=32000,
         runtime=15,
-    conda:
-        "../envs/ants.yaml"
+    params:
+        iters=config["correction_n4_iters"],
+        spline_spacing=config["correction_n4_spline_spacing"],
+        shrink_level=1,  #shrink_level 1 since we use the correction_level to shrink
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "N4BiasFieldCorrection -i {input.nii}"
@@ -180,16 +180,16 @@ rule n4_pre_quant_tune:
                 **inputs["spim"].wildcards,
             )
         ),
-    params:
-        iters="{n4_iters}",
-        spline_spacing="{n4_spline}",
-        shrink_level=1,
+    conda:
+        "../envs/ants.yaml"
     threads: 16
     resources:
         mem_mb=32000,
         runtime=15,
-    conda:
-        "../envs/ants.yaml"
+    params:
+        iters="{n4_iters}",
+        spline_spacing="{n4_spline}",
+        shrink_level=1,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "N4BiasFieldCorrection -i {input.nii}"
@@ -252,11 +252,11 @@ rule n4_biasfield:
 rule multiotsu:
     """Perform multi-Otsu thresholding for segmentation.
 
-Applies multi-level Otsu thresholding to identify intensity classes in the
-corrected image. The k parameter determines number of classes, and the i parameter
-selects which threshold index to use for creating the binary mask. Outputs a
-histogram visualization of the threshold selection.
-"""
+    Applies multi-level Otsu thresholding to identify intensity classes in the
+    corrected image. The k parameter determines number of classes, and the i parameter
+    selects which threshold index to use for creating the binary mask. Outputs a
+    histogram visualization of the threshold selection.
+    """
     input:
         corrected=bids_oz_in(
             root=work,
@@ -303,19 +303,19 @@ histogram visualization of the threshold selection.
 rule gmmthresh:
     """Perform GMM tail-thresholding for segmentation.
 
-Fits a Gaussian Mixture Model with n components to the log1p-transformed
-global intensity histogram.  Components are sorted by mean intensity
-ascending.  The threshold is defined as:
+    Fits a Gaussian Mixture Model with n components to the log1p-transformed
+    global intensity histogram.  Components are sorted by mean intensity
+    ascending.  The threshold is defined as:
 
-    threshold = expm1(mean_n + k * sigma_n)
+        threshold = expm1(mean_n + k * sigma_n)
 
-where mean_n and sigma_n are the mean and standard deviation of the
-highest-intensity component (nth component).  Outputs a QC figure
-showing the histogram with GMM fits and threshold lines.
+    where mean_n and sigma_n are the mean and standard deviation of the
+    highest-intensity component (nth component).  Outputs a QC figure
+    showing the histogram with GMM fits and threshold lines.
 
-Method string format: gmm+n{n}k{k}, where k may use 'p' as decimal
-separator (e.g. gmm+n2k2p5 → k=2.5).
-"""
+    Method string format: gmm+n{n}k{k}, where k may use 'p' as decimal
+    separator (e.g. gmm+n2k2p5 → k=2.5).
+    """
     input:
         corrected=bids_oz_in(
             root=work,
@@ -362,10 +362,10 @@ separator (e.g. gmm+n2k2p5 → k=2.5).
 rule threshold:
     """Apply simple intensity threshold for segmentation.
 
-Creates binary mask by thresholding the corrected image at a specified intensity value.
-Simpler alternative to multi-Otsu for cases where the threshold is known a priori.
+    Creates binary mask by thresholding the corrected image at a specified intensity value.
+    Simpler alternative to multi-Otsu for cases where the threshold is known a priori.
 
-"""
+    """
     input:
         corrected=bids_oz_in(
             root=work,
@@ -399,10 +399,10 @@ Simpler alternative to multi-Otsu for cases where the threshold is known a prior
 rule clean_segmentation:
     """Clean segmentation mask by removing edge artifacts and small objects.
 
-Performs connected component analysis to identify and exclude objects that
-extend too close to the image boundaries (likely artifacts). Creates both
-a cleaned mask and an exclusion mask showing what was removed.
-"""
+    Performs connected component analysis to identify and exclude objects that
+    extend too close to the image boundaries (likely artifacts). Creates both
+    a cleaned mask and an exclusion mask showing what was removed.
+    """
     input:
         mask=bids_oz_in(
             root=root,

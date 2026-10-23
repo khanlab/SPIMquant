@@ -21,7 +21,7 @@ both NIfTI and OME-Zarr formats for different resolution levels.
 
 rule n4:
     """Apply N4 bias field correction to SPIM images.
-    
+
     Uses ANTs N4BiasFieldCorrection to correct intensity inhomogeneities within
     the brain mask. Outputs both the corrected image and the estimated bias field.
     """
@@ -62,12 +62,12 @@ rule n4:
             suffix="biasfield.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    conda:
+        "../envs/ants.yaml"
     threads: 1
     resources:
         mem_mb=32000,
         runtime=15,
-    conda:
-        "../envs/ants.yaml"
     shell:
         "N4BiasFieldCorrection -i {input.nii}"
         " -o [{output.corrected},{output.biasfield}]"
@@ -77,7 +77,7 @@ rule n4:
 
 rule apply_mask_to_corrected:
     """Apply brain mask to N4-corrected image.
-    
+
     Multiplies the N4-corrected image with the brain mask to extract brain tissue,
     removing background and non-brain regions.
     """
@@ -110,19 +110,19 @@ rule apply_mask_to_corrected:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    conda:
+        "../envs/c3d.yaml"
     threads: 1
     resources:
         mem_mb=32000,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
     shell:
         "c3d {input.corrected} {input.mask} -multiply -o {output.masked}"
 
 
 rule crop_template:
     """Crop template to hemisphere for registration.
-    
+
     Allows registration to left or right hemisphere only by cropping the template
     to the specified hemisphere region.
     """
@@ -135,19 +135,19 @@ rule crop_template:
             desc="{hemisphere}crop",
             suffix="{suffix}.nii.gz",
         ),
-    params:
-        hemisphere="{hemisphere}",
     threads: 1
     resources:
         mem_mb=1500,
         runtime=15,
+    params:
+        hemisphere="{hemisphere}",
     script:
         "../scripts/crop_template.py"
 
 
 rule affine_reg:
     """Perform affine registration to template using greedy.
-    
+
     Registers subject SPIM to template space using 12-DOF affine transformation.
     Uses normalized mutual information (NMI) as the similarity metric and outputs
     both the transformation matrix and warped image for QC.
@@ -163,8 +163,6 @@ rule affine_reg:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    params:
-        iters="10x0x0" if config["sloppy"] else "100x100",
     output:
         xfm_ras=temp(
             bids(
@@ -201,6 +199,8 @@ rule affine_reg:
     resources:
         mem_mb=16000,
         runtime=15,
+    params:
+        iters="10x0x0" if config["sloppy"] else "100x100",
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
@@ -211,7 +211,7 @@ rule affine_reg:
 
 rule convert_ras_to_itk:
     """Convert RAS affine transform to ITK format.
-    
+
     Converts greedy's RAS affine format to ITK format for compatibility with
     ANTs tools (used for applying transforms).
     """
@@ -239,19 +239,19 @@ rule convert_ras_to_itk:
                 **inputs["spim"].wildcards,
             )
         ),
+    conda:
+        "../envs/c3d.yaml"
     threads: 1
     resources:
         mem_mb=1500,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
     shell:
         "c3d_affine_tool {input.xfm_ras} -oitk {output.xfm_itk}"
 
 
 rule deform_reg:
     """Perform deformable registration to template using greedy.
-    
+
     Refines affine registration with deformable (non-linear) registration.
     Outputs forward warp, inverse warp, and warped image. The deformation field
     captures local anatomical variations not handled by affine transformation.
@@ -268,11 +268,6 @@ rule deform_reg:
             **inputs["spim"].wildcards,
         ),
         xfm_ras=rules.affine_reg.output.xfm_ras,
-    params:
-        iters="10x0x0" if config["sloppy"] else "100x50",
-        metric="NMI",
-        sigma1="4vox",
-        sigma2="2vox",
     output:
         warp=temp(
             bids(
@@ -317,6 +312,11 @@ rule deform_reg:
     resources:
         mem_mb=16000,
         runtime=5 if config["sloppy"] else 30,
+    params:
+        iters="10x0x0" if config["sloppy"] else "100x50",
+        metric="NMI",
+        sigma1="4vox",
+        sigma2="2vox",
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -it {input.xfm_ras} -m {params.metric} "
@@ -365,12 +365,12 @@ rule compose_subject_to_template_warp:
             suffix="xfm.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    conda:
+        "../envs/ants.yaml"
     threads: 4
     resources:
         mem_mb=8000,
         runtime=15,
-    conda:
-        "../envs/ants.yaml"
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -o [{output.xfm_composite},1] "
@@ -387,11 +387,6 @@ rule resample_labels_to_zarr:
         label_tsv=bids(root=root, template="{template}", desc="LR", suffix="dseg.tsv"),
         xfm_ras=rules.affine_reg.output.xfm_ras,
         zarr_zip=spim_input,
-    params:
-        level_to_resample_to=0,
-        max_downsampling_layers=config["ome_zarr"]["max_downsampling_layers"],
-        label_name="dseg",
-        scaling_method="nearest",
     output:
         zarr=bids_oz_out(
             root=root,
@@ -401,11 +396,6 @@ rule resample_labels_to_zarr:
             suffix="dseg.{ext}",
             **inputs["spim"].wildcards,
         ),
-    threads: 10
-    resources:
-        mem_mb=16000,
-        disk_mb=2097152,
-        runtime=15,
     log:
         bids(
             root="logs",
@@ -414,6 +404,16 @@ rule resample_labels_to_zarr:
             suffix="log.txt",
             **inputs["spim"].wildcards,
         ),
+    threads: 10
+    resources:
+        mem_mb=16000,
+        disk_mb=2097152,
+        runtime=15,
+    params:
+        level_to_resample_to=0,
+        max_downsampling_layers=config["ome_zarr"]["max_downsampling_layers"],
+        label_name="dseg",
+        scaling_method="nearest",
     script:
         "../scripts/resample_labels_to_zarr.py"
 
@@ -423,8 +423,6 @@ rule affine_zarr_to_template_nii:
         ome_zarr=spim_input,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         ref_nii=get_template_for_reg,
-    params:
-        ref_opts={"chunks": (1, 50, 50, 50)},
     output:
         nii=bids(
             root=root,
@@ -439,6 +437,8 @@ rule affine_zarr_to_template_nii:
     resources:
         mem_mb=16000,
         runtime=15,
+    params:
+        ref_opts={"chunks": (1, 50, 50, 50)},
     script:
         "../scripts/affine_to_template_nii.py"
 
@@ -448,8 +448,6 @@ rule affine_zarr_to_template_ome_zarr:
         ome_zarr=spim_input,
         xfm_ras=rules.affine_reg.output.xfm_ras,
         ref_nii=get_template_for_reg,
-    params:
-        ref_opts={"chunks": (1, 50, 50, 50)},
     output:
         ome_zarr=bids_oz_out(
             root=root,
@@ -465,6 +463,8 @@ rule affine_zarr_to_template_ome_zarr:
         mem_mb=16000,
         disk_mb=2097152,
         runtime=15,
+    params:
+        ref_opts={"chunks": (1, 50, 50, 50)},
     script:
         "../scripts/affine_to_template_ome_zarr.py"
 
@@ -473,12 +473,6 @@ rule deform_zarr_to_template_nii:
     input:
         xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
         ref_nii=get_template_for_reg,
-    params:
-        ome_zarr=spim_input,
-        flo_opts={"level": 2},  #downsampling level to use (TODO: set this automatically based on ref resolution?)
-        do_downsample=True,  #whether to perform further downsampling before transforming
-        downsample_opts={"along_z": 4},  #could also be determined automatically 
-        ref_opts={"chunks": (1, 100, 100, 100)},
     output:
         nii=bids(
             root=root,
@@ -493,6 +487,12 @@ rule deform_zarr_to_template_nii:
     resources:
         mem_mb=16000,
         runtime=15,
+    params:
+        ome_zarr=spim_input,
+        flo_opts={"level": 2},  #downsampling level to use (TODO: set this automatically based on ref resolution?)
+        do_downsample=True,  #whether to perform further downsampling before transforming
+        downsample_opts={"along_z": 4},  #could also be determined automatically 
+        ref_opts={"chunks": (1, 100, 100, 100)},
     script:
         "../scripts/deform_to_template_nii.py"
 
@@ -502,18 +502,6 @@ rule deform_to_template_nii_zoomed:
         ome_zarr=spim_input,
         xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
         ref_nii=get_template_for_reg,
-    params:
-        flo_opts={},  #any additional flo znimg options
-        do_downsample=True,  #whether to perform further downsampling before transforming
-        downsample_opts={"along_z": 4},  #could also be determined automatically 
-        ref_opts=lambda wildcards: {
-            "chunks": (1, 50, 50, 50),
-            "zooms": (
-                float(wildcards.res) / 1000,
-                float(wildcards.res) / 1000,
-                float(wildcards.res) / 1000,
-            ),
-        },
     output:
         nii=bids(
             root=root,
@@ -529,6 +517,18 @@ rule deform_to_template_nii_zoomed:
     resources:
         mem_mb=16000,
         runtime=15,
+    params:
+        flo_opts={},  #any additional flo znimg options
+        do_downsample=True,  #whether to perform further downsampling before transforming
+        downsample_opts={"along_z": 4},  #could also be determined automatically 
+        ref_opts=lambda wildcards: {
+            "chunks": (1, 50, 50, 50),
+            "zooms": (
+                float(wildcards.res) / 1000,
+                float(wildcards.res) / 1000,
+                float(wildcards.res) / 1000,
+            ),
+        },
     script:
         "../scripts/deform_to_template_nii.py"
 
@@ -555,12 +555,12 @@ rule deform_spim_nii_to_template_nii:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    conda:
+        "../envs/ants.yaml"
     threads: 32
     resources:
         mem_mb=32000,
         runtime=30,
-    conda:
-        "../envs/ants.yaml"
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n Linear "
@@ -570,7 +570,7 @@ rule deform_spim_nii_to_template_nii:
 
 rule deform_template_dseg_to_subject_nii:
     """Transform template atlas labels to subject space.
-    
+
     Applies composite inverse warp to bring template segmentation labels into
     subject space. Uses nearest-neighbor interpolation to preserve discrete label
     values. This enables atlas-based analysis in native subject space.
@@ -596,74 +596,17 @@ rule deform_template_dseg_to_subject_nii:
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    conda:
+        "../envs/ants.yaml"
     threads: 32
     resources:
         mem_mb=32000,
         runtime=30,
-    conda:
-        "../envs/ants.yaml"
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n NearestNeighbor "
         " -i {input.dseg} -o {output.dseg} "
         " -r {input.ref} -t {input.xfm_composite_inv}"
-
-
-""" this rule needs updating - use atlas/seg wildcard and proper script
-rule deform_transform_labels_to_subj:
-    input:
-        ref_ome_zarr=spim_input,
-        xfm_ras=rules.affine_reg.output.xfm_ras,
-        invwarp_nii=rules.deform_reg.output.invwarp,
-        flo_nii=bids(
-            root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"
-        ),
-    output:
-        zarr=directory(
-            bids(
-                root=work,
-                datatype="micr",
-                desc="deform",
-                space="subject",
-                suffix="dseg.zarr",
-                **inputs["spim"].wildcards,
-            )
-        ),
-    threads: 32
-    script:  #TODO this script doesn't exist??
-        "../scripts/deform_transform_channel_to_template_nii.py"
-
-rule transform_labels_to_zoomed_template:
-    input:
-        dseg=bids(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
-        ref=bids(
-            root=root,
-            datatype="micr",
-            desc="deform",
-            space="{template}",
-            stain=stain_for_reg,
-            res="{res}um",
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-    output:
-        dseg=bids(
-            root=root,
-            datatype="micr",
-            space="{template}",
-            res="{res}um",
-            suffix="dseg.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-    threads: 32
-    conda:
-        "../envs/ants.yaml"
-    shell:
-        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
-        "antsApplyTransforms -d 3 -v -n NearestNeighbor "
-        " -i {input.dseg} -o {output.dseg} "
-        " -r {input.ref} "
-"""
 
 
 rule registration_qc_report:
