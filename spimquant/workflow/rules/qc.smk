@@ -45,11 +45,11 @@ _use_n4_bg = config.get("qc_roi_zoom_bg_n4", False) and (
 rule qc_intensity_histogram:
     """Per-channel intensity histogram QC.
 
-Reads the raw OME-Zarr at the registration downsampling level and
-generates a four-panel figure: linear histogram, log-scale histogram,
-cumulative distribution, and a summary-statistics panel including the
-saturation/clip fraction (percentage of voxels at the maximum bin).
-"""
+    Reads the raw OME-Zarr at the registration downsampling level and
+    generates a four-panel figure: linear histogram, log-scale histogram,
+    cumulative distribution, and a summary-statistics panel including the
+    saturation/clip fraction (percentage of voxels at the maximum bin).
+    """
     input:
         spim=spim_input,
     output:
@@ -76,12 +76,12 @@ saturation/clip fraction (percentage of voxels at the maximum bin).
 rule qc_segmentation_overview:
     """Segmentation overview slice montage QC.
 
-Loads SPIM data via ZarrNii (``downsample_near_isotropic=True``) and the
-raw binary segmentation mask at the corresponding pyramid level.  Displays
-sample slices in axial, coronal, and sagittal orientations with the mask
-overlay, and a max-intensity projection column for each orientation.
-Aspect ratio is corrected using voxel spacings from ``ZarrNii.get_zooms()``.
-"""
+    Loads SPIM data via ZarrNii (``downsample_near_isotropic=True``) and the
+    raw binary segmentation mask at the corresponding pyramid level.  Displays
+    sample slices in axial, coronal, and sagittal orientations with the mask
+    overlay, and a max-intensity projection column for each orientation.
+    Aspect ratio is corrected using voxel spacings from ``ZarrNii.get_zooms()``.
+    """
     input:
         spim=spim_input,
         mask=bids_oz_in(
@@ -117,10 +117,10 @@ Aspect ratio is corrected using voxel spacings from ``ZarrNii.get_zooms()``.
 rule qc_vessels_overview:
     """Vessel segmentation overview slice montage QC.
 
-Identical visualisation to ``qc_segmentation_overview`` but applied to the
-vessel binary mask.  Loads data via ZarrNii with ``downsample_near_isotropic``
-for isotropic display and physically correct aspect ratio.
-"""
+    Identical visualisation to ``qc_segmentation_overview`` but applied to the
+    vessel binary mask.  Loads data via ZarrNii with ``downsample_near_isotropic``
+    for isotropic display and physically correct aspect ratio.
+    """
     input:
         spim=spim_input,
         mask=bids_oz_in(
@@ -156,15 +156,15 @@ for isotropic display and physically correct aspect ratio.
 rule qc_segmentation_roi_zoom:
     """Zoomed ROI montage QC for segmentation.
 
-Crops the SPIM image and segmentation field-fraction mask to each atlas
-region's bounding box (in subject space) and displays the best axial slice
-with the field-fraction overlay.  Aspect ratio is corrected from NIfTI
-voxel dimensions.  Provides detail-level visualisation of segmentation
-quality within individual brain regions.
+    Crops the SPIM image and segmentation field-fraction mask to each atlas
+    region's bounding box (in subject space) and displays the best axial slice
+    with the field-fraction overlay.  Aspect ratio is corrected from NIfTI
+    voxel dimensions.  Provides detail-level visualisation of segmentation
+    quality within individual brain regions.
 
-Two PNGs are produced: one with the mask overlay (``roimontage.png``) and
-one without (``desc-{desc}nomask_roimontage.png``).
-"""
+    Two PNGs are produced: one with the mask overlay (``roimontage.png``) and
+    one without (``desc-{desc}nomask_roimontage.png``).
+    """
     input:
         **(
             {
@@ -245,13 +245,13 @@ one without (``desc-{desc}nomask_roimontage.png``).
 rule qc_vessels_roi_zoom:
     """Zoomed ROI montage QC for vessel segmentation.
 
-Identical to ``qc_segmentation_roi_zoom`` but applied to the vessel
-binary mask.  Uses ZarrNii to load full-resolution data and
-ZarrNiiAtlas for atlas-based ROI cropping.
+    Identical to ``qc_segmentation_roi_zoom`` but applied to the vessel
+    binary mask.  Uses ZarrNii to load full-resolution data and
+    ZarrNiiAtlas for atlas-based ROI cropping.
 
-Two PNGs are produced: one with the mask overlay (``vesselroimontage.png``)
-and one without (``desc-{desc}nomask_vesselroimontage.png``).
-"""
+    Two PNGs are produced: one with the mask overlay (``vesselroimontage.png``)
+    and one without (``desc-{desc}nomask_vesselroimontage.png``).
+    """
     input:
         **(
             {
@@ -332,10 +332,10 @@ and one without (``desc-{desc}nomask_vesselroimontage.png``).
 rule qc_zprofile:
     """Z-profile QC: per-slice signal intensity and segmented fraction.
 
-Plots the mean signal intensity (with ±1 SD band) and mean field fraction
-across Z-slices.  Reveals depth-dependent artefacts such as striping,
-illumination fall-off, or uneven staining.
-"""
+    Plots the mean signal intensity (with ±1 SD band) and mean field fraction
+    across Z-slices.  Reveals depth-dependent artefacts such as striping,
+    illumination fall-off, or uneven staining.
+    """
     input:
         spim=bids(
             root=root,
@@ -374,11 +374,11 @@ illumination fall-off, or uneven staining.
 rule qc_objectstats:
     """Object-level statistics QC.
 
-Loads the aggregated region-properties parquet (all stains combined) and
-plots volume distribution, log-volume distribution, equivalent spherical
-radius distribution, and a summary-statistics panel for the stain
-specified by the ``{stain}`` wildcard.
-"""
+    Loads the aggregated region-properties parquet (all stains combined) and
+    plots volume distribution, log-volume distribution, equivalent spherical
+    radius distribution, and a summary-statistics panel for the stain
+    specified by the ``{stain}`` wildcard.
+    """
     input:
         regionprops=bids(
             root=root,
@@ -408,16 +408,16 @@ specified by the ``{stain}`` wildcard.
 rule qc_otsu_threshold_sweep:
     """Threshold sweep QC HTML report for multiotsu segmentation.
 
-Sweeps over a range of threshold values (spanning the configurable
-percentile range of the bias-field corrected image) and generates 2D
-crops at evenly-spaced positions in the image, one figure per threshold
-value.  The otsu histogram PNG produced by the ``multiotsu`` rule is
-embedded at the top of the report.  The resulting HTML report can be
-visually assessed to select the optimal threshold before running the full
-segmentation pipeline.
+    Sweeps over a range of threshold values (spanning the configurable
+    percentile range of the bias-field corrected image) and generates 2D
+    crops at evenly-spaced positions in the image, one figure per threshold
+    value.  The otsu histogram PNG produced by the ``multiotsu`` rule is
+    embedded at the top of the report.  The resulting HTML report can be
+    visually assessed to select the optimal threshold before running the full
+    segmentation pipeline.
 
-Only applicable when ``seg_method`` uses the ``otsu+k{}i{}`` pattern.
-"""
+    Only applicable when ``seg_method`` uses the ``otsu+k{}i{}`` pattern.
+    """
     input:
         corrected=bids_oz_in(
             root=work,
@@ -463,17 +463,17 @@ Only applicable when ``seg_method`` uses the ``otsu+k{}i{}`` pattern.
 rule qc_n4_tune_png:
     """Per-combination N4 tuning QC figure.
 
-Generates a multi-panel PNG for a single (spline_spacing, iters) parameter
-combination showing:
-  - Middle axial, coronal, and sagittal slices for the uncorrected image,
-    the estimated bias field, and the corrected image (side by side).
-  - Intensity histograms for all three images with median and 99th-percentile
-    markers.
-  - Summary statistics table (min, max, mean, percentiles) for each image.
+    Generates a multi-panel PNG for a single (spline_spacing, iters) parameter
+    combination showing:
+      - Middle axial, coronal, and sagittal slices for the uncorrected image,
+        the estimated bias field, and the corrected image (side by side).
+      - Intensity histograms for all three images with median and 99th-percentile
+        markers.
+      - Summary statistics table (min, max, mean, percentiles) for each image.
 
-One PNG is produced per subject / stain / parameter combination and written
-to the ``qc`` datatype directory.
-"""
+    One PNG is produced per subject / stain / parameter combination and written
+    to the ``qc`` datatype directory.
+    """
     input:
         nii=bids(
             root=root,
@@ -524,17 +524,17 @@ to the ``qc`` datatype directory.
 rule qc_n4_tune_report:
     """HTML report aggregating N4 parameter tuning QC figures.
 
-Collects the per-combination PNG figures produced by ``qc_n4_tune_png`` and
-assembles them into a self-contained scrollable HTML report.  The report
-contains:
-  - A header summary table comparing key statistics (min, max, p50, p99,
-    bias field coefficient of variation) for every (spline_spacing, iters)
-    combination in the grid.
-  - One detailed row per combination with the embedded PNG and a per-image
-    statistics sub-table.
+    Collects the per-combination PNG figures produced by ``qc_n4_tune_png`` and
+    assembles them into a self-contained scrollable HTML report.  The report
+    contains:
+      - A header summary table comparing key statistics (min, max, p50, p99,
+        bias field coefficient of variation) for every (spline_spacing, iters)
+        combination in the grid.
+      - One detailed row per combination with the embedded PNG and a per-image
+        statistics sub-table.
 
-Written to the ``qc`` datatype directory for each subject / stain.
-"""
+    Written to the ``qc`` datatype directory for each subject / stain.
+    """
     input:
         nii=bids(
             root=root,
@@ -607,10 +607,10 @@ Written to the ``qc`` datatype directory for each subject / stain.
 rule qc_roi_summary:
     """Per-ROI summary QC: top-region bar plots for a single subject.
 
-Reads the merged segmentation-statistics TSV (all stains) and the atlas
-label table, then produces horizontal bar charts of the top brain regions
-ranked by field fraction, object count, and density for every stain.
-"""
+    Reads the merged segmentation-statistics TSV (all stains) and the atlas
+    label table, then produces horizontal bar charts of the top brain regions
+    ranked by field fraction, object count, and density for every stain.
+    """
     input:
         segstats=bids(
             root=root,
@@ -648,17 +648,17 @@ ranked by field fraction, object count, and density for every stain.
 rule qc_stain_instance_gif:
     """Instance-centred animated GIF QC for a single stain.
 
-For every detected instance of the given stain, crops the raw SPIM data
-(all channels side-by-side) centred on the instance position, overlays a
-hollow circle whose diameter represents the equivalent spherical diameter,
-and annotates with position, atlas ROI, and radius.  Two GIFs are produced:
-one with a randomised frame order and one sorted by ascending equivalent
-radius.
+    For every detected instance of the given stain, crops the raw SPIM data
+    (all channels side-by-side) centred on the instance position, overlays a
+    hollow circle whose diameter represents the equivalent spherical diameter,
+    and annotates with position, atlas ROI, and radius.  Two GIFs are produced:
+    one with a randomised frame order and one sorted by ascending equivalent
+    radius.
 
-Inputs are the aggregated (all-stain) regionprops parquet in template space
-(which retains subject-space ``pos_x/y/z`` columns) together with the atlas
-parcellation for atlas-label lookup.
-"""
+    Inputs are the aggregated (all-stain) regionprops parquet in template space
+    (which retains subject-space ``pos_x/y/z`` columns) together with the atlas
+    parcellation for atlas-label lookup.
+    """
     input:
         spim=spim_input,
         instance_parquet=bids(
@@ -724,11 +724,11 @@ parcellation for atlas-label lookup.
 rule qc_coloc_instance_gif:
     """Instance-centred animated GIF QC for colocalized object pairs.
 
-Identical to ``qc_stain_instance_gif`` but operates on the colocalization
-parquet: each frame shows the SPIM crop centred on the midpoint between the
-two colocalized objects (subject-space ``pos_coloc_x/y/z``), with a circle
-marker drawn at the average radius of the pair.
-"""
+    Identical to ``qc_stain_instance_gif`` but operates on the colocalization
+    parquet: each frame shows the SPIM crop centred on the midpoint between the
+    two colocalized objects (subject-space ``pos_coloc_x/y/z``), with a circle
+    marker drawn at the average radius of the pair.
+    """
     input:
         spim=spim_input,
         instance_parquet=bids(

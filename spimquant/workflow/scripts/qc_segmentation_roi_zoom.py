@@ -1,9 +1,9 @@
 """ROI-cropped segmentation montage QC.
 
 For each brain region in the atlas parcellation (resampled to subject space),
-crops the SPIM image and the segmentation mask to a fixed 2D bounding box 
-at the region centroid.   This provides a detail-level view of segmentation 
-quality within individual brain regions, complementing the whole-brain 
+crops the SPIM image and the segmentation mask to a fixed 2D bounding box
+at the region centroid.   This provides a detail-level view of segmentation
+quality within individual brain regions, complementing the whole-brain
 overview in ``qc_segmentation_overview``.
 
 

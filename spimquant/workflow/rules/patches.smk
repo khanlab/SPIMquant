@@ -42,14 +42,6 @@ rule create_spim_patches:
             **inputs["spim"].wildcards,
         ),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    params:
-        patch_size=config.get("patch_size", [256, 256, 256]),
-        n_patches=config.get("n_patches_per_label", 10),
-        patch_labels=config.get("patch_labels", None),
-        hires_level=0,  #input is the raw data
-        seed=config.get("patch_seed", 42),
-        zarrnii_kwargs=zarrnii_in_kwargs,
-        patch_uint8=not config.get("no_patch_uint8", False),
     output:
         patches_dir=directory(
             bids(
@@ -68,6 +60,14 @@ rule create_spim_patches:
     resources:
         mem_mb=32000,
         runtime=30,
+    params:
+        patch_size=config.get("patch_size", [256, 256, 256]),
+        n_patches=config.get("n_patches_per_label", 10),
+        patch_labels=config.get("patch_labels", None),
+        hires_level=0,  #input is the raw data
+        seed=config.get("patch_seed", 42),
+        zarrnii_kwargs=zarrnii_in_kwargs,
+        patch_uint8=not config.get("no_patch_uint8", False),
     script:
         "../scripts/create_patches.py"
 
@@ -99,13 +99,6 @@ rule create_mask_patches:
             **inputs["spim"].wildcards,
         ),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    params:
-        patch_size=config.get("patch_size", [256, 256, 256]),
-        n_patches=config.get("n_patches_per_label", 10),
-        patch_labels=config.get("patch_labels", None),
-        seed=config.get("patch_seed", 42),
-        hires_level=config["segmentation_level"],
-        patch_uint8=not config.get("no_patch_uint8", False),
     output:
         patches_dir=directory(
             bids(
@@ -124,6 +117,13 @@ rule create_mask_patches:
     resources:
         mem_mb=32000,
         runtime=30,
+    params:
+        patch_size=config.get("patch_size", [256, 256, 256]),
+        n_patches=config.get("n_patches_per_label", 10),
+        patch_labels=config.get("patch_labels", None),
+        seed=config.get("patch_seed", 42),
+        hires_level=config["segmentation_level"],
+        patch_uint8=not config.get("no_patch_uint8", False),
     script:
         "../scripts/create_patches.py"
 
@@ -155,13 +155,6 @@ rule create_corrected_spim_patches:
             **inputs["spim"].wildcards,
         ),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    params:
-        patch_size=config.get("patch_size", [256, 256, 256]),
-        n_patches=config.get("n_patches_per_label", 10),
-        patch_labels=config.get("patch_labels", None),
-        seed=config.get("patch_seed", 42),
-        hires_level=config["segmentation_level"],
-        patch_uint8=not config.get("no_patch_uint8", False),
     output:
         patches_dir=directory(
             bids(
@@ -180,6 +173,13 @@ rule create_corrected_spim_patches:
     resources:
         mem_mb=32000,
         runtime=30,
+    params:
+        patch_size=config.get("patch_size", [256, 256, 256]),
+        n_patches=config.get("n_patches_per_label", 10),
+        patch_labels=config.get("patch_labels", None),
+        seed=config.get("patch_seed", 42),
+        hires_level=config["segmentation_level"],
+        patch_uint8=not config.get("no_patch_uint8", False),
     script:
         "../scripts/create_patches.py"
 
@@ -203,10 +203,6 @@ rule create_imaris_crops:
             **inputs["spim"].wildcards,
         ),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    params:
-        crop_labels=config.get("crop_labels", None),
-        hires_level=0,  # input is the raw data
-        zarrnii_kwargs=zarrnii_in_kwargs,
     output:
         crops_dir=directory(
             bids(
@@ -224,6 +220,10 @@ rule create_imaris_crops:
     resources:
         mem_mb=32000,
         runtime=60,
+    params:
+        crop_labels=config.get("crop_labels", None),
+        hires_level=0,  # input is the raw data
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/create_imaris_crops.py"
 
@@ -263,9 +263,6 @@ rule extract_bbox_crop:
             if bbox_cfgs_by_name.get(wildcards.desc, {}).get("use_brain_mask", False)
             else []
         ),
-    params:
-        bbox_config=lambda wildcards: bbox_cfgs_by_name[wildcards.desc],
-        zarrnii_kwargs=zarrnii_in_kwargs,
     output:
         nii=bids(
             root=root,
@@ -282,5 +279,8 @@ rule extract_bbox_crop:
     resources:
         mem_mb=32000,
         runtime=60,
+    params:
+        bbox_config=lambda wildcards: bbox_cfgs_by_name[wildcards.desc],
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/extract_bbox_in_template_space.py"

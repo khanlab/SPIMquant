@@ -10,9 +10,6 @@ rule counts_per_voxel:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-    params:
-        coord_column_names=config["coord_column_names"],
-        zarrnii_kwargs=zarrnii_in_kwargs,
     output:
         counts_nii=bids(
             root=root,
@@ -27,6 +24,9 @@ rule counts_per_voxel:
     resources:
         mem_mb=15000,
         runtime=20,
+    params:
+        coord_column_names=config["coord_column_names"],
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/counts_per_voxel.py"
 
@@ -44,8 +44,6 @@ rule counts_per_voxel_template:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
-    params:
-        coord_column_names=config["template_coord_column_names"],
     output:
         counts_nii=bids(
             root=root,
@@ -60,6 +58,8 @@ rule counts_per_voxel_template:
     resources:
         mem_mb=64000,
         runtime=30,
+    params:
+        coord_column_names=config["template_coord_column_names"],
     script:
         "../scripts/counts_per_voxel_template.py"
 
@@ -77,8 +77,6 @@ rule coloc_per_voxel_template:
             suffix="coloc.parquet",
             **inputs["spim"].wildcards,
         ),
-    params:
-        coord_column_names=config["template_coloc_coord_column_names"],
     output:
         counts_nii=bids(
             root=root,
@@ -92,5 +90,7 @@ rule coloc_per_voxel_template:
     resources:
         mem_mb=64000,
         runtime=30,
+    params:
+        coord_column_names=config["template_coloc_coord_column_names"],
     script:
         "../scripts/coloc_per_voxel_template.py"

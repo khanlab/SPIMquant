@@ -1,6 +1,6 @@
 
 rule map_segstats_tsv_dseg_to_template_nii:
-    """ uses generic script that paints regions with column data (e.g. use this to make density heat-maps)"""
+    """uses generic script that paints regions with column data (e.g. use this to make density heat-maps)"""
     input:
         tsv=bids(
             root=root,
@@ -13,9 +13,6 @@ rule map_segstats_tsv_dseg_to_template_nii:
         ),
         dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    params:
-        label_column="index",
-        feature_column="{suffix}",
     output:
         nii=bids(
             root=root,
@@ -30,12 +27,15 @@ rule map_segstats_tsv_dseg_to_template_nii:
     resources:
         mem_mb=32000,
         runtime=30,
+    params:
+        label_column="index",
+        feature_column="{suffix}",
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
 
 rule map_segstats_tsv_dseg_to_subject_nii:
-    """ uses generic script that paints regions with column data (e.g. use this to make density heat-maps)"""
+    """uses generic script that paints regions with column data (e.g. use this to make density heat-maps)"""
     input:
         tsv=bids(
             root=root,
@@ -56,9 +56,6 @@ rule map_segstats_tsv_dseg_to_subject_nii:
             **inputs["spim"].wildcards,
         ),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    params:
-        label_column="index",
-        feature_column="{suffix}",
     output:
         nii=bids(
             root=root,
@@ -74,6 +71,9 @@ rule map_segstats_tsv_dseg_to_subject_nii:
     resources:
         mem_mb=32000,
         runtime=30,
+    params:
+        label_column="index",
+        feature_column="{suffix}",
     script:
         "../scripts/map_tsv_dseg_to_nii.py"
 
@@ -109,12 +109,12 @@ rule deform_fieldfrac_nii_to_template_nii:
             suffix="fieldfrac.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    conda:
+        "../envs/ants.yaml"
     threads: 32
     resources:
         mem_mb=32000,
         runtime=30,
-    conda:
-        "../envs/ants.yaml"
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n Linear "

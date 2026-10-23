@@ -17,7 +17,7 @@ Key workflow stages:
 9. Registration QC report generation
 
 This workflow is optional and used when both MRI and SPIM data are available
-for the same subject. 
+for the same subject.
 """
 
 
@@ -61,7 +61,7 @@ def get_mri_by_index(wildcards):
 
 rule n4_mri_individual:
     """Apply N4 bias field correction to individual T2w MRI images.
-    
+
     This rule only runs when multiple MRI images are present for a subject.
     Uses ANTs N4BiasFieldCorrection to correct intensity inhomogeneities in
     each MRI image before registration and averaging.
@@ -70,24 +70,20 @@ rule n4_mri_individual:
         nii=inputs["mri"].path,
     output:
         nii=temp(bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards)),
+    conda:
+        "../envs/ants.yaml"
     threads: 1
     resources:
         mem_mb=1500,
         runtime=15,
-    conda:
-        "../envs/ants.yaml"
     shell:
-        "N4BiasFieldCorrection -i {input.nii}"
-        " -o {output.nii}"
-        " -d 3 -v "
+        "N4BiasFieldCorrection -i {input.nii}" " -o {output.nii}" " -d 3 -v "
 
 
 rule resample_mri_ref:
     """apply resampling by mri_resample_percent"""
     input:
         nii=bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards),
-    params:
-        resample_percent=config["mri_resample_percent"],
     output:
         nii=temp(
             bids(
@@ -97,19 +93,21 @@ rule resample_mri_ref:
                 **inputs["mri"].wildcards,
             )
         ),
+    conda:
+        "../envs/c3d.yaml"
     threads: 1
     resources:
         mem_mb=1500,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
+    params:
+        resample_percent=config["mri_resample_percent"],
     shell:
         "c3d {input} -interpolation Cubic -resample {params.resample_percent}% -o {output}"
 
 
 rule register_mri_to_first:
     """Rigidly register each MRI to the first MRI using greedy.
-    
+
     This aligns multiple MRI acquisitions to enable super-resolved averaging.
     Only runs when multiple MRI images are present.
     """
@@ -170,9 +168,9 @@ rule resample_mri_to_first:
                 **inputs.subj_wildcards,
             )
         ),
-    threads: 8
     conda:
         "../envs/c3d.yaml"
+    threads: 8
     resources:
         mem_mb=8000,
         runtime=10,
@@ -182,7 +180,7 @@ rule resample_mri_to_first:
 
 rule average_mri:
     """Average all registered and N4-corrected MRI images.
-    
+
     Optionally upsamples images during transformation for super-resolution.
     Produces a final preprocessed MRI with desc-preproc.
     """
@@ -207,24 +205,24 @@ rule average_mri:
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
+    conda:
+        "../envs/c3d.yaml"
     threads: 8
     resources:
         mem_mb=1500,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
     shell:
         "c3d {input.resampled_images} -accum -add -endaccum -o {output.nii}"
 
 
 rule rigid_nlin_reg_mri_to_template:
-    """Initial unmasked MRI to unmasked template MRI using rigid + 
+    """Initial unmasked MRI to unmasked template MRI using rigid +
     deformable registration.
-    
+
     Performs initial rigid (6 DOF) alignment followed by deformable
     registration to align non-brain-masked  MRI with similarly
     non-brain-masked MRI, so that the template brain mask can be
-    propagated. Note: this step could be replaced by a ML-based 
+    propagated. Note: this step could be replaced by a ML-based
     brain-masking if a suitable model is found/trained.
     """
     input:
@@ -236,11 +234,6 @@ rule rigid_nlin_reg_mri_to_template:
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
-    params:
-        iters="{iters}",  #"100x50x50",
-        metric="NCC {radius}",  #3x3x3",
-        sigma1="{gradsigma}vox",  #3
-        sigma2="{warpsigma}vox",  #2
     output:
         xfm_ras=temp(
             bids(
@@ -304,6 +297,11 @@ rule rigid_nlin_reg_mri_to_template:
     resources:
         mem_mb=1500,
         runtime=15,
+    params:
+        iters="{iters}",  #"100x50x50",
+        metric="NCC {radius}",  #3x3x3",
+        sigma1="{gradsigma}vox",  #3
+        sigma2="{warpsigma}vox",  #2
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
         " -a -dof 6 -ia-image-centers -m {params.metric} -o {output.xfm_ras} && "
@@ -432,21 +430,21 @@ rule apply_mri_brain_mask:
             suffix=f"{mri_suffix}.nii.gz",
             **inputs.subj_wildcards,
         ),
+    conda:
+        "../envs/c3d.yaml"
     threads: 1
     resources:
         mem_mb=1500,
         runtime=15,
-    conda:
-        "../envs/c3d.yaml"
     shell:
         "c3d {input.nii} {input.mask} -multiply -o {output.nii}"
 
 
 rule affine_nlin_reg_mri_to_spim:
     """Register MRI to SPIM space using affine + deformable registration.
-    
+
     Performs initial affine (6 or 12 DOF) alignment followed by deformable
-    registration to align brain-masked MRI with SPIM data. 
+    registration to align brain-masked MRI with SPIM data.
     """
     input:
         mri=bids(
@@ -465,13 +463,6 @@ rule affine_nlin_reg_mri_to_spim:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    params:
-        iters="{iters}",  #"100x50x50",
-        metric_rigid="NMI",
-        dof="{dof}",
-        metric="NCC {radius}",  #3x3x3",
-        sigma1="{gradsigma}vox",  #3
-        sigma2="{warpsigma}vox",  #2
     output:
         xfm_ras=temp(
             bids(
@@ -554,6 +545,13 @@ rule affine_nlin_reg_mri_to_spim:
     resources:
         mem_mb=32000,
         runtime=30,
+    params:
+        iters="{iters}",  #"100x50x50",
+        metric_rigid="NMI",
+        dof="{dof}",
+        metric="NCC {radius}",  #3x3x3",
+        sigma1="{gradsigma}vox",  #3
+        sigma2="{warpsigma}vox",  #2
     shell:
         "greedy -threads {threads} -d 3 -i {input.spim} {input.mri} "
         " -a -dof {params.dof} -ia-image-centers -m {params.metric_rigid} -o {output.xfm_ras} && "
@@ -728,7 +726,7 @@ rule warp_mri_to_template_via_spim:
 
 rule warp_mri_brainmask_to_spim:
     """Warp MRI brain mask to SPIM space for tissue comparison.
-    
+
     Applies the composite MRI->SPIM transformation to the MRI brain mask to enable
     direct comparison of brain tissue extent between modalities. Also computes
     Jacobian determinant to quantify local tissue deformation due to fixation
@@ -829,8 +827,6 @@ rule mri_spim_registration_qc_report:
             **inputs["spim"].wildcards,
         ),
         warp=rules.compose_mri_to_spim_warp.output.xfm_composite,
-    params:
-        stain_for_reg=stain_for_reg,
     output:
         report_html=bids(
             root=root,
@@ -844,5 +840,7 @@ rule mri_spim_registration_qc_report:
     resources:
         mem_mb=8000,
         runtime=10,
+    params:
+        stain_for_reg=stain_for_reg,
     script:
         "../scripts/mri_spim_reg_qc_report.py"

@@ -12,13 +12,13 @@ rule create_tabular_json_sidecar_from_tsv:
         "{prefix}.tsv",
     output:
         "{prefix}.json",
-    params:
-        column_descriptions=config["column_descriptions"],
-        stats_maps=config["stats_maps"],
     threads: 1
     resources:
         mem_mb=500,
         runtime=5,
+    params:
+        column_descriptions=config["column_descriptions"],
+        stats_maps=config["stats_maps"],
     script:
         "../scripts/create_json_sidecar.py"
 
@@ -29,12 +29,12 @@ rule create_tabular_json_sidecar_from_parquet:
         "{prefix}.parquet",
     output:
         "{prefix}.json",
-    params:
-        column_descriptions=config["column_descriptions"],
-        stats_maps=config["stats_maps"],
     threads: 1
     resources:
         mem_mb=500,
         runtime=5,
+    params:
+        column_descriptions=config["column_descriptions"],
+        stats_maps=config["stats_maps"],
     script:
         "../scripts/create_json_sidecar.py"

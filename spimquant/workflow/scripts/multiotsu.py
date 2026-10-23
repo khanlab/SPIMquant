@@ -59,13 +59,13 @@ if __name__ == "__main__":
         znimg = ZarrNii.from_file(snakemake.input.corrected)
 
         # calculate histogram using percentile-based range and bin-width-derived bin count
-        (hist_counts, bin_edges) = znimg.compute_histogram(
+        hist_counts, bin_edges = znimg.compute_histogram(
             bins=n_bins, range=[range_lo, range_hi]
         )
 
         # get otsu thresholds (uses histogram)
         print("computing thresholds")
-        (thresholds, fig) = compute_otsu_thresholds(
+        thresholds, fig = compute_otsu_thresholds(
             hist_counts,
             classes=snakemake.params.otsu_k,
             bin_edges=bin_edges,

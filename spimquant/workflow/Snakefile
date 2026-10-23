@@ -27,6 +27,16 @@ set_bids_spec(spec)
 configfile: "config/snakebids.yml"
 
 
+# Default settings for the cached-http storage plugin, used for downloading
+# templates/atlases/models (e.g. from zenodo.org) via storage(). Skipping
+# remote checks avoids DAG-build-time failures on hosts without internet
+# access or when zenodo rate-limits the burst of existence checks.
+storage:
+    provider="cached-http",
+    skip_remote_checks=True,
+    max_concurrent_downloads=1,
+
+
 # use expandvars so we can use e.g. '$SLURM_TMPDIR'
 root = os.path.expandvars(config["root"])
 work = os.path.expandvars(config["work"]) if config["work"] is not None else root

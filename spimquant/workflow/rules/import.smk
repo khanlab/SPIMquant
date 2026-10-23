@@ -23,7 +23,7 @@ wildcard_constraints:
 
 rule get_downsampled_nii:
     """Convert OME-Zarr to NIfTI at specified resolution level.
-    
+
     Extracts a single resolution level from the multi-scale OME-Zarr data and
     converts it to NIfTI format. The level parameter determines which pyramid
     level to extract (0=highest resolution). Handles orientation conversion
@@ -31,8 +31,6 @@ rule get_downsampled_nii:
     """
     input:
         spim=spim_input,
-    params:
-        zarrnii_kwargs=zarrnii_in_kwargs,
     output:
         nii=bids(
             root=root,
@@ -46,6 +44,8 @@ rule get_downsampled_nii:
     resources:
         mem_mb=16000,
         runtime=15,
+    params:
+        zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/ome_zarr_to_nii.py"
 
@@ -62,7 +62,7 @@ localrules:
 
 rule import_template_anat:
     """Import template anatomical image.
-    
+
     Copies or downloads the template reference image specified in the configuration.
     Supports both local paths (relative to resources/) and remote URLs.
     Templates can include ABAv3, gubra, MBMv3, turone, and MouseIn.
@@ -73,10 +73,6 @@ rule import_template_anat:
         ),
     output:
         anat=bids(root=root, template="{template}", suffix="anat.nii.gz"),
-    threads: 1
-    resources:
-        mem_mb=1500,
-        runtime=15,
     log:
         bids(
             root="logs",
@@ -84,13 +80,16 @@ rule import_template_anat:
             template="{template}",
             suffix="log.txt",
         ),
+    threads: 1
+    resources:
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/copy_nii.py"
 
 
 rule import_template_spim:
-    """Import template spim channel.
-    """
+    """Import template spim channel."""
     input:
         anat=lambda wildcards: storage(
             ancient(
@@ -103,10 +102,6 @@ rule import_template_spim:
         ),
     output:
         anat=bids(root=root, template="{template}", suffix=f"{stain_for_reg}.nii.gz"),
-    threads: 1
-    resources:
-        mem_mb=1500,
-        runtime=15,
     log:
         bids(
             root="logs",
@@ -114,6 +109,10 @@ rule import_template_spim:
             template="{template}",
             suffix="log.txt",
         ),
+    threads: 1
+    resources:
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/copy_nii.py"
 
@@ -125,10 +124,6 @@ rule import_mask:
         ),
     output:
         mask=bids(root=root, template="{template}", desc="brain", suffix="mask.nii.gz"),
-    threads: 1
-    resources:
-        mem_mb=1500,
-        runtime=15,
     log:
         bids(
             root="logs",
@@ -136,6 +131,10 @@ rule import_mask:
             template="{template}",
             suffix="log.txt",
         ),
+    threads: 1
+    resources:
+        mem_mb=1500,
+        runtime=15,
     script:
         "../scripts/copy_nii.py"
 
@@ -155,7 +154,7 @@ rule generic_lut_bids_to_itksnap:
 
 rule import_dseg:
     """Import atlas segmentation (dseg) file.
-    
+
     Copies or downloads the atlas parcellation file for the specified template
     and segmentation scheme. The dseg file contains discrete labels corresponding
     to anatomical regions defined in the companion TSV file.
