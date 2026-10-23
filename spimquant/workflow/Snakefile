@@ -661,19 +661,8 @@ rule all_register:
             level=config["registration_level"],
             template=config["template"],
         ),
-        inputs["spim"].expand(
-            bids(
-                root=root,
-                datatype="xfm",
-                stain="{stain}",
-                from_="SPIM",
-                to="{template}",
-                suffix="regqc.html",
-                **inputs["spim"].wildcards,
-            ),
-            stain=stain_for_reg,
-            template=config["template"],
-        ),
+        # defined in reuse.smk (included below), so deferred to DAG building
+        lambda wildcards: get_regqc_targets(wildcards),
 
 
 rule all_vessels:

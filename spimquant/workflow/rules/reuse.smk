@@ -13,10 +13,13 @@ from. Because the prior dataset is SPIMquant's own output, its paths are built
 from the same bids() patterns as the computing rules (rather than queried with
 pybids, which does not know entities like level or type).
 
-When a file is absent from the prior dataset (a subject that was not run, a
-different --registration_level or --template, or an affine transform from an
-older version that deleted it as temp), the reuse rule's input is missing and
-Snakemake falls back to the computing rule for that file only.
+When a file is absent from the prior dataset (a subject that was not run, or a
+different --registration_level or --template), the reuse rule's input is missing
+and Snakemake falls back to the computing rule for that file only.
+
+QC of a reused output would only re-check the prior run, so the registration QC
+report is skipped for subjects whose transforms are reused (the brain mask has
+no QC output of its own).
 """
 
 reuse_root = config.get("reuse_derivatives")
@@ -81,18 +84,6 @@ if reuse_root and "brainmask" in reuse_outputs:
 
 if reuse_root and "transforms" in reuse_outputs:
 
-    rule reuse_affine_xfm:
-        """Copy (or link) the subject-to-template affine from the prior SPIMquant dataset."""
-        input:
-            xfm_ras=reuse_path(rules.affine_reg.output.xfm_ras),
-        output:
-            xfm_ras=rules.affine_reg.output.xfm_ras,
-        localrule: True
-        shell:
-            f"{reuse_cmd} {{input.xfm_ras}} {{output.xfm_ras}}"
-
-    ruleorder: reuse_affine_xfm > affine_reg
-
     rule reuse_composite_warps:
         """Copy (or link) the composite subject<->template warps from the prior SPIMquant dataset."""
         input:
@@ -117,8 +108,28 @@ if reuse_root and "transforms" in reuse_outputs:
         rules.compose_subject_to_template_warp.output.xfm_composite,
         template=config["template"],
     )
-    print_reuse_summary(
-        "affine transforms",
-        rules.affine_reg.output.xfm_ras,
+
+
+def get_regqc_targets(wildcards):
+    """Registration QC reports, for subjects whose transforms are not reused."""
+    regqc = inputs["spim"].expand(
+        bids(
+            root=root,
+            datatype="xfm",
+            stain="{stain}",
+            from_="SPIM",
+            to="{template}",
+            suffix="regqc.html",
+            **inputs["spim"].wildcards,
+        ),
+        stain=stain_for_reg,
         template=config["template"],
     )
+    if not (reuse_root and "transforms" in reuse_outputs):
+        return regqc
+    # same entity order as regqc, so the lists line up per subject
+    reused = inputs["spim"].expand(
+        reuse_path(rules.compose_subject_to_template_warp.output.xfm_composite),
+        template=config["template"],
+    )
+    return [qc for qc, xfm in zip(regqc, reused) if not os.path.exists(xfm)]

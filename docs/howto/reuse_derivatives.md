@@ -31,7 +31,7 @@ Select with `--reuse_outputs` (default: both):
 | Value        | Files                                                                      |
 |--------------|----------------------------------------------------------------------------|
 | `brainmask`  | `micr/*_stain-<reg stain>_level-<registration_level>_desc-brain_mask.nii.gz` |
-| `transforms` | `xfm/*_from-subject_to-<template>_type-ras_desc-affine_xfm.txt`, and the composite warps `xfm/*_from-subject_to-<template>_xfm.nii.gz` / `*_from-<template>_to-subject_xfm.nii.gz` |
+| `transforms` | the composite warps `xfm/*_from-subject_to-<template>_xfm.nii.gz` / `*_from-<template>_to-subject_xfm.nii.gz` |
 
 Reused files are copied into the new output directory, so it stays a complete,
 self-contained dataset. To save disk space (the composite warps are ~1.5 GB per
@@ -44,10 +44,12 @@ Files are looked up at the exact BIDS paths SPIMquant itself writes for the
 current settings, so they are only reused when the path-defining settings match:
 the subject/session/sample/acquisition entities, `--template`,
 `--registration_level` and the registration stain. Anything not found is
-computed as usual, per subject and per file. This includes subjects missing from
-the prior dataset, and the affine transform from datasets made by SPIMquant
-versions that deleted it as a temporary file. In that case the affine is
-recomputed, while the composite warps are still reused.
+computed as usual, per subject and per file, including subjects missing from
+the prior dataset.
+
+The registration QC report (`xfm/*_regqc.html`) is not made for subjects whose
+transforms are reused, since it would only re-check the prior run; see the
+prior dataset's report instead.
 
 Settings that change the result without changing the filenames, such as
 `--orientation`, `--template_crop` or `--sloppy`, are **not** checked. Use the

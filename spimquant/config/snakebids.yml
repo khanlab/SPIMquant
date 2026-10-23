@@ -359,7 +359,7 @@ parse_args:
     default: False
 
   --reuse_outputs:
-    help: "Which outputs to reuse from --reuse_derivatives (default: %(default)s). 'brainmask' reuses the SPIM brain masks, 'transforms' the subject-to-template affine and composite warps."
+    help: "Which outputs to reuse from --reuse_derivatives (default: %(default)s). 'brainmask' reuses the SPIM brain masks, 'transforms' the composite subject<->template warps. The registration QC report is skipped for subjects whose transforms are reused."
     choices:
       - brainmask
       - transforms

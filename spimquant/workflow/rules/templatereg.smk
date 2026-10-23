@@ -147,11 +147,10 @@ rule crop_template:
 
 rule affine_reg:
     """Perform affine registration to template using greedy.
-    
+
     Registers subject SPIM to template space using 12-DOF affine transformation.
-    Uses normalized mutual information (NMI) as the similarity metric. The
-    transformation matrix is kept (not temp) so that later runs can reuse it via
-    --reuse_derivatives; the warped image for QC is made by apply_affine_reg.
+    Uses normalized mutual information (NMI) as the similarity metric and outputs
+    both the transformation matrix and warped image for QC.
     """
     input:
         template=get_template_for_reg,
@@ -164,18 +163,29 @@ rule affine_reg:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    params:
-        iters="10x0x0" if config["sloppy"] else "100x100",
     output:
-        xfm_ras=bids(
-            root=root,
-            datatype="xfm",
-            from_="subject",
-            to="{template}",
-            type_="ras",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
+        xfm_ras=temp(
+            bids(
+                root=root,
+                datatype="xfm",
+                from_="subject",
+                to="{template}",
+                type_="ras",
+                desc="affine",
+                suffix="xfm.txt",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        warped=temp(
+            bids(
+                root=root,
+                datatype="xfm",
+                space="{template}",
+                stain=stain_for_reg,
+                desc="affinewarped",
+                suffix="SPIM.nii.gz",
+                **inputs["spim"].wildcards,
+            )
         ),
     log:
         bids(
@@ -189,58 +199,14 @@ rule affine_reg:
     resources:
         mem_mb=16000,
         runtime=15,
+    params:
+        iters="10x0x0" if config["sloppy"] else "100x100",
     shell:
         "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
-        " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters}"
-
-
-rule apply_affine_reg:
-    """Warp the subject SPIM to template space with the affine transform, for QC.
-
-    Kept separate from affine_reg so the QC image can be made from a reused
-    affine transform without re-running (and overwriting) the registration.
-    """
-    input:
-        template=get_template_for_reg,
-        subject=bids(
-            root=root,
-            datatype="micr",
-            stain=stain_for_reg,
-            level=config["registration_level"],
-            desc=config["templatereg"]["desc"],
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        xfm_ras=bids(
-            root=root,
-            datatype="xfm",
-            from_="subject",
-            to="{template}",
-            type_="ras",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
-        ),
-    output:
-        warped=temp(
-            bids(
-                root=root,
-                datatype="xfm",
-                space="{template}",
-                stain=stain_for_reg,
-                desc="affinewarped",
-                suffix="SPIM.nii.gz",
-                **inputs["spim"].wildcards,
-            )
-        ),
-    threads: 32
-    resources:
-        mem_mb=16000,
-        runtime=15,
-    shell:
-        "greedy -threads {threads} -d 3 -rf {input.template} "
+        " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
+        " greedy -threads {threads} -d 3 -rf {input.template} "
         "  -rm {input.subject} {output.warped} "
-        "  -r {input.xfm_ras}"
+        "  -r {output.xfm_ras}"
 
 
 rule convert_ras_to_itk:
@@ -421,122 +387,6 @@ rule compose_subject_to_template_warp:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -o [{output.xfm_composite_inv},1] "
         " -r {input.subject} -t {input.invwarp} [{input.xfm_itk},1]"
-
-
-rule resample_labels_to_zarr:
-    """TODO: add required OME metadata"""
-    input:
-        dseg=bids(root=root, template="{template}", desc="LR", suffix="dseg.nii.gz"),
-        label_tsv=bids(root=root, template="{template}", desc="LR", suffix="dseg.tsv"),
-        xfm_ras=bids(
-            root=root,
-            datatype="xfm",
-            from_="subject",
-            to="{template}",
-            type_="ras",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
-        ),
-        zarr_zip=spim_input,
-    params:
-        level_to_resample_to=0,
-        max_downsampling_layers=config["ome_zarr"]["max_downsampling_layers"],
-        label_name="dseg",
-        scaling_method="nearest",
-    output:
-        zarr=bids_oz_out(
-            root=root,
-            datatype="micr",
-            desc="resampled",
-            from_="{template}",
-            suffix="dseg.{ext}",
-            **inputs["spim"].wildcards,
-        ),
-    threads: 10
-    resources:
-        mem_mb=16000,
-        disk_mb=2097152,
-        runtime=15,
-    log:
-        bids(
-            root="logs",
-            datatype="resample_labels_to_zarr",
-            space="{template}",
-            suffix="log.txt",
-            **inputs["spim"].wildcards,
-        ),
-    script:
-        "../scripts/resample_labels_to_zarr.py"
-
-
-rule affine_zarr_to_template_nii:
-    input:
-        ome_zarr=spim_input,
-        xfm_ras=bids(
-            root=root,
-            datatype="xfm",
-            from_="subject",
-            to="{template}",
-            type_="ras",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
-        ),
-        ref_nii=get_template_for_reg,
-    params:
-        ref_opts={"chunks": (1, 50, 50, 50)},
-    output:
-        nii=bids(
-            root=root,
-            datatype="micr",
-            desc="affine",
-            space="{template}",
-            stain="{stain}",
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-    threads: 32
-    resources:
-        mem_mb=16000,
-        runtime=15,
-    script:
-        "../scripts/affine_to_template_nii.py"
-
-
-rule affine_zarr_to_template_ome_zarr:
-    input:
-        ome_zarr=spim_input,
-        xfm_ras=bids(
-            root=root,
-            datatype="xfm",
-            from_="subject",
-            to="{template}",
-            type_="ras",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
-        ),
-        ref_nii=get_template_for_reg,
-    params:
-        ref_opts={"chunks": (1, 50, 50, 50)},
-    output:
-        ome_zarr=bids_oz_out(
-            root=root,
-            datatype="micr",
-            desc="affine",
-            space="{template}",
-            stain="{stain}",
-            suffix="spim.{ext}",
-            **inputs["spim"].wildcards,
-        ),
-    threads: 32
-    resources:
-        mem_mb=16000,
-        disk_mb=2097152,
-        runtime=15,
-    script:
-        "../scripts/affine_to_template_ome_zarr.py"
 
 
 rule deform_zarr_to_template_nii:
