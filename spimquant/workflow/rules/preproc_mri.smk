@@ -698,8 +698,13 @@ rule warp_mri_to_template_via_spim:
         ),
         ref=rules.import_template_anat.output.anat,
         xfm_composite_mri_to_spim=rules.compose_mri_to_spim_warp.output.xfm_composite,
-        xfm_composite_spim_to_template=str(
-            rules.compose_subject_to_template_warp.output.xfm_composite
+        xfm_composite_spim_to_template=bids(
+            root=root,
+            datatype="xfm",
+            from_="subject",
+            to="{template}",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
         ),
     output:
         warped=bids(
