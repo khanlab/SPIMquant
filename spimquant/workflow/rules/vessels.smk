@@ -12,12 +12,6 @@ rule run_vesselfm:
     input:
         spim=spim_input,
         model_path="resources/models/vesselfm.pt",
-    params:
-        zarrnii_kwargs=zarrnii_in_kwargs,
-        vesselfm_kwargs=lambda wildcards, input: {
-            "chunk_size": (1, 128, 128, 128),
-            "model_path": input.model_path,
-        },
     output:
         mask=bids_oz_out(
             root=root,
@@ -34,6 +28,12 @@ rule run_vesselfm:
         cpus_per_gpu=8,
         mem_mb=256000,
         runtime=lambda wildcards: max(1, int(400.0 / (3.0 ** float(wildcards.level)))),  # rough estimate, clamped to >=1
+    params:
+        zarrnii_kwargs=zarrnii_in_kwargs,
+        vesselfm_kwargs=lambda wildcards, input: {
+            "chunk_size": (1, 128, 128, 128),
+            "model_path": input.model_path,
+        },
     script:
         "../scripts/vesselfm.py"
 
@@ -57,8 +57,6 @@ rule signed_distance_transform:
             suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
-    params:
-        overlap_depth=32,
     output:
         dist=bids_oz_out(
             root=root,
@@ -74,6 +72,8 @@ rule signed_distance_transform:
         mem_mb=256000,
         disk_mb=2097152,
         runtime=720,
+    params:
+        overlap_depth=32,
     script:
         "../scripts/signed_distance_transform.py"
 
@@ -90,8 +90,6 @@ rule skeletonize_vessels_mask:
             suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
-    params:
-        overlap_depth=32,
     output:
         mask=bids_oz_out(
             root=root,
@@ -107,6 +105,8 @@ rule skeletonize_vessels_mask:
         mem_mb=256000,
         disk_mb=2097152,
         runtime=720,
+    params:
+        overlap_depth=32,
     script:
         "../scripts/skeletonize_vessels_mask.py"
 
@@ -132,8 +132,6 @@ rule vessel_skeleton_graph:
             suffix="dist.{ext}",
             **inputs["spim"].wildcards,
         ),
-    params:
-        overlap_depth=32,
     output:
         graph_parquet=bids(
             root=root,
@@ -149,6 +147,8 @@ rule vessel_skeleton_graph:
         mem_mb=256000,
         disk_mb=2097152,
         runtime=360,
+    params:
+        overlap_depth=32,
     script:
         "../scripts/skeleton_graph_from_sdt.py"
 

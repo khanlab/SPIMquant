@@ -84,16 +84,6 @@ rule run_lantern_plaques:
             suffix="mask.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    params:
-        zarrnii_kwargs=zarrnii_in_kwargs,
-        start_level=config["plaque_level"],
-        iso_res=config["plaque_iso_res"],
-        tile=config["plaque_tile"],
-        stride=config["plaque_stride"],
-        merge_mode=config["plaque_merge_mode"],
-        batch_size=config["plaque_batch_size"],
-        chunk=config["plaque_chunk"],
-        n_gpus=config["plaque_n_gpus"],
     output:
         probseg=bids_oz_out(
             root=root,
@@ -132,6 +122,16 @@ rule run_lantern_plaques:
             ),
         ),
         # stride-64 tiling x 5 folds, split across GPUs
+    params:
+        zarrnii_kwargs=zarrnii_in_kwargs,
+        start_level=config["plaque_level"],
+        iso_res=config["plaque_iso_res"],
+        tile=config["plaque_tile"],
+        stride=config["plaque_stride"],
+        merge_mode=config["plaque_merge_mode"],
+        batch_size=config["plaque_batch_size"],
+        chunk=config["plaque_chunk"],
+        n_gpus=config["plaque_n_gpus"],
     script:
         "../scripts/lantern_plaques.py"
 
@@ -159,15 +159,6 @@ rule binarize_lantern_plaques:
             **inputs["spim"].wildcards,
         ),
         spim=spim_input,
-    params:
-        zarrnii_kwargs=zarrnii_in_kwargs,
-        n_folds=config["plaque_n_folds"],
-        vote_threshold=config["plaque_vote_threshold"],
-        target_level=config["segmentation_level"],
-        min_size=config["min_size"],
-        label_filter=config["label_filter"],
-        label_filter_size=config["label_filter_size"],
-        fp_min_votes=config["plaque_fp_min_votes"],
     output:
         mask=bids_oz_out(
             root=root,
@@ -190,5 +181,14 @@ rule binarize_lantern_plaques:
         mem_mb=120000,
         disk_mb=2097152,
         runtime=240,
+    params:
+        zarrnii_kwargs=zarrnii_in_kwargs,
+        n_folds=config["plaque_n_folds"],
+        vote_threshold=config["plaque_vote_threshold"],
+        target_level=config["segmentation_level"],
+        min_size=config["min_size"],
+        label_filter=config["label_filter"],
+        label_filter_size=config["label_filter_size"],
+        fp_min_votes=config["plaque_fp_min_votes"],
     script:
         "../scripts/binarize_lantern_plaques.py"

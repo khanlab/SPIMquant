@@ -1,9 +1,9 @@
 """
 Registration Quality Control Report Generator
 
-This script generates an HTML report with comprehensive quality control 
-visualizations for template registration, including comparisons of template 
-and transformed subject images, overlay visualizations, label maps, and 
+This script generates an HTML report with comprehensive quality control
+visualizations for template registration, including comparisons of template
+and transformed subject images, overlay visualizations, label maps, and
 warp field visualizations.
 """
 

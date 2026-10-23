@@ -12,8 +12,6 @@ rule map_regionprops_to_atlas_rois:
             **inputs["spim"].wildcards,
         ),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    params:
-        coord_column_names=config["coord_column_names"],
     output:
         regionprops_tsv=bids(
             root=root,
@@ -43,6 +41,8 @@ rule map_regionprops_to_atlas_rois:
     resources:
         mem_mb=32000,
         runtime=15,
+    params:
+        coord_column_names=config["coord_column_names"],
     script:
         "../scripts/map_atlas_to_regionprops.py"
 
@@ -59,8 +59,6 @@ rule map_coloc_to_atlas_rois:
         ),
         dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
-    params:
-        coord_column_names=["template_coloc_x", "template_coloc_y", "template_coloc_z"],
     output:
         coloc_tsv=temp(
             bids(
@@ -88,6 +86,8 @@ rule map_coloc_to_atlas_rois:
     resources:
         mem_mb=32000,
         runtime=15,
+    params:
+        coord_column_names=["template_coloc_x", "template_coloc_y", "template_coloc_z"],
     script:
         "../scripts/map_atlas_to_coloc.py"
 
@@ -177,7 +177,7 @@ def get_coloc_reference_fieldfrac(wildcards):
 
 
 rule merge_into_colocsegstats_tsv:
-    """ also includes fieldfracstats.tsv to obtain the volume to turn count into density"""
+    """also includes fieldfracstats.tsv to obtain the volume to turn count into density"""
     input:
         coloc_tsv=bids(
             root=root,
@@ -198,8 +198,6 @@ rule merge_into_colocsegstats_tsv:
             **inputs["spim"].wildcards,
         ),
         fieldfrac_tsv=get_coloc_reference_fieldfrac,
-    params:
-        columns_to_drop=["fieldfrac"],
     output:
         tsv=temp(
             bids(
@@ -216,6 +214,8 @@ rule merge_into_colocsegstats_tsv:
     resources:
         mem_mb=1500,
         runtime=15,
+    params:
+        columns_to_drop=["fieldfrac"],
     script:
         "../scripts/merge_into_segstats_tsv.py"
 
@@ -265,9 +265,6 @@ rule merge_indiv_and_coloc_segstats_tsv:
     input:
         coloc_tsv=get_coloc_tsv_input,
         indiv_tsvs=get_indiv_segstats_tsvs,
-    params:
-        # must stay aligned with indiv_tsvs, which is per-method
-        stains=lambda wildcards: stains_for_desc(wildcards.desc),
     output:
         merged_tsv=bids(
             root=root,
@@ -282,5 +279,8 @@ rule merge_indiv_and_coloc_segstats_tsv:
     resources:
         mem_mb=1500,
         runtime=15,
+    params:
+        # must stay aligned with indiv_tsvs, which is per-method
+        stains=lambda wildcards: stains_for_desc(wildcards.desc),
     script:
         "../scripts/merge_indiv_and_coloc_segstats_tsv.py"

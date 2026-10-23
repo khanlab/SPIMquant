@@ -41,10 +41,6 @@ rule perform_group_stats:
             contrast="{pairwise_contrast}",
             suffix="groupstats.tsv",
         ),
-    threads: 1
-    resources:
-        mem_mb=16000,
-        runtime=10,
     log:
         bids(
             root="logs",
@@ -55,6 +51,10 @@ rule perform_group_stats:
             contrast="{pairwise_contrast}",
             suffix="groupstats.log",
         ),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=10,
     params:
         model=config.get("group_stats_model", None),
         pairwise_contrast_info=lambda wc: pairwise_contrast_info.get(

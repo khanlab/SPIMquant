@@ -34,7 +34,6 @@ import itertools
 import nibabel as nib
 import numpy as np
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -226,16 +225,14 @@ def main():
   </tbody>
 </table>"""
 
-        detail_rows_html.append(
-            f"""
+        detail_rows_html.append(f"""
 <div class="combo-row" id="combo-spline{spline}-iters{iters}">
   <h2>Spline spacing: {spline} mm &mdash; Iterations per level: {iters}</h2>
   <img src="{entry['png_b64']}"
        alt="N4 tuning QC: spline={spline}, iters={iters}">
   <h3>Quantitative statistics</h3>
   {detail_stat_table}
-</div>"""
-        )
+</div>""")
 
     details_html = "\n".join(detail_rows_html)
 
