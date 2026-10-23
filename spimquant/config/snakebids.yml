@@ -350,8 +350,13 @@ parse_args:
     dest: zarr_store_shards
 
   --reuse_derivatives:
-    help: "Path to an existing SPIMquant output dataset to reuse outputs from (see --reuse_outputs), instead of computing them again. Files are matched by the same BIDS paths SPIMquant writes, so they are only reused when the relevant settings (e.g. --template, --registration_level) match; anything not found is computed as usual. Reused files are copied into the output directory."
+    help: "Path to an existing SPIMquant output dataset to reuse outputs from (see --reuse_outputs), instead of computing them again. Files are matched by the same BIDS paths SPIMquant writes, so they are only reused when the relevant settings (e.g. --template, --registration_level) match; anything not found is computed as usual. Reused files are copied into the output directory (see --reuse_symlink)."
     default: null
+
+  --reuse_symlink:
+    help: "Symlink reused files from --reuse_derivatives instead of copying them. Saves disk space (composite warps are ~1.5 GB per subject), but the output dataset then depends on the prior dataset staying in place."
+    action: store_true
+    default: False
 
   --reuse_outputs:
     help: "Which outputs to reuse from --reuse_derivatives (default: %(default)s). 'brainmask' reuses the SPIM brain masks, 'transforms' the subject-to-template affine and composite warps."

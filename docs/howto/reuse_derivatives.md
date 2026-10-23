@@ -34,7 +34,9 @@ Select with `--reuse_outputs` (default: both):
 | `transforms` | `xfm/*_from-subject_to-<template>_type-ras_desc-affine_xfm.txt`, and the composite warps `xfm/*_from-subject_to-<template>_xfm.nii.gz` / `*_from-<template>_to-subject_xfm.nii.gz` |
 
 Reused files are copied into the new output directory, so it stays a complete,
-self-contained dataset.
+self-contained dataset. To save disk space (the composite warps are ~1.5 GB per
+subject), pass `--reuse_symlink` to symlink them instead; the new dataset then
+depends on the prior one staying in place.
 
 ## Matching and fallback
 

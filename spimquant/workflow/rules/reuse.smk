@@ -37,6 +37,10 @@ if reuse_root:
 
 reuse_outputs = config.get("reuse_outputs") or []
 
+# --reuse_symlink links to the prior dataset instead of copying (composite warps
+# are ~1.5 GB per subject); input paths are absolute, so the links are too
+reuse_cmd = "ln -s" if config.get("reuse_symlink") else "cp"
+
 
 def reuse_path(path):
     """Path in the prior dataset corresponding to an output path under root."""
@@ -56,14 +60,14 @@ def print_reuse_summary(name, path, **kwargs):
 if reuse_root and "brainmask" in reuse_outputs:
 
     rule reuse_brainmask:
-        """Copy a brain mask from the prior SPIMquant dataset."""
+        """Copy (or link) a brain mask from the prior SPIMquant dataset."""
         input:
             mask=reuse_path(rules.create_mask_from_gmm_and_prior.output.mask),
         output:
             mask=rules.create_mask_from_gmm_and_prior.output.mask,
         localrule: True
         shell:
-            "cp {input.mask} {output.mask}"
+            f"{reuse_cmd} {{input.mask}} {{output.mask}}"
 
     ruleorder: reuse_brainmask > create_mask_from_gmm_and_prior > reslice_mask_to_level
 
@@ -78,19 +82,19 @@ if reuse_root and "brainmask" in reuse_outputs:
 if reuse_root and "transforms" in reuse_outputs:
 
     rule reuse_affine_xfm:
-        """Copy the subject-to-template affine from the prior SPIMquant dataset."""
+        """Copy (or link) the subject-to-template affine from the prior SPIMquant dataset."""
         input:
             xfm_ras=reuse_path(rules.affine_reg.output.xfm_ras),
         output:
             xfm_ras=rules.affine_reg.output.xfm_ras,
         localrule: True
         shell:
-            "cp {input.xfm_ras} {output.xfm_ras}"
+            f"{reuse_cmd} {{input.xfm_ras}} {{output.xfm_ras}}"
 
     ruleorder: reuse_affine_xfm > affine_reg
 
     rule reuse_composite_warps:
-        """Copy the composite subject<->template warps from the prior SPIMquant dataset."""
+        """Copy (or link) the composite subject<->template warps from the prior SPIMquant dataset."""
         input:
             xfm_composite=reuse_path(
                 rules.compose_subject_to_template_warp.output.xfm_composite
@@ -103,8 +107,8 @@ if reuse_root and "transforms" in reuse_outputs:
             xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
         localrule: True
         shell:
-            "cp {input.xfm_composite} {output.xfm_composite} && "
-            "cp {input.xfm_composite_inv} {output.xfm_composite_inv}"
+            f"{reuse_cmd} {{input.xfm_composite}} {{output.xfm_composite}} && "
+            f"{reuse_cmd} {{input.xfm_composite_inv}} {{output.xfm_composite_inv}}"
 
     ruleorder: reuse_composite_warps > compose_subject_to_template_warp
 
