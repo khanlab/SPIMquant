@@ -1,0 +1,14 @@
+name: fireants
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+    # PyPI torch wheels bundle the CUDA runtime, so the env can be created on a
+    # node without a GPU. FireANTs pins simpleitk==2.2.1, which is why it lives in
+    # its own env instead of the main pixi environment.
+    - torch==2.5.1
+    # khanlab fork; multi-stain templates need the per-channel template saving
+    # in build_template.py (template_{epoch}_ch-{c}.nii.gz)
+    - fireants @ git+https://github.com/khanlab/FireANTs@f551add7a2467cb2130009b54a59b8a96b3cab7c

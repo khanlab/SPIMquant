@@ -1520,6 +1520,7 @@ include: "rules/patches.smk"
 include: "rules/groupstats.smk"
 include: "rules/qc.smk"
 include: "rules/sidecars.smk"
+include: "rules/cohort_template.smk"
 
 
 if config["register_to_mri"]:
