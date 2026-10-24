@@ -87,9 +87,8 @@ spimquant /path/to/bids /path/to/output cohort_template_export \
 
 Use the same `cohort_template` options as when building. This writes
 `tpl-lecanemab/template_description.json`, `tpl-lecanemab_buildinfo.tar.gz` (image
-list, FireANTs config and logs), and `tpl-lecanemab_spimquant.yml`, a `templates:`
-entry to add to `spimquant/config/snakebids.yml` (also add the name to the
-`--template` choices).
+list, FireANTs config and logs), and `tpl-lecanemab_spimquant.yml`, a SPIMquant
+config file that adds the template and selects it.
 
 To upload to Zenodo, create a draft upload on Zenodo and pass its deposition ID,
 with a Zenodo access token in the environment:
@@ -102,7 +101,23 @@ spimquant /path/to/bids /path/to/output cohort_template_export \
     --cohort-template-zenodo-deposition 12345678
 ```
 
-The config entry then points at `https://zenodo.org/records/<id>/files/...` URLs,
+The config file then points at `https://zenodo.org/records/<id>/files/...` URLs,
 which resolve once you publish the deposition. Without a deposition, it points at
-`tpl-lecanemab/...` paths relative to `spimquant/resources/`, where you can copy the
-`tpl-lecanemab` directory instead.
+the absolute paths of the exported files.
+
+## Using the template
+
+Pass the config file to any SPIMquant run, in place of `--template`:
+
+```
+spimquant /path/to/bids /path/to/output participant \
+    --configfile tpl-lecanemab_spimquant.yml
+```
+
+The registration stain must be one of the cohort template's stains (see
+`--stains_for_reg`).
+
+To make the template a built-in `--template` choice, open a PR that moves its
+`templates:` entry into `spimquant/config/snakebids.yml` (with the Zenodo URLs, or
+paths relative to `spimquant/resources/` after copying `tpl-lecanemab` there), and
+adds the name to the `--template` choices.

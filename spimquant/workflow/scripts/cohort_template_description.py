@@ -1,8 +1,8 @@
 """Write template_description.json and a SPIMquant templates: config snippet.
 
-The snippet points at Zenodo record URLs when a deposition ID was given, and
-otherwise at paths relative to spimquant/resources/ (after copying the
-tpl-{name} directory there).
+The snippet is a SPIMquant config file that selects the cohort template, for
+use with --configfile. It points at Zenodo record URLs when a deposition ID was
+given, and otherwise at the exported files' absolute paths.
 """
 
 import json
@@ -24,7 +24,7 @@ def ref(fname):
         raise ValueError(f"{fname} is not one of the exported files")
     if p.zenodo_deposition is not None:
         return f"https://zenodo.org/records/{p.zenodo_deposition}/files/{fname}"
-    return f"tpl-{name}/{fname}"
+    return os.path.abspath(files[fname])
 
 
 anat_fname = f"tpl-{name}_anat.nii.gz"
@@ -52,20 +52,22 @@ if p.zenodo_deposition is not None:
     )
 else:
     location = (
-        f"# Paths are relative to spimquant/resources/: copy {p.template_dir}\n"
-        "# there, or rerun cohort_template_export with\n"
-        "# --cohort-template-zenodo-deposition to upload to Zenodo.\n"
+        f"# Paths point at the exported files in {os.path.abspath(p.template_dir)};\n"
+        "# rerun cohort_template_export with --cohort-template-zenodo-deposition to\n"
+        "# upload to Zenodo instead.\n"
     )
 
 with open(snakemake.output.config_snippet, "w") as f:
     f.write(
-        f"# SPIMquant templates: entry for tpl-{name}, a cohort template built from\n"
+        f"# SPIMquant config for tpl-{name}, a cohort template built from\n"
         f"# {len(p.subjects)} subjects registered to tpl-{p.orig_template}, with atlases\n"
-        f"# warped from tpl-{p.orig_template}.\n"
-        f"# Add it under templates: in spimquant/config/snakebids.yml, and add {name}\n"
-        "# to the --template choices.\n" + location
+        f"# warped from tpl-{p.orig_template}. Use it with:\n"
+        f"#   spimquant ... --configfile tpl-{name}_spimquant.yml\n"
+        "# To add it to SPIMquant itself, move the templates: entry into\n"
+        f"# spimquant/config/snakebids.yml and add {name} to the --template choices.\n"
+        + location
     )
-    yaml.safe_dump({"templates": {name: entry}}, f, sort_keys=False)
+    yaml.safe_dump({"template": name, "templates": {name: entry}}, f, sort_keys=False)
 
 
 anat = nib.load(files[anat_fname])
