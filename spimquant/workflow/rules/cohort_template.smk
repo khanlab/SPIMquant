@@ -248,8 +248,6 @@ rule build_cohort_template:
         build_dir=directory(os.path.join(cohort_work, "fireants", "buildtemplate")),
     log:
         os.path.join(cohort_work, "logs", "build_cohort_template.log"),
-    conda:
-        "../envs/fireants.yaml"
     threads: 8 * cohort_n_gpus
     resources:
         gpu=cohort_n_gpus,
@@ -268,6 +266,10 @@ rule build_cohort_template:
             os.path.join(output.build_dir, "..", "hydra")
         ),
     shell:
+        # FireANTs is only in the gpu pixi environment
+        "python -c 'import fireants' 2>/dev/null || {{ echo 'FireANTs is not "
+        "installed: run SPIMquant from the gpu environment, e.g. pixi run -e gpu "
+        "spimquant ...' >&2; exit 1; }} && "
         "torchrun --standalone --nproc_per_node {resources.gpu} "
         " -m fireants.scripts.template.build_template "
         " --config-dir {params.config_dir} --config-name {params.config_name} "

@@ -2233,6 +2233,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zict-3.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.1-pyh5ded981_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/dynamic-network-architectures-0.4.4-pyh4616a5c_0.conda
+      - conda: https://prefix.dev/akhanf/khanlab/noarch/fireants-1.4.0.post1-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/imaris-ims-zarr-0.2.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/ngff-zarr-0.34.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
@@ -14730,6 +14731,26 @@ packages:
   run_exports: {}
   size: 43038
   timestamp: 1792390838032
+- conda: https://prefix.dev/akhanf/khanlab/noarch/fireants-1.4.0.post1-pyh4616a5c_0.conda
+  sha256: 42b84d57390e4bcc14b5b78c3d5666b6e16b0427dd65c7ac958873219dd8336d
+  md5: 2e3452376c0c57290c2cef2509b7b04a
+  depends:
+  - python >=3.9
+  - python
+  - python *
+  - pytorch >=2.3.0
+  - simpleitk >=2.2.1
+  - nibabel
+  - numpy
+  - scipy
+  - scikit-image
+  - matplotlib-base
+  - tqdm
+  - pandas
+  - hydra-core
+  run_exports: {}
+  size: 122240
+  timestamp: 1792805761413
 - conda: https://prefix.dev/akhanf/khanlab/noarch/imaris-ims-zarr-0.2.0-pyh4616a5c_0.conda
   sha256: 102710be3f11e2b3e639ee62712b83b595ef44466ed620b4231e15a607a14b1e
   md5: c4f1fb6373694cc0725098776d1b8931

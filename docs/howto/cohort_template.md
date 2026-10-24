@@ -62,9 +62,9 @@ tpl-ABAv3/
 
 Check the `regqc.html` report to confirm the atlases line up with the cohort template.
 
-The FireANTs step runs in its own conda environment (`workflow/envs/fireants.yaml`),
-and uses the fused CUDA ops if they are installed, falling back to the plain
-implementation otherwise.
+FireANTs is only installed in the `gpu` pixi environment, so run this level from
+it, e.g. `pixi run -e gpu spimquant ...`. It uses the fused CUDA ops if they are
+installed, falling back to the plain implementation otherwise.
 
 ## Preparing the template for SPIMquant
 
