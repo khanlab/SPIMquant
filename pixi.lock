@@ -6,7 +6,7 @@ platforms:
   - __linux=4.18
   - __glibc=2.28
   - __archspec=0=x86_64
-- name: p1
+- name: linux-64-cuda
   subdir: linux-64
   virtual-packages:
   - __cuda=12.0
@@ -38,6 +38,7 @@ environments:
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-gcs-1.1.4-pyhdfd78af_0.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-http-0.3.1-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-s3-0.3.6-pyhdfd78af_0.conda
+      - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-zenodo-0.1.5-pyhdfd78af_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-8_kmp_llvm.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aiohttp-3.14.5-py312h8b7ec3f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
@@ -638,7 +639,7 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/ngff-zarr-0.34.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.21.6-pyh4616a5c_0.conda
-      - conda_source: spimquant[1ae1793f] @ .
+      - conda_source: spimquant[a8ed165f] @ .
   dev:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -663,6 +664,7 @@ environments:
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-gcs-1.1.4-pyhdfd78af_0.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-http-0.3.1-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-s3-0.3.6-pyhdfd78af_0.conda
+      - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-zenodo-0.1.5-pyhdfd78af_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-8_kmp_llvm.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aiohttp-3.14.5-py312h8b7ec3f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
@@ -1421,7 +1423,7 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/ngff-zarr-0.34.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.21.6-pyh4616a5c_0.conda
-      - conda_source: spimquant[1ae1793f] @ .
+      - conda_source: spimquant[a8ed165f] @ .
   dev-only:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -1588,7 +1590,7 @@ environments:
     - url: https://conda.anaconda.org/bioconda/
     - url: https://prefix.dev/akhanf/khanlab/
     packages:
-      p1:
+      linux-64-cuda:
       - conda: https://conda.anaconda.org/bioconda/noarch/snakebids-0.15.0-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-9.22.0-hdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-executor-plugin-slurm-1.9.2-pyhdfd78af_0.conda
@@ -1605,6 +1607,7 @@ environments:
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-gcs-1.1.4-pyhdfd78af_0.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-http-0.3.1-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-s3-0.3.6-pyhdfd78af_0.conda
+      - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-zenodo-0.1.5-pyhdfd78af_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-8_kmp_llvm.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aiohttp-3.14.5-py312h8b7ec3f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
@@ -2229,12 +2232,14 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zarr-3.4.1-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zict-3.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.1-pyh5ded981_0.conda
+      - conda: https://prefix.dev/akhanf/khanlab/linux-64/fireants-fused-ops-1.2.0-py312h8f1aada_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/dynamic-network-architectures-0.4.4-pyh4616a5c_0.conda
+      - conda: https://prefix.dev/akhanf/khanlab/noarch/fireants-1.4.0.post1-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/imaris-ims-zarr-0.2.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/ngff-zarr-0.34.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.21.6-pyh4616a5c_0.conda
-      - conda_source: spimquant[1ae1793f] @ .
+      - conda_source: spimquant[a8ed165f] @ .
 packages:
 - conda: https://conda.anaconda.org/bioconda/noarch/snakebids-0.15.0-pyhdfd78af_0.conda
   sha256: 20f87c7eb7de89801639e5a700154eb4a456e4fc0445dd4828b2bb57021b575b
@@ -2542,6 +2547,20 @@ packages:
     - snakemake-storage-plugin-s3 >=0.3.6,<0.4.0a0
   size: 15758
   timestamp: 1757816089665
+- conda: https://conda.anaconda.org/bioconda/noarch/snakemake-storage-plugin-zenodo-0.1.5-pyhdfd78af_0.tar.bz2
+  sha256: e7617f57e5adb91e1c3423bfaeffb43cb74c4fbdf9b9facc0446c52d7ed64648
+  md5: c1173195d2bc1fe9bd4546cba3f49624
+  depends:
+  - python >=3.11.0,<4.0.0
+  - requests >=2.31.0,<3.0.0
+  - snakemake-interface-common >=1.14.4,<2.0.0
+  - snakemake-interface-storage-plugins >=4.1.0,<5.0.0
+  license: MIT
+  run_exports:
+    weak:
+    - snakemake-storage-plugin-zenodo >=0.1.5,<0.2.0a0
+  size: 15014
+  timestamp: 1743065569614
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
   build_number: 20
   sha256: 1dd3fffd892081df9726d7eb7e0dea6198962ba775bd88842135a4ddb4deb3c9
@@ -14699,6 +14718,25 @@ packages:
   run_exports: {}
   size: 24839
   timestamp: 1791091060207
+- conda: https://prefix.dev/akhanf/khanlab/linux-64/fireants-fused-ops-1.2.0-py312h8f1aada_0.conda
+  sha256: 39dcc598db334fce90372ec087fdb11555756615fbaa1a69dba6501f38d4bfbb
+  md5: 90a466412345bc5e7e62061b69ae2d0d
+  depends:
+  - python
+  - pytorch >=2.7.1,<2.8.0a0
+  - pytorch * cuda*
+  - __cuda
+  - __glibc >=2.17,<3.0.a0
+  - libstdcxx >=13
+  - libgcc >=13
+  - cuda-version >=12.6,<13
+  - python_abi 3.12.* *_cp312
+  - cuda-cudart >=12.6.77,<13.0a0
+  - libtorch >=2.7.1,<2.8.0a0
+  license: LicenseRef-FireANTs
+  run_exports: {}
+  size: 16241882
+  timestamp: 1792851202904
 - conda: https://prefix.dev/akhanf/khanlab/noarch/dynamic-network-architectures-0.4.4-pyh4616a5c_0.conda
   sha256: c7965561ba0394584ed69a9f42732f229d95efb74a5d0d650e7281095b9aec59
   md5: e9df3172e5221a85e89938b877d849c6
@@ -14713,6 +14751,26 @@ packages:
   run_exports: {}
   size: 43038
   timestamp: 1792390838032
+- conda: https://prefix.dev/akhanf/khanlab/noarch/fireants-1.4.0.post1-pyh4616a5c_0.conda
+  sha256: 42b84d57390e4bcc14b5b78c3d5666b6e16b0427dd65c7ac958873219dd8336d
+  md5: 2e3452376c0c57290c2cef2509b7b04a
+  depends:
+  - python >=3.9
+  - python
+  - python *
+  - pytorch >=2.3.0
+  - simpleitk >=2.2.1
+  - nibabel
+  - numpy
+  - scipy
+  - scikit-image
+  - matplotlib-base
+  - tqdm
+  - pandas
+  - hydra-core
+  run_exports: {}
+  size: 122240
+  timestamp: 1792805761413
 - conda: https://prefix.dev/akhanf/khanlab/noarch/imaris-ims-zarr-0.2.0-pyh4616a5c_0.conda
   sha256: 102710be3f11e2b3e639ee62712b83b595ef44466ed620b4231e15a607a14b1e
   md5: c4f1fb6373694cc0725098776d1b8931
@@ -14807,7 +14865,7 @@ packages:
   run_exports: {}
   size: 127748
   timestamp: 1792392976566
-- conda_source: spimquant[1ae1793f] @ .
+- conda_source: spimquant[a8ed165f] @ .
   variants:
     target_platform: noarch
   depends:
@@ -14817,6 +14875,7 @@ packages:
   - snakemake-storage-plugin-gcs >=1.1.4,<2
   - snakemake-storage-plugin-fs >=1.1.2,<2
   - snakemake-storage-plugin-cached-http >=0.3.0,<0.4.0
+  - snakemake-storage-plugin-zenodo >=0.1.5,<0.2
   - snakemake-executor-plugin-slurm >=1.4.0,<2
   - conda >=25.5.0,<26
   - gcsfs >=2025.5.1,<2026

@@ -3,6 +3,8 @@ analysis_levels: &analysis_levels
  - participant
  - group
  - tune_n4
+ - cohort_template
+ - cohort_template_export
 
 #mapping from analysis_level to set of target rules or files
 targets_by_analysis_level:
@@ -12,6 +14,10 @@ targets_by_analysis_level:
     - 'all_group'
   tune_n4:
     - 'all_n4_tune'
+  cohort_template:
+    - 'all_cohort_template'
+  cohort_template_export:
+    - 'all_cohort_template_export'
 
 # Configure components:
 # Each entry creates a new component that can be retreived within the workflow
@@ -477,6 +483,45 @@ parse_args:
     help: "Label for this group-stats run. Outputs are placed under group/{label}/ so that different analyses (e.g. different models or --group-stats-where filters) do not overwrite each other. (default: %(default)s)"
     default: "1"
 
+  --cohort-template-name:
+    help: "Name (tpl- label) for the cohort template built by the cohort_template analysis level. Must be alphanumeric and must not clash with an existing --template choice. (default: %(default)s)"
+    default: cohort
+
+  --cohort-template-stains:
+    help: "Stains to build the cohort template from. All stains are built jointly as one multivariate template, so every stain template shares the same space. (default: all stains)"
+    default: null
+    nargs: '+'
+
+  --cohort-template-level:
+    help: "Downsampling level of the subject images (already warped to --template space) used to build the cohort template (default: --registration_level)"
+    default: null
+    type: int
+
+  --cohort-template-iterations:
+    help: "Number of FireANTs template-building iterations (default: %(default)s)"
+    default: 10
+    type: int
+
+  --cohort-template-resample-mm:
+    help: "Isotropic voxel size (mm) to resample the subject images to before building the cohort template, e.g. 0.05. Lowers GPU memory use and run time, e.g. for a finer --cohort-template-level or --template. (default: --template resolution)"
+    default: null
+    type: float
+
+  --cohort-template-n-gpus:
+    help: "Number of GPUs for FireANTs template building; subjects are split across GPUs (default: %(default)s)"
+    default: 1
+    type: int
+
+  --cohort-template-extra-inputs:
+    help: "Additional SPIMquant output directories (from other datasets registered to the same --template) whose subjects are added to the cohort template. Subject images are found by globbing for the same space/level/stain files in each directory."
+    default: null
+    nargs: '+'
+
+  --cohort-template-zenodo-deposition:
+    help: "Zenodo deposition ID (an unpublished draft you created) to upload the exported cohort template to, in the cohort_template_export analysis level. Requires SNAKEMAKE_STORAGE_ZENODO_ACCESS_TOKEN to be set. When absent, the export is only prepared locally. (default: %(default)s)"
+    default: null
+    type: int
+
 
 #--- workflow specific configuration -- 
 
@@ -587,6 +632,76 @@ masking:
 
 zarrnii_out_kwargs:
   storage_options: {}
+
+cohort_template:
+  # subject images are clipped to these percentiles (of nonzero voxels) and
+  # rescaled to [0,1] before template building, so bright outliers (e.g.
+  # plaques) do not dominate FireANTs' min-max normalization
+  clip_percentiles: [0.5, 99.5]
+  # registration of the original template (moving) to the cohort template (fixed)
+  reg:
+    metric: NMI
+    affine_iters: 100x50x0
+    deform_iters: 100x50x0
+    sigma1: 4vox
+    sigma2: 2vox
+  # FireANTs build_template config (image_list_file, save_dir and
+  # template_iterations are filled in by the workflow)
+  fireants:
+    debug: False
+    verbose: False
+    image_prefix: null
+    image_suffix: null
+    num_subjects: null
+    init_template_path: null # average of the subjects (already in --template space)
+    normalize_images: True
+    save_as_uint8: False
+    num_laplacian: 2
+    laplace_params:
+      learning_rate: 0.5
+      itk_scale: true
+    # shape averaging runs an extra full-resolution registration per iteration
+    # (and OOMs at 25um on a 40GB GPU); the init template is already the subject
+    # average in --template space, and without it the subjects fit better
+    shape_avg: false
+    save_every: 1
+    save_init_template: true
+    save_moved_images: true
+    save_additional:
+      image_file: []
+      image_prefix: []
+      image_suffix: []
+      is_segmentation: []
+    batch_size: 1
+    do_moments: False
+    moments:
+      scale: 4
+      moments: 1
+    do_rigid: False
+    rigid:
+      iterations: [200, 100, 25]
+      scales: [4, 2, 1]
+      progress_bar: False
+      loss_type: cc
+    do_affine: False
+    affine:
+      iterations: [200, 100, 25]
+      scales: [4, 2, 1]
+      progress_bar: False
+      loss_type: cc
+    do_deform: True
+    deform_algo: greedy
+    deform:
+      iterations: [200, 100, 50]
+      scales: [4, 2, 1]
+      optimizer_lr: 0.25
+      smooth_warp_sigma: 0.5
+      smooth_grad_sigma: 1.0
+      progress_bar: False
+      cc_kernel_size: 5
+      loss_type: fusedcc # falls back to cc if fireants fused_ops are not built
+    tmpdir: null
+    last_reg: null
 
 reg_mri:
   rigidgreedy:

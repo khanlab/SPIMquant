@@ -74,6 +74,7 @@ snakemake-storage-plugin-s3 = ">=0.3.3,<0.4"
 snakemake-storage-plugin-gcs = ">=1.1.4,<2"
 snakemake-storage-plugin-fs = ">=1.1.2,<2"
 snakemake-storage-plugin-cached-http = ">=0.3.0,<0.4.0"
+snakemake-storage-plugin-zenodo = ">=0.1.5,<0.2"
 snakemake-executor-plugin-slurm = ">=1.4.0,<2"
 conda = ">=25.5.0,<26"
 gcsfs = ">=2025.5.1,<2026"
@@ -133,6 +134,9 @@ platforms = ["linux-64-cuda"]
 [tool.pixi.feature.gpu.dependencies]
 cuda-version = "12.6.*"
 pytorch-gpu = "*"
+# cohort template building (khanlab fork, from akhanf/khanlab)
+fireants = ">=1.4.0.post1"
+fireants-fused-ops = ">=1.2.0"
 
 
 # ----------------------------------------------------------------------

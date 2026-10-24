@@ -26,10 +26,11 @@ dseg_path = snakemake.input.dseg
 
 output_html = snakemake.output.report_html
 
-# Get wildcards for report title
-subject = snakemake.wildcards.subject
-template = snakemake.wildcards.template
-stain = snakemake.wildcards.stain
+# Get wildcards for report title (params for rules without these wildcards,
+# e.g. the original-to-cohort template registration)
+subject = getattr(snakemake.wildcards, "subject", None) or snakemake.params.subject
+template = getattr(snakemake.wildcards, "template", None) or snakemake.params.template
+stain = getattr(snakemake.wildcards, "stain", None) or snakemake.params.stain
 
 print(
     f"Processing registration QC for subject {subject}, stain {stain}, template {template}"
