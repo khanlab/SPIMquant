@@ -522,6 +522,11 @@ parse_args:
     default: null
     type: int
 
+  --benchmark:
+    help: "Record the run time, peak memory and CPU use of every job to benchmarks/{rule}/*.jsonl in the output folder, along with the threads and resources each job requested. Use for tuning the resources of each rule. (default: %(default)s)"
+    action: store_true
+    default: False
+
 
 #--- workflow specific configuration -- 
 

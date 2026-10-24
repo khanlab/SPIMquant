@@ -7,6 +7,7 @@ This module provides shared helper functions used across multiple workflow rules
 - get_template_path(): Template file locator with optional cropping
 - get_template_for_reg(): Registration-specific template selector
 - get_stains_all_subjects(): Stain consistency validator across subjects
+- spim_size_gb(), spim_chunk_mb(): Image and chunk size of a job's SPIM input, for resources
 - bids_oz_out(): bids() wrapper for OME-Zarr outputs (adds directory() when needed)
 - bids_oz_in(): bids() wrapper for OME-Zarr inputs
 
@@ -14,7 +15,9 @@ These functions abstract away path complexity and ensure consistent file
 organization following BIDS conventions.
 """
 
+import functools
 import json
+import math
 from pathlib import Path
 
 
@@ -117,6 +120,53 @@ def get_stains_all_subjects(ignore_stains=None):
         raise ValueError(
             f"Stains across subjects are not consistent: {stain_sets}\n\n Consider using --ignore-stains to ignore stains that are not consistent across subjects."
         )
+
+
+@functools.cache
+def get_spim_info(spim_path, level=0):
+    """Shape and chunk shape (by axis name) and bytes per voxel of a SPIM input.
+
+    Read lazily from the image metadata with ZarrNii, so it works the same for
+    .ome.zarr, .ozx, .ims and remote stores, where the file size on disk says
+    little about the image size (compressed, chunked, or not local at all).
+    """
+    znimg = ZarrNii.from_file(str(spim_path), level=int(level))
+    return {
+        "shape": dict(zip(znimg.dims, znimg.darr.shape)),
+        "chunks": dict(zip(znimg.dims, znimg.darr.chunksize)),
+        "itemsize": znimg.darr.dtype.itemsize,
+    }
+
+
+def _spatial_bytes(sizes, itemsize):
+    return math.prod(n for dim, n in sizes.items() if dim != "c") * itemsize
+
+
+def get_spim_size_gb(spim_path, level=0):
+    """Uncompressed size of one channel of a SPIM input at `level`, in GB.
+
+    For block-parallel (dask) rules this mostly sets the run time."""
+    info = get_spim_info(spim_path, level)
+    return _spatial_bytes(info["shape"], info["itemsize"]) / 1e9
+
+
+def get_spim_chunk_mb(spim_path, level=0):
+    """Uncompressed size of one chunk of one channel of a SPIM input, in MB.
+
+    For block-parallel (dask) rules this, times the threads, mostly sets the
+    peak memory."""
+    info = get_spim_info(spim_path, level)
+    return _spatial_bytes(info["chunks"], info["itemsize"]) / 1e6
+
+
+def spim_size_gb(wildcards, level=0):
+    """get_spim_size_gb() for the SPIM input of a job, e.g. to scale its resources."""
+    return get_spim_size_gb(spim_input(wildcards), level)
+
+
+def spim_chunk_mb(wildcards, level=0):
+    """get_spim_chunk_mb() for the SPIM input of a job, e.g. to scale its resources."""
+    return get_spim_chunk_mb(spim_input(wildcards), level)
 
 
 def get_spim_json_path(spim_path):

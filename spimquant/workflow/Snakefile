@@ -1526,3 +1526,69 @@ include: "rules/cohort_template.smk"
 if config["register_to_mri"]:
 
     include: "rules/preproc_mri.smk"
+
+
+# --benchmark: give every rule that has outputs a benchmark file, named after its
+# output wildcards so that each job gets its own. The extended format also records
+# the threads, resources and input sizes of each job, which is what resource tuning
+# needs, so it is switched on here rather than relying on --benchmark-extended.
+# The image and chunk size of each SPIM input at each level is written to
+# benchmarks/spim_sizes.tsv once at the start of the run (onstart hooks are skipped in
+# cluster jobs), so the summary can relate each job's usage to the image it worked on.
+# Summarize the results with tools/summarize_benchmarks.py.
+if config.get("benchmark", False):
+    workflow.output_settings.benchmark_extended = True
+
+    onstart:
+        _levels = range(
+            max(
+                config["registration_level"],
+                config["correction_level"],
+                config["segmentation_level"],
+                config["plaque_level"],
+            )
+            + 1
+        )
+        _rows = []
+        for _key, _path in _spim_path_lookup.items():
+            for _level in _levels:
+                _info = get_spim_info(_path, _level)
+                _rows.append(
+                    {
+                        **dict(zip(_spim_key_wildcards, _key)),
+                        "level": _level,
+                        **{f"n{dim}": n for dim, n in _info["shape"].items()},
+                        **{f"chunk_{dim}": n for dim, n in _info["chunks"].items()},
+                        "bytes_per_voxel": _info["itemsize"],
+                        "gb_per_channel": get_spim_size_gb(_path, _level),
+                        "chunk_mb_per_channel": get_spim_chunk_mb(_path, _level),
+                        "path": _path,
+                    }
+                )
+        os.makedirs("benchmarks", exist_ok=True)
+        # Chunking of SPIMquant's own zarr outputs, which later rules read
+        with open("benchmarks/run_config.json", "w") as _f:
+            json.dump(
+                {
+                    k: config.get(k)
+                    for k in [
+                        "zarr_store_ext",
+                        "zarr_store_chunks",
+                        "zarr_store_shards",
+                        "dask_scheduler",
+                    ]
+                },
+                _f,
+                indent=2,
+            )
+        _pd.DataFrame(_rows).to_csv(
+            "benchmarks/spim_sizes.tsv", sep="\t", index=False
+        )
+
+    for _rule in workflow.rules:
+        if not _rule.output or _rule.benchmark is not None:
+            continue
+        _wildcards = sorted(_rule.wildcard_names)
+        _name = "_".join(f"{w}-{{{w}}}" for w in _wildcards) or _rule.name
+        _rule.benchmark_modifier = workflow.modifier.path_modifier
+        _rule.benchmark = os.path.join("benchmarks", _rule.name, f"{_name}.jsonl")
