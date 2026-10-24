@@ -1566,12 +1566,19 @@ if config.get("benchmark", False):
                     }
                 )
         os.makedirs("benchmarks", exist_ok=True)
-        # Chunking of SPIMquant's own zarr outputs, which later rules read
+        # The levels most rules run at (rather than a {level} wildcard), and the
+        # chunking of SPIMquant's own zarr outputs, which later rules read
         with open("benchmarks/run_config.json", "w") as _f:
             json.dump(
                 {
                     k: config.get(k)
                     for k in [
+                        "registration_level",
+                        "segmentation_level",
+                        "correction_level",
+                        "plaque_level",
+                        "plaque_iso_res",
+                        "seg_method",
                         "zarr_store_ext",
                         "zarr_store_chunks",
                         "zarr_store_shards",

@@ -15,6 +15,10 @@ table, and a per-rule table compares what was used against what was requested:
                                has one (from benchmarks/spim_sizes.tsv)
   chunk_mb                     size of one chunk of one channel of that input,
                                at the job's {level} (or level 0)
+  spim_gb_reg / spim_gb_seg /  the same at the run's --registration-level and
+  chunk_mb_seg                 --segmentation-level, for the many rules that run
+                               at those levels without a {level} wildcard (the
+                               levels are in benchmarks/run_config.json)
 
 For block-parallel (dask) rules, peak memory should follow threads * chunk_mb
 and run time spim_gb. Rules reading SPIMquant's own zarr outputs see the chunks
@@ -63,8 +67,16 @@ def get_spim_size(wildcards, sizes, key_cols, level):
     return sizes.get((key, int(level)), (None, None))
 
 
+def load_run_config(out_dir):
+    path = Path(out_dir, "benchmarks", "run_config.json")
+    return json.loads(path.read_text()) if path.exists() else {}
+
+
 def load_jobs(out_dir, label):
     sizes, key_cols = load_spim_sizes(out_dir)
+    run_config = load_run_config(out_dir)
+    reg_level = run_config.get("registration_level")
+    seg_level = run_config.get("segmentation_level")
     rows = []
     for path in sorted(Path(out_dir, "benchmarks").rglob("*.jsonl")):
         for line in path.read_text().splitlines():
@@ -80,6 +92,16 @@ def load_jobs(out_dir, label):
                 get_spim_size(wildcards, sizes, key_cols, level)
                 if level.isdigit()
                 else (None, chunk_mb_l0)
+            )
+            spim_gb_reg, _ = (
+                get_spim_size(wildcards, sizes, key_cols, reg_level)
+                if reg_level is not None
+                else (None, None)
+            )
+            spim_gb_seg, chunk_mb_seg = (
+                get_spim_size(wildcards, sizes, key_cols, seg_level)
+                if seg_level is not None
+                else (None, None)
             )
             rows.append(
                 {
@@ -102,6 +124,11 @@ def load_jobs(out_dir, label):
                     "spim_gb_l0": spim_gb_l0,
                     "spim_gb": spim_gb,
                     "chunk_mb": chunk_mb,
+                    "registration_level": reg_level,
+                    "segmentation_level": seg_level,
+                    "spim_gb_reg": spim_gb_reg,
+                    "spim_gb_seg": spim_gb_seg,
+                    "chunk_mb_seg": chunk_mb_seg,
                     "benchmark": str(path),
                 }
             )
@@ -128,6 +155,11 @@ def summarize_rules(jobs):
             spim_gb_l0=("spim_gb_l0", "max"),
             spim_gb=("spim_gb", "max"),
             chunk_mb=("chunk_mb", "max"),
+            reg_level=("registration_level", "max"),
+            seg_level=("segmentation_level", "max"),
+            spim_gb_reg=("spim_gb_reg", "max"),
+            spim_gb_seg=("spim_gb_seg", "max"),
+            chunk_mb_seg=("chunk_mb_seg", "max"),
         )
         .reset_index()
     )
@@ -180,6 +212,9 @@ def main():
         "spim_gb_l0",
         "spim_gb",
         "chunk_mb",
+        "spim_gb_reg",
+        "spim_gb_seg",
+        "chunk_mb_seg",
     ]
     # Jobs too short for psutil to sample have "NA" for memory and CPU
     jobs[num_cols] = jobs[num_cols].apply(pd.to_numeric, errors="coerce")
