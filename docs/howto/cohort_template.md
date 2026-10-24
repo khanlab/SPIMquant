@@ -66,6 +66,17 @@ FireANTs is only installed in the `gpu` pixi environment, so run this level from
 it, e.g. `pixi run -e gpu spimquant ...`. It uses the fused CUDA ops if they are
 installed, falling back to the plain implementation otherwise.
 
+Shape averaging (`cohort_template.fireants.shape_avg`) is off by default: it adds
+a full-resolution registration per iteration, runs out of memory at the 25um
+ABAv3 resolution on a 40GB GPU, and in testing gave a worse subject fit than the
+plain average. To lower memory use and run time, resample the subject images
+before template building with e.g. `--cohort-template-resample-mm 0.05`, useful
+when using a finer `--cohort-template-level`. On an 18-subject cohort, a 50um
+template built in ~7 min vs ~50 min at 25um.
+
+The fused CUDA ops (`fireants-fused-ops`, from the `akhanf/khanlab` channel) are
+installed in the gpu environment and reduce FireANTs' GPU memory use.
+
 ## Preparing the template for SPIMquant
 
 ```

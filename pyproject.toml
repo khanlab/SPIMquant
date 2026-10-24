@@ -136,6 +136,7 @@ cuda-version = "12.6.*"
 pytorch-gpu = "*"
 # cohort template building (khanlab fork, from akhanf/khanlab)
 fireants = ">=1.4.0.post1"
+fireants-fused-ops = ">=1.2.0"
 
 
 # ----------------------------------------------------------------------

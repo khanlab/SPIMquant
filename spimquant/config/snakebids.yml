@@ -502,6 +502,11 @@ parse_args:
     default: 10
     type: int
 
+  --cohort-template-resample-mm:
+    help: "Isotropic voxel size (mm) to resample the subject images to before building the cohort template, e.g. 0.05. Lowers GPU memory use and run time, e.g. for a finer --cohort-template-level or --template. (default: --template resolution)"
+    default: null
+    type: float
+
   --cohort-template-n-gpus:
     help: "Number of GPUs for FireANTs template building; subjects are split across GPUs (default: %(default)s)"
     default: 1
@@ -655,7 +660,10 @@ cohort_template:
     laplace_params:
       learning_rate: 0.5
       itk_scale: true
-    shape_avg: true
+    # shape averaging runs an extra full-resolution registration per iteration
+    # (and OOMs at 25um on a 40GB GPU); the init template is already the subject
+    # average in --template space, and without it the subjects fit better
+    shape_avg: false
     save_every: 1
     save_init_template: true
     save_moved_images: true

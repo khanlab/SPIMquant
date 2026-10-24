@@ -208,8 +208,8 @@ rule all_cohort_template:
 rule cohort_template_inputs:
     """Normalize subject images and write the FireANTs image list and config.
 
-    Each image is clipped to robust percentiles of its nonzero voxels and
-    rescaled to [0,1]. The image list has one comma-separated row per subject
+    Images are optionally resampled to --cohort-template-resample-mm. Each image
+    is clipped to robust percentiles of its nonzero voxels and rescaled to [0,1]. The image list has one comma-separated row per subject
     (one entry per stain), which FireANTs builds as one multivariate template.
     """
     input:
@@ -226,6 +226,7 @@ rule cohort_template_inputs:
         rows=cohort_rows,
         stains=cohort_stains,
         clip_percentiles=config["cohort_template"]["clip_percentiles"],
+        resample_mm=config["cohort_template_resample_mm"],
         fireants=lambda wildcards, output: {
             **config["cohort_template"]["fireants"],
             "template_iterations": cohort_iterations,
@@ -270,6 +271,9 @@ rule build_cohort_template:
         "python -c 'import fireants' 2>/dev/null || {{ echo 'FireANTs is not "
         "installed: run SPIMquant from the gpu environment, e.g. pixi run -e gpu "
         "spimquant ...' >&2; exit 1; }} && "
+        # full-res deformable steps can run close to the GPU memory limit, and
+        # fragmentation otherwise causes OOM after a few subjects
+        "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True "
         "torchrun --standalone --nproc_per_node {resources.gpu} "
         " -m fireants.scripts.template.build_template "
         " --config-dir {params.config_dir} --config-name {params.config_name} "

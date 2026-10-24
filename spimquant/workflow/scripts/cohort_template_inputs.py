@@ -1,7 +1,8 @@
 """Prepare subject images for FireANTs cohort template building.
 
-Each subject image (already in the original template space) is clipped to
-robust percentiles of its nonzero voxels and rescaled to [0, 1]. Writes:
+Each subject image (already in the original template space) is optionally
+resampled to an isotropic voxel size, then clipped to robust percentiles of its
+nonzero voxels and rescaled to [0, 1]. Writes:
 
 - the normalized images, one per subject and stain
 - an image list with one comma-separated row per subject (one entry per stain,
@@ -14,11 +15,25 @@ import os
 import nibabel as nib
 import numpy as np
 import yaml
+from nibabel.affines import rescale_affine, voxel_sizes
+from nibabel.processing import resample_from_to
 
 rows = snakemake.params.rows
 stains = snakemake.params.stains
 p_lo, p_hi = snakemake.params.clip_percentiles
+resample_mm = snakemake.params.resample_mm
 out_dir = snakemake.output.images
+
+
+def resample(img):
+    """Linearly resample img to resample_mm isotropic, covering the same extent."""
+    zooms = voxel_sizes(img.affine)
+    new_shape = np.maximum(
+        np.round(np.array(img.shape[:3]) * zooms / resample_mm), 1
+    ).astype(int)
+    new_affine = rescale_affine(img.affine, img.shape[:3], resample_mm, new_shape)
+    return resample_from_to(img, (tuple(new_shape), new_affine), order=1)
+
 
 os.makedirs(out_dir, exist_ok=True)
 
@@ -27,6 +42,8 @@ for row in rows:
     out_paths = []
     for stain, in_path in zip(stains, row["images"]):
         img = nib.load(in_path)
+        if resample_mm is not None:
+            img = resample(img)
         data = np.asarray(img.dataobj, dtype=np.float32)
         nonzero = data[data > 0]
         if nonzero.size == 0:
