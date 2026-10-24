@@ -12,7 +12,7 @@ table, and a per-rule table compares what was used against what was requested:
 
   spim_gb_l0 / spim_gb         size of one channel of the job's SPIM input at
                                level 0, and at the job's {level} wildcard if it
-                               has one (from benchmarks/spim_sizes.tsv)
+                               has one (from benchmarks/spim_sizes/)
   chunk_mb                     size of one chunk of one channel of that input,
                                at the job's {level} (or level 0)
   spim_gb_reg / spim_gb_seg /  the same at the run's --registration-level and
@@ -43,11 +43,11 @@ import pandas as pd
 
 def load_spim_sizes(out_dir):
     """{(scan wildcards, level): (GB, chunk MB) per channel}, scan wildcard names."""
-    path = Path(out_dir, "benchmarks", "spim_sizes.tsv")
-    if not path.exists():
+    paths = sorted(Path(out_dir, "benchmarks", "spim_sizes").rglob("*.tsv"))
+    if not paths:
         return {}, []
     # As strings, so that e.g. subject 01 is not read as 1
-    sizes = pd.read_csv(path, sep="\t", dtype=str)
+    sizes = pd.concat(pd.read_csv(p, sep="\t", dtype=str) for p in paths)
     key_cols = list(sizes.columns[: sizes.columns.get_loc("level")])
     lookup = {
         (tuple(row[key_cols]), int(row["level"])): (
