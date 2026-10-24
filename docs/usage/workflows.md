@@ -44,14 +44,30 @@ The `--cores` option controls parallelization:
 
 ### SLURM
 
-SPIMquant can submit jobs to SLURM clusters:
+SPIMquant can submit jobs to SLURM clusters with the Snakemake SLURM executor,
+run from the login node:
 
 ```bash
 pixi run spimquant /bids /output participant \
-  --profile slurm \
-  --jobs 100 \
-  --cores all
+  --executor slurm \
+  --jobs 100
 ```
+
+Steps that use a GPU (e.g. vessel segmentation with vesselFM, LANTERN plaque
+segmentation, cohort template building) need the `gpu` environment. pixi only
+runs the `gpu` environment on a machine with a CUDA driver, which a login node
+usually lacks, so tell pixi to assume one:
+
+```bash
+export CONDA_OVERRIDE_CUDA=12.8
+pixi run -e gpu spimquant /bids /output participant \
+  --executor slurm \
+  --jobs 100
+```
+
+This is safe: the login node only schedules jobs, and the GPU jobs run on GPU
+nodes, which use their real driver. Put the `export` in your `~/.bashrc` on the
+login node to avoid repeating it.
 
 ### Custom Profiles
 
