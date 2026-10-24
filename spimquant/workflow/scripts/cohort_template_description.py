@@ -90,6 +90,8 @@ description = {
     "OriginalTemplate": p.orig_template,
     "Stains": list(p.stains),
     "InputLevel": p.level,
+    # isotropic voxel size (mm) the inputs were resampled to, null if not resampled
+    "InputResampleMM": p.resample_mm,
     "TemplateIterations": p.iterations,
     "Subjects": list(p.subjects),
     "Atlases": list(entry["atlases"].keys()),

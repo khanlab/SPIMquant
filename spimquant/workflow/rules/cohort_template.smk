@@ -631,6 +631,7 @@ rule cohort_template_description:
         stains=cohort_stains,
         level=cohort_level,
         iterations=cohort_iterations,
+        resample_mm=config["cohort_template_resample_mm"],
         subjects=[row["name"] for row in cohort_rows],
         fireants=config["cohort_template"]["fireants"],
         reg=config["cohort_template"]["reg"],
