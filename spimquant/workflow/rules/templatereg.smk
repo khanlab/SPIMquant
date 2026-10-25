@@ -66,8 +66,8 @@ rule n4:
         "../envs/ants.yaml"
     threads: 1
     resources:
-        mem_mb=4000,
-        runtime=15,
+        mem_mb=scaled_mem_mb(2000, 22000),
+        runtime=scaled_runtime(10, 30),
     shell:
         "N4BiasFieldCorrection -i {input.nii}"
         " -o [{output.corrected},{output.biasfield}]"
@@ -114,7 +114,7 @@ rule apply_mask_to_corrected:
         "../envs/c3d.yaml"
     threads: 1
     resources:
-        mem_mb=4000,
+        mem_mb=scaled_mem_mb(2000, 14000),
         runtime=15,
     shell:
         "c3d {input.corrected} {input.mask} -multiply -o {output.masked}"
@@ -500,7 +500,7 @@ rule deform_spim_nii_to_template_nii:
         "../envs/ants.yaml"
     threads: 8
     resources:
-        mem_mb=8000,
+        mem_mb=scaled_mem_mb(4000, 21000),
         runtime=30,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
@@ -548,7 +548,7 @@ rule deform_template_dseg_to_subject_nii:
         "../envs/ants.yaml"
     threads: 8
     resources:
-        mem_mb=8000,
+        mem_mb=scaled_mem_mb(2500, 16000),
         runtime=30,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "

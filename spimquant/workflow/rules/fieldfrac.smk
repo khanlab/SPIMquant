@@ -74,7 +74,7 @@ rule map_fieldfrac_img_to_seg_tsv:
         ),
     threads: 1
     resources:
-        mem_mb=4000,
-        runtime=15,
+        mem_mb=scaled_mem_mb(2000, 22000),
+        runtime=scaled_runtime(10, 150),
     script:
         "../scripts/map_img_to_roi_tsv.py"

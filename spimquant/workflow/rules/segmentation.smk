@@ -238,8 +238,9 @@ rule n4_biasfield:
         ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        # Peak memory is ~0.6x the image size, so this does not stream in chunks
-        mem_mb=scaled_mem_mb(8000, 700),
+        # ~1 GB per thread (dask workers), plus ~0.5x the image size, so this
+        # does not stream in chunks
+        mem_mb=scaled_mem_mb(128000, 500),
         runtime=scaled_runtime(60, 0.2),
     params:
         proc_level=config["correction_level"],

@@ -23,7 +23,7 @@ rule compute_filtered_regionprops:
         ),
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=scaled_mem_mb(32000, 60, config["segmentation_level"]),
+        mem_mb=scaled_mem_mb(48000, 30, config["segmentation_level"]),
         runtime=scaled_runtime(30, 0.2, config["segmentation_level"]),
     params:
         region_filters=lambda wildcards: config["stain_defaults"][
@@ -67,7 +67,7 @@ rule transform_regionprops_to_template:
         ),
     threads: 1
     resources:
-        mem_mb=4000,
+        mem_mb=scaled_mem_mb(2000, 18000, config["registration_level"]),
         runtime=15,
     params:
         coord_column_names=config["coord_column_names"],

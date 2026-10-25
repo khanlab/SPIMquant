@@ -22,7 +22,7 @@ rule counts_per_voxel:
         ),
     threads: 16
     resources:
-        mem_mb=15000,
+        mem_mb=scaled_mem_mb(2000, 20000),
         runtime=20,
     params:
         coord_column_names=config["coord_column_names"],

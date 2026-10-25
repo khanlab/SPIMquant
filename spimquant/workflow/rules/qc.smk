@@ -365,7 +365,7 @@ rule qc_zprofile:
         ),
     threads: 1
     resources:
-        mem_mb=4000,
+        mem_mb=scaled_mem_mb(1500, 16000, config["registration_level"]),
         runtime=10,
     script:
         "../scripts/qc_zprofile.py"

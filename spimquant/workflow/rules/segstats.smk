@@ -39,7 +39,7 @@ rule map_regionprops_to_atlas_rois:
         ),
     threads: 4
     resources:
-        mem_mb=4000,
+        mem_mb=scaled_mem_mb(2000, 10000),
         runtime=15,
     params:
         coord_column_names=config["coord_column_names"],
