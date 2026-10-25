@@ -8,6 +8,7 @@ This module provides shared helper functions used across multiple workflow rules
 - get_template_for_reg(): Registration-specific template selector
 - get_stains_all_subjects(): Stain consistency validator across subjects
 - spim_size_gb(), spim_chunk_mb(): Image and chunk size of a job's SPIM input, for resources
+- scaled_mem_mb(), scaled_runtime(): Resources that grow with a job's SPIM input size
 - bids_oz_out(): bids() wrapper for OME-Zarr outputs (adds directory() when needed)
 - bids_oz_in(): bids() wrapper for OME-Zarr inputs
 
@@ -19,6 +20,8 @@ import functools
 import json
 import math
 from pathlib import Path
+
+import numpy as np
 
 
 def resources_path(path):
@@ -122,19 +125,62 @@ def get_stains_all_subjects(ignore_stains=None):
         )
 
 
+def _open_spim_level(spim_path, level):
+    """(dims, shape, chunks, dtype) of a stored pyramid level, or None if the
+    pyramid has fewer levels; read from metadata only, without any image data."""
+    if spim_path.endswith(".ims"):
+        from imaris_ims_zarr import ImsProcessSafeStore
+
+        if level >= ImsProcessSafeStore(spim_path).ResolutionLevels:
+            return None
+        store = ImsProcessSafeStore(spim_path, ResolutionLevelLock=level)
+        return ("tczyx", store.shape, store.chunks, np.dtype(store.dtype))
+
+    import zarr
+
+    if spim_path.endswith((".ozx", ".zip")):
+        group = zarr.open_group(zarr.storage.ZipStore(spim_path, mode="r"), mode="r")
+    else:
+        group = zarr.open_group(spim_path, mode="r")
+    attrs = group.attrs.asdict()
+    multiscales = attrs.get("ome", attrs)["multiscales"][0]
+    datasets = multiscales["datasets"]
+    if level >= len(datasets):
+        return None
+    arr = group[datasets[level]["path"]]
+    dims = [axis["name"] for axis in multiscales["axes"]]
+    return (dims, arr.shape, arr.chunks, np.dtype(arr.dtype))
+
+
 @functools.cache
 def get_spim_info(spim_path, level=0):
     """Shape and chunk shape (by axis name) and bytes per voxel of a SPIM input.
 
-    Read lazily from the image metadata with ZarrNii, so it works the same for
-    .ome.zarr, .ozx, .ims and remote stores, where the file size on disk says
-    little about the image size (compressed, chunked, or not local at all).
+    Read from the image metadata of .ome.zarr, .ozx, .ims or remote stores, where
+    the file size on disk says little about the image size (compressed, chunked,
+    or not local at all). Only metadata is read, so this is cheap enough for
+    resource functions evaluated by the scheduler. Levels beyond the stored
+    pyramid are halved in each spatial dimension per level, as ZarrNii does.
     """
-    znimg = ZarrNii.from_file(str(spim_path), level=int(level))
+    spim_path, level = str(spim_path), int(level)
+    stored = level
+    while (info := _open_spim_level(spim_path, stored)) is None and stored > 0:
+        stored -= 1
+    if info is None:
+        raise ValueError(f"No pyramid levels found in {spim_path}")
+    dims, shape, chunks, dtype = info
+    factor = 2 ** (level - stored)
+    spatial = {"x", "y", "z"}
+    sizes = {
+        d: ((max(1, n // factor), max(1, c // factor)) if d in spatial else (n, c))
+        for d, n, c in zip(dims, shape, chunks)
+        if d != "t"
+    }
+    # As in dask, a chunk is no larger than the image
     return {
-        "shape": dict(zip(znimg.dims, znimg.darr.shape)),
-        "chunks": dict(zip(znimg.dims, znimg.darr.chunksize)),
-        "itemsize": znimg.darr.dtype.itemsize,
+        "shape": {d: n for d, (n, c) in sizes.items()},
+        "chunks": {d: min(n, c) for d, (n, c) in sizes.items()},
+        "itemsize": dtype.itemsize,
     }
 
 
@@ -167,6 +213,39 @@ def spim_size_gb(wildcards, level=0):
 def spim_chunk_mb(wildcards, level=0):
     """get_spim_chunk_mb() for the SPIM input of a job, e.g. to scale its resources."""
     return get_spim_chunk_mb(spim_input(wildcards), level)
+
+
+def _job_spim_size_gb(wildcards, level):
+    """spim_size_gb() at `level`, or at the job's {level} wildcard if None."""
+    return spim_size_gb(wildcards, wildcards.level if level is None else level)
+
+
+def scaled_mem_mb(base_mb, mb_per_gb, level=None):
+    """mem_mb for a rule whose peak memory grows with the size of its SPIM input.
+
+    base_mb + mb_per_gb * GB of one channel of the job's SPIM input at `level`
+    (default: the job's {level} wildcard), times the attempt, so that a job
+    retried with --retries gets more memory. Fitted from --benchmark runs, see
+    tools/summarize_benchmarks.py."""
+
+    def mem_mb(wildcards, attempt):
+        return int(
+            (base_mb + mb_per_gb * _job_spim_size_gb(wildcards, level)) * attempt
+        )
+
+    return mem_mb
+
+
+def scaled_runtime(base_min, min_per_gb, level=None):
+    """runtime (minutes) for a rule whose run time grows with the size of its
+    SPIM input; as scaled_mem_mb()."""
+
+    def runtime(wildcards, attempt):
+        return int(
+            (base_min + min_per_gb * _job_spim_size_gb(wildcards, level)) * attempt
+        )
+
+    return runtime
 
 
 def get_spim_json_path(spim_path):

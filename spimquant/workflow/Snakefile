@@ -1583,7 +1583,7 @@ if config.get("benchmark", False):
             tsv=benchmark_spim_sizes_path,
         threads: 1
         resources:
-            mem_mb=8000,
+            mem_mb=2000,
             runtime=15,
         params:
             levels=range(
