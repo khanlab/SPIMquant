@@ -1,2 +1,6 @@
 use-conda: True
 latency-wait: 10
+# Name cluster job scripts by job id only. The default also includes the job
+# name, which for a group job lists its rules and can exceed the 255-character
+# limit on file names.
+jobname: "snakejob.{jobid}.sh"

@@ -23,7 +23,9 @@ rule compute_filtered_regionprops:
         ),
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=scaled_mem_mb(48000, 30, config["segmentation_level"]),
+        # dask gives each worker an equal share of this; with less, workers
+        # pause at their limit and the job runs ~10x slower
+        mem_mb=scaled_mem_mb(96000, 30, config["segmentation_level"]),
         runtime=scaled_runtime(30, 0.2, config["segmentation_level"]),
     params:
         region_filters=lambda wildcards: config["stain_defaults"][
