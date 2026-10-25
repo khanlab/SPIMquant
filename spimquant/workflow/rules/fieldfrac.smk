@@ -27,9 +27,9 @@ rule fieldfrac:
             suffix="fieldfrac.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    threads: 32
+    threads: 8
     resources:
-        mem_mb=16000,
+        mem_mb=4000,
         runtime=30,
     params:
         hires_level=config["segmentation_level"],
@@ -74,7 +74,7 @@ rule map_fieldfrac_img_to_seg_tsv:
         ),
     threads: 1
     resources:
-        mem_mb=32000,
+        mem_mb=4000,
         runtime=15,
     script:
         "../scripts/map_img_to_roi_tsv.py"

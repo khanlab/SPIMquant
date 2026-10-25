@@ -111,7 +111,7 @@ rule n4_pre_quant:
         "../envs/ants.yaml"
     threads: 16
     resources:
-        mem_mb=32000,
+        mem_mb=4000,
         runtime=15,
     params:
         iters=config["correction_n4_iters"],
@@ -238,8 +238,9 @@ rule n4_biasfield:
         ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
-        runtime=180,
+        # Peak memory is ~0.6x the image size, so this does not stream in chunks
+        mem_mb=scaled_mem_mb(8000, 700),
+        runtime=scaled_runtime(60, 0.2),
     params:
         proc_level=config["correction_level"],
         zarrnii_kwargs=zarrnii_in_kwargs,
@@ -347,9 +348,9 @@ rule gmmthresh:
         ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=500000 if config["dask_scheduler"] == "distributed" else 250000,
+        mem_mb=scaled_mem_mb(40000, 20),
         disk_mb=2097152,
-        runtime=180,
+        runtime=scaled_runtime(45, 0.05),
     params:
         hist_bin_width=float(config["seg_hist_bin_width"]),
         hist_percentile_range=[float(x) for x in config["seg_hist_percentile_range"]],

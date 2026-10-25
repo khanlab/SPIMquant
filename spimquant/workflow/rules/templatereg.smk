@@ -66,7 +66,7 @@ rule n4:
         "../envs/ants.yaml"
     threads: 1
     resources:
-        mem_mb=32000,
+        mem_mb=4000,
         runtime=15,
     shell:
         "N4BiasFieldCorrection -i {input.nii}"
@@ -114,7 +114,7 @@ rule apply_mask_to_corrected:
         "../envs/c3d.yaml"
     threads: 1
     resources:
-        mem_mb=32000,
+        mem_mb=4000,
         runtime=15,
     shell:
         "c3d {input.corrected} {input.mask} -multiply -o {output.masked}"
@@ -319,7 +319,7 @@ rule deform_reg:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=20000,
         runtime=5 if config["sloppy"] else 30,
     params:
         iters="10x0x0" if config["sloppy"] else "100x50",
@@ -378,7 +378,7 @@ rule compose_subject_to_template_warp:
         "../envs/ants.yaml"
     threads: 4
     resources:
-        mem_mb=8000,
+        mem_mb=10000,
         runtime=15,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
@@ -498,9 +498,9 @@ rule deform_spim_nii_to_template_nii:
         ),
     conda:
         "../envs/ants.yaml"
-    threads: 32
+    threads: 8
     resources:
-        mem_mb=32000,
+        mem_mb=8000,
         runtime=30,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
@@ -546,9 +546,9 @@ rule deform_template_dseg_to_subject_nii:
         ),
     conda:
         "../envs/ants.yaml"
-    threads: 32
+    threads: 8
     resources:
-        mem_mb=32000,
+        mem_mb=8000,
         runtime=30,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "

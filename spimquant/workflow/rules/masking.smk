@@ -119,7 +119,7 @@ rule atropos_seg:
         "../envs/ants.yaml"
     threads: 16
     resources:
-        mem_mb=32000,
+        mem_mb=4000,
         runtime=45,
     params:
         mrf_smoothing=0.3,
@@ -213,7 +213,7 @@ rule init_affine_reg:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=8000,
         runtime=15,
     params:
         iters="10x0x0" if config["sloppy"] else "100x100",
@@ -248,9 +248,9 @@ rule affine_transform_template_mask_to_subject:
                 **inputs["spim"].wildcards,
             ),
         ),
-    threads: 32
+    threads: 8
     resources:
-        mem_mb=16000,
+        mem_mb=4000,
         runtime=15,
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "

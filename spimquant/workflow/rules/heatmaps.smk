@@ -25,7 +25,7 @@ rule map_segstats_tsv_dseg_to_template_nii:
         ),
     threads: 1
     resources:
-        mem_mb=32000,
+        mem_mb=4000,
         runtime=30,
     params:
         label_column="index",
@@ -111,9 +111,9 @@ rule deform_fieldfrac_nii_to_template_nii:
         ),
     conda:
         "../envs/ants.yaml"
-    threads: 32
+    threads: 8
     resources:
-        mem_mb=32000,
+        mem_mb=8000,
         runtime=30,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
