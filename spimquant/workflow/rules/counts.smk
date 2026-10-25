@@ -20,10 +20,12 @@ rule counts_per_voxel:
             suffix="counts.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_quant"
     threads: 16
     resources:
         mem_mb=scaled_mem_mb(2000, 20000),
-        runtime=20,
+        runtime=10,
     params:
         coord_column_names=config["coord_column_names"],
         zarrnii_kwargs=zarrnii_in_kwargs,
@@ -54,10 +56,12 @@ rule counts_per_voxel_template:
             suffix="counts.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_quant"
     threads: 16
     resources:
         mem_mb=scaled_mem_mb(8000, 20, config["segmentation_level"]),
-        runtime=15,
+        runtime=10,
     params:
         coord_column_names=config["template_coord_column_names"],
     script:

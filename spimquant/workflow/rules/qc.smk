@@ -363,6 +363,8 @@ rule qc_zprofile:
             suffix="zprofile.png",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_quant"
     threads: 1
     resources:
         mem_mb=scaled_mem_mb(1500, 16000, config["registration_level"]),
@@ -397,6 +399,8 @@ rule qc_objectstats:
             suffix="objectstats.png",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_quant"
     threads: 1
     resources:
         mem_mb=4000,
@@ -637,9 +641,11 @@ rule qc_roi_summary:
             suffix="roisummary.png",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_quant"
     threads: 1
     resources:
-        mem_mb=4000,
+        mem_mb=1000,
         runtime=10,
     script:
         "../scripts/qc_roi_summary.py"

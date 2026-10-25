@@ -107,6 +107,8 @@ rule n4_pre_quant:
             suffix="biasfield.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_mask"
     conda:
         "../envs/ants.yaml"
     threads: 16

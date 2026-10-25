@@ -12,6 +12,8 @@ rule create_tabular_json_sidecar_from_tsv:
         "{prefix}.tsv",
     output:
         "{prefix}.json",
+    group:
+        "subj_quant"
     threads: 1
     resources:
         mem_mb=500,
@@ -29,6 +31,8 @@ rule create_tabular_json_sidecar_from_parquet:
         "{prefix}.parquet",
     output:
         "{prefix}.json",
+    group:
+        "subj_quant"
     threads: 1
     resources:
         mem_mb=500,
