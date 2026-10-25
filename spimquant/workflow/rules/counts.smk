@@ -22,7 +22,7 @@ rule counts_per_voxel:
         ),
     threads: 16
     resources:
-        mem_mb=15000,
+        mem_mb=scaled_mem_mb(2000, 20000),
         runtime=20,
     params:
         coord_column_names=config["coord_column_names"],
@@ -56,8 +56,8 @@ rule counts_per_voxel_template:
         ),
     threads: 16
     resources:
-        mem_mb=64000,
-        runtime=30,
+        mem_mb=scaled_mem_mb(8000, 20, config["segmentation_level"]),
+        runtime=15,
     params:
         coord_column_names=config["template_coord_column_names"],
     script:

@@ -111,17 +111,20 @@ rule run_lantern_plaques:
         # one task that sees all N GPUs -- which is what DevicePool expects.
         tasks_per_gpu=0,
         cpus_per_gpu=8,
-        mem_mb=256000,
+        # Sized by the input at plaque_level, although inference runs on the
+        # plaque_iso_res grid; re-check if either is changed from the default.
+        mem_mb=scaled_mem_mb(48000, 500, config["plaque_level"]),
         disk_mb=2097152,
-        runtime=lambda wildcards: max(
-            1,
-            int(
-                2880.0
-                / (3.0 ** float(config["plaque_level"]))
-                / float(config["plaque_n_gpus"])
-            ),
-        ),
         # stride-64 tiling x 5 folds, split across GPUs
+        runtime=lambda wildcards, attempt: int(
+            (
+                30
+                + 5.0
+                * spim_size_gb(wildcards, config["plaque_level"])
+                / config["plaque_n_gpus"]
+            )
+            * attempt
+        ),
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,
         start_level=config["plaque_level"],
@@ -178,9 +181,9 @@ rule binarize_lantern_plaques:
         # the sparse plaque voxels. Measured on a 45 G-voxel grid with 32
         # threads: 5 min / 42 GB peak for a binary ensemble, 12 min / 63 GB
         # for a 3-class one with --label_filter, before the upsample/write.
-        mem_mb=120000,
+        mem_mb=scaled_mem_mb(64000, 25, config["segmentation_level"]),
         disk_mb=2097152,
-        runtime=240,
+        runtime=scaled_runtime(30, 0.1, config["segmentation_level"]),
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,
         n_folds=config["plaque_n_folds"],

@@ -44,14 +44,35 @@ The `--cores` option controls parallelization:
 
 ### SLURM
 
-SPIMquant can submit jobs to SLURM clusters:
+SPIMquant can submit jobs to SLURM clusters with the Snakemake SLURM executor,
+run from the login node:
 
 ```bash
 pixi run spimquant /bids /output participant \
-  --profile slurm \
-  --jobs 100 \
-  --cores all
+  --executor slurm \
+  --jobs 100
 ```
+
+Steps that use a GPU (e.g. vessel segmentation with vesselFM, LANTERN plaque
+segmentation, cohort template building) need the `gpu` environment. pixi only
+runs the `gpu` environment on a machine with a CUDA driver, which a login node
+usually lacks, so tell pixi to assume one:
+
+```bash
+export CONDA_OVERRIDE_CUDA=12.8
+pixi run -e gpu spimquant /bids /output participant \
+  --executor slurm \
+  --jobs 100
+```
+
+This is safe: the login node only schedules jobs, and the GPU jobs run on GPU
+nodes, which use their real driver. Put the `export` in your `~/.bashrc` on the
+login node to avoid repeating it.
+
+Add `--retries 1` on a cluster. A job that fails is then run once more, with
+twice the memory and time for the steps whose resources grow with the image
+size. This also covers jobs that fail because a file just written on another
+node is not yet visible on a shared filesystem.
 
 ### Custom Profiles
 
@@ -192,6 +213,27 @@ pixi run spimquant ... --cores 16 --set-threads convert_to_nifti=4
 <!-- TODO: Add time limit configuration -->
 
 Set maximum execution time for cluster jobs.
+
+### Measuring Resource Use
+
+The memory and run time each step requests were measured on full-resolution
+data, and for the heavy steps they grow with the size of the image at the
+level the step runs at (`--registration-level`, `--segmentation-level`). To
+measure them on your own data, add `--benchmark`:
+
+```bash
+pixi run spimquant /bids /output participant --benchmark ...
+```
+
+This records the run time, peak memory and CPU use of every job, with the
+resources it requested, in `/output/benchmarks/`. Summarize one or more runs
+with:
+
+```bash
+pixi run -e dev python tools/summarize_benchmarks.py /output [/output2 ...]
+```
+
+which compares, for each rule, what was requested with what was used.
 
 ## Workflow Visualization
 

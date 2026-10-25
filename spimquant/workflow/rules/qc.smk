@@ -62,7 +62,7 @@ rule qc_intensity_histogram:
         ),
     threads: 4
     resources:
-        mem_mb=16000,
+        mem_mb=2000,
         runtime=30,
     params:
         level=config["registration_level"],
@@ -104,7 +104,7 @@ rule qc_segmentation_overview:
         ),
     threads: 4
     resources:
-        mem_mb=16000,
+        mem_mb=2000,
         runtime=30,
     params:
         level=config["registration_level"],
@@ -143,7 +143,7 @@ rule qc_vessels_overview:
         ),
     threads: 4
     resources:
-        mem_mb=16000,
+        mem_mb=2000,
         runtime=30,
     params:
         level=config["registration_level"],
@@ -229,8 +229,8 @@ rule qc_segmentation_roi_zoom:
         ),
     threads: 4
     resources:
-        mem_mb=32000,
-        runtime=15,
+        mem_mb=scaled_mem_mb(4000, 4, config["segmentation_level"]),
+        runtime=scaled_runtime(15, 0.05, config["segmentation_level"]),
     params:
         max_rois=lambda wildcards: 25 if wildcards.seg == "coarse" else 100,
         n_cols=lambda wildcards: 5 if wildcards.seg == "coarse" else 10,
@@ -316,8 +316,8 @@ rule qc_vessels_roi_zoom:
         ),
     threads: 4
     resources:
-        mem_mb=32000,
-        runtime=15,
+        mem_mb=scaled_mem_mb(4000, 4, config["segmentation_level"]),
+        runtime=scaled_runtime(15, 0.05, config["segmentation_level"]),
     params:
         max_rois=lambda wildcards: 25 if wildcards.seg == "coarse" else 100,
         n_cols=lambda wildcards: 5 if wildcards.seg == "coarse" else 10,
@@ -365,7 +365,7 @@ rule qc_zprofile:
         ),
     threads: 1
     resources:
-        mem_mb=4000,
+        mem_mb=scaled_mem_mb(1500, 16000, config["registration_level"]),
         runtime=10,
     script:
         "../scripts/qc_zprofile.py"

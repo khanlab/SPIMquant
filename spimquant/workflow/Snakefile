@@ -1479,9 +1479,20 @@ rule all_bbox_template_crops:
         ],
 
 
+# Image and chunk sizes of each SPIM input, for --benchmark (see the end of this file)
+benchmark_spim_sizes_path = bids(
+    root="benchmarks/spim_sizes", suffix="sizes.tsv", **inputs["spim"].wildcards
+)
+
+
 rule all_participant:
     default_target: True
     input:
+        (
+            inputs["spim"].expand(benchmark_spim_sizes_path)
+            if config.get("benchmark", False)
+            else []
+        ),
         rules.all_register.input,
         rules.all_vessels.input if do_vessels else [],
         rules.all_plaques.input if do_plaques else [],
@@ -1526,3 +1537,88 @@ include: "rules/cohort_template.smk"
 if config["register_to_mri"]:
 
     include: "rules/preproc_mri.smk"
+
+
+# --benchmark: give every rule that has outputs a benchmark file, named after its
+# output wildcards so that each job gets its own. The extended format also records
+# the threads, resources and input sizes of each job, which is what resource tuning
+# needs, so it is switched on here rather than relying on --benchmark-extended.
+# The image and chunk size of each SPIM input at each level is written by the
+# benchmark_spim_sizes rule (a job of its own, since building the lazy array for a
+# full-resolution image takes GBs, too much for a login node), so the summary can
+# relate each job's usage to the image it worked on.
+# Summarize the results with tools/summarize_benchmarks.py.
+if config.get("benchmark", False):
+    workflow.output_settings.benchmark_extended = True
+
+    # The levels most rules run at (rather than a {level} wildcard), and the
+    # chunking of SPIMquant's own zarr outputs, which later rules read
+    onstart:
+        os.makedirs("benchmarks", exist_ok=True)
+        with open("benchmarks/run_config.json", "w") as _f:
+            json.dump(
+                {
+                    k: config.get(k)
+                    for k in [
+                        "registration_level",
+                        "segmentation_level",
+                        "correction_level",
+                        "plaque_level",
+                        "plaque_iso_res",
+                        "seg_method",
+                        "zarr_store_ext",
+                        "zarr_store_chunks",
+                        "zarr_store_shards",
+                        "dask_scheduler",
+                    ]
+                },
+                _f,
+                indent=2,
+            )
+
+    rule benchmark_spim_sizes:
+        input:
+            spim=spim_input,
+        output:
+            tsv=benchmark_spim_sizes_path,
+        threads: 1
+        resources:
+            mem_mb=2000,
+            runtime=15,
+        params:
+            levels=range(
+                max(
+                    config["registration_level"],
+                    config["correction_level"],
+                    config["segmentation_level"],
+                    config["plaque_level"],
+                )
+                + 1
+            ),
+        run:
+            rows = []
+            for level in params.levels:
+                info = get_spim_info(input.spim, level)
+                rows.append(
+                    {
+                        **{w: wildcards[w] for w in _spim_key_wildcards},
+                        "level": level,
+                        **{f"n{dim}": n for dim, n in info["shape"].items()},
+                        **{f"chunk_{dim}": n for dim, n in info["chunks"].items()},
+                        "bytes_per_voxel": info["itemsize"],
+                        "gb_per_channel": get_spim_size_gb(input.spim, level),
+                        "chunk_mb_per_channel": get_spim_chunk_mb(
+                            input.spim, level
+                        ),
+                        "path": input.spim,
+                    }
+                )
+            _pd.DataFrame(rows).to_csv(output.tsv, sep="\t", index=False)
+
+    for _rule in workflow.rules:
+        if not _rule.output or _rule.benchmark is not None:
+            continue
+        _wildcards = sorted(_rule.wildcard_names)
+        _name = "_".join(f"{w}-{{{w}}}" for w in _wildcards) or _rule.name
+        _rule.benchmark_modifier = workflow.modifier.path_modifier
+        _rule.benchmark = os.path.join("benchmarks", _rule.name, f"{_name}.jsonl")

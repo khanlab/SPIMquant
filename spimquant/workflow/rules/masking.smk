@@ -63,7 +63,7 @@ rule pre_atropos:
         "../envs/c3d.yaml"
     threads: 1
     resources:
-        mem_mb=3000,
+        mem_mb=scaled_mem_mb(1500, 6000),
         runtime=15,
     params:
         downsampling=(
@@ -119,8 +119,8 @@ rule atropos_seg:
         "../envs/ants.yaml"
     threads: 16
     resources:
-        mem_mb=32000,
-        runtime=45,
+        mem_mb=scaled_mem_mb(2000, 12000),
+        runtime=scaled_runtime(10, 180),
     params:
         mrf_smoothing=0.3,
         mrf_radius="2x2x2",
@@ -157,7 +157,7 @@ rule post_atropos:
         "../envs/c3d.yaml"
     threads: 1
     resources:
-        mem_mb=3000,
+        mem_mb=scaled_mem_mb(1500, 7500),
         runtime=15,
     shell:
         "c3d -interpolation NearestNeighbor {input.ref} {input.dseg} -reslice-identity -o {output.dseg}"
@@ -213,7 +213,7 @@ rule init_affine_reg:
         ),
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=8000,
         runtime=15,
     params:
         iters="10x0x0" if config["sloppy"] else "100x100",
@@ -248,9 +248,9 @@ rule affine_transform_template_mask_to_subject:
                 **inputs["spim"].wildcards,
             ),
         ),
-    threads: 32
+    threads: 8
     resources:
-        mem_mb=16000,
+        mem_mb=scaled_mem_mb(2000, 26000, config["registration_level"]),
         runtime=15,
     shell:
         " greedy -threads {threads} -d 3 -rf {input.ref} "
@@ -300,8 +300,8 @@ rule create_mask_from_gmm_and_prior:
         level=config["registration_level"],
     threads: 1
     resources:
-        mem_mb=4000,
-        runtime=15,
+        mem_mb=scaled_mem_mb(2000, 9000),
+        runtime=scaled_runtime(10, 80),
     params:
         prior_sigma_mm=config["masking"]["prior_sigma_mm"],
         margin_mm=config["masking"]["prior_margin_mm"],

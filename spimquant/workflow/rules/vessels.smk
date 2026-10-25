@@ -26,8 +26,8 @@ rule run_vesselfm:
     resources:
         gpu=1,
         cpus_per_gpu=8,
-        mem_mb=256000,
-        runtime=lambda wildcards: max(1, int(400.0 / (3.0 ** float(wildcards.level)))),  # rough estimate, clamped to >=1
+        mem_mb=scaled_mem_mb(8000, 20),
+        runtime=scaled_runtime(30, 0.75),
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,
         vesselfm_kwargs=lambda wildcards, input: {
@@ -69,9 +69,9 @@ rule signed_distance_transform:
         ),
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=256000,
+        mem_mb=scaled_mem_mb(96000, 75),
         disk_mb=2097152,
-        runtime=720,
+        runtime=scaled_runtime(30, 0.5),
     params:
         overlap_depth=32,
     script:
@@ -102,9 +102,9 @@ rule skeletonize_vessels_mask:
         ),
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=256000,
+        mem_mb=scaled_mem_mb(32000, 60),
         disk_mb=2097152,
-        runtime=720,
+        runtime=scaled_runtime(15, 0.1),
     params:
         overlap_depth=32,
     script:

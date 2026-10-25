@@ -39,7 +39,7 @@ rule map_regionprops_to_atlas_rois:
         ),
     threads: 4
     resources:
-        mem_mb=32000,
+        mem_mb=scaled_mem_mb(2000, 10000),
         runtime=15,
     params:
         coord_column_names=config["coord_column_names"],
@@ -143,7 +143,7 @@ rule merge_into_segstats_tsv:
         ),
     threads: 1
     resources:
-        mem_mb=16000,
+        mem_mb=2000,
         runtime=15,
     script:
         "../scripts/merge_into_segstats_tsv.py"
