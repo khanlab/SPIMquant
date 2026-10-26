@@ -34,12 +34,15 @@ if __name__ == "__main__":
             **snakemake.params.zarrnii_kwargs,
         )
 
-        # only use temp zarr for imaris stores
+        # only use temp zarr for imaris stores; on the job's local scratch, and
+        # without a pyramid, since only level 0 is read back
         if is_imaris:
             temp_dir = stack.enter_context(
-                tempfile.TemporaryDirectory(suffix=".ome.zarr")
+                tempfile.TemporaryDirectory(
+                    suffix=".ome.zarr", dir=snakemake.resources.tmpdir
+                )
             )
-            znimg_in.to_ome_zarr(temp_dir)
+            znimg_in.to_ome_zarr(temp_dir, max_layer=1)
             znimg = ZarrNii.from_file(temp_dir)
         else:
             znimg = znimg_in
