@@ -62,6 +62,8 @@ rule n4:
             suffix="biasfield.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_reg"
     conda:
         "../envs/ants.yaml"
     threads: 1
@@ -110,12 +112,14 @@ rule apply_mask_to_corrected:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_reg"
     conda:
         "../envs/c3d.yaml"
     threads: 1
     resources:
         mem_mb=scaled_mem_mb(2000, 14000),
-        runtime=15,
+        runtime=10,
     shell:
         "c3d {input.corrected} {input.mask} -multiply -o {output.masked}"
 
@@ -195,6 +199,8 @@ rule affine_reg:
             suffix="log.txt",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_reg"
     threads: 32
     resources:
         mem_mb=16000,
@@ -239,12 +245,14 @@ rule convert_ras_to_itk:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj_reg"
     conda:
         "../envs/c3d.yaml"
     threads: 1
     resources:
         mem_mb=1500,
-        runtime=15,
+        runtime=10,
     shell:
         "c3d_affine_tool {input.xfm_ras} -oitk {output.xfm_itk}"
 
@@ -317,6 +325,8 @@ rule deform_reg:
             suffix="log.txt",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_reg"
     threads: 32
     resources:
         mem_mb=20000,
@@ -374,6 +384,8 @@ rule compose_subject_to_template_warp:
             suffix="xfm.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_reg"
     conda:
         "../envs/ants.yaml"
     threads: 4
@@ -496,12 +508,14 @@ rule deform_spim_nii_to_template_nii:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_reg"
     conda:
         "../envs/ants.yaml"
     threads: 8
     resources:
         mem_mb=scaled_mem_mb(4000, 21000),
-        runtime=30,
+        runtime=10,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n Linear "
@@ -544,12 +558,14 @@ rule deform_template_dseg_to_subject_nii:
             suffix="dseg.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_reg"
     conda:
         "../envs/ants.yaml"
     threads: 8
     resources:
         mem_mb=scaled_mem_mb(2500, 16000),
-        runtime=30,
+        runtime=10,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n NearestNeighbor "
@@ -612,6 +628,8 @@ rule registration_qc_report:
             suffix="regqc.html",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_reg"
     threads: 1
     resources:
         mem_mb=8000,

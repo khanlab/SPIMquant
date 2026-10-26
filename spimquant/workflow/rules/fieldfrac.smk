@@ -27,10 +27,12 @@ rule fieldfrac:
             suffix="fieldfrac.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_quant"
     threads: 8
     resources:
         mem_mb=4000,
-        runtime=30,
+        runtime=10,
     params:
         hires_level=config["segmentation_level"],
     script:
@@ -72,6 +74,8 @@ rule map_fieldfrac_img_to_seg_tsv:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj_quant"
     threads: 1
     resources:
         mem_mb=scaled_mem_mb(2000, 22000),

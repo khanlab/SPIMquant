@@ -37,10 +37,12 @@ rule map_regionprops_to_atlas_rois:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj_quant"
     threads: 4
     resources:
         mem_mb=scaled_mem_mb(2000, 10000),
-        runtime=15,
+        runtime=10,
     params:
         coord_column_names=config["coord_column_names"],
     script:
@@ -141,10 +143,12 @@ rule merge_into_segstats_tsv:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj_quant"
     threads: 1
     resources:
         mem_mb=2000,
-        runtime=15,
+        runtime=10,
     script:
         "../scripts/merge_into_segstats_tsv.py"
 
@@ -275,10 +279,12 @@ rule merge_indiv_and_coloc_segstats_tsv:
             suffix="mergedsegstats.tsv",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_quant"
     threads: 1
     resources:
         mem_mb=1500,
-        runtime=15,
+        runtime=10,
     params:
         # must stay aligned with indiv_tsvs, which is per-method
         stains=lambda wildcards: stains_for_desc(wildcards.desc),

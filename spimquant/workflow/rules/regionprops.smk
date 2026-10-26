@@ -23,7 +23,9 @@ rule compute_filtered_regionprops:
         ),
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=scaled_mem_mb(48000, 30, config["segmentation_level"]),
+        # dask gives each worker an equal share of this; with less, workers
+        # pause at their limit and the job runs ~10x slower
+        mem_mb=scaled_mem_mb(96000, 30, config["segmentation_level"]),
         runtime=scaled_runtime(30, 0.2, config["segmentation_level"]),
     params:
         region_filters=lambda wildcards: config["stain_defaults"][
@@ -65,10 +67,12 @@ rule transform_regionprops_to_template:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj_quant"
     threads: 1
     resources:
         mem_mb=scaled_mem_mb(2000, 18000, config["registration_level"]),
-        runtime=15,
+        runtime=10,
     params:
         coord_column_names=config["coord_column_names"],
     script:
@@ -110,10 +114,12 @@ rule aggregate_regionprops_across_stains:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_quant"
     threads: 1
     resources:
         mem_mb=1500,
-        runtime=15,
+        runtime=10,
     params:
         # must stay aligned with regionprops_parquets, which is per-method
         stains=lambda wildcards: stains_for_desc(wildcards.desc),
@@ -193,6 +199,8 @@ rule sample_at_vessel_sdt:
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_quant"
     threads: 8
     resources:
         mem_mb=4000,

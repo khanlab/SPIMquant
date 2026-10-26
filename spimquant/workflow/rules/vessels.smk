@@ -26,7 +26,8 @@ rule run_vesselfm:
     resources:
         gpu=1,
         cpus_per_gpu=8,
-        mem_mb=scaled_mem_mb(8000, 20),
+        # Slurm measured 8.6 GB where psutil measured 2.5 GB (F1A1Te4, level 1).
+        mem_mb=scaled_mem_mb(12000, 20),
         runtime=scaled_runtime(30, 0.75),
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,

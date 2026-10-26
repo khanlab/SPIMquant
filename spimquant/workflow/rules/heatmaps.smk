@@ -23,10 +23,12 @@ rule map_segstats_tsv_dseg_to_template_nii:
             suffix="{suffix}.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_quant"
     threads: 1
     resources:
-        mem_mb=4000,
-        runtime=30,
+        mem_mb=2000,
+        runtime=10,
     params:
         label_column="index",
         feature_column="{suffix}",
@@ -109,12 +111,14 @@ rule deform_fieldfrac_nii_to_template_nii:
             suffix="fieldfrac.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_quant"
     conda:
         "../envs/ants.yaml"
     threads: 8
     resources:
         mem_mb=8000,
-        runtime=30,
+        runtime=10,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -v -n Linear "

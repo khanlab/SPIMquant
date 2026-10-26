@@ -40,10 +40,12 @@ rule get_downsampled_nii:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_mask"
     threads: 8
     resources:
         mem_mb=4000,
-        runtime=15,
+        runtime=10,
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,
     script:

@@ -69,6 +69,11 @@ This is safe: the login node only schedules jobs, and the GPU jobs run on GPU
 nodes, which use their real driver. Put the `export` in your `~/.bashrc` on the
 login node to avoid repeating it.
 
+On a cluster, the many short steps of each subject are submitted together as a
+few jobs, one per stage: brain masking (`subj_mask`), registration
+(`subj_reg`), and the region tables after segmentation (`subj_quant`). This
+grouping applies only to cluster execution.
+
 Add `--retries 1` on a cluster. A job that fails is then run once more, with
 twice the memory and time for the steps whose resources grow with the image
 size. This also covers jobs that fail because a file just written on another
