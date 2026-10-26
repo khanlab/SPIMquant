@@ -113,7 +113,8 @@ rule run_lantern_plaques:
         cpus_per_gpu=8,
         # Sized by the input at plaque_level, although inference runs on the
         # plaque_iso_res grid; re-check if either is changed from the default.
-        mem_mb=scaled_mem_mb(48000, 500, config["plaque_level"]),
+        # Slurm measured 67 GB where psutil measured 55 GB (F1A1Te4, level 1).
+        mem_mb=scaled_mem_mb(64000, 500, config["plaque_level"]),
         disk_mb=2097152,
         # stride-64 tiling x 5 folds, split across GPUs
         runtime=lambda wildcards, attempt: int(
