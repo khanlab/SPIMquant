@@ -81,7 +81,7 @@ gcsfs = ">=2025.5.1,<2026"
 s3fs = ">=2025.5.1,<2026"
 universal-pathlib = ">=0.2.6,<0.3"
 # image I/O and processing
-zarrnii = ">=0.21.6,<0.22.0"
+zarrnii = ">=0.22.0,<0.23.0"
 zarr = ">=3.1.6,<4"
 dask = ">=2026.3.0"
 h5py = ">=3.14.0"
