@@ -240,9 +240,12 @@ rule n4_biasfield:
         ),
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        # ~1 GB per thread (dask workers), plus ~0.5x the image size, so this
-        # does not stream in chunks
-        mem_mb=scaled_mem_mb(128000, 500),
+        # streams in chunks, so this does not grow with the image: ~0.4 GB per
+        # thread for a 256^3 chunk. dask splits the job's memory evenly across
+        # its workers: for .ims, 8 workers of 16 threads peak at ~6.5 GB each
+        # and get 12 GB (pausing at 80%); for OME-Zarr, 64 workers of 2 threads
+        # get 1.5 GB each, enough for input chunks up to 256^3
+        mem_mb=scaled_mem_mb(96000, 0),
         runtime=scaled_runtime(60, 0.2),
     params:
         proc_level=config["correction_level"],
