@@ -69,10 +69,10 @@ rule import_template_anat:
     Supports both local paths (relative to resources/) and remote URLs.
     Templates can include ABAv3, gubra, MBMv3, turone, and MouseIn.
     """
+    wildcard_constraints:
+        **templates["anat"].wildcard_constraints(tpl="{template}"),
     input:
-        anat=lambda wildcards: storage(
-            ancient(resources_path(config["templates"][wildcards.template]["anat"]))
-        ),
+        anat=templates["anat"].input(storage, ancient=True, tpl="{template}"),
     output:
         anat=bids(root=root, template="{template}", suffix="anat.nii.gz"),
     log:
@@ -92,15 +92,13 @@ rule import_template_anat:
 
 rule import_template_spim:
     """Import template spim channel."""
+    wildcard_constraints:
+        **templates["spim"].wildcard_constraints(
+            tpl="{template}", stain=stain_for_reg
+        ),
     input:
-        anat=lambda wildcards: storage(
-            ancient(
-                resources_path(
-                    config["templates"][wildcards.template]["spim_templates"][
-                        stain_for_reg
-                    ]
-                )
-            )
+        anat=templates["spim"].input(
+            storage, ancient=True, tpl="{template}", stain=stain_for_reg
         ),
     output:
         anat=bids(root=root, template="{template}", suffix=f"{stain_for_reg}.nii.gz"),
@@ -120,10 +118,10 @@ rule import_template_spim:
 
 
 rule import_mask:
+    wildcard_constraints:
+        **templates["mask"].wildcard_constraints(tpl="{template}"),
     input:
-        mask=lambda wildcards: storage(
-            ancient(resources_path(config["templates"][wildcards.template]["mask"]))
-        ),
+        mask=templates["mask"].input(storage, ancient=True, tpl="{template}"),
     output:
         mask=bids(root=root, template="{template}", desc="brain", suffix="mask.nii.gz"),
     log:
@@ -161,16 +159,10 @@ rule import_dseg:
     and segmentation scheme. The dseg file contains discrete labels corresponding
     to anatomical regions defined in the companion TSV file.
     """
+    wildcard_constraints:
+        **templates["dseg"].wildcard_constraints(tpl="{template}"),
     input:
-        dseg=lambda wildcards: storage(
-            ancient(
-                resources_path(
-                    config["templates"][wildcards.template]["atlases"][wildcards.seg][
-                        "dseg"
-                    ]
-                )
-            )
-        ),
+        dseg=templates["dseg"].input(storage, ancient=True, tpl="{template}"),
     output:
         dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
     threads: 1
@@ -182,16 +174,10 @@ rule import_dseg:
 
 
 rule import_lut_tsv:
+    wildcard_constraints:
+        **templates["lut"].wildcard_constraints(tpl="{template}"),
     input:
-        tsv=lambda wildcards: storage(
-            ancient(
-                resources_path(
-                    config["templates"][wildcards.template]["atlases"][wildcards.seg][
-                        "tsv"
-                    ]
-                )
-            )
-        ),
+        tsv=templates["lut"].input(storage, ancient=True, tpl="{template}"),
     output:
         tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     threads: 1
@@ -204,7 +190,7 @@ rule import_lut_tsv:
 
 rule import_DSURQE_tsv:
     input:
-        csv=storage(config["templates"]["DSURQE"]["atlases"]["all"]["custom_csv"]),
+        csv=templates["lut_csv"].input(storage, tpl="DSURQE", seg="all"),
     output:
         tsv=bids(root=root, template="DSURQE", seg="all", suffix="dseg.tsv"),
     threads: 1

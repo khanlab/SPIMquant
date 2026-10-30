@@ -5,6 +5,7 @@ analysis_levels: &analysis_levels
  - tune_n4
  - cohort_template
  - cohort_template_export
+ - templates
 
 #mapping from analysis_level to set of target rules or files
 targets_by_analysis_level:
@@ -18,6 +19,8 @@ targets_by_analysis_level:
     - 'all_cohort_template'
   cohort_template_export:
     - 'all_cohort_template_export'
+  templates: # download and import the chosen template, e.g. on a login node
+    - 'all_templates'
 
 # Configure components:
 # Each entry creates a new component that can be retreived within the workflow
@@ -539,75 +542,65 @@ ome_zarr:
     - 1024
   scaling_method: 'local_mean' #can be nearest, gaussian, local_mean, zoom (zoom uses spline interp)
 
+# Template files are listed from sources, and selected by the components below
+# using snakebids-templates. Sources are searched in the order given, so files
+# pre-downloaded into resources/imported/ are used before remote copies.
 templates:
+  sources:
+    imported: # pre-downloaded copies of remote files (flat tpl-X_*.nii.gz names)
+      type: local
+      path: ../resources/imported
+      optional: true
+    resources:
+      type: local
+      path: ../resources
+    abav3:
+      type: zenodo
+      record: 18906782
+    abav3_spim:
+      type: zenodo
+      record: 20057848
+    dsurqe:
+      type: manifest
+      files:
+        tpl-DSURQE/tpl-DSURQE_anat.nii: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/nifti/DSURQE_40micron_average.nii
+        tpl-DSURQE/tpl-DSURQE_desc-brain_mask.nii: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/nifti/DSURQE_40micron_mask.nii
+        tpl-DSURQE/tpl-DSURQE_seg-all_dseg.nii: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/nifti/DSURQE_40micron_labels.nii
+        tpl-DSURQE/tpl-DSURQE_seg-all_mapping.csv: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/mappings/DSURQE_40micron_R_mapping.csv
+
+  components:
+    anat: # reference image for MRI-like registration, first match wins
+      path:
+        - tpl-{tpl}/tpl-{tpl}_anat.nii.gz
+        - tpl-{tpl}/tpl-{tpl}_T2w.nii.gz
+        - tpl-{tpl}/tpl-{tpl}_res-1_inv-1_MP2RAGE.nii.gz
+        - tpl-{tpl}/tpl-{tpl}_anat.nii
+    mask:
+      path:
+        - tpl-{tpl}/tpl-{tpl}_desc-brain_mask.nii.gz
+        - tpl-{tpl}/tpl-{tpl}_res-1_desc-brain_mask.nii.gz
+        - tpl-{tpl}/tpl-{tpl}_desc-brain_mask.nii
+    spim: # stain-specific SPIM templates
+      path:
+        - tpl-{tpl}/tpl-{tpl}_level-{level}_stain-{stain}_SPIM.nii.gz
+        - tpl-{tpl}/tpl-{tpl}_stain-{stain}_SPIM.nii.gz # cohort templates
+    dseg:
+      path:
+        - tpl-{tpl}/tpl-{tpl}_seg-{seg}_dseg.nii.gz
+        - tpl-{tpl}/tpl-{tpl}_seg-{seg}_dseg.nii
+      filters:
+        seg: # tissue-class segmentations, not atlases
+          search: '^(?!\d+tissue$)'
+    lut:
+      path: tpl-{tpl}/tpl-{tpl}_seg-{seg}_dseg.tsv
+    lut_csv: # label mappings needing conversion to tsv (DSURQE)
+      path: tpl-{tpl}/tpl-{tpl}_seg-{seg}_mapping.csv
+
+# Per-template settings that are app policy, not template files
+template_settings:
   ABAv3:
-    anat: https://zenodo.org/records/18906782/files/tpl-ABAv3_anat.nii.gz
-    mask: https://zenodo.org/records/18906782/files/tpl-ABAv3_desc-brain_mask.nii.gz
-    spim_templates: #sorted in priority order:
-      YoPro: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-YoPro_SPIM.nii.gz
-      Iba1: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-Iba1_SPIM.nii.gz
-      CD31: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-CD31_SPIM.nii.gz
-      Abeta: https://zenodo.org/records/20057848/files/tpl-ABAv3_level-5_stain-Abeta_SPIM.nii.gz
-    default_segs:
-      - all
-      - coarse
-      - mid
-      - fine
-    atlases:
-      all: 
-        dseg: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-all_dseg.nii.gz
-        tsv: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-all_dseg.tsv
-      allsym: 
-        dseg: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-allsym_dseg.nii.gz
-        tsv: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-allsym_dseg.tsv
-      coarse:
-        dseg: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-coarse_dseg.nii.gz
-        tsv: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-coarse_dseg.tsv
-      mid:
-        dseg: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-mid_dseg.nii.gz
-        tsv: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-mid_dseg.tsv
-      fine:
-        dseg: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-fine_dseg.nii.gz
-        tsv: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-fine_dseg.tsv
-      roi22:
-        dseg: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-roi22_dseg.nii.gz
-        tsv: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-roi22_dseg.tsv
-      roi82:
-        dseg: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-roi82_dseg.nii.gz
-        tsv: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-roi82_dseg.tsv
-      roi198:
-        dseg: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-roi198_dseg.nii.gz
-        tsv: https://zenodo.org/records/18906782/files/tpl-ABAv3_seg-roi198_dseg.tsv
-  MouseIn:
-    # MP2RAGE inv1 chosen since its most similar to the MT GRE I had on hand.. better to create a 
-    # new template later..
-    anat: 'tpl-MouseIn/tpl-MouseIn_res-1_inv-1_MP2RAGE.nii.gz'
-    mask: 'tpl-MouseIn/tpl-MouseIn_res-1_desc-brain_mask.nii.gz'
-
-  MBMv3:
-    anat: 'tpl-MBMv3/tpl-MBMv3_T2w.nii.gz'
-    mask: 'tpl-MBMv3/tpl-MBMv3_desc-brain_mask.nii.gz'
-    atlases:
-      paxinos: 
-        dseg: 'tpl-MBMv3/tpl-MBMv3_seg-paxinos_dseg.nii.gz'
-        tsv: 'tpl-MBMv3/tpl-MBMv3_seg-paxinos_dseg.tsv'
-
-  turone:
-    anat: 'tpl-turone/tpl-turone_T2w.nii.gz'
-    atlases:
-      all:
-        dseg: 'tpl-turone/tpl-turone_seg-all_dseg.nii.gz'
-        tsv: 'tpl-turone/tpl-turone_seg-all_dseg.tsv'
-
-  DSURQE:
-    anat: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/nifti/DSURQE_40micron_average.nii
-    mask: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/nifti/DSURQE_40micron_mask.nii
-    atlases:
-      all: 
-        dseg: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/nifti/DSURQE_40micron_labels.nii
-        custom_csv: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/mappings/DSURQE_40micron_R_mapping.csv
-        tsv: tpl-DSURQE/seg-all_tpl-DSURQE_dseg.tsv
-
+    default_segs: [all, coarse, mid, fine]
+    spim_stains: [YoPro, Iba1, CD31, Abeta] # in priority order
 
 models:
   vesselfm: https://huggingface.co/bwittmann/vesselFM/resolve/main/vesselFM_base.pt

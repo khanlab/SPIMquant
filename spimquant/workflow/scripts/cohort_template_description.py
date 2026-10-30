@@ -1,8 +1,8 @@
 """Write template_description.json and a SPIMquant templates: config snippet.
 
 The snippet is a SPIMquant config file that selects the cohort template, for
-use with --configfile. It points at Zenodo record URLs when a deposition ID was
-given, and otherwise at the exported files' absolute paths.
+use with --configfile. It adds a template source: the Zenodo record when a
+deposition ID was given, and otherwise the exported files' directory.
 """
 
 import json
@@ -14,36 +14,19 @@ import yaml
 
 p = snakemake.params
 name = p.name
-orig = p.orig_template_config
-
 files = {os.path.basename(f): f for f in snakemake.input.files}
-
-
-def ref(fname):
-    if fname not in files:
-        raise ValueError(f"{fname} is not one of the exported files")
-    if p.zenodo_deposition is not None:
-        return f"https://zenodo.org/records/{p.zenodo_deposition}/files/{fname}"
-    return os.path.abspath(files[fname])
-
-
 anat_fname = f"tpl-{name}_anat.nii.gz"
-entry = {"anat": ref(anat_fname)}
-if f"tpl-{name}_desc-brain_mask.nii.gz" in files:
-    entry["mask"] = ref(f"tpl-{name}_desc-brain_mask.nii.gz")
+
+# the exported files are named so the template components find them
+if p.zenodo_deposition is not None:
+    source = {"type": "zenodo", "record": p.zenodo_deposition}
+else:
+    source = {"type": "local", "path": os.path.abspath(p.template_dir)}
+
 # stain order is the registration priority SPIMquant uses
-entry["spim_templates"] = {
-    stain: ref(f"tpl-{name}_stain-{stain}_SPIM.nii.gz") for stain in p.stains
-}
-if "default_segs" in orig:
-    entry["default_segs"] = list(orig["default_segs"])
-entry["atlases"] = {
-    seg: {
-        "dseg": ref(f"tpl-{name}_seg-{seg}_dseg.nii.gz"),
-        "tsv": ref(f"tpl-{name}_seg-{seg}_dseg.tsv"),
-    }
-    for seg in orig.get("atlases", {})
-}
+settings = {"spim_stains": list(p.stains)}
+if "default_segs" in p.orig_template_settings:
+    settings["default_segs"] = list(p.orig_template_settings["default_segs"])
 
 if p.zenodo_deposition is not None:
     location = (
@@ -63,11 +46,19 @@ with open(snakemake.output.config_snippet, "w") as f:
         f"# {len(p.subjects)} subjects registered to tpl-{p.orig_template}, with atlases\n"
         f"# warped from tpl-{p.orig_template}. Use it with:\n"
         f"#   spimquant ... --configfile tpl-{name}_spimquant.yml\n"
-        "# To add it to SPIMquant itself, move the templates: entry into\n"
-        f"# spimquant/config/snakebids.yml and add {name} to the --template choices.\n"
-        + location
+        "# To add it to SPIMquant itself, move the source and template_settings\n"
+        f"# entries into spimquant/config/snakebids.yml and add {name} to the\n"
+        "# --template choices.\n" + location
     )
-    yaml.safe_dump({"template": name, "templates": {name: entry}}, f, sort_keys=False)
+    yaml.safe_dump(
+        {
+            "template": name,
+            "templates": {"sources": {f"tpl-{name}": source}},
+            "template_settings": {name: settings},
+        },
+        f,
+        sort_keys=False,
+    )
 
 
 anat = nib.load(files[anat_fname])
@@ -96,7 +87,7 @@ description = {
     "InputResampleMM": p.resample_mm,
     "TemplateIterations": p.iterations,
     "Subjects": list(p.subjects),
-    "Atlases": list(entry["atlases"].keys()),
+    "Atlases": list(p.atlas_segs),
     "Transforms": {
         f"tpl-{name}_from-{p.orig_template}_to-{name}_xfm.nii.gz": f"resamples "
         f"tpl-{p.orig_template} images into tpl-{name} space",

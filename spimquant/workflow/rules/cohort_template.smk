@@ -48,8 +48,8 @@ cohort_reg_stain = cohort_stains[0]
 
 # atlases carried over from the original template (all of them, so the cohort
 # template supports every --atlas_segs choice the original did)
-cohort_atlas_segs = list(template.get("atlases", {}).keys())
-cohort_has_mask = "mask" in template
+cohort_atlas_segs = template_segs
+cohort_has_mask = len(templates["mask"].filter(tpl=template_name)) > 0
 
 # snakebids paths always use the bids() entity order, so the filename tail is
 # the same in other SPIMquant output directories
@@ -136,7 +136,7 @@ if config.get("analysis_level") in ("cohort_template", "cohort_template_export")
         raise ValueError(
             f"--cohort-template-name must be alphanumeric, got {repr(cohort_name)}"
         )
-    if cohort_name in config["templates"]:
+    if cohort_name in templates["anat"].entities["tpl"]:
         raise ValueError(
             f"--cohort-template-name {repr(cohort_name)} clashes with an existing template"
         )
@@ -627,7 +627,8 @@ rule cohort_template_description:
     params:
         name=cohort_name,
         orig_template=orig_template,
-        orig_template_config=template,
+        orig_template_settings=template_settings,
+        atlas_segs=cohort_atlas_segs,
         stains=cohort_stains,
         level=cohort_level,
         iterations=cohort_iterations,

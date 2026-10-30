@@ -14,14 +14,10 @@ from snakebids import (
     set_bids_spec,
 )
 import snakebids
+from snakebids_templates import generate_templates
 
-# update v15 spec to add template entity
-spec = snakebids.paths.specs.v0_15_0()
-tpl_spec = spec[0].copy()
-tpl_spec["entity"] = "template"
-tpl_spec["tag"] = "tpl"
-spec.insert(0, tpl_spec)
-set_bids_spec(spec)
+# v15 spec with template (tpl-) and cohort entities
+set_bids_spec(snakebids.paths.specs.v0_15_0(templates=True))
 
 
 configfile: "config/snakebids.yml"
@@ -186,20 +182,33 @@ if config["orientation"]:
 
 stain_for_reg = None
 
-template = config["templates"][config["template"]]
+# template files, found from the sources in config["templates"]
+templates = generate_templates(config["templates"], workflow.basedir)
 
+template_name = config["template"]
+if template_name not in templates["anat"].entities["tpl"]:
+    raise ValueError(
+        f"Template {template_name} not found, available templates: "
+        f"{templates['anat'].entities['tpl']}"
+    )
+template_settings = config.get("template_settings", {}).get(template_name, {})
+template_segs = templates["dseg"].filter(tpl=template_name).entities["seg"]
+
+# SPIM templates for this template, in priority order
+_spim_stains = templates["spim"].filter(tpl=template_name).entities["stain"]
+spim_template_stains = [
+    s for s in template_settings.get("spim_stains", []) if s in _spim_stains
+]
+spim_template_stains += [s for s in _spim_stains if s not in spim_template_stains]
 
 # first, check if there are any SPIM templates defined
 # for the stains we have
 use_spim_template = False
-spim_templates = template.get("spim_templates", None)
-
-if spim_templates is not None:
-    for stain in spim_templates.keys():
-        if stain in stains:
-            stain_for_reg = stain
-            use_spim_template = True
-            break
+for stain in spim_template_stains:
+    if stain in stains:
+        stain_for_reg = stain
+        use_spim_template = True
+        break
 
 if not use_spim_template:
     for stain in config["stains_for_reg"]:
@@ -366,13 +375,13 @@ def seg_expand_plain(paths, **wildcards):
 # atlas segmentations to use
 
 if config["atlas_segs"] is None:
-    atlas_segs = template.get("default_segs", template["atlases"].keys())
+    atlas_segs = template_settings.get("default_segs", template_segs)
 else:
     atlas_segs = []
     for seg in config["atlas_segs"]:
-        if seg not in template["atlases"]:
+        if seg not in template_segs:
             raise ValueError(
-                f"Chosen segmentation {seg} was not found in the template {template}"
+                f"Chosen segmentation {seg} was not found in the template {template_name}"
             )
         else:
             atlas_segs.append(seg)
@@ -380,9 +389,9 @@ else:
 # atlas segmentations to use for patches (defaults to roi22)
 patch_atlas_segs = []
 for seg in config["patch_atlas_segs"]:
-    if seg not in template["atlases"]:
+    if seg not in template_segs:
         raise ValueError(
-            f"Chosen patch segmentation {seg} was not found in the template {template}"
+            f"Chosen patch segmentation {seg} was not found in the template {template_name}"
         )
     else:
         patch_atlas_segs.append(seg)
@@ -390,9 +399,9 @@ for seg in config["patch_atlas_segs"]:
 # atlas segmentations to use for Imaris crops (defaults to roi22)
 crop_atlas_segs = []
 for seg in config["crop_atlas_segs"]:
-    if seg not in template["atlases"]:
+    if seg not in template_segs:
         raise ValueError(
-            f"Chosen crop segmentation {seg} was not found in the template {template}"
+            f"Chosen crop segmentation {seg} was not found in the template {template_name}"
         )
     else:
         crop_atlas_segs.append(seg)
@@ -652,6 +661,27 @@ rule all_n4_tune:
                 **inputs["spim"].wildcards,
             ),
             stain=stains,
+        ),
+
+
+rule all_templates:
+    """Import the files of the chosen template, downloading any remote ones.
+
+    Run on a host with internet access (e.g. a login node) before running the
+    workflow where downloads are not possible.
+    """
+    input:
+        bids(root=root, template=template_name, suffix="anat.nii.gz"),
+        [bids(root=root, template=template_name, desc="brain", suffix="mask.nii.gz")]
+        if len(templates["mask"].filter(tpl=template_name))
+        else [],
+        [bids(root=root, template=template_name, suffix=f"{stain_for_reg}.nii.gz")]
+        if use_spim_template
+        else [],
+        expand(
+            bids(root=root, template=template_name, seg="{seg}", suffix="dseg.{ext}"),
+            seg=sorted({*atlas_segs, *patch_atlas_segs, *crop_atlas_segs}),
+            ext=["nii.gz", "tsv"],
         ),
 
 
