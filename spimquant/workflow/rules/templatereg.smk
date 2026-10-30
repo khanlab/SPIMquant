@@ -514,7 +514,7 @@ rule deform_spim_nii_to_template_nii:
         "../envs/ants.yaml"
     threads: 8
     resources:
-        mem_mb=scaled_mem_mb(4000, 21000),
+        mem_mb=scaled_mem_mb(8000, 32000),
         runtime=10,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
