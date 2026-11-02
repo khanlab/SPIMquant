@@ -140,9 +140,15 @@ def test_average_merges_every_channel_with_shared_weights(lp):
 
 class _FakeFold:
     """Stands in for one ResEncLUNet fold that calls every voxel of every tile
-    the same way: plaque if `votes_plaque`, background otherwise."""
+    the same way: plaque if `votes_plaque`, background otherwise.
+
+    `decode` mirrors the real signature (see lantern_model.ResEncLUNet): the
+    raw tile statistics are accepted and ignored, as an unconditioned fold
+    ignores them.
+    """
 
     n_classes = 2
+    cond = None
 
     def __init__(self, votes_plaque):
         self.logit = 10.0 if votes_plaque else -10.0
@@ -150,7 +156,7 @@ class _FakeFold:
     def encoder(self, x):
         return x
 
-    def decoder(self, skips):
+    def decode(self, skips, raw_mean=None, raw_std=None):
         background = torch.zeros_like(skips)
         return torch.cat([background, torch.full_like(skips, self.logit)], dim=1)
 
