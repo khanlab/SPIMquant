@@ -69,7 +69,7 @@ hatch-vcs = "*"
 
 [tool.pixi.package.run-dependencies]
 snakemake = ">=9.5.1,<10"
-snakebids = ">=0.15.0,<0.16"
+snakebids = ">=0.16.0,<0.17"
 snakemake-storage-plugin-s3 = ">=0.3.3,<0.4"
 snakemake-storage-plugin-gcs = ">=1.1.4,<2"
 snakemake-storage-plugin-fs = ">=1.1.2,<2"
