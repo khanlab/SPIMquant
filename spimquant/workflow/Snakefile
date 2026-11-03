@@ -73,6 +73,7 @@ inputs = generate_inputs(
     exclude_participant_label=config.get("exclude_participant_label", None),
     validate=not config.get("plugins.validator.skip", False),
     limit_to=["spim", "mri"] if config["register_to_mri"] else ["spim"],
+    participant_filter=config.get("participant_filter"),
 )
 
 
