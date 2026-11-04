@@ -28,4 +28,5 @@ render_report(
     fixed_path=snakemake.input.fixed,
     candidates=candidates,
     hint=f"Selected for this run: {p.selected}.",
+    default_layer=getattr(p, "default_layer", "warped"),
 )

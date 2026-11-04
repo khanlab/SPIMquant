@@ -13,7 +13,6 @@ try:
     from fireants.io.image import BatchedImages, Image
     from fireants.registration.affine import AffineRegistration
     from fireants.registration.greedy import GreedyRegistration
-    from fireants.registration.moments import MomentsRegistration
 except ImportError as err:
     raise SystemExit(
         "FireANTs is not installed: run SPIMquant from the gpu environment, "
@@ -30,9 +29,7 @@ def load(path):
     image = Image.load_file(path, device=device)
     data = image.array.data
     values = data[data > 0]
-    low, high = np.percentile(
-        values.cpu().numpy(), preset["clip_percentiles"]
-    )
+    low, high = np.percentile(values.cpu().numpy(), preset["clip_percentiles"])
     image.array = ((data.clamp(low, high) - low) / max(high - low, 1e-6)).to(data.dtype)
     return image
 
@@ -48,13 +45,23 @@ moving_image = load(snakemake.input.moving)
 fixed = BatchedImages([fixed_image])
 moving = BatchedImages([moving_image])
 
-init = None
-if p.init_moments:
-    moments = MomentsRegistration(
-        scale=4, fixed_images=fixed, moving_images=moving, moments=1
+
+def center_alignment(fixed_image, moving_image):
+    """Affine translating the fixed image's center to the moving image's center."""
+
+    def center(image):
+        itk = image.itk_image
+        index = [(size - 1) / 2 for size in itk.GetSize()]
+        return np.array(itk.TransformContinuousIndexToPhysicalPoint(index))
+
+    matrix = torch.eye(4, device=device, dtype=torch.float32)[None]
+    matrix[0, :3, 3] = torch.as_tensor(
+        center(moving_image) - center(fixed_image), device=device, dtype=torch.float32
     )
-    moments.optimize()
-    init = moments.get_affine_init()
+    return matrix
+
+
+init = center_alignment(fixed_image, moving_image) if p.init_centers else None
 
 if preset["affine"]:
     affine = AffineRegistration(

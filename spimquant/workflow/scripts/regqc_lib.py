@@ -25,6 +25,8 @@ from PIL import Image
 N_SLICES = 7
 JACOBIAN_STRIDE = 2
 LOG_JACOBIAN_RANGE = 1.0
+# atlas outlines are drawn at about this width, so they stay thin on coarse images
+OUTLINE_WIDTH_PX = 1000
 
 # plane name, array axis through the plane (RAS+ arrays), name of that direction
 PLANES = [("Coronal", 1, "A"), ("Axial", 2, "S"), ("Sagittal", 0, "R")]
@@ -88,6 +90,8 @@ def _uri(image, fmt):
 
 def _outline_uri(plane):
     """Transparent PNG with the boundaries between labels."""
+    scale = max(1, OUTLINE_WIDTH_PX // max(plane.shape))
+    plane = plane.repeat(scale, axis=0).repeat(scale, axis=1)
     edges = np.zeros(plane.shape, dtype=bool)
     edges[:-1, :] |= plane[:-1, :] != plane[1:, :]
     edges[:, :-1] |= plane[:, :-1] != plane[:, 1:]
@@ -131,9 +135,7 @@ def _slice_indices(mask, axis):
     present = np.flatnonzero(mask.any(axis=other))
     if present.size == 0:
         present = np.arange(mask.shape[axis])
-    return (
-        np.linspace(present[0], present[-1], N_SLICES + 2)[1:-1].round().astype(int)
-    )
+    return np.linspace(present[0], present[-1], N_SLICES + 2)[1:-1].round().astype(int)
 
 
 def build_viewer_data(fixed_path, candidates):
@@ -163,7 +165,9 @@ def build_viewer_data(fixed_path, candidates):
             warp_img = nib.load(cand["warp"])
             det = jacobian_determinant(warp_img)
             # the Jacobian layer and mask follow the warp's own grid
-            if det.shape == tuple(s // JACOBIAN_STRIDE + (s % JACOBIAN_STRIDE > 0) for s in fixed.shape):
+            if det.shape == tuple(
+                s // JACOBIAN_STRIDE + (s % JACOBIAN_STRIDE > 0) for s in fixed.shape
+            ):
                 dets[-1] = det
                 det_stats = _jacobian_stats(
                     det, mask[::JACOBIAN_STRIDE, ::JACOBIAN_STRIDE, ::JACOBIAN_STRIDE]
@@ -210,7 +214,9 @@ def build_viewer_data(fixed_path, candidates):
                 "jacobian": None,
             }
             if seg is not None:
-                entry["labels"] = [_outline_uri(_to_view(seg, axis, i)) for i in indices]
+                entry["labels"] = [
+                    _outline_uri(_to_view(seg, axis, i)) for i in indices
+                ]
             if det is not None:
                 entry["jacobian"] = [
                     _jacobian_uri(_to_view(det, axis, i // JACOBIAN_STRIDE))
@@ -234,9 +240,7 @@ def _stats_table(stats):
         if folded is not None:
             state = "bad" if folded >= 0.1 else ("warn" if folded > 0 else "good")
             flag = f'<span class="pill {state}">{folded:.3f}%</span>'
-        jac_range = (
-            f"{jac['p1']:.2f} – {jac['p99']:.2f}" if "p1" in jac else "–"
-        )
+        jac_range = f"{jac['p1']:.2f} – {jac['p99']:.2f}" if "p1" in jac else "–"
         note = (
             f'<span class="note">{html.escape(item["note"])}</span>'
             if item["note"]
@@ -350,7 +354,7 @@ figcaption { font-weight: 600; font-size: 14px; }
 
 SCRIPT = """
 const data = JSON.parse(document.getElementById('viewer-data').textContent);
-const state = { plane: 0, slice: 3, layer: 'warped', labels: true, flicker: null };
+const state = { plane: 0, slice: 3, layer: data.defaultLayer, labels: true, flicker: null };
 const grid = document.getElementById('grid');
 const slider = document.getElementById('slice');
 const output = document.getElementById('position');
@@ -449,13 +453,17 @@ def render_report(
     candidates,
     hint="",
     panel_width=460,
+    default_layer="warped",
 ):
-    """Write the HTML report for candidates compared against fixed_path."""
+    """Write the HTML report for candidates compared against fixed_path.
+
+    default_layer is the layer shown first: fixed when the atlas labels were warped
+    along with the moving image, since they then match it by construction.
+    """
     viewer = build_viewer_data(fixed_path, candidates)
+    viewer["defaultLayer"] = default_layer
     has_labels = any(c.get("labels") for c in candidates)
-    has_jacobian = any(
-        entry["jacobian"] for entry in viewer["planes"][0]["candidates"]
-    )
+    has_jacobian = any(entry["jacobian"] for entry in viewer["planes"][0]["candidates"])
     fact_items = "".join(
         f"<div><dt>{html.escape(str(k))}</dt><dd>{html.escape(str(v))}</dd></div>"
         for k, v in facts.items()

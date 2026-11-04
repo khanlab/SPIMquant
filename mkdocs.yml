@@ -22,6 +22,7 @@ nav:
   - How-To Guides:
       - Segmentation Methods: howto/segmentation.md
       - MRI Registration: howto/mri_registration.md
+      - Registration Methods: howto/registration_methods.md
       - Reusing Previous Outputs: howto/reuse_derivatives.md
       - Cohort Templates: howto/cohort_template.md
   - Reference:

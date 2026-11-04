@@ -141,12 +141,16 @@ if reuse_root and "transforms" in reuse_outputs:
         )
         for desc_path, legacy_path in zip(
             inputs["spim"].expand(
-                reuse_path(rules.compose_subject_to_template_warp.output.xfm_composite),
+                reuse_path(
+                    rules.compose_subject_to_template_warp.output.xfm_composite
+                ),
                 template=config["template"],
                 reg=_reuse_method,
             ),
             inputs["spim"].expand(
-                reuse_path(rules.select_subject_to_template_warp.output.xfm_composite),
+                reuse_path(
+                    rules.select_subject_to_template_warp.output.xfm_composite
+                ),
                 template=config["template"],
             ),
         )
@@ -171,7 +175,9 @@ def get_regqc_targets(wildcards):
         # subjects from the cohort build have no registration of their own to check
         built = {
             os.path.basename(f).split("_stain-")[0]
-            for f in _glob.glob(os.path.join(cohort_warps["warps_dir"], "*_invwarp.nii.gz"))
+            for f in _glob.glob(
+                os.path.join(cohort_warps["warps_dir"], "*_invwarp.nii.gz")
+            )
         }
         regqc = [
             qc for qc in regqc if os.path.basename(qc).split("_stain-")[0] not in built

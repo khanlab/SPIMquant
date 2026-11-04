@@ -31,7 +31,7 @@ Select with `--reuse_outputs` (default: both):
 | Value        | Files                                                                      |
 |--------------|----------------------------------------------------------------------------|
 | `brainmask`  | `micr/*_stain-<reg stain>_level-<registration_level>_desc-brain_mask.nii.gz` |
-| `transforms` | the composite warps `xfm/*_from-subject_to-<template>_xfm.nii.gz` / `*_from-<template>_to-subject_xfm.nii.gz` |
+| `transforms` | the composite warps of `--registration_method`: `xfm/*_from-subject_to-<template>_desc-<method>_xfm.nii.gz` / `*_from-<template>_to-subject_desc-<method>_xfm.nii.gz` |
 
 Reused files are copied into the new output directory, so it stays a complete,
 self-contained dataset. To save disk space (the composite warps are ~1.5 GB per
@@ -43,7 +43,10 @@ depends on the prior one staying in place.
 Files are looked up at the exact BIDS paths SPIMquant itself writes for the
 current settings, so they are only reused when the path-defining settings match:
 the subject/session/sample/acquisition entities, `--template`,
-`--registration_level` and the registration stain. Anything not found is
+`--registration_level`, the registration stain and `--registration_method`.
+Datasets made before registration methods were added have warps without a `desc-`;
+these were computed with greedy, so they are reused for `--registration_method
+greedy` only. Anything not found is
 computed as usual, per subject and per file, including subjects missing from
 the prior dataset.
 

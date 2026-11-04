@@ -367,7 +367,9 @@ def _resolve_reg_preset(name):
     return {**_resolve_reg_preset(base), **preset} if base else preset
 
 
-reg_presets = {name: _resolve_reg_preset(name) for name in config["registration"]["presets"]}
+reg_presets = {
+    name: _resolve_reg_preset(name) for name in config["registration"]["presets"]
+}
 for _name, _preset in reg_presets.items():
     if not _name.isalnum() or _name == "cohort":
         raise ValueError(
@@ -399,13 +401,14 @@ def reg_note(preset):
 def ants_reg_args(preset, fixed, moving, center_init):
     """antsRegistration stages for a preset (the output prefix is added by the rule)."""
     pair = f"{fixed},{moving},1"
-    metrics = {"MI": f"MI[{pair},32,Regular,0.25]", "CC": f"CC[{pair},{preset['cc_radius']}]"}
-    levels = (
-        f"-f {preset['shrink']} -s {preset['smooth']}vox "
-    )
+    metrics = {
+        "MI": f"MI[{pair},32,Regular,0.25]",
+        "CC": f"CC[{pair},{preset['cc_radius']}]",
+    }
+    levels = f"-f {preset['shrink']} -s {preset['smooth']}vox "
     args = "-d 3 --float 1 --collapse-output-transforms 1 -v 1 -n Linear "
     if center_init:
-        args += f"--initial-moving-transform [{fixed},{moving},1] "
+        args += f"--initial-moving-transform [{fixed},{moving},0] "  # image centers
     if preset["affine"]:
         args += (
             f"-t Affine[0.1] -m {metrics[preset['affine_metric']]} "
@@ -435,7 +438,9 @@ def _cohort_warp_paths(wildcards):
     """Files that make up the subject<->cohort template warps of a subject."""
     entities = {k: wildcards[k] for k in inputs["spim"].wildcards}
     row = os.path.basename(bids(stain="x", suffix="x", **entities)).split("_stain-")[0]
-    stem = os.path.join(cohort_warps["warps_dir"], f"{row}_stain-{cohort_warps['reg_stain']}")
+    stem = os.path.join(
+        cohort_warps["warps_dir"], f"{row}_stain-{cohort_warps['reg_stain']}"
+    )
     orig = cohort_warps["orig_template"]
     return {
         "warp": f"{stem}_warp.nii.gz",

@@ -3,6 +3,8 @@
 from regqc_lib import render_report
 
 p = snakemake.params
+# labels warped with the deformable registration do not apply to the affine stage
+labels_warped = getattr(p, "labels_warped", False)
 
 render_report(
     snakemake.output.report_html,
@@ -20,7 +22,7 @@ render_report(
         {
             "name": "Affine",
             "warped": snakemake.input.warped_affine,
-            "labels": snakemake.input.dseg,
+            "labels": None if labels_warped else snakemake.input.dseg,
         },
         {
             "name": "Deformable",
@@ -30,4 +32,5 @@ render_report(
         },
     ],
     panel_width=620,
+    default_layer="fixed" if labels_warped else "warped",
 )

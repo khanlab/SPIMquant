@@ -12,9 +12,10 @@ The workflow is:
    [FireANTs](https://github.com/rohitrango/FireANTs) on GPU. All stains are built
    jointly, so every stain template is in the same space.
 3. The cohort template drifts away from the original template's space during
-   building, so the original template's anat is registered (affine + deformable,
-   greedy) to the cohort template. The original atlases, brain mask and anat are
-   warped into cohort template space with this registration.
+   building, so the original template is registered to the cohort template, with
+   `--cohort-template-reg-method` (see
+   [Registration Methods](registration_methods.md)). The original atlases, brain
+   mask and anat are warped into cohort template space with this registration.
 4. The `cohort_template_export` level writes a `template_description.json`, a
    SPIMquant `templates:` config entry, and optionally uploads everything to Zenodo.
 
@@ -54,9 +55,9 @@ tpl-lecanemab/
 ├── tpl-lecanemab_anat.nii.gz                      # original anat, warped
 ├── tpl-lecanemab_desc-brain_mask.nii.gz           # original mask, warped
 ├── tpl-lecanemab_seg-<seg>_dseg.nii.gz/.tsv       # original atlases, warped
-├── tpl-lecanemab_from-ABAv3_to-lecanemab_xfm.nii.gz
-├── tpl-lecanemab_from-lecanemab_to-ABAv3_xfm.nii.gz
-└── tpl-lecanemab_stain-YoPro_from-ABAv3_to-lecanemab_regqc.html
+├── tpl-lecanemab_from-ABAv3_to-lecanemab_desc-greedy_xfm.nii.gz
+├── tpl-lecanemab_from-lecanemab_to-ABAv3_desc-greedy_xfm.nii.gz
+└── tpl-lecanemab_stain-YoPro_from-ABAv3_to-lecanemab_desc-greedy_regqc.html
 tpl-ABAv3/
 └── tpl-ABAv3_desc-lecanemab_stain-YoPro_SPIM.nii.gz   # cohort template in ABAv3 space
 ```
@@ -128,6 +129,15 @@ spimquant /path/to/bids /path/to/output participant \
 
 The registration stain must be one of the cohort template's stains (see
 `--stains_for_reg`).
+
+Subjects that were used to build the template are not registered again. Their
+warps to the template are composed from the warps saved by the build, and from
+their warps to the original template in the dataset the template was built in, and
+are written as `desc-cohort`. Other subjects are registered with
+`--registration_method` as usual. This needs both of those to still be in place at
+the paths in `tpl-lecanemab_spimquant.yml`, and a template built with a version of
+SPIMquant that saves the inverse warps (`*_invwarp.nii.gz` in the build directory);
+otherwise the subject is registered as usual.
 
 To make the template a built-in `--template` choice, open a PR that moves its
 `templates:` entry into `spimquant/config/snakebids.yml` (with the Zenodo URLs, or

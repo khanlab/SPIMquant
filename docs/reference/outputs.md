@@ -32,8 +32,11 @@ output/spimquant/
 │   │   └── *_seg-<seg>_space-<template>_desc-<desc>_<suffix>.nii.gz
 │   └── xfm/                              # Registration transforms
 │       ├── *_from-subject_to-<template>_xfm.txt
-│       ├── *_from-subject_to-<template>_xfm.nii.gz
-│       └── *_from-<template>_to-subject_xfm.nii.gz
+│       ├── *_from-subject_to-<template>_xfm.nii.gz    # link to the selected desc-<method> warp
+│       ├── *_from-<template>_to-subject_xfm.nii.gz    # link to the selected desc-<method> warp
+│       ├── *_from-subject_to-<template>_desc-<method>_xfm.nii.gz
+│       ├── *_from-<template>_to-subject_desc-<method>_xfm.nii.gz
+│       └── *_stain-<stain>_from-SPIM_to-<template>_desc-<method>_regqc.html
 └── group/                                 # Group-level outputs (no subject subdirectory)
     ├── *_seg-<seg>_from-<template>_desc-<desc>_allsubjects.tsv
     ├── *_seg-<seg>_from-<template>_stain-<stain>_level-<N>_desc-<desc>_allsubjects_regionpropstats.tsv

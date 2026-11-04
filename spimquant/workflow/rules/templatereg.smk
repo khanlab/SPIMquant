@@ -371,7 +371,7 @@ rule reg_fireants:
             "affine_iters": reg_iters(reg_presets[wildcards.reg], "affine_iters"),
             "deform_iters": reg_iters(reg_presets[wildcards.reg], "deform_iters"),
         },
-        init_moments=lambda wildcards: reg_presets[wildcards.reg]["affine"],
+        init_centers=lambda wildcards: reg_presets[wildcards.reg]["affine"],
     script:
         "../scripts/reg_fireants.py"
 
@@ -422,7 +422,8 @@ rule compose_subject_warp_from_cohort_build:
 
     Chains the subject's warps to the original template with its warp to the
     cohort template, instead of registering the subject again. Used when
-    --template is a cohort template built from this subject.
+    --template is a cohort template built from this subject. A point in the output
+    space goes through the first transform listed after -t first.
     """
     input:
         ref=rules.import_template_anat.output.anat,
@@ -454,10 +455,10 @@ rule compose_subject_warp_from_cohort_build:
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -o [{output.xfm_composite},1] "
-        " -r {input.ref} -t {input.to_orig} {input.warp} && "
+        " -r {input.ref} -t {input.warp} {input.to_orig} && "
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -o [{output.xfm_composite_inv},1] "
-        " -r {input.subject} -t {input.invwarp} {input.from_orig}"
+        " -r {input.subject} -t {input.from_orig} {input.invwarp}"
 
 
 rule select_subject_to_template_warp:
@@ -678,9 +679,7 @@ rule registration_qc_report:
             suffix="dseg.nii.gz",
         ),
     output:
-        report_html=_reg_xfm(
-            "regqc.html", from_="SPIM", stain=stain_for_reg
-        ),
+        report_html=_reg_xfm("regqc.html", from_="SPIM", stain=stain_for_reg),
     wildcard_constraints:
         reg=reg_constraint(),
     threads: 1

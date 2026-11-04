@@ -147,9 +147,9 @@ if config.get("analysis_level") in (
                 f"Unknown registration method {repr(_method)}, choose from "
                 f"{sorted(reg_presets)}"
             )
-        if reg_presets[_method]["moving"] == "spim" and cohort_reg_stain not in template.get(
-            "spim_templates", {}
-        ):
+        if reg_presets[_method][
+            "moving"
+        ] == "spim" and cohort_reg_stain not in template.get("spim_templates", {}):
             raise ValueError(
                 f"Registration method {_method} uses a spim_template, but "
                 f"tpl-{orig_template} has none for {cohort_reg_stain}"
@@ -212,10 +212,16 @@ rule all_cohort_template:
             ext=["nii.gz", "tsv"],
         ),
         bids_cohort(
-            from_=orig_template, to=cohort_name, desc=cohort_reg_method, suffix="xfm.nii.gz"
+            from_=orig_template,
+            to=cohort_name,
+            desc=cohort_reg_method,
+            suffix="xfm.nii.gz",
         ),
         bids_cohort(
-            from_=cohort_name, to=orig_template, desc=cohort_reg_method, suffix="xfm.nii.gz"
+            from_=cohort_name,
+            to=orig_template,
+            desc=cohort_reg_method,
+            suffix="xfm.nii.gz",
         ),
         bids_cohort(
             stain=cohort_reg_stain,
@@ -507,7 +513,7 @@ use rule reg_fireants as cohort_template_reg_fireants with:
             "affine_iters": reg_iters(reg_presets[wildcards.reg], "affine_iters"),
             "deform_iters": reg_iters(reg_presets[wildcards.reg], "deform_iters"),
         },
-        init_moments=False,
+        init_centers=False,
 
 
 rule cohort_template_compose_warp:
@@ -683,6 +689,7 @@ rule cohort_template_regqc:
         stain=cohort_reg_stain,
         method=cohort_reg_method,
         parameters=reg_note(reg_presets[cohort_reg_method]),
+        labels_warped=True,
     script:
         "../scripts/reg_qc_report.py"
 
@@ -745,6 +752,7 @@ rule cohort_template_tune_report:
         stain=cohort_reg_stain,
         methods=cohort_reg_tune_methods,
         selected=cohort_reg_method,
+        default_layer="fixed",
         notes={m: reg_note(reg_presets[m]) for m in reg_presets},
     script:
         "../scripts/reg_tune_report.py"
@@ -812,7 +820,9 @@ rule cohort_template_buildinfo:
                 rules.cohort_template_affine_reg.log[0].format(reg=cohort_reg_method),
                 rules.cohort_template_deform_reg.log[0].format(reg=cohort_reg_method),
             ],
-            "ants": [rules.cohort_template_reg_ants.log[0].format(reg=cohort_reg_method)],
+            "ants": [
+                rules.cohort_template_reg_ants.log[0].format(reg=cohort_reg_method)
+            ],
             "fireants": [],
         }[reg_presets[cohort_reg_method]["backend"]],
     shell:
