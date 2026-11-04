@@ -149,56 +149,66 @@ rule crop_template:
         "../scripts/crop_template.py"
 
 
-rule affine_reg:
-    """Perform affine registration to template using greedy.
+_reg_moving = bids(
+    root=root,
+    datatype="micr",
+    stain=stain_for_reg,
+    level=config["registration_level"],
+    desc=config["templatereg"]["desc"],
+    suffix="SPIM.nii.gz",
+    **inputs["spim"].wildcards,
+)
 
-    Registers subject SPIM to template space using 12-DOF affine transformation.
-    Uses normalized mutual information (NMI) as the similarity metric and outputs
-    both the transformation matrix and warped image for QC.
+
+def _reg_xfm(suffix, from_="subject", to="{template}", desc="{reg}", **kwargs):
+    return bids(
+        root=root,
+        datatype="xfm",
+        from_=from_,
+        to=to,
+        desc=desc,
+        suffix=suffix,
+        **kwargs,
+        **inputs["spim"].wildcards,
+    )
+
+
+def _reg_warped(desc):
+    return bids(
+        root=root,
+        datatype="xfm",
+        space="{template}",
+        stain=stain_for_reg,
+        desc=desc,
+        suffix="SPIM.nii.gz",
+        **inputs["spim"].wildcards,
+    )
+
+
+rule affine_reg:
+    """Affine registration with greedy, for methods with backend: greedy.
+
+    Writes the transformation and the warped image for QC. Methods with
+    affine: false use the identity instead. The same rule, with other paths,
+    registers the original template to a cohort template (cohort_template.smk).
     """
     input:
-        template=get_template_for_reg,
-        subject=bids(
-            root=root,
-            datatype="micr",
-            stain=stain_for_reg,
-            level=config["registration_level"],
-            desc=config["templatereg"]["desc"],
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
+        fixed=get_template_for_reg,
+        moving=_reg_moving,
     output:
-        xfm_ras=temp(
-            bids(
-                root=root,
-                datatype="xfm",
-                from_="subject",
-                to="{template}",
-                type_="ras",
-                desc="affine",
-                suffix="xfm.txt",
-                **inputs["spim"].wildcards,
-            )
-        ),
-        warped=temp(
-            bids(
-                root=root,
-                datatype="xfm",
-                space="{template}",
-                stain=stain_for_reg,
-                desc="affinewarped",
-                suffix="SPIM.nii.gz",
-                **inputs["spim"].wildcards,
-            )
-        ),
+        xfm_ras=temp(_reg_xfm("xfm.txt", desc="{reg}affine", type_="ras")),
+        warped=temp(_reg_warped("{reg}affinewarped")),
     log:
         bids(
             root="logs",
             datatype="affine_reg",
             space="{template}",
+            desc="{reg}",
             suffix="log.txt",
             **inputs["spim"].wildcards,
         ),
+    wildcard_constraints:
+        reg=reg_constraint("greedy"),
     group:
         "subj_reg"
     threads: 32
@@ -206,45 +216,29 @@ rule affine_reg:
         mem_mb=16000,
         runtime=15,
     params:
-        iters="10x0x0" if config["sloppy"] else "100x100",
+        affine=lambda wildcards: reg_presets[wildcards.reg]["affine"],
+        init="-ia-image-centers",
+        metric=lambda wildcards: reg_presets[wildcards.reg]["metric"],
+        iters=lambda wildcards: reg_iters(reg_presets[wildcards.reg], "affine_iters"),
+        identity=reg_identity_ras,
     shell:
-        "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
-        " -a -dof 12 -ia-image-centers -m NMI -o {output.xfm_ras} -n {params.iters} && "
-        " greedy -threads {threads} -d 3 -rf {input.template} "
-        "  -rm {input.subject} {output.warped} "
-        "  -r {output.xfm_ras}"
+        "(if [ '{params.affine}' = 'True' ]; then "
+        " greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} "
+        "  -a -dof 12 {params.init} -m {params.metric} -o {output.xfm_ras} -n {params.iters}; "
+        "else {params.identity} > {output.xfm_ras}; fi && "
+        " greedy -threads {threads} -d 3 -rf {input.fixed} "
+        "  -rm {input.moving} {output.warped} "
+        "  -r {output.xfm_ras}) &> {log}"
 
 
 rule convert_ras_to_itk:
-    """Convert RAS affine transform to ITK format.
-
-    Converts greedy's RAS affine format to ITK format for compatibility with
-    ANTs tools (used for applying transforms).
-    """
+    """Convert greedy's RAS affine to ITK format, for applying with ANTs tools."""
     input:
-        xfm_ras=bids(
-            root=root,
-            datatype="xfm",
-            from_="subject",
-            to="{template}",
-            type_="ras",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
-        ),
+        xfm_ras=rules.affine_reg.output.xfm_ras,
     output:
-        xfm_itk=temp(
-            bids(
-                root=root,
-                datatype="xfm",
-                from_="subject",
-                to="{template}",
-                type_="itk",
-                desc="affine",
-                suffix="xfm.txt",
-                **inputs["spim"].wildcards,
-            )
-        ),
+        xfm_itk=temp(_reg_xfm("xfm.txt", desc="{reg}affine", type_="itk")),
+    wildcard_constraints:
+        reg=reg_constraint("greedy"),
     group:
         "subj_reg"
     conda:
@@ -258,73 +252,29 @@ rule convert_ras_to_itk:
 
 
 rule deform_reg:
-    """Perform deformable registration to template using greedy.
+    """Deformable registration with greedy, starting from affine_reg.
 
-    Refines affine registration with deformable (non-linear) registration.
-    Outputs forward warp, inverse warp, and warped image. The deformation field
-    captures local anatomical variations not handled by affine transformation.
+    Writes the forward and inverse warps, and the warped image for QC.
     """
     input:
-        template=get_template_for_reg,
-        subject=bids(
-            root=root,
-            datatype="micr",
-            stain=stain_for_reg,
-            level=config["registration_level"],
-            desc=config["templatereg"]["desc"],
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        xfm_ras=bids(
-            root=root,
-            datatype="xfm",
-            from_="subject",
-            to="{template}",
-            type_="ras",
-            desc="affine",
-            suffix="xfm.txt",
-            **inputs["spim"].wildcards,
-        ),
+        fixed=get_template_for_reg,
+        moving=_reg_moving,
+        xfm_ras=rules.affine_reg.output.xfm_ras,
     output:
-        warp=temp(
-            bids(
-                root=root,
-                datatype="xfm",
-                from_="subject",
-                to="{template}",
-                suffix="warp.nii.gz",
-                **inputs["spim"].wildcards,
-            )
-        ),
-        invwarp=temp(
-            bids(
-                root=root,
-                datatype="xfm",
-                from_="{template}",
-                to="subject",
-                suffix="warp.nii.gz",
-                **inputs["spim"].wildcards,
-            )
-        ),
-        warped=temp(
-            bids(
-                root=root,
-                datatype="xfm",
-                space="{template}",
-                stain=stain_for_reg,
-                desc="deformwarped",
-                suffix="SPIM.nii.gz",
-                **inputs["spim"].wildcards,
-            )
-        ),
+        warp=temp(_reg_xfm("warp.nii.gz")),
+        invwarp=temp(_reg_xfm("warp.nii.gz", from_="{template}", to="subject")),
+        warped=temp(_reg_warped("{reg}deformwarped")),
     log:
         bids(
             root="logs",
             datatype="deform_reg",
             space="{template}",
+            desc="{reg}",
             suffix="log.txt",
             **inputs["spim"].wildcards,
         ),
+    wildcard_constraints:
+        reg=reg_constraint("greedy"),
     group:
         "subj_reg"
     threads: 32
@@ -332,27 +282,105 @@ rule deform_reg:
         mem_mb=20000,
         runtime=5 if config["sloppy"] else 30,
     params:
-        iters="10x0x0" if config["sloppy"] else "100x50",
-        metric="NMI",
-        sigma1="4vox",
-        sigma2="2vox",
+        iters=lambda wildcards: reg_iters(reg_presets[wildcards.reg], "deform_iters"),
+        metric=lambda wildcards: reg_presets[wildcards.reg]["metric"],
+        sigma1=lambda wildcards: reg_presets[wildcards.reg]["sigma1"],
+        sigma2=lambda wildcards: reg_presets[wildcards.reg]["sigma2"],
     shell:
-        "greedy -threads {threads} -d 3 -i {input.template} {input.subject} "
+        "(greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} "
         " -it {input.xfm_ras} -m {params.metric} "
         " -oinv {output.invwarp} "
         " -o {output.warp} -n {params.iters} -s {params.sigma1} {params.sigma2} && "
-        " greedy -threads {threads} -d 3 -rf {input.template} "
-        "  -rm {input.subject} {output.warped} "
-        "  -r {output.warp} {input.xfm_ras} "
+        " greedy -threads {threads} -d 3 -rf {input.fixed} "
+        "  -rm {input.moving} {output.warped} "
+        "  -r {output.warp} {input.xfm_ras}) &> {log}"
+
+
+rule reg_ants:
+    """Affine and deformable registration with antsRegistration (backend: ants)."""
+    input:
+        fixed=get_template_for_reg,
+        moving=_reg_moving,
+    output:
+        xfm_itk=temp(_reg_xfm("xfm.txt", desc="{reg}affine", type_="itk")),
+        warp=temp(_reg_xfm("warp.nii.gz")),
+        invwarp=temp(_reg_xfm("warp.nii.gz", from_="{template}", to="subject")),
+        warped_affine=temp(_reg_warped("{reg}affinewarped")),
+        warped=temp(_reg_warped("{reg}deformwarped")),
+    log:
+        bids(
+            root="logs",
+            datatype="reg_ants",
+            space="{template}",
+            desc="{reg}",
+            suffix="log.txt",
+            **inputs["spim"].wildcards,
+        ),
+    wildcard_constraints:
+        reg=reg_constraint("ants"),
+    conda:
+        "../envs/ants.yaml"
+    threads: 32
+    resources:
+        mem_mb=32000,
+        runtime=5 if config["sloppy"] else 240,
+    params:
+        args=lambda wildcards, input: ants_reg_args(
+            reg_presets[wildcards.reg], input.fixed, input.moving, center_init=True
+        ),
+        identity=reg_identity_itk,
+    shell:
+        "(export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads}; "
+        "tmp=$(mktemp -d) && "
+        "antsRegistration {params.args} -o $tmp/reg_ && "
+        "if [ -f $tmp/reg_0GenericAffine.mat ]; then "
+        " ConvertTransformFile 3 $tmp/reg_0GenericAffine.mat {output.xfm_itk}; "
+        "else {params.identity} > {output.xfm_itk}; fi && "
+        "mv $tmp/reg_*[0-9]Warp.nii.gz {output.warp} && "
+        "mv $tmp/reg_*InverseWarp.nii.gz {output.invwarp} && "
+        "antsApplyTransforms -d 3 -u float -i {input.moving} -r {input.fixed} "
+        " -o {output.warped_affine} -t {output.xfm_itk} && "
+        "antsApplyTransforms -d 3 -u float -i {input.moving} -r {input.fixed} "
+        " -o {output.warped} -t {output.warp} {output.xfm_itk} && "
+        "rm -r $tmp) &> {log}"
+
+
+rule reg_fireants:
+    """Affine and deformable registration with FireANTs (backend: fireants, GPU)."""
+    input:
+        fixed=get_template_for_reg,
+        moving=_reg_moving,
+    output:
+        xfm_itk=temp(_reg_xfm("xfm.txt", desc="{reg}affine", type_="itk")),
+        warp=temp(_reg_xfm("warp.nii.gz")),
+        invwarp=temp(_reg_xfm("warp.nii.gz", from_="{template}", to="subject")),
+        warped_affine=temp(_reg_warped("{reg}affinewarped")),
+        warped=temp(_reg_warped("{reg}deformwarped")),
+    wildcard_constraints:
+        reg=reg_constraint("fireants"),
+    threads: 8
+    resources:
+        gpu=1,
+        tasks_per_gpu=0,
+        cpus_per_gpu=8,
+        mem_mb=32000,
+        runtime=30,
+    params:
+        preset=lambda wildcards: {
+            **reg_presets[wildcards.reg],
+            "affine_iters": reg_iters(reg_presets[wildcards.reg], "affine_iters"),
+            "deform_iters": reg_iters(reg_presets[wildcards.reg], "deform_iters"),
+        },
+        init_moments=lambda wildcards: reg_presets[wildcards.reg]["affine"],
+    script:
+        "../scripts/reg_fireants.py"
 
 
 rule compose_subject_to_template_warp:
-    """Compose affine and deformable transforms into a single composite warp field.
+    """Compose a method's affine and warp into a composite warp field per direction.
 
-    Creates composite transformation fields by concatenating the affine and
-    deformable registration transforms. This simplifies downstream applications
-    that need to move data between subject and template space, removing the need
-    to remember transform order or affine inversion.
+    from-subject_to-{template} resamples subject images into template space,
+    and from-{template}_to-subject is its inverse.
     """
     input:
         ref=rules.import_template_anat.output.anat,
@@ -364,9 +392,83 @@ rule compose_subject_to_template_warp:
             suffix="SPIM.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        xfm_itk=rules.convert_ras_to_itk.output.xfm_itk,
-        warp=rules.deform_reg.output.warp,
-        invwarp=rules.deform_reg.output.invwarp,
+        xfm_itk=_reg_xfm("xfm.txt", desc="{reg}affine", type_="itk"),
+        warp=_reg_xfm("warp.nii.gz"),
+        invwarp=_reg_xfm("warp.nii.gz", from_="{template}", to="subject"),
+    output:
+        xfm_composite=_reg_xfm("xfm.nii.gz"),
+        xfm_composite_inv=_reg_xfm("xfm.nii.gz", from_="{template}", to="subject"),
+    wildcard_constraints:
+        reg=reg_constraint(),
+    group:
+        "subj_reg"
+    conda:
+        "../envs/ants.yaml"
+    threads: 4
+    resources:
+        mem_mb=10000,
+        runtime=15,
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -o [{output.xfm_composite},1] "
+        " -r {input.ref} -t {input.warp} {input.xfm_itk} && "
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -o [{output.xfm_composite_inv},1] "
+        " -r {input.subject} -t {input.invwarp} [{input.xfm_itk},1]"
+
+
+rule compose_subject_warp_from_cohort_build:
+    """Subject<->cohort template warps from the warps saved by the cohort build.
+
+    Chains the subject's warps to the original template with its warp to the
+    cohort template, instead of registering the subject again. Used when
+    --template is a cohort template built from this subject.
+    """
+    input:
+        ref=rules.import_template_anat.output.anat,
+        subject=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level=config["registration_level"],
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        warp=lambda wildcards: _cohort_warp_paths(wildcards)["warp"],
+        invwarp=lambda wildcards: _cohort_warp_paths(wildcards)["invwarp"],
+        to_orig=lambda wildcards: _cohort_warp_paths(wildcards)["to_orig"],
+        from_orig=lambda wildcards: _cohort_warp_paths(wildcards)["from_orig"],
+    output:
+        xfm_composite=_reg_xfm("xfm.nii.gz", desc="cohort"),
+        xfm_composite_inv=_reg_xfm(
+            "xfm.nii.gz", from_="{template}", to="subject", desc="cohort"
+        ),
+    group:
+        "subj_reg"
+    conda:
+        "../envs/ants.yaml"
+    threads: 4
+    resources:
+        mem_mb=10000,
+        runtime=15,
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -o [{output.xfm_composite},1] "
+        " -r {input.ref} -t {input.to_orig} {input.warp} && "
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -o [{output.xfm_composite_inv},1] "
+        " -r {input.subject} -t {input.invwarp} {input.from_orig}"
+
+
+rule select_subject_to_template_warp:
+    """Link the warps every downstream rule uses to the subject's selected method."""
+    input:
+        xfm_composite=lambda wildcards: _reg_xfm("xfm.nii.gz").format(
+            reg=subject_reg_method(wildcards), **wildcards
+        ),
+        xfm_composite_inv=lambda wildcards: _reg_xfm(
+            "xfm.nii.gz", from_="{template}", to="subject"
+        ).format(reg=subject_reg_method(wildcards), **wildcards),
     output:
         xfm_composite=bids(
             root=root,
@@ -384,21 +486,10 @@ rule compose_subject_to_template_warp:
             suffix="xfm.nii.gz",
             **inputs["spim"].wildcards,
         ),
-    group:
-        "subj_reg"
-    conda:
-        "../envs/ants.yaml"
-    threads: 4
-    resources:
-        mem_mb=10000,
-        runtime=15,
+    localrule: True
     shell:
-        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
-        "antsApplyTransforms -d 3 -o [{output.xfm_composite},1] "
-        " -r {input.ref} -t {input.warp} {input.xfm_itk} && "
-        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
-        "antsApplyTransforms -d 3 -o [{output.xfm_composite_inv},1] "
-        " -r {input.subject} -t {input.invwarp} [{input.xfm_itk},1]"
+        "ln -srf {input.xfm_composite} {output.xfm_composite} && "
+        "ln -srf {input.xfm_composite_inv} {output.xfm_composite_inv}"
 
 
 rule deform_zarr_to_template_nii:
@@ -574,44 +665,12 @@ rule deform_template_dseg_to_subject_nii:
 
 
 rule registration_qc_report:
-    """Generate registration quality control notebook with visualizations"""
+    """Report on the affine and deformable stages of one registration method."""
     input:
         template=get_template_for_reg,
-        subject=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level=config["registration_level"],
-            desc=config["templatereg"]["desc"],
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        warped_affine=bids(
-            root=root,
-            datatype="xfm",
-            space="{template}",
-            stain="{stain}",
-            desc="affinewarped",
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        warped_deform=bids(
-            root=root,
-            datatype="micr",
-            stain="{stain}",
-            level=config["registration_level"],
-            space="{template}",
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-        warp=bids(
-            root=root,
-            datatype="xfm",
-            from_="subject",
-            to="{template}",
-            suffix="xfm.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
+        warped_affine=_reg_warped("{reg}affinewarped"),
+        warped_deform=_reg_warped("{reg}deformwarped"),
+        warp=_reg_xfm("xfm.nii.gz"),
         dseg=lambda wildcards: bids(
             root=root,
             template=wildcards.template,
@@ -619,20 +678,72 @@ rule registration_qc_report:
             suffix="dseg.nii.gz",
         ),
     output:
-        report_html=bids(
-            root=root,
-            datatype="xfm",
-            stain="{stain}",
-            from_="SPIM",
-            to="{template}",
-            suffix="regqc.html",
-            **inputs["spim"].wildcards,
+        report_html=_reg_xfm(
+            "regqc.html", from_="SPIM", stain=stain_for_reg
         ),
-    group:
-        "subj_reg"
+    wildcard_constraints:
+        reg=reg_constraint(),
     threads: 1
     resources:
-        mem_mb=8000,
+        mem_mb=16000,
         runtime=30,
+    params:
+        subject=lambda wildcards: f"sub-{wildcards.subject}",
+        template=lambda wildcards: f"tpl-{wildcards.template}",
+        stain=stain_for_reg,
+        method=lambda wildcards: wildcards.reg,
+        parameters=lambda wildcards: reg_note(reg_presets[wildcards.reg]),
     script:
         "../scripts/reg_qc_report.py"
+
+
+rule reg_tune_report:
+    """Compare registration methods for one subject, using the same report as QC."""
+    input:
+        fixed=get_template_for_reg,
+        warped=lambda wildcards: [
+            _reg_warped("{reg}deformwarped").format(reg=reg, **wildcards)
+            for reg in config["registration_tune_methods"]
+        ],
+        warps=lambda wildcards: [
+            _reg_xfm("xfm.nii.gz").format(reg=reg, **wildcards)
+            for reg in config["registration_tune_methods"]
+        ],
+        labels=lambda wildcards: [
+            bids(
+                root=root,
+                template=wildcards.template,
+                seg=list(atlas_segs)[0],
+                suffix="dseg.nii.gz",
+            )
+        ]
+        * len(config["registration_tune_methods"]),
+    output:
+        report_html=_reg_xfm(
+            "regqc.html", from_="SPIM", stain=stain_for_reg, desc="tune"
+        ),
+    threads: 1
+    resources:
+        mem_mb=32000,
+        runtime=60,
+    params:
+        subject=lambda wildcards: f"sub-{wildcards.subject}",
+        template=lambda wildcards: f"tpl-{wildcards.template}",
+        stain=stain_for_reg,
+        methods=config["registration_tune_methods"],
+        selected=config["registration_method"],
+        notes={m: reg_note(reg_presets[m]) for m in reg_presets},
+    script:
+        "../scripts/reg_tune_report.py"
+
+
+rule all_reg_tune:
+    """Compare registration methods per subject (--registration_tune_methods).
+
+    Invoke with: ``spimquant <bids_dir> <out_dir> tune_reg``
+    """
+    input:
+        inputs["spim"].expand(
+            rules.reg_tune_report.output.report_html,
+            template=config["template"],
+        ),

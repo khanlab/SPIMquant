@@ -351,3 +351,117 @@ def get_regionprops_parquet(wildcards):
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         )
+
+
+# --- registration methods: named presets, used as the desc- of their outputs ---
+
+
+def _resolve_reg_preset(name):
+    presets = config["registration"]["presets"]
+    if name not in presets:
+        raise ValueError(
+            f"Unknown registration method {repr(name)}, choose from {sorted(presets)}"
+        )
+    preset = dict(presets[name])
+    base = preset.pop("base", None)
+    return {**_resolve_reg_preset(base), **preset} if base else preset
+
+
+reg_presets = {name: _resolve_reg_preset(name) for name in config["registration"]["presets"]}
+for _name, _preset in reg_presets.items():
+    if not _name.isalnum() or _name == "cohort":
+        raise ValueError(
+            f"Registration method name {repr(_name)} must be alphanumeric, and "
+            "cohort is reserved for warps from a cohort template build"
+        )
+    if _preset["backend"] not in ("greedy", "ants", "fireants"):
+        raise ValueError(f"Unknown backend in registration method {_name}: {_preset}")
+
+
+def reg_constraint(backend=None):
+    """Regex matching the registration method names, optionally of one backend."""
+    names = [n for n, p in reg_presets.items() if backend in (None, p["backend"])]
+    return "|".join(names) if names else "(?!)"
+
+
+def reg_iters(preset, key):
+    """Iterations of a preset, or very few when running with --sloppy."""
+    if not config["sloppy"]:
+        return preset[key]
+    return [10, 0, 0] if preset["backend"] == "fireants" else "10x0x0"
+
+
+def reg_note(preset):
+    """One-line summary of a preset for reports."""
+    return ", ".join(f"{k}: {v}" for k, v in preset.items())
+
+
+def ants_reg_args(preset, fixed, moving, center_init):
+    """antsRegistration stages for a preset (the output prefix is added by the rule)."""
+    pair = f"{fixed},{moving},1"
+    metrics = {"MI": f"MI[{pair},32,Regular,0.25]", "CC": f"CC[{pair},{preset['cc_radius']}]"}
+    levels = (
+        f"-f {preset['shrink']} -s {preset['smooth']}vox "
+    )
+    args = "-d 3 --float 1 --collapse-output-transforms 1 -v 1 -n Linear "
+    if center_init:
+        args += f"--initial-moving-transform [{fixed},{moving},1] "
+    if preset["affine"]:
+        args += (
+            f"-t Affine[0.1] -m {metrics[preset['affine_metric']]} "
+            f"-c [{reg_iters(preset, 'affine_iters')},1e-6,10] {levels}"
+        )
+    return args + (
+        f"-t SyN[{preset['syn']}] -m {metrics[preset['metric']]} "
+        f"-c [{reg_iters(preset, 'deform_iters')},1e-6,10] {levels}"
+    )
+
+
+# printf commands for the identity transforms of presets without an affine stage
+reg_identity_ras = "printf '1 0 0 0\\n0 1 0 0\\n0 0 1 0\\n0 0 0 1\\n'"
+reg_identity_itk = (
+    "printf '#Insight Transform File V1.0\\n#Transform 0\\n"
+    "Transform: MatrixOffsetTransformBase_double_3_3\\n"
+    "Parameters: 1 0 0 0 1 0 0 0 1 0 0 0\\nFixedParameters: 0 0 0\\n'"
+)
+
+
+# --- subject warps from a cohort template build, when --template is that cohort ---
+
+cohort_warps = config["templates"][config["template"]].get("cohort_warps")
+
+
+def _cohort_warp_paths(wildcards):
+    """Files that make up the subject<->cohort template warps of a subject."""
+    entities = {k: wildcards[k] for k in inputs["spim"].wildcards}
+    row = os.path.basename(bids(stain="x", suffix="x", **entities)).split("_stain-")[0]
+    stem = os.path.join(cohort_warps["warps_dir"], f"{row}_stain-{cohort_warps['reg_stain']}")
+    orig = cohort_warps["orig_template"]
+    return {
+        "warp": f"{stem}_warp.nii.gz",
+        "invwarp": f"{stem}_invwarp.nii.gz",
+        "to_orig": bids(
+            root=cohort_warps["orig_root"],
+            datatype="xfm",
+            from_="subject",
+            to=orig,
+            suffix="xfm.nii.gz",
+            **entities,
+        ),
+        "from_orig": bids(
+            root=cohort_warps["orig_root"],
+            datatype="xfm",
+            from_=orig,
+            to="subject",
+            suffix="xfm.nii.gz",
+            **entities,
+        ),
+    }
+
+
+def subject_reg_method(wildcards):
+    """Registration desc for a subject: its cohort build warps if any, else the method."""
+    if wildcards.template == config["template"] and cohort_warps:
+        if all(os.path.exists(f) for f in _cohort_warp_paths(wildcards).values()):
+            return "cohort"
+    return config["registration_method"]

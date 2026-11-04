@@ -3,7 +3,9 @@ analysis_levels: &analysis_levels
  - participant
  - group
  - tune_n4
+ - tune_reg
  - cohort_template
+ - cohort_template_tune_reg
  - cohort_template_export
 
 #mapping from analysis_level to set of target rules or files
@@ -14,8 +16,12 @@ targets_by_analysis_level:
     - 'all_group'
   tune_n4:
     - 'all_n4_tune'
+  tune_reg:
+    - 'all_reg_tune'
   cohort_template:
     - 'all_cohort_template'
+  cohort_template_tune_reg:
+    - 'all_cohort_template_reg_tune'
   cohort_template_export:
     - 'all_cohort_template_export'
 
@@ -355,6 +361,20 @@ parse_args:
     type: int
     dest: zarr_store_shards
 
+  --registration_method:
+    help: "Registration method for subject to template registration: a name from registration.presets in the config, which is also the desc- of its output transforms. The built-in methods use greedy (greedy...), antsRegistration (ants...) or FireANTs (fireants..., needs a GPU and the gpu environment). (default: %(default)s)"
+    default: greedy
+
+  --registration_tune_methods:
+    help: "Registration methods to compare in the tune_reg analysis level, which writes a side-by-side report per subject. (default: %(default)s)"
+    default:
+      - greedy
+      - greedySharp
+      - greedyNCC
+      - ants
+      - fireants
+    nargs: '+'
+
   --reuse_derivatives:
     help: "Path to an existing SPIMquant output dataset to reuse outputs from (see --reuse_outputs), instead of computing them again. Files are matched by the same BIDS paths SPIMquant writes, so they are only reused when the relevant settings (e.g. --template, --registration_level) match; anything not found is computed as usual. Reused files are copied into the output directory (see --reuse_symlink)."
     default: null
@@ -365,7 +385,7 @@ parse_args:
     default: False
 
   --reuse_outputs:
-    help: "Which outputs to reuse from --reuse_derivatives (default: %(default)s). 'brainmask' reuses the SPIM brain masks, 'transforms' the composite subject<->template warps. The registration QC report is skipped for subjects whose transforms are reused."
+    help: "Which outputs to reuse from --reuse_derivatives (default: %(default)s). 'brainmask' reuses the SPIM brain masks, 'transforms' the composite subject<->template warps of --registration_method (warps from datasets made before registration methods existed count as greedy). The registration QC report is skipped for subjects whose transforms are reused."
     choices:
       - brainmask
       - transforms
@@ -517,6 +537,21 @@ parse_args:
     default: null
     nargs: '+'
 
+  --cohort-template-reg-method:
+    help: "Registration method for the original template to cohort template registration: a name from registration.presets in the config. (default: %(default)s)"
+    default: greedy
+
+  --cohort-template-reg-tune-methods:
+    help: "Registration methods to compare in the cohort_template_tune_reg analysis level. (default: %(default)s)"
+    default:
+      - greedy
+      - greedyNoAffine
+      - greedySharp
+      - greedySpim
+      - ants
+      - fireants
+    nargs: '+'
+
   --cohort-template-zenodo-deposition:
     help: "Zenodo deposition ID (an unpublished draft you created) to upload the exported cohort template to, in the cohort_template_export analysis level. Requires SNAKEMAKE_STORAGE_ZENODO_ACCESS_TOKEN to be set. When absent, the export is only prepared locally. (default: %(default)s)"
     default: null
@@ -638,18 +673,80 @@ masking:
 zarrnii_out_kwargs:
   storage_options: {}
 
+# Registration methods. The name of each is the desc- of its output transforms,
+# and a preset can start from another one with base:. Set by --registration_method
+# and --cohort-template-reg-method, and compared by the tune_reg and
+# cohort_template_tune_reg analysis levels.
+registration:
+  presets:
+    # greedy iterations are per level, with the last at full resolution
+    greedy:
+      backend: greedy
+      affine: true
+      metric: NMI
+      affine_iters: 100x100
+      deform_iters: 100x50
+      sigma1: 4vox
+      sigma2: 2vox
+      moving: anat # cohort template registration only: anat, or spim to use the
+                   # original template's spim_template of the registration stain
+    greedyNoAffine:
+      base: greedy
+      affine: false
+    # less smoothing of the warp, to follow finer structure
+    greedySharp:
+      base: greedy
+      sigma1: 2vox
+      sigma2: 1vox
+    greedyNCC:
+      base: greedy
+      metric: NCC 2x2x2
+    # same contrast as the cohort template, so a local metric can be used
+    greedySpim:
+      base: greedy
+      moving: spim
+      metric: NCC 2x2x2
+    ants:
+      backend: ants
+      affine: true
+      affine_metric: MI
+      metric: MI
+      cc_radius: 2
+      affine_iters: 1000x500x250
+      deform_iters: 100x70x50
+      shrink: 4x2x1
+      smooth: 2x1x0
+      syn: 0.1,3,0
+      moving: anat
+    antsSpim:
+      base: ants
+      moving: spim
+      metric: CC
+    fireants:
+      backend: fireants
+      affine: true
+      affine_loss: mi
+      deform_loss: mi
+      clip_percentiles: [0.5, 99.5]
+      scales: [4, 2, 1]
+      affine_iters: [200, 100, 25]
+      deform_iters: [200, 100, 50]
+      optimizer_lr: 0.25
+      smooth_warp_sigma: 0.5
+      smooth_grad_sigma: 1.0
+      cc_kernel_size: 5
+      moving: anat
+    fireantsSpim:
+      base: fireants
+      moving: spim
+      affine_loss: cc
+      deform_loss: fusedcc # falls back to cc if fireants fused_ops are not built
+
 cohort_template:
   # subject images are clipped to these percentiles (of nonzero voxels) and
   # rescaled to [0,1] before template building, so bright outliers (e.g.
   # plaques) do not dominate FireANTs' min-max normalization
   clip_percentiles: [0.5, 99.5]
-  # registration of the original template (moving) to the cohort template (fixed)
-  reg:
-    metric: NMI
-    affine_iters: 100x50x0
-    deform_iters: 100x50x0
-    sigma1: 4vox
-    sigma2: 2vox
   # FireANTs build_template config (image_list_file, save_dir and
   # template_iterations are filled in by the workflow)
   fireants:

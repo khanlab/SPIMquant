@@ -12,9 +12,10 @@ Key workflow stages:
 3. Multivariate template building with FireANTs (all stains share one space)
    and a desc-rawintensity template per stain: the subjects' un-normalized images
    warped with the final-iteration warps and averaged
-4. Registration of the original template anat (moving) to the cohort template
+4. Registration of the original template (moving) to the cohort template
    (fixed), since the cohort template drifts away from the original template
-   space during building
+   space during building, with --cohort-template-reg-method. The
+   cohort_template_tune_reg analysis level compares methods side by side.
 5. Warping of the original atlases, brain mask and anat into cohort template space
 6. Export: template_description.json, a templates: config snippet for SPIMquant,
    and optional upload to a Zenodo deposition
@@ -36,6 +37,8 @@ cohort_level = (
 cohort_iterations = config["cohort_template_iterations"]
 cohort_n_gpus = config["cohort_template_n_gpus"]
 cohort_zenodo_deposition = config["cohort_template_zenodo_deposition"]
+cohort_reg_method = config["cohort_template_reg_method"]
+cohort_reg_tune_methods = config["cohort_template_reg_tune_methods"]
 
 # final outputs in cohort_root/tpl-{name}/, intermediate files in cohort_work
 cohort_root = os.path.join(root, "cohort_template")
@@ -133,7 +136,24 @@ def _get_cohort_rows():
     return rows
 
 
-if config.get("analysis_level") in ("cohort_template", "cohort_template_export"):
+if config.get("analysis_level") in (
+    "cohort_template",
+    "cohort_template_tune_reg",
+    "cohort_template_export",
+):
+    for _method in [cohort_reg_method, *cohort_reg_tune_methods]:
+        if _method not in reg_presets:
+            raise ValueError(
+                f"Unknown registration method {repr(_method)}, choose from "
+                f"{sorted(reg_presets)}"
+            )
+        if reg_presets[_method]["moving"] == "spim" and cohort_reg_stain not in template.get(
+            "spim_templates", {}
+        ):
+            raise ValueError(
+                f"Registration method {_method} uses a spim_template, but "
+                f"tpl-{orig_template} has none for {cohort_reg_stain}"
+            )
     if not cohort_name.isalnum():
         raise ValueError(
             f"--cohort-template-name must be alphanumeric, got {repr(cohort_name)}"
@@ -191,12 +211,17 @@ rule all_cohort_template:
             seg=cohort_atlas_segs,
             ext=["nii.gz", "tsv"],
         ),
-        bids_cohort(from_=orig_template, to=cohort_name, suffix="xfm.nii.gz"),
-        bids_cohort(from_=cohort_name, to=orig_template, suffix="xfm.nii.gz"),
+        bids_cohort(
+            from_=orig_template, to=cohort_name, desc=cohort_reg_method, suffix="xfm.nii.gz"
+        ),
+        bids_cohort(
+            from_=cohort_name, to=orig_template, desc=cohort_reg_method, suffix="xfm.nii.gz"
+        ),
         bids_cohort(
             stain=cohort_reg_stain,
             from_=orig_template,
             to=cohort_name,
+            desc=cohort_reg_method,
             suffix="regqc.html",
         ),
         # cohort template resampled back into the original template space
@@ -382,86 +407,107 @@ rule cohort_template_rawintensity:
         "../scripts/cohort_template_rawintensity.py"
 
 
-rule cohort_template_affine_reg:
-    """Affine registration of the original template anat to the cohort template.
+def _cohort_moving(wildcards):
+    """Original template image to register, set by the method's moving: option."""
+    if reg_presets[wildcards.reg]["moving"] == "spim":
+        return bids_orig(suffix=f"{cohort_reg_stain}.nii.gz")
+    return bids_orig(suffix="anat.nii.gz")
 
-    The images start out roughly aligned (subjects were registered to the
-    original template), so registration is initialized with identity.
-    """
+
+_cohort_fixed = bids_cohort(stain=cohort_reg_stain, suffix="SPIM.nii.gz")
+_cohort_affine_ras = os.path.join(cohort_work, "xfm", "{reg}_affine_ras_xfm.txt")
+_cohort_affine_itk = os.path.join(cohort_work, "xfm", "{reg}_affine_itk_xfm.txt")
+_cohort_warp = os.path.join(cohort_work, "xfm", "{reg}_warp.nii.gz")
+_cohort_invwarp = os.path.join(cohort_work, "xfm", "{reg}_invwarp.nii.gz")
+_cohort_warped_affine = os.path.join(cohort_work, "xfm", "{reg}_affinewarped.nii.gz")
+_cohort_warped = os.path.join(cohort_work, "xfm", "{reg}_deformwarped.nii.gz")
+_cohort_reg_log = os.path.join(cohort_work, "logs", "{reg}_{step}.log")
+
+
+# The images start out roughly aligned (subjects were registered to the original
+# template), so registration is initialized with identity
+use rule affine_reg as cohort_template_affine_reg with:
     input:
-        fixed=bids_cohort(stain=cohort_reg_stain, suffix="SPIM.nii.gz"),
-        moving=bids_orig(suffix="anat.nii.gz"),
+        fixed=_cohort_fixed,
+        moving=_cohort_moving,
     output:
-        xfm_ras=os.path.join(cohort_work, "xfm", "affine_ras_xfm.txt"),
-        warped=os.path.join(cohort_work, "xfm", "affinewarped_anat.nii.gz"),
+        xfm_ras=temp(_cohort_affine_ras),
+        warped=temp(_cohort_warped_affine),
     log:
-        os.path.join(cohort_work, "logs", "cohort_template_affine_reg.log"),
-    threads: 32
-    resources:
-        mem_mb=16000,
-        runtime=30,
+        _cohort_reg_log.replace("{step}", "affine_reg"),
+    group:
+        "cohort_reg"
     params:
-        metric=config["cohort_template"]["reg"]["metric"],
-        iters=(
-            "10x0x0"
-            if config["sloppy"]
-            else config["cohort_template"]["reg"]["affine_iters"]
-        ),
-    shell:
-        "(greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} "
-        " -a -dof 12 -ia-identity -m {params.metric} -o {output.xfm_ras} -n {params.iters} && "
-        " greedy -threads {threads} -d 3 -rf {input.fixed} "
-        "  -rm {input.moving} {output.warped} -r {output.xfm_ras}) &> {log}"
+        affine=lambda wildcards: reg_presets[wildcards.reg]["affine"],
+        init="-ia-identity",
+        metric=lambda wildcards: reg_presets[wildcards.reg]["metric"],
+        iters=lambda wildcards: reg_iters(reg_presets[wildcards.reg], "affine_iters"),
+        identity=reg_identity_ras,
 
 
-rule cohort_template_deform_reg:
-    """Deformable registration of the original template anat to the cohort template."""
+use rule convert_ras_to_itk as cohort_template_ras_to_itk with:
     input:
-        fixed=bids_cohort(stain=cohort_reg_stain, suffix="SPIM.nii.gz"),
-        moving=bids_orig(suffix="anat.nii.gz"),
-        xfm_ras=rules.cohort_template_affine_reg.output.xfm_ras,
+        xfm_ras=_cohort_affine_ras,
     output:
-        warp=os.path.join(cohort_work, "xfm", "warp.nii.gz"),
-        invwarp=os.path.join(cohort_work, "xfm", "invwarp.nii.gz"),
-        warped=os.path.join(cohort_work, "xfm", "deformwarped_anat.nii.gz"),
+        xfm_itk=temp(_cohort_affine_itk),
+    group:
+        "cohort_reg"
+
+
+use rule deform_reg as cohort_template_deform_reg with:
+    input:
+        fixed=_cohort_fixed,
+        moving=_cohort_moving,
+        xfm_ras=_cohort_affine_ras,
+    output:
+        warp=temp(_cohort_warp),
+        invwarp=temp(_cohort_invwarp),
+        warped=temp(_cohort_warped),
     log:
-        os.path.join(cohort_work, "logs", "cohort_template_deform_reg.log"),
-    threads: 32
+        _cohort_reg_log.replace("{step}", "deform_reg"),
+    group:
+        "cohort_reg"
     resources:
         mem_mb=16000,
         runtime=5 if config["sloppy"] else 60,
-    params:
-        metric=config["cohort_template"]["reg"]["metric"],
-        iters=(
-            "10x0x0"
-            if config["sloppy"]
-            else config["cohort_template"]["reg"]["deform_iters"]
-        ),
-        sigma1=config["cohort_template"]["reg"]["sigma1"],
-        sigma2=config["cohort_template"]["reg"]["sigma2"],
-    shell:
-        "(greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} "
-        " -it {input.xfm_ras} -m {params.metric} "
-        " -oinv {output.invwarp} "
-        " -o {output.warp} -n {params.iters} -s {params.sigma1} {params.sigma2} && "
-        " greedy -threads {threads} -d 3 -rf {input.fixed} "
-        "  -rm {input.moving} {output.warped} "
-        "  -r {output.warp} {input.xfm_ras}) &> {log}"
 
 
-rule cohort_template_ras_to_itk:
+use rule reg_ants as cohort_template_reg_ants with:
     input:
-        xfm_ras=rules.cohort_template_affine_reg.output.xfm_ras,
+        fixed=_cohort_fixed,
+        moving=_cohort_moving,
     output:
-        xfm_itk=os.path.join(cohort_work, "xfm", "affine_itk_xfm.txt"),
-    conda:
-        "../envs/c3d.yaml"
-    threads: 1
-    resources:
-        mem_mb=1500,
-        runtime=15,
-    shell:
-        "c3d_affine_tool {input.xfm_ras} -oitk {output.xfm_itk}"
+        xfm_itk=temp(_cohort_affine_itk),
+        warp=temp(_cohort_warp),
+        invwarp=temp(_cohort_invwarp),
+        warped_affine=temp(_cohort_warped_affine),
+        warped=temp(_cohort_warped),
+    log:
+        _cohort_reg_log.replace("{step}", "reg_ants"),
+    params:
+        args=lambda wildcards, input: ants_reg_args(
+            reg_presets[wildcards.reg], input.fixed, input.moving, center_init=False
+        ),
+        identity=reg_identity_itk,
+
+
+use rule reg_fireants as cohort_template_reg_fireants with:
+    input:
+        fixed=_cohort_fixed,
+        moving=_cohort_moving,
+    output:
+        xfm_itk=temp(_cohort_affine_itk),
+        warp=temp(_cohort_warp),
+        invwarp=temp(_cohort_invwarp),
+        warped_affine=temp(_cohort_warped_affine),
+        warped=temp(_cohort_warped),
+    params:
+        preset=lambda wildcards: {
+            **reg_presets[wildcards.reg],
+            "affine_iters": reg_iters(reg_presets[wildcards.reg], "affine_iters"),
+            "deform_iters": reg_iters(reg_presets[wildcards.reg], "deform_iters"),
+        },
+        init_moments=False,
 
 
 rule cohort_template_compose_warp:
@@ -472,18 +518,20 @@ rule cohort_template_compose_warp:
     from-{cohort}_to-{orig} is its inverse.
     """
     input:
-        cohort_ref=bids_cohort(stain=cohort_reg_stain, suffix="SPIM.nii.gz"),
+        cohort_ref=_cohort_fixed,
         orig_ref=bids_orig(suffix="anat.nii.gz"),
-        xfm_itk=rules.cohort_template_ras_to_itk.output.xfm_itk,
-        warp=rules.cohort_template_deform_reg.output.warp,
-        invwarp=rules.cohort_template_deform_reg.output.invwarp,
+        xfm_itk=_cohort_affine_itk,
+        warp=_cohort_warp,
+        invwarp=_cohort_invwarp,
     output:
         xfm_composite=bids_cohort(
-            from_=orig_template, to=cohort_name, suffix="xfm.nii.gz"
+            from_=orig_template, to=cohort_name, desc="{reg}", suffix="xfm.nii.gz"
         ),
         xfm_composite_inv=bids_cohort(
-            from_=cohort_name, to=orig_template, suffix="xfm.nii.gz"
+            from_=cohort_name, to=orig_template, desc="{reg}", suffix="xfm.nii.gz"
         ),
+    wildcard_constraints:
+        reg=reg_constraint(),
     conda:
         "../envs/ants.yaml"
     threads: 4
@@ -499,6 +547,15 @@ rule cohort_template_compose_warp:
         " -r {input.orig_ref} -t {input.invwarp} [{input.xfm_itk},1]"
 
 
+# the warps of the method selected with --cohort-template-reg-method
+_cohort_xfm = bids_cohort(
+    from_=orig_template, to=cohort_name, desc=cohort_reg_method, suffix="xfm.nii.gz"
+)
+_cohort_xfm_inv = bids_cohort(
+    from_=cohort_name, to=orig_template, desc=cohort_reg_method, suffix="xfm.nii.gz"
+)
+
+
 _cohort_warp_shell = (
     "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
     "antsApplyTransforms -d 3 -v -n {params.interp} "
@@ -510,7 +567,7 @@ rule cohort_template_warp_anat:
     input:
         img=bids_orig(suffix="anat.nii.gz"),
         ref=bids_cohort(stain=cohort_reg_stain, suffix="SPIM.nii.gz"),
-        xfm=rules.cohort_template_compose_warp.output.xfm_composite,
+        xfm=_cohort_xfm,
     output:
         bids_cohort(suffix="anat.nii.gz"),
     conda:
@@ -529,7 +586,7 @@ rule cohort_template_warp_mask:
     input:
         img=bids_orig(desc="brain", suffix="mask.nii.gz"),
         ref=bids_cohort(stain=cohort_reg_stain, suffix="SPIM.nii.gz"),
-        xfm=rules.cohort_template_compose_warp.output.xfm_composite,
+        xfm=_cohort_xfm,
     output:
         bids_cohort(desc="brain", suffix="mask.nii.gz"),
     conda:
@@ -549,7 +606,7 @@ rule cohort_template_warp_dseg:
     input:
         img=bids_orig(seg="{seg}", suffix="dseg.nii.gz"),
         ref=bids_cohort(stain=cohort_reg_stain, suffix="SPIM.nii.gz"),
-        xfm=rules.cohort_template_compose_warp.output.xfm_composite,
+        xfm=_cohort_xfm,
     output:
         bids_cohort(seg="{seg}", suffix="dseg.nii.gz"),
     conda:
@@ -583,7 +640,7 @@ rule cohort_template_to_orig_space:
     input:
         img=bids_cohort(stain="{stain}", suffix="SPIM.nii.gz"),
         ref=bids_orig(suffix="anat.nii.gz"),
-        xfm=rules.cohort_template_compose_warp.output.xfm_composite_inv,
+        xfm=_cohort_xfm_inv,
     output:
         bids_orig(
             root=cohort_root, desc=cohort_name, stain="{stain}", suffix="SPIM.nii.gz"
@@ -603,17 +660,17 @@ rule cohort_template_to_orig_space:
 rule cohort_template_regqc:
     """QC report for the original-to-cohort template registration."""
     input:
-        template=bids_cohort(stain=cohort_reg_stain, suffix="SPIM.nii.gz"),
-        subject=bids_orig(suffix="anat.nii.gz"),
-        warped_affine=rules.cohort_template_affine_reg.output.warped,
-        warped_deform=rules.cohort_template_deform_reg.output.warped,
-        warp=rules.cohort_template_compose_warp.output.xfm_composite,
+        template=_cohort_fixed,
+        warped_affine=_cohort_warped_affine.format(reg=cohort_reg_method),
+        warped_deform=_cohort_warped.format(reg=cohort_reg_method),
+        warp=_cohort_xfm,
         dseg=bids_cohort(seg=list(atlas_segs)[0], suffix="dseg.nii.gz"),
     output:
         report_html=bids_cohort(
             stain=cohort_reg_stain,
             from_=orig_template,
             to=cohort_name,
+            desc=cohort_reg_method,
             suffix="regqc.html",
         ),
     threads: 1
@@ -624,8 +681,78 @@ rule cohort_template_regqc:
         subject=f"tpl-{orig_template}",
         template=f"tpl-{cohort_name}",
         stain=cohort_reg_stain,
+        method=cohort_reg_method,
+        parameters=reg_note(reg_presets[cohort_reg_method]),
     script:
         "../scripts/reg_qc_report.py"
+
+
+rule cohort_template_tune_warp_dseg:
+    """Warp an original template atlas with a method compared by the tune report."""
+    input:
+        img=bids_orig(seg="{seg}", suffix="dseg.nii.gz"),
+        ref=_cohort_fixed,
+        xfm=bids_cohort(
+            from_=orig_template, to=cohort_name, desc="{reg}", suffix="xfm.nii.gz"
+        ),
+    output:
+        temp(os.path.join(cohort_work, "tune", "{reg}_seg-{seg}_dseg.nii.gz")),
+    wildcard_constraints:
+        reg=reg_constraint(),
+    conda:
+        "../envs/ants.yaml"
+    threads: 8
+    resources:
+        mem_mb=16000,
+        runtime=15,
+    params:
+        interp="NearestNeighbor",
+    shell:
+        _cohort_warp_shell
+
+
+rule cohort_template_tune_report:
+    """Compare methods for registering the original template to the cohort template."""
+    input:
+        fixed=_cohort_fixed,
+        warped=expand(_cohort_warped, reg=cohort_reg_tune_methods),
+        warps=expand(
+            bids_cohort(
+                from_=orig_template, to=cohort_name, desc="{reg}", suffix="xfm.nii.gz"
+            ),
+            reg=cohort_reg_tune_methods,
+        ),
+        labels=expand(
+            rules.cohort_template_tune_warp_dseg.output[0],
+            reg=cohort_reg_tune_methods,
+            seg=list(atlas_segs)[0],
+        ),
+    output:
+        report_html=bids_cohort(
+            stain=cohort_reg_stain,
+            from_=orig_template,
+            to=cohort_name,
+            desc="tune",
+            suffix="regqc.html",
+        ),
+    threads: 1
+    resources:
+        mem_mb=32000,
+        runtime=60,
+    params:
+        subject=f"tpl-{orig_template}",
+        template=f"tpl-{cohort_name}",
+        stain=cohort_reg_stain,
+        methods=cohort_reg_tune_methods,
+        selected=cohort_reg_method,
+        notes={m: reg_note(reg_presets[m]) for m in reg_presets},
+    script:
+        "../scripts/reg_tune_report.py"
+
+
+rule all_cohort_template_reg_tune:
+    input:
+        rules.cohort_template_tune_report.output.report_html,
 
 
 # --- export: prepare the cohort template for inclusion in SPIMquant ---
@@ -644,10 +771,7 @@ cohort_export_files = (
         for seg in cohort_atlas_segs
         for ext in ["nii.gz", "tsv"]
     ]
-    + [
-        bids_cohort(from_=orig_template, to=cohort_name, suffix="xfm.nii.gz"),
-        bids_cohort(from_=cohort_name, to=orig_template, suffix="xfm.nii.gz"),
-    ]
+    + [_cohort_xfm, _cohort_xfm_inv]
 )
 
 
@@ -677,16 +801,20 @@ rule cohort_template_buildinfo:
         fireants_config=rules.cohort_template_inputs.output.fireants_config,
         # logs cannot be inputs; these outputs guarantee the logs were written
         build_dir=rules.build_cohort_template.output.build_dir,
-        warp=rules.cohort_template_deform_reg.output.warp,
+        warp=_cohort_xfm,
     output:
         cohort_buildinfo,
     localrule: True
     params:
-        logs=[
-            rules.build_cohort_template.log[0],
-            rules.cohort_template_affine_reg.log[0],
-            rules.cohort_template_deform_reg.log[0],
-        ],
+        logs=[rules.build_cohort_template.log[0]]
+        + {
+            "greedy": [
+                rules.cohort_template_affine_reg.log[0].format(reg=cohort_reg_method),
+                rules.cohort_template_deform_reg.log[0].format(reg=cohort_reg_method),
+            ],
+            "ants": [rules.cohort_template_reg_ants.log[0].format(reg=cohort_reg_method)],
+            "fireants": [],
+        }[reg_presets[cohort_reg_method]["backend"]],
     shell:
         "tar -czf {output} --transform 's,.*/,,' "
         " {input.image_list} {input.fireants_config} {params.logs}"
@@ -697,6 +825,7 @@ rule cohort_template_description:
     input:
         files=cohort_export_files,
         image_list=rules.cohort_template_inputs.output.image_list,
+        build_dir=rules.build_cohort_template.output.build_dir,
     output:
         description=cohort_description,
         config_snippet=cohort_config_snippet,
@@ -711,7 +840,12 @@ rule cohort_template_description:
         resample_mm=config["cohort_template_resample_mm"],
         subjects=[row["name"] for row in cohort_rows],
         fireants=config["cohort_template"]["fireants"],
-        reg=config["cohort_template"]["reg"],
+        reg_method=cohort_reg_method,
+        reg=reg_presets[cohort_reg_method],
+        warps_dir=lambda wildcards, input: os.path.abspath(
+            os.path.join(input.build_dir, "warps")
+        ),
+        orig_root=os.path.abspath(root),
         zenodo_deposition=cohort_zenodo_deposition,
         template_dir=os.path.join(cohort_root, f"tpl-{cohort_name}"),
     script:
