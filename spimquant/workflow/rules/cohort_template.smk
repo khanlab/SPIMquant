@@ -10,6 +10,8 @@ Key workflow stages:
    any --cohort-template-extra-inputs SPIMquant output directories)
 2. Robust intensity normalization of the subject images
 3. Multivariate template building with FireANTs (all stains share one space)
+   and a desc-rawintensity template per stain: the subjects' un-normalized images
+   warped with the final-iteration warps and averaged
 4. Registration of the original template anat (moving) to the cohort template
    (fixed), since the cohort template drifts away from the original template
    space during building
@@ -178,6 +180,10 @@ cohort_buildinfo = os.path.join(cohort_root, f"tpl-{cohort_name}_buildinfo.tar.g
 rule all_cohort_template:
     input:
         expand(bids_cohort(stain="{stain}", suffix="SPIM.nii.gz"), stain=cohort_stains),
+        expand(
+            bids_cohort(desc="rawintensity", stain="{stain}", suffix="SPIM.nii.gz"),
+            stain=cohort_stains,
+        ),
         bids_cohort(suffix="anat.nii.gz"),
         bids_cohort(desc="brain", suffix="mask.nii.gz") if cohort_has_mask else [],
         expand(
@@ -240,7 +246,10 @@ rule cohort_template_inputs:
 
 
 rule build_cohort_template:
-    """Build the multivariate cohort template with FireANTs (GPU)."""
+    """Build the multivariate cohort template with FireANTs (GPU).
+
+    Also writes each subject's final-iteration warp to {build_dir}/warps/.
+    """
     input:
         images=rules.cohort_template_inputs.output.images,
         image_list=rules.cohort_template_inputs.output.image_list,
@@ -259,6 +268,7 @@ rule build_cohort_template:
         # rough estimate: ~30s per subject per iteration, split across GPUs
         runtime=int(15 + 0.5 * len(cohort_rows) * cohort_iterations / cohort_n_gpus),
     params:
+        script=os.path.join(workflow.basedir, "scripts", "cohort_template_build.py"),
         config_dir=lambda wildcards, input: os.path.abspath(
             os.path.dirname(input.fireants_config)
         ),
@@ -275,7 +285,7 @@ rule build_cohort_template:
         # fragmentation otherwise causes OOM after a few subjects
         "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True "
         "torchrun --standalone --nproc_per_node {resources.gpu} "
-        " -m fireants.scripts.template.build_template "
+        " {params.script} "
         " --config-dir {params.config_dir} --config-name {params.config_name} "
         " hydra.run.dir={params.hydra_dir} &> {log}"
 
@@ -307,6 +317,69 @@ rule cohort_template_stain:
         "FireANTs build_template that saves every channel (template_<epoch>_ch-<c>)' >&2;"
         " exit 1; fi; "
         "cp {params.template_nii} {output.spim}"
+
+
+_cohort_rows_by_name = {row["name"]: row for row in cohort_rows}
+_cohort_raw_warped = os.path.join(
+    cohort_work, "rawintensity", "{row}_stain-{stain}.nii.gz"
+)
+
+
+rule cohort_template_warp_rawintensity:
+    """Warp a subject's un-normalized image with its final-iteration warp.
+
+    The image is the input to cohort_template_inputs, before intensity clipping
+    and rescaling, so intensities stay comparable across subjects.
+    """
+    input:
+        build_dir=rules.build_cohort_template.output.build_dir,
+        img=lambda wildcards: _cohort_rows_by_name[wildcards.row]["images"][
+            cohort_stains.index(wildcards.stain)
+        ],
+        ref=bids_cohort(stain=cohort_reg_stain, suffix="SPIM.nii.gz"),
+    output:
+        temp(_cohort_raw_warped),
+    wildcard_constraints:
+        row="[^/]+",
+    conda:
+        "../envs/ants.yaml"
+    threads: 8
+    resources:
+        mem_mb=16000,
+        runtime=15,
+    params:
+        # inside the build directory, so it cannot be declared as an input
+        warp=lambda wildcards, input: os.path.join(
+            input.build_dir,
+            "warps",
+            f"{wildcards.row}_stain-{cohort_stains[0]}_warp.nii.gz",
+        ),
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -v -n Linear -u float "
+        " -i {input.img} -o {output} -r {input.ref} -t {params.warp}"
+
+
+rule cohort_template_rawintensity:
+    """Average the warped un-normalized images into a desc-rawintensity template.
+
+    A plain voxelwise mean, without the Laplacian sharpening and min-max
+    normalization FireANTs applies to its template.
+    """
+    input:
+        images=lambda wildcards: expand(
+            _cohort_raw_warped,
+            row=[row["name"] for row in cohort_rows],
+            stain=wildcards.stain,
+        ),
+    output:
+        bids_cohort(desc="rawintensity", stain="{stain}", suffix="SPIM.nii.gz"),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=lambda wildcards, input: 10 + len(input.images),
+    script:
+        "../scripts/cohort_template_rawintensity.py"
 
 
 rule cohort_template_affine_reg:
@@ -562,6 +635,10 @@ cohort_export_files = (
     [bids_cohort(suffix="anat.nii.gz")]
     + ([bids_cohort(desc="brain", suffix="mask.nii.gz")] if cohort_has_mask else [])
     + [bids_cohort(stain=s, suffix="SPIM.nii.gz") for s in cohort_stains]
+    + [
+        bids_cohort(desc="rawintensity", stain=s, suffix="SPIM.nii.gz")
+        for s in cohort_stains
+    ]
     + [
         bids_cohort(seg=seg, suffix=f"dseg.{ext}")
         for seg in cohort_atlas_segs

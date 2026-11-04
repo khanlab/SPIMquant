@@ -49,7 +49,8 @@ Outputs are in `<output>/cohort_template/`:
 
 ```
 tpl-lecanemab/
-├── tpl-lecanemab_stain-YoPro_SPIM.nii.gz          # one per stain
+├── tpl-lecanemab_stain-YoPro_SPIM.nii.gz          # one per stain, normalized to [0,1]
+├── tpl-lecanemab_desc-rawintensity_stain-YoPro_SPIM.nii.gz   # one per stain, original intensities
 ├── tpl-lecanemab_anat.nii.gz                      # original anat, warped
 ├── tpl-lecanemab_desc-brain_mask.nii.gz           # original mask, warped
 ├── tpl-lecanemab_seg-<seg>_dseg.nii.gz/.tsv       # original atlases, warped
@@ -61,6 +62,17 @@ tpl-ABAv3/
 ```
 
 Check the `regqc.html` report to confirm the atlases line up with the cohort template.
+
+Template building clips each subject image to robust percentiles and rescales it
+to [0,1], and FireANTs sharpens and min-max normalizes the template, so the stain
+templates do not keep the original intensities. The `desc-rawintensity` templates
+do: each is the voxelwise mean of the subjects' un-normalized images (the
+`space-<template>` SPIM images, which have no bias field correction or other
+intensity changes), warped with the warps from the final template iteration. They
+are in the same space as the stain templates but are not sharpened, so they look
+slightly smoother. Use them when absolute intensity matters, e.g. with uniform
+laser power settings across subjects; the stain templates remain the ones used for
+registration.
 
 FireANTs is only installed in the `gpu` pixi environment, so run this level from
 it, e.g. `pixi run -e gpu spimquant ...`. It uses the fused CUDA ops if they are
