@@ -17,11 +17,8 @@ The built-in methods are:
 | `greedyNoAffine` | greedy | no affine stage |
 | `greedySharp` | greedy | less smoothing of the warp, to follow finer structure |
 | `greedyNCC` | greedy | local cross-correlation metric, for images of similar contrast |
-| `greedySpim` | greedy | cohort template only: registers the original template's SPIM template with NCC |
 | `ants` | antsRegistration | SyN with the MI metric |
-| `antsSpim` | antsRegistration | cohort template only: registers the SPIM template with CC |
 | `fireants` | FireANTs | MI loss (`fusedmi`); needs a GPU and the `gpu` environment |
-| `fireantsSpim` | FireANTs | cohort template only: registers the SPIM template with CC |
 
 To add a method, add a preset, starting from another one with `base:`. Names must
 be alphanumeric:
@@ -37,10 +34,6 @@ registration:
 Greedy iterations are per level, with the last at full resolution, so `100x50` runs
 at 2x downsampling and then at full resolution.
 
-The `moving: spim` methods have the same contrast as the cohort template, but the
-SPIM template may not be as well aligned to the atlases as the original template's
-`anat`, so check the labels in the report.
-
 ## Comparing methods
 
 These analysis levels run several methods and write one report with them side by
@@ -54,7 +47,7 @@ spimquant /path/to/bids /path/to/output tune_reg \
 
 spimquant /path/to/bids /path/to/output cohort_template_tune_reg \
     --cohort-template-name lecanemab \
-    --cohort-template-reg-tune-methods greedy greedyNoAffine greedySpim
+    --cohort-template-reg-tune-methods greedy greedyNoAffine greedySharp
 ```
 
 The reports are `xfm/*_stain-<stain>_from-SPIM_to-<template>_desc-tune_regqc.html`

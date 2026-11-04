@@ -147,13 +147,6 @@ if config.get("analysis_level") in (
                 f"Unknown registration method {repr(_method)}, choose from "
                 f"{sorted(reg_presets)}"
             )
-        if reg_presets[_method][
-            "moving"
-        ] == "spim" and cohort_reg_stain not in template.get("spim_templates", {}):
-            raise ValueError(
-                f"Registration method {_method} uses a spim_template, but "
-                f"tpl-{orig_template} has none for {cohort_reg_stain}"
-            )
     if not cohort_name.isalnum():
         raise ValueError(
             f"--cohort-template-name must be alphanumeric, got {repr(cohort_name)}"
@@ -413,13 +406,7 @@ rule cohort_template_rawintensity:
         "../scripts/cohort_template_rawintensity.py"
 
 
-def _cohort_moving(wildcards):
-    """Original template image to register, set by the method's moving: option."""
-    if reg_presets[wildcards.reg]["moving"] == "spim":
-        return bids_orig(suffix=f"{cohort_reg_stain}.nii.gz")
-    return bids_orig(suffix="anat.nii.gz")
-
-
+_cohort_moving = bids_orig(suffix="anat.nii.gz")
 _cohort_fixed = bids_cohort(stain=cohort_reg_stain, suffix="SPIM.nii.gz")
 _cohort_affine_ras = os.path.join(cohort_work, "xfm", "{reg}_affine_ras_xfm.txt")
 _cohort_affine_itk = os.path.join(cohort_work, "xfm", "{reg}_affine_itk_xfm.txt")

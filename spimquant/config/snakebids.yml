@@ -547,7 +547,6 @@ parse_args:
       - greedy
       - greedyNoAffine
       - greedySharp
-      - greedySpim
       - ants
       - fireants
     nargs: '+'
@@ -688,8 +687,6 @@ registration:
       deform_iters: 100x50
       sigma1: 4vox
       sigma2: 2vox
-      moving: anat # cohort template registration only: anat, or spim to use the
-                   # original template's spim_template of the registration stain
     greedyNoAffine:
       base: greedy
       affine: false
@@ -700,11 +697,6 @@ registration:
       sigma2: 1vox
     greedyNCC:
       base: greedy
-      metric: NCC 2x2x2
-    # same contrast as the cohort template, so a local metric can be used
-    greedySpim:
-      base: greedy
-      moving: spim
       metric: NCC 2x2x2
     ants:
       backend: ants
@@ -717,11 +709,6 @@ registration:
       shrink: 4x2x1
       smooth: 2x1x0
       syn: 0.1,3,0
-      moving: anat
-    antsSpim:
-      base: ants
-      moving: spim
-      metric: CC
     fireants:
       backend: fireants
       affine: true
@@ -736,12 +723,6 @@ registration:
       smooth_warp_sigma: 0.5
       smooth_grad_sigma: 1.0
       cc_kernel_size: 5
-      moving: anat
-    fireantsSpim:
-      base: fireants
-      moving: spim
-      affine_loss: cc
-      deform_loss: fusedcc # falls back to cc if fireants fused_ops are not built
 
 cohort_template:
   # subject images are clipped to these percentiles (of nonzero voxels) and
