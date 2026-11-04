@@ -725,8 +725,9 @@ registration:
     fireants:
       backend: fireants
       affine: true
-      affine_loss: mi
-      deform_loss: mi
+      # plain mi keeps a voxels x bins table per image: over 60 GiB at 25um
+      affine_loss: fusedmi
+      deform_loss: fusedmi
       clip_percentiles: [0.5, 99.5]
       scales: [4, 2, 1]
       affine_iters: [200, 100, 25]

@@ -20,7 +20,7 @@ The built-in methods are:
 | `greedySpim` | greedy | cohort template only: registers the original template's SPIM template with NCC |
 | `ants` | antsRegistration | SyN with the MI metric |
 | `antsSpim` | antsRegistration | cohort template only: registers the SPIM template with CC |
-| `fireants` | FireANTs | MI loss; needs a GPU and the `gpu` environment |
+| `fireants` | FireANTs | MI loss (`fusedmi`); needs a GPU and the `gpu` environment |
 | `fireantsSpim` | FireANTs | cohort template only: registers the SPIM template with CC |
 
 To add a method, add a preset, starting from another one with `base:`. Names must
