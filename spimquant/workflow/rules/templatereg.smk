@@ -423,7 +423,7 @@ rule compose_subject_to_template_warp:
 rule compose_subject_warp_from_cohort_build:
     """Subject<->cohort template warps from the warps saved by the cohort build.
 
-    Chains the subject's warps to the original template with its warp to the
+    Chains the subject's affine to the original template with its warp to the
     cohort template, instead of registering the subject again. Used when
     --template is a cohort template built from this subject. A point in the output
     space goes through the first transform listed after -t first.

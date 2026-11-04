@@ -167,8 +167,8 @@ if reuse_root and "transforms" in reuse_outputs:
             f"Warning: {_reuse_legacy} reused warp(s) have no desc- entity, so they "
             "predate registration methods and may have been registered to a packaged "
             "SPIM template, which is not accurately aligned to the template's atlases. "
-            "Atlas labels from these warps will inherit that error: use them only as "
-            "the starting point for a cohort template, or register again."
+            "Atlas labels from these warps will inherit that error, so register again "
+            "if you need accurate labels."
         )
 
 

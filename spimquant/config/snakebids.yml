@@ -512,7 +512,7 @@ parse_args:
     nargs: '+'
 
   --cohort-template-level:
-    help: "Downsampling level of the subject images (already warped to --template space) used to build the cohort template (default: --registration_level)"
+    help: "Downsampling level of the subject images (affine-registered to --template) used to build the cohort template (default: --registration_level)"
     default: null
     type: int
 
@@ -745,7 +745,7 @@ cohort_template:
     image_prefix: null
     image_suffix: null
     num_subjects: null
-    init_template_path: null # average of the subjects (already in --template space)
+    init_template_path: null # average of the subjects (affine-registered to --template)
     normalize_images: True
     save_as_uint8: False
     num_laplacian: 2
@@ -754,7 +754,7 @@ cohort_template:
       itk_scale: true
     # shape averaging runs an extra full-resolution registration per iteration
     # (and OOMs at 25um on a 40GB GPU); the init template is already the subject
-    # average in --template space, and without it the subjects fit better
+    # average, and without it the subjects fit better
     shape_avg: false
     save_every: 1
     save_init_template: true

@@ -5,14 +5,14 @@ and prepare it for use as a `--template` in later SPIMquant runs.
 
 The workflow is:
 
-1. Subjects are registered to `--template` (e.g. ABAv3) as in the `participant`
-   level, and each stain is resampled to template space at `--cohort-template-level`
-   (default: `--registration_level`).
+1. Subjects are affine-registered to `--template` (e.g. ABAv3), and each stain is
+   resampled to template space at `--cohort-template-level` (default:
+   `--registration_level`). No deformable registration or earlier SPIMquant run is
+   needed, and the template's shape comes only from the subjects.
 2. A multivariate template is built from these images with
    [FireANTs](https://github.com/rohitrango/FireANTs) on GPU. All stains are built
    jointly, so every stain template is in the same space.
-3. The cohort template drifts away from the original template's space during
-   building, so the original template is registered to the cohort template, with
+3. The cohort template has its own shape, so the original template is registered to the cohort template, with
    `--cohort-template-reg-method` (see
    [Registration Methods](registration_methods.md)). The original atlases, brain
    mask and anat are warped into cohort template space with this registration.
@@ -68,7 +68,7 @@ Template building clips each subject image to robust percentiles and rescales it
 to [0,1], and FireANTs sharpens and min-max normalizes the template, so the stain
 templates do not keep the original intensities. The `desc-rawintensity` templates
 do: each is the voxelwise mean of the subjects' un-normalized images (the
-`space-<template>` SPIM images, which have no bias field correction or other
+`space-<template>_desc-affine` SPIM images, which have no bias field correction or other
 intensity changes), warped with the warps from the final template iteration. They
 are in the same space as the stain templates but are not sharpened, so they look
 slightly smoother. Use them when absolute intensity matters, e.g. with uniform
@@ -136,8 +136,8 @@ registered to directly.
 
 Subjects that were used to build the template are not registered again. Their
 warps to the template are composed from the warps saved by the build, and from
-their warps to the original template in the dataset the template was built in, and
-are written as `desc-cohort`. Other subjects are registered with
+their `desc-affine` warps to the original template in the dataset the template was
+built in, and are written as `desc-cohort`. Other subjects are registered with
 `--registration_method` as usual. This needs both of those to still be in place at
 the paths in `tpl-lecanemab_spimquant.yml`, and a template built with a version of
 SPIMquant that saves the inverse warps (`*_invwarp.nii.gz` in the build directory);

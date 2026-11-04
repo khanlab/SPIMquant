@@ -1,13 +1,13 @@
 """
 Cohort template building workflow for SPIMquant.
 
-Builds a study-specific (cohort) SPIM template from subjects that have already
-been registered to --template, then registers the original template to the new
-one so its atlases can be carried over into cohort template space.
+Builds a study-specific (cohort) SPIM template from subjects affine-registered to
+--template, then registers the original template to the new one so its atlases can
+be carried over into cohort template space.
 
 Key workflow stages:
-1. Gather each subject's per-stain images in --template space (this dataset, plus
-   any --cohort-template-extra-inputs SPIMquant output directories)
+1. Resample each subject's per-stain images to --template space with an affine
+   (plus images from any --cohort-template-extra-inputs SPIMquant output directories)
 2. Robust intensity normalization of the subject images
 3. Multivariate template building with FireANTs (all stains share one space)
    and a desc-rawintensity template per stain: the subjects' un-normalized images
@@ -64,6 +64,7 @@ _cohort_input_pattern = bids(
     stain="{stain}",
     level="{level}",
     space="{template}",
+    desc="affine",
     suffix="SPIM.nii.gz",
     **inputs["spim"].wildcards,
 )
@@ -233,6 +234,91 @@ rule all_cohort_template:
             ),
             stain=cohort_stains,
         ),
+
+
+rule cohort_template_affine_to_itk:
+    """Convert a subject's initial affine to the original template to ITK format."""
+    input:
+        xfm_ras=rules.init_affine_reg.output.xfm_ras,
+    output:
+        xfm_itk=temp(_reg_xfm("xfm.txt", desc="initaffine", type_="itk")),
+    group:
+        "cohort_affine"
+    conda:
+        "../envs/c3d.yaml"
+    threads: 1
+    resources:
+        mem_mb=1500,
+        runtime=10,
+    shell:
+        "c3d_affine_tool {input.xfm_ras} -oitk {output.xfm_itk}"
+
+
+rule cohort_template_affine_warp:
+    """Composite warps for a subject's initial affine to the original template.
+
+    Building needs only an affine, since the template gets its own shape, and the
+    original template is registered to it afterwards. Participant runs with the
+    cohort template chain these with the warps saved by the build.
+    """
+    input:
+        ref=rules.import_template_anat.output.anat,
+        subject=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level=config["registration_level"],
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        xfm_itk=rules.cohort_template_affine_to_itk.output.xfm_itk,
+    output:
+        xfm_composite=_reg_xfm("xfm.nii.gz", desc="affine"),
+        xfm_composite_inv=_reg_xfm(
+            "xfm.nii.gz", from_="{template}", to="subject", desc="affine"
+        ),
+    group:
+        "cohort_affine"
+    conda:
+        "../envs/ants.yaml"
+    threads: 4
+    resources:
+        mem_mb=10000,
+        runtime=15,
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -o [{output.xfm_composite},1] "
+        " -r {input.ref} -t {input.xfm_itk} && "
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -o [{output.xfm_composite_inv},1] "
+        " -r {input.subject} -t [{input.xfm_itk},1]"
+
+
+use rule deform_spim_nii_to_template_nii as cohort_template_affine_input with:
+    input:
+        spim=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        ref=rules.import_template_anat.output.anat,
+        xfm_composite=rules.cohort_template_affine_warp.output.xfm_composite,
+    output:
+        spim=bids(
+            root=root,
+            datatype="micr",
+            stain="{stain}",
+            level="{level}",
+            space="{template}",
+            desc="affine",
+            suffix="SPIM.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "cohort_affine"
 
 
 rule cohort_template_inputs:
@@ -437,8 +523,8 @@ def _cohort_greedy_mem_mb(wildcards):
 _cohort_reg_log = os.path.join(cohort_work, "logs", "{reg}_{step}.log")
 
 
-# The images start out roughly aligned (subjects were registered to the original
-# template), so registration is initialized with identity
+# The images start out roughly aligned (subjects were affine-registered to the
+# original template), so registration is initialized with identity
 use rule affine_reg as cohort_template_affine_reg with:
     input:
         fixed=_cohort_fixed,
