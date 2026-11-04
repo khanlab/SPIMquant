@@ -11,7 +11,7 @@ pytest.importorskip("PIL")
 sys.path.insert(
     0, str(Path(__file__).parents[1] / "spimquant" / "workflow" / "scripts")
 )
-from regqc_lib import jacobian_determinant  # noqa: E402
+from regqc_lib import _display_window, jacobian_determinant  # noqa: E402
 
 
 def _field(affine, scale_lps, shape=(20, 24, 28)):
@@ -46,3 +46,19 @@ def test_canonical_orientation():
     det = jacobian_determinant(_field(affine, (1, 1, 1)), stride=2)
     assert det.shape == (10, 12, 14)
     assert det == pytest.approx(1.0, rel=1e-4)
+
+
+def test_display_window_keeps_skewed_stain_visible():
+    # most of the brain is dim, with a few very bright voxels (e.g. YoPro)
+    rng = np.random.default_rng(0)
+    data = rng.normal(0.15, 0.005, (40, 40, 40)).astype(np.float32)
+    data[:5] = 0.7
+    mask = np.ones(data.shape, dtype=bool)
+    low, high, gamma = _display_window(data, mask)
+    assert high > 0.5
+    median = ((np.median(data) - low) / (high - low)) ** gamma
+    assert 0.3 < median < 0.5
+
+
+def test_display_window_handles_empty_image():
+    assert _display_window(np.zeros((4, 4, 4)), None) == (0.0, 1.0, 1.0)

@@ -32,6 +32,10 @@ OUTLINE_WIDTH_PX = 1000
 PLANES = [("Coronal", 1, "A"), ("Axial", 2, "S"), ("Sagittal", 0, "R")]
 
 
+MEDIAN_GRAY = 0.4  # display gray level of an image's median voxel
+GAMMA_RANGE = (0.2, 1.0)
+
+
 def jacobian_determinant(warp_img, stride=JACOBIAN_STRIDE):
     """Jacobian determinant of an ITK displacement field (LPS mm displacements).
 
@@ -65,16 +69,28 @@ def _on_fixed_grid(img, fixed, order):
     return np.asarray(img.dataobj)
 
 
-def _display_range(data):
-    values = data[data > 0]
+def _display_window(data, mask):
+    """Window and gamma for an image, from its nonzero voxels within mask.
+
+    Stains can have a few very bright regions (e.g. YoPro in the olfactory bulb
+    and cerebellum) with most of the brain near the bottom of the range, so the
+    gamma puts the median at mid-gray, which keeps the bright regions in range.
+    """
+    values = data[(data > 0) & mask] if mask is not None else data[data > 0]
     if values.size == 0:
-        return 0.0, 1.0
-    low, high = np.percentile(values, [1, 99.5])
-    return float(low), float(max(high, low + 1e-6))
+        values = data[data > 0]
+    if values.size == 0:
+        return 0.0, 1.0, 1.0
+    low, median, high = np.percentile(values, [1, 50, 99.5])
+    high = max(high, low + 1e-6)
+    scaled_median = (median - low) / (high - low)
+    gamma = np.log(MEDIAN_GRAY) / np.log(scaled_median) if scaled_median > 0 else 1.0
+    return float(low), float(high), float(np.clip(gamma, *GAMMA_RANGE))
 
 
-def _gray_uri(plane, low, high):
-    scaled = np.clip((plane - low) / (high - low), 0, 1) ** 0.75
+def _gray_uri(plane, window):
+    low, high, gamma = window
+    scaled = np.clip((plane - low) / (high - low), 0, 1) ** gamma
     return _uri(Image.fromarray((scaled * 255).astype(np.uint8)), "JPEG")
 
 
@@ -142,7 +158,6 @@ def build_viewer_data(fixed_path, candidates):
     """Render the slices for every plane and candidate, and compute metrics."""
     fixed_img = nib.as_closest_canonical(nib.load(fixed_path))
     fixed = np.asarray(fixed_img.dataobj, dtype=np.float32)
-    low, high = _display_range(fixed)
     zooms = fixed_img.header.get_zooms()[:3]
 
     warped, labels, dets, stats, warps = [], [], [], [], []
@@ -184,7 +199,12 @@ def build_viewer_data(fixed_path, candidates):
         )
 
     first_labels = next((seg for seg in labels if seg is not None), None)
-    brain = first_labels > 0 if first_labels is not None else fixed > low
+    if first_labels is not None:
+        brain = first_labels > 0
+    else:
+        # without labels, background would set the window: use the bright half
+        brain = fixed > np.median(fixed[fixed > 0]) if fixed.any() else fixed > 0
+    fixed_window = _display_window(fixed, brain)
 
     planes = []
     for plane_name, axis, direction in PLANES:
@@ -200,14 +220,14 @@ def build_viewer_data(fixed_path, candidates):
             "positions": [
                 f"{direction} {origin + i * spacing:+.2f} mm" for i in indices
             ],
-            "fixed": [_gray_uri(_to_view(fixed, axis, i), low, high) for i in indices],
+            "fixed": [_gray_uri(_to_view(fixed, axis, i), fixed_window) for i in indices],
             "candidates": [],
         }
         for moved, seg, det in zip(warped, labels, dets):
-            moved_low, moved_high = _display_range(moved)
+            moved_window = _display_window(moved, seg > 0 if seg is not None else brain)
             entry = {
                 "warped": [
-                    _gray_uri(_to_view(moved, axis, i), moved_low, moved_high)
+                    _gray_uri(_to_view(moved, axis, i), moved_window)
                     for i in indices
                 ],
                 "labels": None,
@@ -507,7 +527,7 @@ def render_report(
 <section aria-labelledby="metrics-title">
 <h2 id="metrics-title">Metrics</h2>
 {_stats_table(viewer["stats"])}
-<p class="hint">{html.escape(hint)} These numbers flag problems but do not rank registrations: judge alignment from the slices. NCC is computed within the atlas or the fixed image's nonzero voxels, and is only a rough guide between different contrasts. Jacobians are within the same region, and include any affine scaling.</p>
+<p class="hint">{html.escape(hint)} These numbers flag problems but do not rank registrations: judge alignment from the slices. NCC is computed within the atlas or the fixed image's nonzero voxels, and is only a rough guide between different contrasts. Jacobians are within the same region, and include any affine scaling. Each image has its own display window and gamma, so brightness is not comparable between images.</p>
 </section>
 <section aria-labelledby="viewer-title">
 <h2 id="viewer-title">Slices</h2>
