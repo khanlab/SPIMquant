@@ -46,7 +46,9 @@ the subject/session/sample/acquisition entities, `--template`,
 `--registration_level`, the registration stain and `--registration_method`.
 Datasets made before registration methods were added have warps without a `desc-`;
 these were computed with greedy, so they are reused for `--registration_method
-greedy` only. Anything not found is
+greedy` only. They may also have been registered to a packaged SPIM template, which
+is not accurately aligned to the atlases, so SPIMquant warns about them: use them
+only as the starting point for a cohort template, or register again. Anything not found is
 computed as usual, per subject and per file, including subjects missing from
 the prior dataset.
 

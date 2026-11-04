@@ -666,8 +666,7 @@ rule cohort_template_copy_dseg_tsv:
 rule cohort_template_to_orig_space:
     """Resample a cohort stain template into the original template space.
 
-    Useful for replacing spim_templates of the original template with ones that
-    are actually aligned to its atlases.
+    Gives stain templates that are aligned to the original template's atlases.
     """
     input:
         img=bids_cohort(stain="{stain}", suffix="SPIM.nii.gz"),

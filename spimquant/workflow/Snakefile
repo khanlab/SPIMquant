@@ -190,8 +190,8 @@ stain_for_reg = None
 template = config["templates"][config["template"]]
 
 
-# first, check if there are any SPIM templates defined
-# for the stains we have
+# cohort templates (see cohort_template.smk) define SPIM templates, in the same
+# contrast as the subjects and aligned to their atlases: use one if we have its stain
 use_spim_template = False
 spim_templates = template.get("spim_templates", None)
 

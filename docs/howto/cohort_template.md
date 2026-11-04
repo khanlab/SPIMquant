@@ -130,6 +130,10 @@ spimquant /path/to/bids /path/to/output participant \
 The registration stain must be one of the cohort template's stains (see
 `--stains_for_reg`).
 
+Packaged templates such as ABAv3 are registered to through their `anat` image. Only
+cohort templates define stain templates, which subjects with one of those stains are
+registered to directly.
+
 Subjects that were used to build the template are not registered again. Their
 warps to the template are composed from the warps saved by the build, and from
 their warps to the original template in the dataset the template was built in, and

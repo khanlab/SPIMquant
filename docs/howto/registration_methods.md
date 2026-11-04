@@ -16,7 +16,7 @@ The built-in methods are:
 | `greedy` | greedy | NMI metric, the default |
 | `greedyNoAffine` | greedy | no affine stage |
 | `greedySharp` | greedy | less smoothing of the warp, to follow finer structure |
-| `greedyNCC` | greedy | local cross-correlation metric, for images of similar contrast |
+| `greedyNCC` | greedy | local cross-correlation metric, for images of similar contrast, such as a cohort template |
 | `greedyMulti` | greedy | cohort template only: a metric term per stain |
 | `ants` | antsRegistration | SyN with the MI metric |
 | `antsMulti` | antsRegistration | cohort template only: a metric term per stain |

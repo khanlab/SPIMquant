@@ -132,34 +132,44 @@ if reuse_root and "transforms" in reuse_outputs:
     ruleorder: reuse_composite_warps > compose_subject_to_template_warp
 
     _reuse_method = config["registration_method"]
-    _reuse_found = [
-        os.path.exists(desc_path)
-        or (
-            _reuse_method == "greedy"
+    _reuse_found = []
+    _reuse_legacy = 0
+    for desc_path, legacy_path in zip(
+        inputs["spim"].expand(
+            reuse_path(
+                rules.compose_subject_to_template_warp.output.xfm_composite
+            ),
+            template=config["template"],
+            reg=_reuse_method,
+        ),
+        inputs["spim"].expand(
+            reuse_path(
+                rules.select_subject_to_template_warp.output.xfm_composite
+            ),
+            template=config["template"],
+        ),
+    ):
+        _is_legacy = (
+            not os.path.exists(desc_path)
+            and _reuse_method == "greedy"
             and os.path.exists(legacy_path)
             and not os.path.islink(legacy_path)
         )
-        for desc_path, legacy_path in zip(
-            inputs["spim"].expand(
-                reuse_path(
-                    rules.compose_subject_to_template_warp.output.xfm_composite
-                ),
-                template=config["template"],
-                reg=_reuse_method,
-            ),
-            inputs["spim"].expand(
-                reuse_path(
-                    rules.select_subject_to_template_warp.output.xfm_composite
-                ),
-                template=config["template"],
-            ),
-        )
-    ]
+        _reuse_found.append(os.path.exists(desc_path) or _is_legacy)
+        _reuse_legacy += _is_legacy
     print(
         f"Reusing desc-{_reuse_method} composite warps from {reuse_root} for "
         f"{sum(_reuse_found)} of {len(_reuse_found)} subject(s); the rest will be "
         "computed"
     )
+    if _reuse_legacy:
+        print(
+            f"Warning: {_reuse_legacy} reused warp(s) have no desc- entity, so they "
+            "predate registration methods and may have been registered to a packaged "
+            "SPIM template, which is not accurately aligned to the template's atlases. "
+            "Atlas labels from these warps will inherit that error: use them only as "
+            "the starting point for a cohort template, or register again."
+        )
 
 
 def get_regqc_targets(wildcards):
