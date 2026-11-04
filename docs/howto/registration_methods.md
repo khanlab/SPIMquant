@@ -17,8 +17,11 @@ The built-in methods are:
 | `greedyNoAffine` | greedy | no affine stage |
 | `greedySharp` | greedy | less smoothing of the warp, to follow finer structure |
 | `greedyNCC` | greedy | local cross-correlation metric, for images of similar contrast |
+| `greedyMulti` | greedy | cohort template only: a metric term per stain |
 | `ants` | antsRegistration | SyN with the MI metric |
+| `antsMulti` | antsRegistration | cohort template only: a metric term per stain |
 | `fireants` | FireANTs | MI loss (`fusedmi`); needs a GPU and the `gpu` environment |
+| `fireantsMulti` | FireANTs | cohort template only: a metric term per stain |
 
 To add a method, add a preset, starting from another one with `base:`. Names must
 be alphanumeric:
@@ -33,6 +36,13 @@ registration:
 
 Greedy iterations are per level, with the last at full resolution, so `100x50` runs
 at 2x downsampling and then at full resolution.
+
+The `multichannel: true` methods use every stain of the cohort template, so a
+structure that is only visible in one stain can still guide the registration. Each
+stain gets an equally weighted metric term against the same original template
+image, so run time grows with the number of stains. With one stain they are the
+same as their base method. Compare them to their base method with the labels in the
+report, since a stain with little in common with the original template adds little.
 
 ## Comparing methods
 

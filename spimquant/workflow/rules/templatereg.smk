@@ -221,9 +221,10 @@ rule affine_reg:
         metric=lambda wildcards: reg_presets[wildcards.reg]["metric"],
         iters=lambda wildcards: reg_iters(reg_presets[wildcards.reg], "affine_iters"),
         identity=reg_identity_ras,
+        extra_pairs="",
     shell:
         "(if [ '{params.affine}' = 'True' ]; then "
-        " greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} "
+        " greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} {params.extra_pairs} "
         "  -a -dof 12 {params.init} -m {params.metric} -o {output.xfm_ras} -n {params.iters}; "
         "else {params.identity} > {output.xfm_ras}; fi && "
         " greedy -threads {threads} -d 3 -rf {input.fixed} "
@@ -286,8 +287,9 @@ rule deform_reg:
         metric=lambda wildcards: reg_presets[wildcards.reg]["metric"],
         sigma1=lambda wildcards: reg_presets[wildcards.reg]["sigma1"],
         sigma2=lambda wildcards: reg_presets[wildcards.reg]["sigma2"],
+        extra_pairs="",
     shell:
-        "(greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} "
+        "(greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} {params.extra_pairs} "
         " -it {input.xfm_ras} -m {params.metric} "
         " -oinv {output.invwarp} "
         " -o {output.warp} -n {params.iters} -s {params.sigma1} {params.sigma2} && "
@@ -372,6 +374,7 @@ rule reg_fireants:
             "deform_iters": reg_iters(reg_presets[wildcards.reg], "deform_iters"),
         },
         init_centers=lambda wildcards: reg_presets[wildcards.reg]["affine"],
+        extra_fixed=[],
     script:
         "../scripts/reg_fireants.py"
 

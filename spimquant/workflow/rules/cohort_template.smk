@@ -414,6 +414,26 @@ _cohort_warp = os.path.join(cohort_work, "xfm", "{reg}_warp.nii.gz")
 _cohort_invwarp = os.path.join(cohort_work, "xfm", "{reg}_invwarp.nii.gz")
 _cohort_warped_affine = os.path.join(cohort_work, "xfm", "{reg}_affinewarped.nii.gz")
 _cohort_warped = os.path.join(cohort_work, "xfm", "{reg}_deformwarped.nii.gz")
+
+
+def _cohort_extra_fixed(wildcards):
+    """Other stains of the cohort template, for multichannel registration methods."""
+    if not reg_presets[wildcards.reg].get("multichannel"):
+        return []
+    return [
+        bids_cohort(stain=stain, suffix="SPIM.nii.gz")
+        for stain in cohort_stains
+        if stain != cohort_reg_stain
+    ]
+
+
+def _cohort_extra_pairs(wildcards):
+    """greedy image pairs for the other stains, each against the same moving image."""
+    return " ".join(f"-i {fixed} {_cohort_moving}" for fixed in _cohort_extra_fixed(wildcards))
+
+
+def _cohort_greedy_mem_mb(wildcards):
+    return 32000 if reg_presets[wildcards.reg].get("multichannel") else 16000
 _cohort_reg_log = os.path.join(cohort_work, "logs", "{reg}_{step}.log")
 
 
@@ -423,6 +443,7 @@ use rule affine_reg as cohort_template_affine_reg with:
     input:
         fixed=_cohort_fixed,
         moving=_cohort_moving,
+        extra_fixed=_cohort_extra_fixed,
     output:
         xfm_ras=temp(_cohort_affine_ras),
         warped=temp(_cohort_warped_affine),
@@ -436,6 +457,10 @@ use rule affine_reg as cohort_template_affine_reg with:
         metric=lambda wildcards: reg_presets[wildcards.reg]["metric"],
         iters=lambda wildcards: reg_iters(reg_presets[wildcards.reg], "affine_iters"),
         identity=reg_identity_ras,
+        extra_pairs=_cohort_extra_pairs,
+    resources:
+        mem_mb=_cohort_greedy_mem_mb,
+        runtime=15,
 
 
 use rule convert_ras_to_itk as cohort_template_ras_to_itk with:
@@ -451,6 +476,7 @@ use rule deform_reg as cohort_template_deform_reg with:
     input:
         fixed=_cohort_fixed,
         moving=_cohort_moving,
+        extra_fixed=_cohort_extra_fixed,
         xfm_ras=_cohort_affine_ras,
     output:
         warp=temp(_cohort_warp),
@@ -461,14 +487,21 @@ use rule deform_reg as cohort_template_deform_reg with:
     group:
         "cohort_reg"
     resources:
-        mem_mb=16000,
+        mem_mb=_cohort_greedy_mem_mb,
         runtime=5 if config["sloppy"] else 60,
+    params:
+        iters=lambda wildcards: reg_iters(reg_presets[wildcards.reg], "deform_iters"),
+        metric=lambda wildcards: reg_presets[wildcards.reg]["metric"],
+        sigma1=lambda wildcards: reg_presets[wildcards.reg]["sigma1"],
+        sigma2=lambda wildcards: reg_presets[wildcards.reg]["sigma2"],
+        extra_pairs=_cohort_extra_pairs,
 
 
 use rule reg_ants as cohort_template_reg_ants with:
     input:
         fixed=_cohort_fixed,
         moving=_cohort_moving,
+        extra_fixed=_cohort_extra_fixed,
     output:
         xfm_itk=temp(_cohort_affine_itk),
         warp=temp(_cohort_warp),
@@ -479,7 +512,11 @@ use rule reg_ants as cohort_template_reg_ants with:
         _cohort_reg_log.replace("{step}", "reg_ants"),
     params:
         args=lambda wildcards, input: ants_reg_args(
-            reg_presets[wildcards.reg], input.fixed, input.moving, center_init=False
+            reg_presets[wildcards.reg],
+            input.fixed,
+            input.moving,
+            center_init=False,
+            extra_fixed=_cohort_extra_fixed(wildcards),
         ),
         identity=reg_identity_itk,
 
@@ -488,6 +525,7 @@ use rule reg_fireants as cohort_template_reg_fireants with:
     input:
         fixed=_cohort_fixed,
         moving=_cohort_moving,
+        extra_fixed=_cohort_extra_fixed,
     output:
         xfm_itk=temp(_cohort_affine_itk),
         warp=temp(_cohort_warp),
@@ -501,6 +539,7 @@ use rule reg_fireants as cohort_template_reg_fireants with:
             "deform_iters": reg_iters(reg_presets[wildcards.reg], "deform_iters"),
         },
         init_centers=False,
+        extra_fixed=_cohort_extra_fixed,
 
 
 rule cohort_template_compose_warp:

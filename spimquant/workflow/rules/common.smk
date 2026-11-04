@@ -378,6 +378,12 @@ for _name, _preset in reg_presets.items():
         )
     if _preset["backend"] not in ("greedy", "ants", "fireants"):
         raise ValueError(f"Unknown backend in registration method {_name}: {_preset}")
+for _name in [config["registration_method"], *config["registration_tune_methods"]]:
+    if reg_presets.get(_name, {}).get("multichannel"):
+        raise ValueError(
+            f"Registration method {_name} is multichannel, which only applies to "
+            "cohort template registration (--cohort-template-reg-method)"
+        )
 
 
 def reg_constraint(backend=None):
@@ -398,24 +404,33 @@ def reg_note(preset):
     return ", ".join(f"{k}: {v}" for k, v in preset.items())
 
 
-def ants_reg_args(preset, fixed, moving, center_init):
-    """antsRegistration stages for a preset (the output prefix is added by the rule)."""
-    pair = f"{fixed},{moving},1"
-    metrics = {
-        "MI": f"MI[{pair},32,Regular,0.25]",
-        "CC": f"CC[{pair},{preset['cc_radius']}]",
-    }
+def ants_reg_args(preset, fixed, moving, center_init, extra_fixed=()):
+    """antsRegistration stages for a preset (the output prefix is added by the rule).
+
+    Each image in extra_fixed adds a metric term against the same moving image.
+    """
+
+    def metric_args(metric):
+        forms = {
+            "MI": "MI[{},{},1,32,Regular,0.25]",
+            "CC": "CC[{},{},1," + str(preset["cc_radius"]) + "]",
+        }
+        return " ".join(
+            "-m " + forms[metric].format(image, moving)
+            for image in [fixed, *extra_fixed]
+        )
+
     levels = f"-f {preset['shrink']} -s {preset['smooth']}vox "
     args = "-d 3 --float 1 --collapse-output-transforms 1 -v 1 -n Linear "
     if center_init:
         args += f"--initial-moving-transform [{fixed},{moving},0] "  # image centers
     if preset["affine"]:
         args += (
-            f"-t Affine[0.1] -m {metrics[preset['affine_metric']]} "
+            f"-t Affine[0.1] {metric_args(preset['affine_metric'])} "
             f"-c [{reg_iters(preset, 'affine_iters')},1e-6,10] {levels}"
         )
     return args + (
-        f"-t SyN[{preset['syn']}] -m {metrics[preset['metric']]} "
+        f"-t SyN[{preset['syn']}] {metric_args(preset['metric'])} "
         f"-c [{reg_iters(preset, 'deform_iters')},1e-6,10] {levels}"
     )
 

@@ -42,6 +42,12 @@ def save_like(array, reference, path):
 
 fixed_image = load(snakemake.input.fixed)
 moving_image = load(snakemake.input.moving)
+# multichannel: other fixed stains as channels, each against a copy of the moving
+# image, so the loss has a term per stain (warped images save the first channel)
+if p.extra_fixed:
+    fixed_image.concatenate([load(path) for path in p.extra_fixed])
+    moving_image.array = moving_image.array.repeat(1, fixed_image.channels, 1, 1, 1)
+    moving_image.channels = fixed_image.channels
 fixed = BatchedImages([fixed_image])
 moving = BatchedImages([moving_image])
 
