@@ -248,6 +248,16 @@ def scaled_runtime(base_min, min_per_gb, level=None):
     return runtime
 
 
+def per_attempt(base):
+    """A resource for a rule whose needs don't follow its SPIM input size: base
+    times the attempt, so that a job retried with --retries gets more."""
+
+    def resource(wildcards, attempt):
+        return base * attempt
+
+    return resource
+
+
 def get_spim_json_path(spim_path):
     spim_path = str(spim_path)
     if spim_path.endswith(".ozx"):

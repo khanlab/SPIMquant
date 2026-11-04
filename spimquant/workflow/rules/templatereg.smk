@@ -324,8 +324,8 @@ rule reg_ants:
         "../envs/ants.yaml"
     threads: 32
     resources:
-        mem_mb=32000,
-        runtime=5 if config["sloppy"] else 240,
+        mem_mb=per_attempt(32000),
+        runtime=per_attempt(5 if config["sloppy"] else 240),
     params:
         args=lambda wildcards, input: ants_reg_args(
             reg_presets[wildcards.reg], input.fixed, input.moving, center_init=True
