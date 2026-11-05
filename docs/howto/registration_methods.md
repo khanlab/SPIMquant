@@ -17,11 +17,8 @@ The built-in methods are:
 | `greedyNoAffine` | greedy | no affine stage |
 | `greedySharp` | greedy | less smoothing of the warp, to follow finer structure |
 | `greedyNCC` | greedy | local cross-correlation metric, for images of similar contrast, such as a cohort template |
-| `greedyMulti` | greedy | cohort template only: a metric term per stain |
 | `ants` | antsRegistration | SyN with the MI metric |
-| `antsMulti` | antsRegistration | cohort template only: a metric term per stain |
 | `fireants` | FireANTs | MI loss (`fusedmi`); needs a GPU and the `gpu` environment |
-| `fireantsMulti` | FireANTs | cohort template only: a metric term per stain |
 
 To add a method, add a preset, starting from another one with `base:`. Names must
 be alphanumeric:
@@ -37,12 +34,30 @@ registration:
 Greedy iterations are per level, with the last at full resolution, so `100x50` runs
 at 2x downsampling and then at full resolution.
 
-The `multichannel: true` methods use every stain of the cohort template, so a
-structure that is only visible in one stain can still guide the registration. Each
-stain gets an equally weighted metric term against the same original template
-image, so run time grows with the number of stains. With one stain they are the
-same as their base method. Compare them to their base method with the labels in the
-report, since a stain with little in common with the original template adds little.
+Every method also has a multichannel variant, named `<method>Multi` (`greedyMulti`,
+`antsMulti`, `fireantsMulti`, and so on), with an equally weighted metric term per
+stain, so a structure that is only visible in one stain can still guide the
+registration. Memory and run time grow with the number of stains.
+
+For a cohort template registered to its original template, each cohort template
+stain is compared against the same original template image. Compare these to their
+base method with the labels in the report, since a stain with little in common with
+the original template adds little.
+
+For subjects registered to a cohort template, each stain is compared against the
+same stain of the template:
+
+- With two or more stains shared with the template, `--registration_method` becomes
+  its multichannel variant, using all of them. A template with two of a subject's
+  three stains uses those two. `--registration_single_channel` turns this off.
+- With one shared stain, registration uses that stain.
+- With none, or a template without SPIM templates, registration uses the first
+  stain in `--stains_for_reg` against the template's `anat` image.
+
+Single-channel steps, such as the initial affine for brain masking, use the first
+shared stain in `--stains_for_reg`, or else the first in the template. All stains
+use that stain's brain mask. Warps from `--reuse_derivatives` are matched by method
+name, so `desc-greedy` warps are not reused for a run that becomes `greedyMulti`.
 
 ## Comparing methods
 

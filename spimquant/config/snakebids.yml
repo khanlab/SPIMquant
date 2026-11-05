@@ -362,16 +362,24 @@ parse_args:
     dest: zarr_store_shards
 
   --registration_method:
-    help: "Registration method for subject to template registration: a name from registration.presets in the config, which is also the desc- of its output transforms. The built-in methods use greedy (greedy...), antsRegistration (ants...) or FireANTs (fireants..., needs a GPU and the gpu environment). (default: %(default)s)"
+    help: "Registration method for subject to template registration: a name from registration.presets in the config, which is also the desc- of its output transforms. The built-in methods use greedy (greedy...), antsRegistration (ants...) or FireANTs (fireants..., needs a GPU and the gpu environment). A template with two or more SPIM templates of the subjects' stains uses the method's multichannel variant, <method>Multi, unless --registration_single_channel. (default: %(default)s)"
     default: greedy
 
+  --registration_single_channel:
+    help: "Register with one stain (see --stains_for_reg) even if the template has SPIM templates of more of the subjects' stains. (default: %(default)s)"
+    action: store_true
+    default: false
+
   --registration_tune_methods:
-    help: "Registration methods to compare in the tune_reg analysis level, which writes a side-by-side report per subject. (default: %(default)s)"
+    help: "Registration methods to compare in the tune_reg analysis level, which writes a side-by-side report per subject. Multichannel methods are left out if the template shares fewer than two stains with the subjects. (default: %(default)s)"
     default:
       - greedy
       - greedySharp
+      - greedyMulti
       - ants
+      - antsMulti
       - fireants
+      - fireantsMulti
     nargs: '+'
 
   --reuse_derivatives:
@@ -672,7 +680,8 @@ zarrnii_out_kwargs:
 # Registration methods. The name of each is the desc- of its output transforms,
 # and a preset can start from another one with base:. Set by --registration_method
 # and --cohort-template-reg-method, and compared by the tune_reg and
-# cohort_template_tune_reg analysis levels.
+# cohort_template_tune_reg analysis levels. Each also has a multichannel variant,
+# <method>Multi, with a metric term per stain.
 registration:
   presets:
     # greedy iterations are per level, with the last at full resolution
@@ -695,11 +704,6 @@ registration:
     greedyNCC:
       base: greedy
       metric: NCC 2x2x2
-    # cohort template registration only: a metric term per cohort template stain,
-    # each against the same original template image
-    greedyMulti:
-      base: greedy
-      multichannel: true
     ants:
       backend: ants
       affine: true
@@ -711,9 +715,6 @@ registration:
       shrink: 4x2x1
       smooth: 2x1x0
       syn: 0.1,3,0
-    antsMulti:
-      base: ants
-      multichannel: true
     fireants:
       backend: fireants
       affine: true
@@ -728,9 +729,6 @@ registration:
       smooth_warp_sigma: 0.5
       smooth_grad_sigma: 1.0
       cc_kernel_size: 5
-    fireantsMulti:
-      base: fireants
-      multichannel: true
 
 cohort_template:
   # subject images are clipped to these percentiles (of nonzero voxels) and

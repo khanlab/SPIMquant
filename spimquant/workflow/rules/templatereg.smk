@@ -37,7 +37,7 @@ rule n4:
         mask=bids(
             root=root,
             datatype="micr",
-            stain="{stain}",
+            stain=stain_for_reg,
             level="{level}",
             desc="brain",
             suffix="mask.nii.gz",
@@ -96,7 +96,7 @@ rule apply_mask_to_corrected:
         mask=bids(
             root=root,
             datatype="micr",
-            stain="{stain}",
+            stain=stain_for_reg,
             level="{level}",
             desc="brain",
             suffix="mask.nii.gz",
@@ -149,15 +149,46 @@ rule crop_template:
         "../scripts/crop_template.py"
 
 
-_reg_moving = bids(
-    root=root,
-    datatype="micr",
-    stain=stain_for_reg,
-    level=config["registration_level"],
-    desc=config["templatereg"]["desc"],
-    suffix="SPIM.nii.gz",
-    **inputs["spim"].wildcards,
-)
+def _reg_moving_stain(stain):
+    return bids(
+        root=root,
+        datatype="micr",
+        stain=stain,
+        level=config["registration_level"],
+        desc=config["templatereg"]["desc"],
+        suffix="SPIM.nii.gz",
+        **inputs["spim"].wildcards,
+    )
+
+
+_reg_moving = _reg_moving_stain(stain_for_reg)
+
+
+def _reg_other_stains(wildcards):
+    """Stains registered as well as stain_for_reg, for multichannel methods."""
+    return reg_stains[1:] if reg_presets[wildcards.reg].get("multichannel") else []
+
+
+def _reg_extra_fixed(wildcards):
+    return [
+        get_template_path(root, wildcards.template, config.get("template_crop"), stain)
+        for stain in _reg_other_stains(wildcards)
+    ]
+
+
+def _reg_extra_moving(wildcards):
+    return [
+        _reg_moving_stain(stain).format(**wildcards)
+        for stain in _reg_other_stains(wildcards)
+    ]
+
+
+def _reg_extra_pairs(wildcards):
+    """greedy image pairs for the other stains, template and subject."""
+    return " ".join(
+        f"-i {fixed} {moving}"
+        for fixed, moving in zip(_reg_extra_fixed(wildcards), _reg_extra_moving(wildcards))
+    )
 
 
 def _reg_xfm(suffix, from_="subject", to="{template}", desc="{reg}", **kwargs):
@@ -195,6 +226,8 @@ rule affine_reg:
     input:
         fixed=get_template_for_reg,
         moving=_reg_moving,
+        extra_fixed=_reg_extra_fixed,
+        extra_moving=_reg_extra_moving,
     output:
         xfm_ras=temp(_reg_xfm("xfm.txt", desc="{reg}affine", type_="ras")),
         warped=temp(_reg_warped("{reg}affinewarped")),
@@ -213,7 +246,7 @@ rule affine_reg:
         "subj_reg"
     threads: 32
     resources:
-        mem_mb=16000,
+        mem_mb=reg_mem_mb(16000),
         runtime=15,
     params:
         affine=lambda wildcards: reg_presets[wildcards.reg]["affine"],
@@ -221,7 +254,7 @@ rule affine_reg:
         metric=lambda wildcards: reg_presets[wildcards.reg]["metric"],
         iters=lambda wildcards: reg_iters(reg_presets[wildcards.reg], "affine_iters"),
         identity=reg_identity_ras,
-        extra_pairs="",
+        extra_pairs=_reg_extra_pairs,
     shell:
         "(if [ '{params.affine}' = 'True' ]; then "
         " greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} {params.extra_pairs} "
@@ -260,6 +293,8 @@ rule deform_reg:
     input:
         fixed=get_template_for_reg,
         moving=_reg_moving,
+        extra_fixed=_reg_extra_fixed,
+        extra_moving=_reg_extra_moving,
         xfm_ras=rules.affine_reg.output.xfm_ras,
     output:
         warp=temp(_reg_xfm("warp.nii.gz")),
@@ -280,14 +315,14 @@ rule deform_reg:
         "subj_reg"
     threads: 32
     resources:
-        mem_mb=20000,
+        mem_mb=reg_mem_mb(20000),
         runtime=5 if config["sloppy"] else 30,
     params:
         iters=lambda wildcards: reg_iters(reg_presets[wildcards.reg], "deform_iters"),
         metric=lambda wildcards: reg_presets[wildcards.reg]["metric"],
         sigma1=lambda wildcards: reg_presets[wildcards.reg]["sigma1"],
         sigma2=lambda wildcards: reg_presets[wildcards.reg]["sigma2"],
-        extra_pairs="",
+        extra_pairs=_reg_extra_pairs,
     shell:
         "(greedy -threads {threads} -d 3 -i {input.fixed} {input.moving} {params.extra_pairs} "
         " -it {input.xfm_ras} -m {params.metric} "
@@ -303,6 +338,8 @@ rule reg_ants:
     input:
         fixed=get_template_for_reg,
         moving=_reg_moving,
+        extra_fixed=_reg_extra_fixed,
+        extra_moving=_reg_extra_moving,
     output:
         xfm_itk=temp(_reg_xfm("xfm.txt", desc="{reg}affine", type_="itk")),
         warp=temp(_reg_xfm("warp.nii.gz")),
@@ -324,11 +361,16 @@ rule reg_ants:
         "../envs/ants.yaml"
     threads: 32
     resources:
-        mem_mb=per_attempt(32000),
+        mem_mb=reg_mem_mb(32000),
         runtime=per_attempt(5 if config["sloppy"] else 240),
     params:
         args=lambda wildcards, input: ants_reg_args(
-            reg_presets[wildcards.reg], input.fixed, input.moving, center_init=True
+            reg_presets[wildcards.reg],
+            input.fixed,
+            input.moving,
+            center_init=True,
+            extra_fixed=_reg_extra_fixed(wildcards),
+            extra_moving=_reg_extra_moving(wildcards),
         ),
         identity=reg_identity_itk,
     shell:
@@ -352,6 +394,8 @@ rule reg_fireants:
     input:
         fixed=get_template_for_reg,
         moving=_reg_moving,
+        extra_fixed=_reg_extra_fixed,
+        extra_moving=_reg_extra_moving,
     output:
         xfm_itk=temp(_reg_xfm("xfm.txt", desc="{reg}affine", type_="itk")),
         warp=temp(_reg_xfm("warp.nii.gz")),
@@ -365,7 +409,7 @@ rule reg_fireants:
         gpu=1,
         tasks_per_gpu=0,
         cpus_per_gpu=8,
-        mem_mb=32000,
+        mem_mb=reg_mem_mb(32000),
         runtime=30,
     params:
         preset=lambda wildcards: {
@@ -374,7 +418,8 @@ rule reg_fireants:
             "deform_iters": reg_iters(reg_presets[wildcards.reg], "deform_iters"),
         },
         init_centers=lambda wildcards: reg_presets[wildcards.reg]["affine"],
-        extra_fixed=[],
+        extra_fixed=_reg_extra_fixed,
+        extra_moving=_reg_extra_moving,
     script:
         "../scripts/reg_fireants.py"
 

@@ -70,12 +70,10 @@ def bids_oz_in(**kwargs):
     return bids(**kwargs, suffix=suffix.replace("{ext}", zarr_store_ext))
 
 
-def get_template_path(root, template, template_crop=None):
+def get_template_path(root, template, template_crop=None, suffix=None):
     """Get template path, optionally cropped based on hemisphere"""
-    if use_spim_template:
-        suffix = stain_for_reg
-    else:
-        suffix = "anat"
+    if suffix is None:
+        suffix = stain_for_reg if use_spim_template else "anat"
 
     if template_crop is not None:
         return bids(
@@ -90,15 +88,7 @@ def get_template_path(root, template, template_crop=None):
 
 def get_template_for_reg(wildcards):
     """Get the appropriate template file for registration, cropped if specified"""
-    if use_spim_template:
-        suffix = stain_for_reg
-    else:
-        suffix = "anat"
-
-    if config.get("template_crop") is not None:
-        return get_template_path(root, wildcards.template, config["template_crop"])
-    else:
-        return bids(root=root, template=wildcards.template, suffix=f"{suffix}.nii.gz")
+    return get_template_path(root, wildcards.template, config.get("template_crop"))
 
 
 def get_stains_all_subjects(ignore_stains=None):
@@ -248,6 +238,17 @@ def scaled_runtime(base_min, min_per_gb, level=None):
     return runtime
 
 
+def reg_mem_mb(base):
+    """mem_mb for a registration rule: base, doubled for a multichannel method, times
+    the attempt, so that a job retried with --retries gets more."""
+
+    def mem_mb(wildcards, attempt):
+        multichannel = reg_presets[wildcards.reg].get("multichannel")
+        return base * (2 if multichannel else 1) * attempt
+
+    return mem_mb
+
+
 def per_attempt(base):
     """A resource for a rule whose needs don't follow its SPIM input size: base
     times the attempt, so that a job retried with --retries gets more."""
@@ -388,12 +389,46 @@ for _name, _preset in reg_presets.items():
         )
     if _preset["backend"] not in ("greedy", "ants", "fireants"):
         raise ValueError(f"Unknown backend in registration method {_name}: {_preset}")
-for _name in [config["registration_method"], *config["registration_tune_methods"]]:
-    if reg_presets.get(_name, {}).get("multichannel"):
+# every method has a multichannel variant, named <method>Multi
+for _name, _preset in list(reg_presets.items()):
+    if not _preset.get("multichannel"):
+        reg_presets.setdefault(f"{_name}Multi", {**_preset, "multichannel": True})
+
+
+def select_registration_methods(reg_stains):
+    """Set the subject registration methods, given the stains shared with the template.
+
+    With two or more, --registration_method becomes its multichannel variant, unless
+    --registration_single_channel. With fewer, multichannel methods can't be used.
+    """
+    method = config["registration_method"]
+    if method not in reg_presets:
         raise ValueError(
-            f"Registration method {_name} is multichannel, which only applies to "
-            "cohort template registration (--cohort-template-reg-method)"
+            f"Unknown registration method {repr(method)}, choose from "
+            f"{sorted(reg_presets)}"
         )
+    if len(reg_stains) > 1:
+        if config["registration_single_channel"]:
+            print(f"Registering to the template with one stain: {reg_stains[0]}")
+        else:
+            if not reg_presets[method].get("multichannel"):
+                config["registration_method"] = f"{method}Multi"
+            print(
+                f"Registering with {config['registration_method']}, using the "
+                f"stains shared with the template: {reg_stains}"
+            )
+        return
+    if reg_presets[method].get("multichannel"):
+        raise ValueError(
+            f"Registration method {method} is multichannel, but the template shares "
+            f"fewer than two stains with the subjects ({reg_stains}). Choose a "
+            "single-channel method, or a template with SPIM templates of their stains."
+        )
+    config["registration_tune_methods"] = [
+        m
+        for m in config["registration_tune_methods"]
+        if not reg_presets[m].get("multichannel")
+    ]
 
 
 def reg_constraint(backend=None):
@@ -414,21 +449,23 @@ def reg_note(preset):
     return ", ".join(f"{k}: {v}" for k, v in preset.items())
 
 
-def ants_reg_args(preset, fixed, moving, center_init, extra_fixed=()):
+def ants_reg_args(preset, fixed, moving, center_init, extra_fixed=(), extra_moving=()):
     """antsRegistration stages for a preset (the output prefix is added by the rule).
 
-    Each image in extra_fixed adds a metric term against the same moving image.
+    Each image in extra_fixed adds a metric term, against the matching image in
+    extra_moving, or against the same moving image if there is no extra_moving.
     """
+    pairs = [
+        (fixed, moving),
+        *zip(extra_fixed, extra_moving or [moving] * len(extra_fixed)),
+    ]
 
     def metric_args(metric):
         forms = {
             "MI": "MI[{},{},1,32,Regular,0.25]",
             "CC": "CC[{},{},1," + str(preset["cc_radius"]) + "]",
         }
-        return " ".join(
-            "-m " + forms[metric].format(image, moving)
-            for image in [fixed, *extra_fixed]
-        )
+        return " ".join("-m " + forms[metric].format(*pair) for pair in pairs)
 
     levels = f"-f {preset['shrink']} -s {preset['smooth']}vox "
     args = "-d 3 --float 1 --collapse-output-transforms 1 -v 1 -n Linear "

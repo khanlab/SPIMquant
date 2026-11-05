@@ -31,7 +31,7 @@ anat_fname = f"tpl-{name}_anat.nii.gz"
 entry = {"anat": ref(anat_fname)}
 if f"tpl-{name}_desc-brain_mask.nii.gz" in files:
     entry["mask"] = ref(f"tpl-{name}_desc-brain_mask.nii.gz")
-# stain order is the registration priority SPIMquant uses
+# stains in --stains_for_reg come first for SPIMquant, then this order
 entry["spim_templates"] = {
     stain: ref(f"tpl-{name}_stain-{stain}_SPIM.nii.gz") for stain in p.stains
 }

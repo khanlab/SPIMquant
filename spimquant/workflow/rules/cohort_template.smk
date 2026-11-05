@@ -626,6 +626,7 @@ use rule reg_fireants as cohort_template_reg_fireants with:
         },
         init_centers=False,
         extra_fixed=_cohort_extra_fixed,
+        extra_moving=[],
 
 
 rule cohort_template_compose_warp:

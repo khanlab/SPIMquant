@@ -191,18 +191,17 @@ template = config["templates"][config["template"]]
 
 
 # cohort templates (see cohort_template.smk) define SPIM templates, in the same
-# contrast as the subjects and aligned to their atlases: use one if we have its stain
-use_spim_template = False
-spim_templates = template.get("spim_templates", None)
+# contrast as the subjects and aligned to their atlases: register to every one we
+# have the stain for. The first, from the --stains_for_reg priority list if it can
+# be, is the single stain that single-channel steps use.
+_shared_stains = [s for s in template.get("spim_templates") or {} if s in stains]
+reg_stains = [s for s in config["stains_for_reg"] if s in _shared_stains]
+reg_stains += [s for s in _shared_stains if s not in reg_stains]
+use_spim_template = bool(reg_stains)
 
-if spim_templates is not None:
-    for stain in spim_templates.keys():
-        if stain in stains:
-            stain_for_reg = stain
-            use_spim_template = True
-            break
-
-if not use_spim_template:
+if use_spim_template:
+    stain_for_reg = reg_stains[0]
+else:
     for stain in config["stains_for_reg"]:
         if stain in stains:
             stain_for_reg = stain
@@ -210,6 +209,8 @@ if not use_spim_template:
 
 if stain_for_reg is None:
     raise ValueError(f"a stain for registration was not found in {stains}")
+
+select_registration_methods(reg_stains)
 
 
 stains_for_seg = sorted(list(set(config["stains_for_seg"]).intersection(set(stains))))
