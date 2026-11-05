@@ -416,6 +416,11 @@ parse_args:
     action: "store_true"
     default: False
 
+  --save_patches:
+    help: "Extract and save patches from each ROI in the atlas, customize with --patch_* options"
+    action: "store_true"
+    default: False
+
   --patch_size:
     help: "Size of patches to extract in voxels (x, y, z) (default: %(default)s)"
     default:
