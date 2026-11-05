@@ -1602,6 +1602,7 @@ if config.get("benchmark", False):
     rule benchmark_spim_sizes:
         input:
             spim=spim_input,
+            spim_json=spim_json_input,
         output:
             tsv=benchmark_spim_sizes_path,
         threads: 1

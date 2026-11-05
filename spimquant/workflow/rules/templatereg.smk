@@ -581,6 +581,7 @@ rule deform_zarr_to_template_nii:
 rule deform_to_template_nii_zoomed:
     input:
         ome_zarr=spim_input,
+        spim_json=spim_json_input,
         xfm_composite=bids(
             root=root,
             datatype="xfm",
