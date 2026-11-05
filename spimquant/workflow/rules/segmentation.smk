@@ -27,6 +27,7 @@ rule gaussian_biasfield:
     """simple bias field correction with gaussian"""
     input:
         spim=spim_input,
+        spim_json=spim_json_input,
     output:
         corrected=temp(
             bids_oz_out(
@@ -207,6 +208,7 @@ rule n4_biasfield:
     """N4 bias field correction with antspyx"""
     input:
         spim=spim_input,
+        spim_json=spim_json_input,
         biasfield=bids(
             root=root,
             datatype="micr",

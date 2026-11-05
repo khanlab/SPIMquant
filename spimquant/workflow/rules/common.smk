@@ -270,6 +270,16 @@ def get_spim_json_path(spim_path):
     return str(Path(spim_path).with_suffix(".json"))
 
 
+def spim_json_input(wildcards):
+    """JSON sidecar of a job's SPIM input, or nothing if it has none.
+
+    Sidecar values (e.g. orientation) change the outputs of rules that read the
+    SPIM input, so any rule with spim_input as an input should have this as well,
+    to rerun if the sidecar changes."""
+    json_path = get_spim_json_path(spim_input(wildcards))
+    return json_path if Path(json_path).exists() else []
+
+
 def _normalize_channel_labels(value):
     if value is None:
         return None

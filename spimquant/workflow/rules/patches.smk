@@ -32,6 +32,7 @@ rule create_spim_patches:
     """
     input:
         spim=spim_input,
+        spim_json=spim_json_input,
         dseg=bids(
             root=root,
             datatype="parc",
@@ -193,6 +194,7 @@ rule create_imaris_crops:
     """
     input:
         spim=spim_input,
+        spim_json=spim_json_input,
         dseg=bids(
             root=root,
             datatype="parc",
@@ -244,7 +246,8 @@ rule extract_bbox_crop:
     the bounding box extent, enabling whole-brain resampling at arbitrary resolution.
     """
     input:
-        spim=inputs["spim"].path,
+        spim=spim_input,
+        spim_json=spim_json_input,
         xfm_composite=bids(
             root=root,
             datatype="xfm",

@@ -11,6 +11,7 @@ rule import_vesselfm_model:
 rule run_vesselfm:
     input:
         spim=spim_input,
+        spim_json=spim_json_input,
         model_path="resources/models/vesselfm.pt",
     output:
         mask=bids_oz_out(

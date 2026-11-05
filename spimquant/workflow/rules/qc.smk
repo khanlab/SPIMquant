@@ -52,6 +52,7 @@ rule qc_intensity_histogram:
     """
     input:
         spim=spim_input,
+        spim_json=spim_json_input,
     output:
         png=bids(
             root=root,
@@ -84,6 +85,7 @@ rule qc_segmentation_overview:
     """
     input:
         spim=spim_input,
+        spim_json=spim_json_input,
         mask=bids_oz_in(
             root=root,
             datatype="seg",
@@ -123,6 +125,7 @@ rule qc_vessels_overview:
     """
     input:
         spim=spim_input,
+        spim_json=spim_json_input,
         mask=bids_oz_in(
             root=root,
             datatype="vessels",
@@ -182,6 +185,7 @@ rule qc_segmentation_roi_zoom:
             else {}
         ),
         spim=spim_input,
+        spim_json=spim_json_input,
         mask=bids_oz_in(
             root=root,
             datatype="seg",
@@ -269,6 +273,7 @@ rule qc_vessels_roi_zoom:
             else {}
         ),
         spim=spim_input,
+        spim_json=spim_json_input,
         mask=bids_oz_in(
             root=root,
             datatype="vessels",
@@ -667,6 +672,7 @@ rule qc_stain_instance_gif:
     """
     input:
         spim=spim_input,
+        spim_json=spim_json_input,
         instance_parquet=bids(
             root=root,
             datatype="tabular",
@@ -737,6 +743,7 @@ rule qc_coloc_instance_gif:
     """
     input:
         spim=spim_input,
+        spim_json=spim_json_input,
         instance_parquet=bids(
             root=root,
             datatype="tabular",

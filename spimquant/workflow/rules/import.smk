@@ -31,6 +31,7 @@ rule get_downsampled_nii:
     """
     input:
         spim=spim_input,
+        spim_json=spim_json_input,
     output:
         nii=bids(
             root=root,

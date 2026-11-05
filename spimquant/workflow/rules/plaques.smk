@@ -69,6 +69,7 @@ rule run_lantern_plaques:
     """
     input:
         spim=spim_input,
+        spim_json=spim_json_input,
         models=expand(
             lantern_fold_path,
             name=lantern_name,
@@ -163,6 +164,7 @@ rule binarize_lantern_plaques:
             **inputs["spim"].wildcards,
         ),
         spim=spim_input,
+        spim_json=spim_json_input,
     output:
         mask=bids_oz_out(
             root=root,
