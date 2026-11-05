@@ -931,12 +931,12 @@ if config["save_patches"]:
             inputs["spim"].expand(
                 bids(
                     root=root,
-                    datatype="seg",
+                    datatype="micr",
                     stain="{stain}",
                     seg="{seg}",
                     from_="{template}",
                     level="{level}",
-                    desc="{desc}",
+                    desc="raw",
                     suffix="SPIM.patches",
                     **inputs["spim"].wildcards,
                 ),
@@ -944,7 +944,23 @@ if config["save_patches"]:
                 seg=patch_atlas_segs,
                 template=config["template"],
                 level=config["segmentation_level"],
-                desc=["raw", "corrected" + config["correction_method"]],
+            ),
+            inputs["spim"].expand(
+                bids(
+                    root=root,
+                    datatype="seg",
+                    stain="{stain}",
+                    seg="{seg}",
+                    from_="{template}",
+                    level="{level}",
+                    desc="corrected" + config["correction_method"],
+                    suffix="SPIM.patches",
+                    **inputs["spim"].wildcards,
+                ),
+                stain=stains_for_seg,
+                seg=patch_atlas_segs,
+                template=config["template"],
+                level=config["segmentation_level"],
             ),
             seg_expand(
                 bids(
