@@ -713,6 +713,49 @@ rule deform_template_dseg_to_subject_nii:
         " -r {input.ref} -t {input.xfm_composite_inv}"
 
 
+_qc_warped = bids(
+    root=root,
+    datatype="xfm",
+    space="{template}",
+    stain="{stain}",
+    desc="{reg}qcwarped",
+    suffix="SPIM.nii.gz",
+    **inputs["spim"].wildcards,
+)
+# the template stains in the reports, or else the one compared to the template's anat
+_report_stains = reg_stains or [stain_for_reg]
+
+
+def _report_fixed(wildcards, stain):
+    suffix = stain if use_spim_template else None
+    return get_template_path(
+        root, wildcards.template, config.get("template_crop"), suffix
+    )
+
+
+rule warp_stain_for_report:
+    """Resample a stain with a method's composite warp, for the reports."""
+    input:
+        moving=lambda wildcards: _reg_moving_stain(wildcards.stain).format(**wildcards),
+        ref=lambda wildcards: _report_fixed(wildcards, wildcards.stain),
+        xfm=_reg_xfm("xfm.nii.gz"),
+    output:
+        temp(_qc_warped),
+    wildcard_constraints:
+        reg=reg_constraint(),
+        stain="|".join(_report_stains),
+    conda:
+        "../envs/ants.yaml"
+    threads: 8
+    resources:
+        mem_mb=per_attempt(16000),
+        runtime=per_attempt(15),
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -v -n Linear "
+        " -i {input.moving} -o {output} -r {input.ref} -t {input.xfm}"
+
+
 rule registration_qc_report:
     """Report on the affine and deformable stages of one registration method."""
     input:
@@ -720,6 +763,12 @@ rule registration_qc_report:
         warped_affine=_reg_warped("{reg}affinewarped"),
         warped_deform=_reg_warped("{reg}deformwarped"),
         warp=_reg_xfm("xfm.nii.gz"),
+        extra_fixed=lambda wildcards: [
+            _report_fixed(wildcards, stain) for stain in _report_stains[1:]
+        ],
+        extra_warped=lambda wildcards: [
+            _qc_warped.format(stain=stain, **wildcards) for stain in _report_stains[1:]
+        ],
         dseg=lambda wildcards: bids(
             root=root,
             template=wildcards.template,
@@ -737,7 +786,7 @@ rule registration_qc_report:
     params:
         subject=lambda wildcards: f"sub-{wildcards.subject}",
         template=lambda wildcards: f"tpl-{wildcards.template}",
-        stain=stain_for_reg,
+        stains=_report_stains,
         method=lambda wildcards: wildcards.reg,
         parameters=lambda wildcards: reg_note(reg_presets[wildcards.reg]),
     script:
@@ -748,8 +797,14 @@ rule reg_tune_report:
     """Compare registration methods for one subject, using the same report as QC."""
     input:
         fixed=get_template_for_reg,
+        extra_fixed=lambda wildcards: [
+            _report_fixed(wildcards, stain) for stain in _report_stains[1:]
+        ],
+        # from the composite warps, which are kept, so that the report can be
+        # written again without repeating the registrations
         warped=lambda wildcards: [
-            _reg_warped("{reg}deformwarped").format(reg=reg, **wildcards)
+            _qc_warped.format(reg=reg, stain=stain, **wildcards)
+            for stain in _report_stains
             for reg in config["registration_tune_methods"]
         ],
         warps=lambda wildcards: [
@@ -776,7 +831,7 @@ rule reg_tune_report:
     params:
         subject=lambda wildcards: f"sub-{wildcards.subject}",
         template=lambda wildcards: f"tpl-{wildcards.template}",
-        stain=stain_for_reg,
+        stains=_report_stains,
         methods=config["registration_tune_methods"],
         selected=config["registration_method"],
         notes={m: reg_note(reg_presets[m]) for m in reg_presets},

@@ -775,10 +775,20 @@ rule cohort_template_to_orig_space:
         _cohort_warp_shell
 
 
+_cohort_report_stains = [cohort_reg_stain] + [
+    stain for stain in cohort_stains if stain != cohort_reg_stain
+]
+_cohort_report_extra_fixed = [
+    bids_cohort(stain=stain, suffix="SPIM.nii.gz")
+    for stain in _cohort_report_stains[1:]
+]
+
+
 rule cohort_template_regqc:
     """QC report for the original-to-cohort template registration."""
     input:
         template=_cohort_fixed,
+        extra_fixed=_cohort_report_extra_fixed,
         warped_affine=_cohort_warped_affine.format(reg=cohort_reg_method),
         warped_deform=_cohort_warped.format(reg=cohort_reg_method),
         warp=_cohort_xfm,
@@ -798,7 +808,7 @@ rule cohort_template_regqc:
     params:
         subject=f"tpl-{orig_template}",
         template=f"tpl-{cohort_name}",
-        stain=cohort_reg_stain,
+        stains=_cohort_report_stains,
         method=cohort_reg_method,
         parameters=reg_note(reg_presets[cohort_reg_method]),
         labels_warped=True,
@@ -830,11 +840,42 @@ rule cohort_template_tune_warp_dseg:
         _cohort_warp_shell
 
 
+rule cohort_template_tune_warp_anat:
+    """Warp the original template with a method compared by the tune report.
+
+    From the composite warp, which is kept, so that the report can be written again
+    without repeating the registrations.
+    """
+    input:
+        img=bids_orig(suffix="anat.nii.gz"),
+        ref=_cohort_fixed,
+        xfm=bids_cohort(
+            from_=orig_template, to=cohort_name, desc="{reg}", suffix="xfm.nii.gz"
+        ),
+    output:
+        temp(os.path.join(cohort_work, "tune", "{reg}_anat.nii.gz")),
+    wildcard_constraints:
+        reg=reg_constraint(),
+    conda:
+        "../envs/ants.yaml"
+    threads: 8
+    resources:
+        mem_mb=16000,
+        runtime=15,
+    params:
+        interp="Linear",
+    shell:
+        _cohort_warp_shell
+
+
 rule cohort_template_tune_report:
     """Compare methods for registering the original template to the cohort template."""
     input:
         fixed=_cohort_fixed,
-        warped=expand(_cohort_warped, reg=cohort_reg_tune_methods),
+        extra_fixed=_cohort_report_extra_fixed,
+        warped=expand(
+            rules.cohort_template_tune_warp_anat.output[0], reg=cohort_reg_tune_methods
+        ),
         warps=expand(
             bids_cohort(
                 from_=orig_template, to=cohort_name, desc="{reg}", suffix="xfm.nii.gz"
@@ -861,7 +902,7 @@ rule cohort_template_tune_report:
     params:
         subject=f"tpl-{orig_template}",
         template=f"tpl-{cohort_name}",
-        stain=cohort_reg_stain,
+        stains=_cohort_report_stains,
         methods=cohort_reg_tune_methods,
         selected=cohort_reg_method,
         default_layer="fixed",

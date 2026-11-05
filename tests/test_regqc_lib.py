@@ -11,7 +11,12 @@ pytest.importorskip("PIL")
 sys.path.insert(
     0, str(Path(__file__).parents[1] / "spimquant" / "workflow" / "scripts")
 )
-from regqc_lib import _display_window, jacobian_determinant  # noqa: E402
+from regqc_lib import (  # noqa: E402
+    _display_window,
+    build_viewer_data,
+    jacobian_determinant,
+    render_report,
+)
 
 
 def _field(affine, scale_lps, shape=(20, 24, 28)):
@@ -62,3 +67,61 @@ def test_display_window_keeps_skewed_stain_visible():
 
 def test_display_window_handles_empty_image():
     assert _display_window(np.zeros((4, 4, 4)), None) == (0.0, 1.0, 1.0)
+
+
+def _write(path, data):
+    nib.save(nib.Nifti1Image(data.astype(np.float32), np.eye(4)), path)
+    return str(path)
+
+
+def _images(tmp_path):
+    rng = np.random.default_rng(0)
+    return [
+        _write(tmp_path / f"{name}.nii.gz", rng.random((24, 26, 28)) + 0.1)
+        for name in ["fixed_a", "fixed_b", "moved_a", "moved_b"]
+    ]
+
+
+def test_report_renders_a_moving_image_once_when_stains_share_it(tmp_path):
+    fixed_a, fixed_b, moved, _ = _images(tmp_path)
+    viewer = build_viewer_data(
+        fixed_a,
+        [{"name": "m", "warped": moved}],
+        [
+            {"name": "A", "fixed": fixed_a, "warped": [moved]},
+            {"name": "B", "fixed": fixed_b, "warped": [moved]},
+        ],
+    )
+    assert viewer["stains"] == ["A", "B"]
+    plane = viewer["planes"][0]
+    assert len(plane["fixed"]) == 2
+    assert plane["fixed"][0] != plane["fixed"][1]
+    assert len(plane["candidates"][0]["warped"]) == 1
+    assert plane["candidates"][0]["warpedFor"] == [0, 0]
+    assert len(viewer["stats"][0]["ncc"]) == 2
+
+
+def test_report_hides_a_candidate_without_an_image_for_a_stain(tmp_path):
+    fixed_a, fixed_b, moved_a, moved_b = _images(tmp_path)
+    viewer = build_viewer_data(
+        fixed_a,
+        [{"name": "affine", "warped": moved_a}, {"name": "deform", "warped": moved_a}],
+        [
+            {"name": "A", "fixed": fixed_a, "warped": [moved_a, moved_a]},
+            {"name": "B", "fixed": fixed_b, "warped": [None, moved_b]},
+        ],
+    )
+    affine, deform = viewer["planes"][0]["candidates"]
+    assert affine["warpedFor"] == [0, None]
+    assert deform["warpedFor"] == [0, 1]
+    assert viewer["stats"][0]["ncc"][1] is None
+    assert viewer["stats"][1]["ncc"][1] is not None
+
+
+def test_report_without_stains_has_one_unnamed_stain(tmp_path):
+    fixed, _, moved, _ = _images(tmp_path)
+    output = tmp_path / "report.html"
+    render_report(
+        str(output), "t", "e", {}, fixed, [{"name": "m", "warped": moved}]
+    )
+    assert "NCC to fixed" in output.read_text()

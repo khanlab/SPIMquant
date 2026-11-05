@@ -9,6 +9,15 @@ no server or network. A candidate is a dict with:
 - labels: optional path of an atlas segmentation in fixed image space
 - warp: optional path of an ITK displacement field, for the Jacobian layer
 - note: optional text describing the candidate, e.g. its parameters
+
+A report can also have several stains, to choose between in the report. Each is a
+dict with:
+
+- name: label shown in the report
+- fixed: path of the fixed image of the stain
+- warped: for each candidate, the path of the moving image for this stain resampled
+  onto the fixed image, which can be the same image for every stain, or None if that
+  candidate has none, in which case it is hidden for the stain
 """
 
 import base64
@@ -154,46 +163,51 @@ def _slice_indices(mask, axis):
     return np.linspace(present[0], present[-1], N_SLICES + 2)[1:-1].round().astype(int)
 
 
-def build_viewer_data(fixed_path, candidates):
-    """Render the slices for every plane and candidate, and compute metrics."""
-    fixed_img = nib.as_closest_canonical(nib.load(fixed_path))
-    fixed = np.asarray(fixed_img.dataobj, dtype=np.float32)
+def build_viewer_data(fixed_path, candidates, stains=None):
+    """Render the slices for every plane, stain and candidate, and compute metrics."""
+    if stains is None:
+        stains = [
+            {
+                "name": "",
+                "fixed": fixed_path,
+                "warped": [cand["warped"] for cand in candidates],
+            }
+        ]
+    fixed_img = nib.as_closest_canonical(nib.load(stains[0]["fixed"]))
+    first_fixed = np.asarray(fixed_img.dataobj, dtype=np.float32)
     zooms = fixed_img.header.get_zooms()[:3]
 
-    warped, labels, dets, stats, warps = [], [], [], [], []
+    labels, dets, stats, masks = [], [], [], []
     for cand in candidates:
-        moved = _on_fixed_grid(
-            nib.as_closest_canonical(nib.load(cand["warped"])), fixed_img, 1
-        ).astype(np.float32)
-        warped.append(moved)
         seg = None
         if cand.get("labels"):
             seg = _on_fixed_grid(
                 nib.as_closest_canonical(nib.load(cand["labels"])), fixed_img, 0
             ).astype(np.int32)
         labels.append(seg)
-        dets.append(None)
-        warps.append(None)
-        mask = seg > 0 if seg is not None else fixed > 0
-        det_stats = None
+        mask = seg > 0 if seg is not None else first_fixed > 0
+        masks.append(mask)
+        det, det_stats = None, None
         if cand.get("warp"):
             warp_img = nib.load(cand["warp"])
-            det = jacobian_determinant(warp_img)
+            full = jacobian_determinant(warp_img)
             # the Jacobian layer and mask follow the warp's own grid
-            if det.shape == tuple(
-                s // JACOBIAN_STRIDE + (s % JACOBIAN_STRIDE > 0) for s in fixed.shape
+            if full.shape == tuple(
+                s // JACOBIAN_STRIDE + (s % JACOBIAN_STRIDE > 0)
+                for s in first_fixed.shape
             ):
-                dets[-1] = det
+                det = full
                 det_stats = _jacobian_stats(
                     det, mask[::JACOBIAN_STRIDE, ::JACOBIAN_STRIDE, ::JACOBIAN_STRIDE]
                 )
             else:
-                det_stats = _jacobian_stats(det, None)
+                det_stats = _jacobian_stats(full, None)
+        dets.append(det)
         stats.append(
             {
                 "name": cand["name"],
                 "note": cand.get("note", ""),
-                "ncc": _ncc(fixed, moved, mask),
+                "ncc": [],
                 "jacobian": det_stats,
             }
         )
@@ -203,36 +217,33 @@ def build_viewer_data(fixed_path, candidates):
         brain = first_labels > 0
     else:
         # without labels, background would set the window: use the bright half
-        brain = fixed > np.median(fixed[fixed > 0]) if fixed.any() else fixed > 0
-    fixed_window = _display_window(fixed, brain)
+        brain = (
+            first_fixed > np.median(first_fixed[first_fixed > 0])
+            if first_fixed.any()
+            else first_fixed > 0
+        )
 
     planes = []
     for plane_name, axis, direction in PLANES:
         indices = _slice_indices(brain, axis)
         origin = fixed_img.affine[axis, 3]
         spacing = fixed_img.affine[axis, axis]
-        view_shape = _to_view(fixed, axis, 0).shape
+        view_shape = _to_view(first_fixed, axis, 0).shape
         width_mm = view_shape[1] * [z for i, z in enumerate(zooms) if i != axis][0]
         height_mm = view_shape[0] * [z for i, z in enumerate(zooms) if i != axis][1]
         plane = {
             "name": plane_name,
+            "axis": axis,
+            "indices": indices,
             "aspect": f"{width_mm:.4f} / {height_mm:.4f}",
             "positions": [
                 f"{direction} {origin + i * spacing:+.2f} mm" for i in indices
             ],
-            "fixed": [_gray_uri(_to_view(fixed, axis, i), fixed_window) for i in indices],
+            "fixed": [],
             "candidates": [],
         }
-        for moved, seg, det in zip(warped, labels, dets):
-            moved_window = _display_window(moved, seg > 0 if seg is not None else brain)
-            entry = {
-                "warped": [
-                    _gray_uri(_to_view(moved, axis, i), moved_window)
-                    for i in indices
-                ],
-                "labels": None,
-                "jacobian": None,
-            }
+        for seg, det in zip(labels, dets):
+            entry = {"warped": [], "warpedFor": [], "labels": None, "jacobian": None}
             if seg is not None:
                 entry["labels"] = [
                     _outline_uri(_to_view(seg, axis, i)) for i in indices
@@ -244,14 +255,64 @@ def build_viewer_data(fixed_path, candidates):
                 ]
             plane["candidates"].append(entry)
         planes.append(plane)
-    return {"planes": planes, "stats": stats}
+
+    # the moving image is often the same for every stain, so it is rendered only once
+    last_moved = [(None, None)] * len(candidates)
+    for stain in stains:
+        fixed = _on_fixed_grid(
+            nib.as_closest_canonical(nib.load(stain["fixed"])), fixed_img, 1
+        ).astype(np.float32)
+        fixed_window = _display_window(fixed, brain)
+        for plane in planes:
+            plane["fixed"].append(
+                [
+                    _gray_uri(_to_view(fixed, plane["axis"], i), fixed_window)
+                    for i in plane["indices"]
+                ]
+            )
+        for c, path in enumerate(stain["warped"]):
+            if path is None:
+                for plane in planes:
+                    plane["candidates"][c]["warpedFor"].append(None)
+                stats[c]["ncc"].append(None)
+                continue
+            is_new = last_moved[c][0] != path
+            if is_new:
+                moved = _on_fixed_grid(
+                    nib.as_closest_canonical(nib.load(path)), fixed_img, 1
+                ).astype(np.float32)
+                last_moved[c] = (path, moved)
+                seg = labels[c]
+                moved_window = _display_window(
+                    moved, seg > 0 if seg is not None else brain
+                )
+            moved = last_moved[c][1]
+            for plane in planes:
+                entry = plane["candidates"][c]
+                if is_new:
+                    entry["warped"].append(
+                        [
+                            _gray_uri(_to_view(moved, plane["axis"], i), moved_window)
+                            for i in plane["indices"]
+                        ]
+                    )
+                entry["warpedFor"].append(len(entry["warped"]) - 1)
+            stats[c]["ncc"].append(_ncc(fixed, moved, masks[c]))
+
+    for plane in planes:
+        del plane["axis"], plane["indices"]
+    return {
+        "stains": [stain["name"] for stain in stains],
+        "planes": planes,
+        "stats": stats,
+    }
 
 
 def _format(value, spec):
     return "–" if value is None else format(value, spec)
 
 
-def _stats_table(stats):
+def _stats_table(stats, stain_names):
     rows = []
     for item in stats:
         jac = item["jacobian"] or {}
@@ -268,15 +329,21 @@ def _stats_table(stats):
         )
         rows.append(
             f'<tr><th scope="row">{html.escape(item["name"])}{note}</th>'
-            f'<td class="num">{_format(item["ncc"], ".3f")}</td>'
-            f'<td class="num">{_format(jac.get("median"), ".3f")}</td>'
+            + "".join(
+                f'<td class="num">{_format(ncc, ".3f")}</td>' for ncc in item["ncc"]
+            )
+            + f'<td class="num">{_format(jac.get("median"), ".3f")}</td>'
             f'<td class="num">{jac_range}</td>'
             f'<td class="num">{flag or "–"}</td></tr>'
         )
+    ncc_headers = "".join(
+        f'<th scope="col" class="num">NCC{" " + html.escape(name) if name else " to fixed"}</th>'
+        for name in stain_names
+    )
     return (
         '<div class="table-wrap"><table><thead><tr><th scope="col">Registration</th>'
-        '<th scope="col" class="num">NCC to fixed</th>'
-        '<th scope="col" class="num">Median Jacobian</th>'
+        + ncc_headers
+        + '<th scope="col" class="num">Median Jacobian</th>'
         '<th scope="col" class="num">Jacobian p1 – p99</th>'
         '<th scope="col" class="num">Folded voxels</th>'
         f"</tr></thead><tbody>{''.join(rows)}</tbody></table></div>"
@@ -341,6 +408,7 @@ tbody tr:last-child > * { border-bottom: 0; }
   margin-bottom: 14px; }
 .group { display: flex; gap: 2px; padding: 2px; border: 1px solid var(--line);
   border-radius: 7px; }
+.group[hidden] { display: none; }
 .group button { border: 0; background: transparent; color: var(--ink);
   padding: 5px 11px; border-radius: 5px; font: inherit; font-size: 14px; cursor: pointer; }
 .group button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
@@ -355,6 +423,7 @@ label.check { display: flex; gap: 6px; align-items: center; font-size: 14px; }
 .grid { display: grid; gap: 14px;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--panel, 460px)), 1fr)); }
 figure { margin: 0; display: grid; gap: 6px; }
+figure[hidden] { display: none; }
 figcaption { font-weight: 600; font-size: 14px; }
 .stage { position: relative; background: var(--stage); border-radius: 5px;
   overflow: hidden; }
@@ -374,7 +443,7 @@ figcaption { font-weight: 600; font-size: 14px; }
 
 SCRIPT = """
 const data = JSON.parse(document.getElementById('viewer-data').textContent);
-const state = { plane: 0, slice: 3, layer: data.defaultLayer, labels: true, flicker: null };
+const state = { plane: 0, stain: 0, slice: 3, layer: data.defaultLayer, labels: true, flicker: null };
 const grid = document.getElementById('grid');
 const slider = document.getElementById('slice');
 const output = document.getElementById('position');
@@ -394,7 +463,7 @@ const panels = data.stats.map((item) => {
   stage.append(base, overlay, tag);
   figure.append(caption, stage);
   grid.append(figure);
-  return { stage, base, overlay, tag };
+  return { figure, stage, base, overlay, tag };
 });
 function shownLayer() {
   return state.flicker || state.layer;
@@ -405,9 +474,13 @@ function render() {
   output.textContent = plane.positions[i];
   panels.forEach((panel, c) => {
     const cand = plane.candidates[c];
+    const warped = cand.warpedFor[state.stain];
+    panel.figure.hidden = warped === null;
+    if (warped === null) return;
     let layer = shownLayer();
     if (layer === 'jacobian' && !cand.jacobian) layer = 'warped';
-    const source = layer === 'fixed' ? plane.fixed : cand[layer];
+    const source = layer === 'fixed' ? plane.fixed[state.stain]
+      : layer === 'warped' ? cand.warped[warped] : cand.jacobian;
     panel.stage.style.aspectRatio = plane.aspect;
     panel.base.src = source[i];
     panel.base.alt = `${layerNames[layer]}, ${plane.name}, ${plane.positions[i]}`;
@@ -421,6 +494,17 @@ function press(group, value) {
   group.querySelectorAll('button').forEach((b) =>
     b.setAttribute('aria-pressed', String(b.dataset.value === String(value))));
 }
+const stainGroup = document.getElementById('stains');
+data.stains.forEach((name, i) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = name;
+  b.dataset.value = i;
+  b.addEventListener('click', () => { state.stain = i; press(stainGroup, i); render(); });
+  stainGroup.append(b);
+});
+stainGroup.hidden = data.stains.length < 2;
+press(stainGroup, 0);
 const planeGroup = document.getElementById('planes');
 data.planes.forEach((p, i) => {
   const b = document.createElement('button');
@@ -474,13 +558,16 @@ def render_report(
     hint="",
     panel_width=460,
     default_layer="warped",
+    stains=None,
 ):
     """Write the HTML report for candidates compared against fixed_path.
 
     default_layer is the layer shown first: fixed when the atlas labels were warped
     along with the moving image, since they then match it by construction.
+    stains (see the module docstring) replaces fixed_path and the candidates' warped
+    images, to choose between stains in the report.
     """
-    viewer = build_viewer_data(fixed_path, candidates)
+    viewer = build_viewer_data(fixed_path, candidates, stains)
     viewer["defaultLayer"] = default_layer
     has_labels = any(c.get("labels") for c in candidates)
     has_jacobian = any(entry["jacobian"] for entry in viewer["planes"][0]["candidates"])
@@ -526,12 +613,13 @@ def render_report(
 </header>
 <section aria-labelledby="metrics-title">
 <h2 id="metrics-title">Metrics</h2>
-{_stats_table(viewer["stats"])}
+{_stats_table(viewer["stats"], viewer["stains"])}
 <p class="hint">{html.escape(hint)} These numbers flag problems but do not rank registrations: judge alignment from the slices. NCC is computed within the atlas or the fixed image's nonzero voxels, and is only a rough guide between different contrasts. Jacobians are within the same region, and include any affine scaling. Each image has its own display window and gamma, so brightness is not comparable between images.</p>
 </section>
 <section aria-labelledby="viewer-title">
 <h2 id="viewer-title">Slices</h2>
 <div class="controls">
+<div class="group" id="stains" role="group" aria-label="Stain"></div>
 <div class="group" id="planes" role="group" aria-label="Plane"></div>
 <div class="group" id="layers" role="group" aria-label="Layer">
 <button type="button" data-value="fixed">Fixed</button>
