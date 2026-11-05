@@ -1508,7 +1508,7 @@ rule all_participant:
         rules.all_tabular_sidecars.input,
         rules.all_bbox_template_crops.input if do_bbox else [],
         rules.all_spim_patches.input if config["save_patches"] else [],
-        rules.all_imaris_crops if config["save_patches"] else [],
+        rules.all_imaris_crops.input if config["save_patches"] else [],
 
 
 rule all_group:
