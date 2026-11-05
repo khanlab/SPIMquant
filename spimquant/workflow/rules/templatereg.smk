@@ -187,7 +187,9 @@ def _reg_extra_pairs(wildcards):
     """greedy image pairs for the other stains, template and subject."""
     return " ".join(
         f"-i {fixed} {moving}"
-        for fixed, moving in zip(_reg_extra_fixed(wildcards), _reg_extra_moving(wildcards))
+        for fixed, moving in zip(
+            _reg_extra_fixed(wildcards), _reg_extra_moving(wildcards)
+        )
     )
 
 

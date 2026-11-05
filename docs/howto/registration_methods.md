@@ -4,10 +4,23 @@ Registration runs with a named method from `registration.presets` in
 `config/snakebids.yml`. The name is also the `desc-` of the method's output
 transforms, so results from different methods can sit side by side.
 
+## Choosing a route
+
+| Route | When | Needs |
+|-------|------|-------|
+| Register subjects to a packaged template such as ABAv3 | The default | CPU only |
+| [Build a cohort template](cohort_template.md), then use it and its warps | Recommended when you can | A GPU, and at least 2 subjects |
+
+A cohort template is not the default because of what it needs, but it is the
+recommended route: subjects are registered to images of their own contrast, and the
+hard step, from the cohort's shape to the atlas, is solved once on a high-SNR average.
+
+## Options
+
 | Option | Registration | Default |
 |--------|--------------|---------|
 | `--registration_method` | subject to `--template` | `greedy` |
-| `--cohort-template-reg-method` | original template to cohort template | `greedy` |
+| `--cohort-template-reg-method` | original template to cohort template | `antsMulti` |
 
 The built-in methods are:
 
@@ -43,6 +56,9 @@ For a cohort template registered to its original template, each cohort template
 stain is compared against the same original template image. Compare these to their
 base method with the labels in the report, since a stain with little in common with
 the original template adds little.
+`antsMulti` is the default here: it aligned best by eye when the methods above were
+compared on one cohort template (`NkCreVATFX`, 5 subjects, 3 stains). Check the report
+for your own data, as this is one comparison.
 
 For subjects registered to a cohort template, each stain is compared against the
 same stain of the template:
@@ -63,16 +79,17 @@ name, so `desc-greedy` warps are not reused for a run that becomes `greedyMulti`
 
 These analysis levels run several methods and write one report with them side by
 side. The report shows each method's atlas outlines, in all three planes, and can
-flicker between the fixed and warped images:
+flicker between the fixed and warped images. When the template has several stains,
+you can switch between them, with every method shown on every stain:
 
 ```
 spimquant /path/to/bids /path/to/output tune_reg \
-    --registration_tune_methods greedy greedySharp ants fireants \
+    --registration_tune_methods greedy greedyMulti ants antsMulti \
     --participant-label 01 02
 
 spimquant /path/to/bids /path/to/output cohort_template_tune_reg \
     --cohort-template-name lecanemab \
-    --cohort-template-reg-tune-methods greedy greedyNoAffine greedySharp
+    --cohort-template-reg-tune-methods greedy greedyMulti ants antsMulti
 ```
 
 The reports are `xfm/*_stain-<stain>_from-SPIM_to-<template>_desc-tune_regqc.html`
@@ -82,6 +99,10 @@ cohort template. Limit the subjects when tuning: every subject runs every method
 The metrics flag problems such as folding, but do not rank methods, since no metric
 compares well across image contrasts. Pick by eye, then pass the method to
 `--registration_method` or `--cohort-template-reg-method`.
+
+The reports resample from the kept composite warps, so writing one again does not
+repeat the registrations. The QC report of a single method also shows its affine
+stage, which does need that registration's temporary outputs.
 
 ## Outputs
 

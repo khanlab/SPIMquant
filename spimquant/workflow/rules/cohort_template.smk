@@ -515,11 +515,15 @@ def _cohort_extra_fixed(wildcards):
 
 def _cohort_extra_pairs(wildcards):
     """greedy image pairs for the other stains, each against the same moving image."""
-    return " ".join(f"-i {fixed} {_cohort_moving}" for fixed in _cohort_extra_fixed(wildcards))
+    return " ".join(
+        f"-i {fixed} {_cohort_moving}" for fixed in _cohort_extra_fixed(wildcards)
+    )
 
 
 def _cohort_greedy_mem_mb(wildcards):
     return 32000 if reg_presets[wildcards.reg].get("multichannel") else 16000
+
+
 _cohort_reg_log = os.path.join(cohort_work, "logs", "{reg}_{step}.log")
 
 
@@ -537,6 +541,9 @@ use rule affine_reg as cohort_template_affine_reg with:
         _cohort_reg_log.replace("{step}", "affine_reg"),
     group:
         "cohort_reg"
+    resources:
+        mem_mb=_cohort_greedy_mem_mb,
+        runtime=15,
     params:
         affine=lambda wildcards: reg_presets[wildcards.reg]["affine"],
         init="-ia-identity",
@@ -544,9 +551,6 @@ use rule affine_reg as cohort_template_affine_reg with:
         iters=lambda wildcards: reg_iters(reg_presets[wildcards.reg], "affine_iters"),
         identity=reg_identity_ras,
         extra_pairs=_cohort_extra_pairs,
-    resources:
-        mem_mb=_cohort_greedy_mem_mb,
-        runtime=15,
 
 
 use rule convert_ras_to_itk as cohort_template_ras_to_itk with:

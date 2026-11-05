@@ -15,9 +15,11 @@ stains = [
     {
         "name": name,
         "fixed": fixed_path,
-        "warped": warped[s * n_methods : (s + 1) * n_methods]
-        if per_stain
-        else warped[:n_methods],
+        "warped": (
+            warped[s * n_methods : (s + 1) * n_methods]
+            if per_stain
+            else warped[:n_methods]
+        ),
     }
     for s, (name, fixed_path) in enumerate(zip(p.stains, fixed))
 ]

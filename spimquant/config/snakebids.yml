@@ -546,7 +546,7 @@ parse_args:
 
   --cohort-template-reg-method:
     help: "Registration method for the original template to cohort template registration: a name from registration.presets in the config. (default: %(default)s)"
-    default: greedy
+    default: antsMulti
 
   --cohort-template-reg-tune-methods:
     help: "Registration methods to compare in the cohort_template_tune_reg analysis level. (default: %(default)s)"

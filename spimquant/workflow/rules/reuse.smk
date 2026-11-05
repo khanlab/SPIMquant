@@ -136,16 +136,12 @@ if reuse_root and "transforms" in reuse_outputs:
     _reuse_legacy = 0
     for desc_path, legacy_path in zip(
         inputs["spim"].expand(
-            reuse_path(
-                rules.compose_subject_to_template_warp.output.xfm_composite
-            ),
+            reuse_path(rules.compose_subject_to_template_warp.output.xfm_composite),
             template=config["template"],
             reg=_reuse_method,
         ),
         inputs["spim"].expand(
-            reuse_path(
-                rules.select_subject_to_template_warp.output.xfm_composite
-            ),
+            reuse_path(rules.select_subject_to_template_warp.output.xfm_composite),
             template=config["template"],
         ),
     ):

@@ -23,9 +23,11 @@ for i, (name, fixed) in enumerate(zip(p.stains[1:], inp.extra_fixed)):
         {
             "name": name,
             "fixed": fixed,
-            "warped": [None, extra_warped[i]]
-            if extra_warped
-            else [inp.warped_affine, inp.warped_deform],
+            "warped": (
+                [None, extra_warped[i]]
+                if extra_warped
+                else [inp.warped_affine, inp.warped_deform]
+            ),
         }
     )
 
@@ -54,9 +56,7 @@ render_report(
             "warp": inp.warp,
         },
     ],
-    hint=(
-        f"The affine stage is only shown for {p.stains[0]}." if extra_warped else ""
-    ),
+    hint=(f"The affine stage is only shown for {p.stains[0]}." if extra_warped else ""),
     panel_width=620,
     default_layer="fixed" if labels_warped else "warped",
     stains=stains,

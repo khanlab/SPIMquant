@@ -50,9 +50,7 @@ if p.extra_fixed:
     if p.extra_moving:
         moving_image.concatenate([load(path) for path in p.extra_moving])
     else:
-        moving_image.array = moving_image.array.repeat(
-            1, fixed_image.channels, 1, 1, 1
-        )
+        moving_image.array = moving_image.array.repeat(1, fixed_image.channels, 1, 1, 1)
         moving_image.channels = fixed_image.channels
 fixed = BatchedImages([fixed_image])
 moving = BatchedImages([moving_image])

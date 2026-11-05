@@ -1,7 +1,9 @@
 # Cohort templates
 
 SPIMquant can build a study-specific (cohort) SPIM template from your subjects,
-and prepare it for use as a `--template` in later SPIMquant runs.
+and prepare it for use as a `--template` in later SPIMquant runs. This is the
+recommended way to register, but it is not the default, as it needs a GPU and at
+least 2 subjects (see [Registration Methods](registration_methods.md#choosing-a-route)).
 
 The workflow is:
 
@@ -13,7 +15,7 @@ The workflow is:
    [FireANTs](https://github.com/rohitrango/FireANTs) on GPU. All stains are built
    jointly, so every stain template is in the same space.
 3. The cohort template has its own shape, so the original template is registered to the cohort template, with
-   `--cohort-template-reg-method` (see
+   `--cohort-template-reg-method`, by default `antsMulti` (see
    [Registration Methods](registration_methods.md)). The original atlases, brain
    mask and anat are warped into cohort template space with this registration.
 4. The `cohort_template_export` level writes a `template_description.json`, a
@@ -131,14 +133,15 @@ The registration stain must be one of the cohort template's stains (see
 `--stains_for_reg`).
 
 Packaged templates such as ABAv3 are registered to through their `anat` image. Only
-cohort templates define stain templates, which subjects with one of those stains are
-registered to directly.
+cohort templates define stain templates. Subjects are registered directly to the
+ones they have a stain for, using all of them when there are two or more (see
+[Registration Methods](registration_methods.md)).
 
 Subjects that were used to build the template are not registered again. Their
 warps to the template are composed from the warps saved by the build, and from
 their `desc-affine` warps to the original template in the dataset the template was
 built in, and are written as `desc-cohort`. Other subjects are registered with
-`--registration_method` as usual. This needs both of those to still be in place at
+`--registration_method`, or its multichannel variant. This needs both of those to still be in place at
 the paths in `tpl-lecanemab_spimquant.yml`, and a template built with a version of
 SPIMquant that saves the inverse warps (`*_invwarp.nii.gz` in the build directory);
 otherwise the subject is registered as usual.
