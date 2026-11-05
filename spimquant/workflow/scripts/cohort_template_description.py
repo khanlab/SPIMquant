@@ -31,7 +31,7 @@ anat_fname = f"tpl-{name}_anat.nii.gz"
 entry = {"anat": ref(anat_fname)}
 if f"tpl-{name}_desc-brain_mask.nii.gz" in files:
     entry["mask"] = ref(f"tpl-{name}_desc-brain_mask.nii.gz")
-# stain order is the registration priority SPIMquant uses
+# stains in --stains_for_reg come first for SPIMquant, then this order
 entry["spim_templates"] = {
     stain: ref(f"tpl-{name}_stain-{stain}_SPIM.nii.gz") for stain in p.stains
 }
@@ -43,6 +43,15 @@ entry["atlases"] = {
         "tsv": ref(f"tpl-{name}_seg-{seg}_dseg.tsv"),
     }
     for seg in orig.get("atlases", {})
+}
+
+# lets participant runs with this template reuse the warps from the build, for
+# subjects in the cohort, instead of registering them again
+entry["cohort_warps"] = {
+    "warps_dir": p.warps_dir,
+    "orig_template": p.orig_template,
+    "orig_root": p.orig_root,
+    "reg_stain": p.stains[0],
 }
 
 if p.zenodo_deposition is not None:
@@ -80,7 +89,7 @@ description = {
         {
             "Name": "SPIMquant",
             "Description": "cohort_template analysis level: FireANTs multivariate "
-            "template building, then greedy registration of the original template "
+            "template building, then registration of the original template "
             "to the cohort template to warp its atlases",
             "CodeURL": "https://github.com/khanlab/SPIMquant",
         },
@@ -103,12 +112,13 @@ description = {
     "Subjects": list(p.subjects),
     "Atlases": list(entry["atlases"].keys()),
     "Transforms": {
-        f"tpl-{name}_from-{p.orig_template}_to-{name}_xfm.nii.gz": f"resamples "
+        f"tpl-{name}_from-{p.orig_template}_to-{name}_desc-{p.reg_method}_xfm.nii.gz": f"resamples "
         f"tpl-{p.orig_template} images into tpl-{name} space",
-        f"tpl-{name}_from-{name}_to-{p.orig_template}_xfm.nii.gz": f"resamples "
+        f"tpl-{name}_from-{name}_to-{p.orig_template}_desc-{p.reg_method}_xfm.nii.gz": f"resamples "
         f"tpl-{name} images into tpl-{p.orig_template} space",
     },
     "FireANTsParameters": dict(p.fireants),
+    "RegistrationMethod": p.reg_method,
     "RegistrationParameters": dict(p.reg),
     "res": {
         "1": {

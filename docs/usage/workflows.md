@@ -76,7 +76,7 @@ grouping applies only to cluster execution.
 
 Add `--retries 1` on a cluster. A job that fails is then run once more, with
 twice the memory and time for the steps whose resources grow with the image
-size. This also covers jobs that fail because a file just written on another
+size, and for ANTs registration. This also covers jobs that fail because a file just written on another
 node is not yet visible on a shared filesystem.
 
 ### Custom Profiles

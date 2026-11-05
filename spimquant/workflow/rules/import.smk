@@ -97,20 +97,22 @@ rule import_template_spim:
             ancient(
                 resources_path(
                     config["templates"][wildcards.template]["spim_templates"][
-                        stain_for_reg
+                        wildcards.tplstain
                     ]
                 )
             )
         ),
     output:
-        anat=bids(root=root, template="{template}", suffix=f"{stain_for_reg}.nii.gz"),
+        anat=bids(root=root, template="{template}", suffix="{tplstain}.nii.gz"),
     log:
         bids(
             root="logs",
-            datatype=f"import_template_spim_{stain_for_reg}",
+            datatype="import_template_spim_{tplstain}",
             template="{template}",
             suffix="log.txt",
         ),
+    wildcard_constraints:
+        tplstain="|".join(reg_stains) or "(?!)",
     threads: 1
     resources:
         mem_mb=1500,

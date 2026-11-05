@@ -22,6 +22,8 @@ report is skipped for subjects whose transforms are reused (the brain mask has
 no QC output of its own).
 """
 
+import glob as _glob
+
 reuse_root = config.get("reuse_derivatives")
 
 if reuse_root:
@@ -82,20 +84,46 @@ if reuse_root and "brainmask" in reuse_outputs:
     )
 
 
+def _reused_warp(rule_output, legacy_output):
+    """Input function for a method's composite warp in the prior dataset.
+
+    Datasets from before registration methods were added only have the warp
+    without a desc-, which was always computed by the greedy method.
+    """
+
+    def get_path(wildcards):
+        path = reuse_path(rule_output).format(**wildcards)
+        legacy = reuse_path(legacy_output).format(**wildcards)
+        if (
+            wildcards.reg == "greedy"
+            and not os.path.exists(path)
+            and os.path.exists(legacy)
+            and not os.path.islink(legacy)
+        ):
+            return legacy
+        return path
+
+    return get_path
+
+
 if reuse_root and "transforms" in reuse_outputs:
 
     rule reuse_composite_warps:
-        """Copy (or link) the composite subject<->template warps from the prior SPIMquant dataset."""
+        """Copy (or link) a method's composite warps from the prior SPIMquant dataset."""
         input:
-            xfm_composite=reuse_path(
-                rules.compose_subject_to_template_warp.output.xfm_composite
+            xfm_composite=_reused_warp(
+                rules.compose_subject_to_template_warp.output.xfm_composite,
+                rules.select_subject_to_template_warp.output.xfm_composite,
             ),
-            xfm_composite_inv=reuse_path(
-                rules.compose_subject_to_template_warp.output.xfm_composite_inv
+            xfm_composite_inv=_reused_warp(
+                rules.compose_subject_to_template_warp.output.xfm_composite_inv,
+                rules.select_subject_to_template_warp.output.xfm_composite_inv,
             ),
         output:
             xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
             xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
+        wildcard_constraints:
+            reg=reg_constraint(),
         localrule: True
         shell:
             f"{reuse_cmd} {{input.xfm_composite}} {{output.xfm_composite}} && "
@@ -103,33 +131,77 @@ if reuse_root and "transforms" in reuse_outputs:
 
     ruleorder: reuse_composite_warps > compose_subject_to_template_warp
 
-    print_reuse_summary(
-        "composite warps",
-        rules.compose_subject_to_template_warp.output.xfm_composite,
-        template=config["template"],
+    _reuse_method = config["registration_method"]
+    _reuse_found = []
+    _reuse_legacy = 0
+    for desc_path, legacy_path in zip(
+        inputs["spim"].expand(
+            reuse_path(rules.compose_subject_to_template_warp.output.xfm_composite),
+            template=config["template"],
+            reg=_reuse_method,
+        ),
+        inputs["spim"].expand(
+            reuse_path(rules.select_subject_to_template_warp.output.xfm_composite),
+            template=config["template"],
+        ),
+    ):
+        _is_legacy = (
+            not os.path.exists(desc_path)
+            and _reuse_method == "greedy"
+            and os.path.exists(legacy_path)
+            and not os.path.islink(legacy_path)
+        )
+        _reuse_found.append(os.path.exists(desc_path) or _is_legacy)
+        _reuse_legacy += _is_legacy
+    print(
+        f"Reusing desc-{_reuse_method} composite warps from {reuse_root} for "
+        f"{sum(_reuse_found)} of {len(_reuse_found)} subject(s); the rest will be "
+        "computed"
     )
+    if _reuse_legacy:
+        print(
+            f"Warning: {_reuse_legacy} reused warp(s) have no desc- entity, so they "
+            "predate registration methods and may have been registered to a packaged "
+            "SPIM template, which is not accurately aligned to the template's atlases. "
+            "Atlas labels from these warps will inherit that error, so register again "
+            "if you need accurate labels."
+        )
 
 
 def get_regqc_targets(wildcards):
-    """Registration QC reports, for subjects whose transforms are not reused."""
+    """Registration QC reports, for subjects whose transforms are computed here."""
+    method = config["registration_method"]
     regqc = inputs["spim"].expand(
-        bids(
-            root=root,
-            datatype="xfm",
-            stain="{stain}",
-            from_="SPIM",
-            to="{template}",
-            suffix="regqc.html",
-            **inputs["spim"].wildcards,
-        ),
-        stain=stain_for_reg,
+        rules.registration_qc_report.output.report_html,
         template=config["template"],
+        reg=method,
     )
-    if not (reuse_root and "transforms" in reuse_outputs):
-        return regqc
     # same entity order as regqc, so the lists line up per subject
-    reused = inputs["spim"].expand(
-        reuse_path(rules.compose_subject_to_template_warp.output.xfm_composite),
-        template=config["template"],
-    )
-    return [qc for qc, xfm in zip(regqc, reused) if not os.path.exists(xfm)]
+    if cohort_warps:
+        # subjects from the cohort build have no registration of their own to check
+        built = {
+            os.path.basename(f).split("_stain-")[0]
+            for f in _glob.glob(
+                os.path.join(cohort_warps["warps_dir"], "*_invwarp.nii.gz")
+            )
+        }
+        regqc = [
+            qc for qc in regqc if os.path.basename(qc).split("_stain-")[0] not in built
+        ]
+    if reuse_root and "transforms" in reuse_outputs and not cohort_warps:
+        reused = inputs["spim"].expand(
+            reuse_path(rules.compose_subject_to_template_warp.output.xfm_composite),
+            template=config["template"],
+            reg=method,
+        )
+        legacy = inputs["spim"].expand(
+            reuse_path(rules.select_subject_to_template_warp.output.xfm_composite),
+            template=config["template"],
+        )
+        regqc = [
+            qc
+            for qc, xfm, old in zip(regqc, reused, legacy)
+            if not os.path.exists(xfm)
+            and not (method == "greedy" and os.path.exists(old))
+        ]
+    return regqc

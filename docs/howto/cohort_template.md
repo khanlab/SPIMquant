@@ -1,20 +1,23 @@
 # Cohort templates
 
 SPIMquant can build a study-specific (cohort) SPIM template from your subjects,
-and prepare it for use as a `--template` in later SPIMquant runs.
+and prepare it for use as a `--template` in later SPIMquant runs. This is the
+recommended way to register, but it is not the default, as it needs a GPU and at
+least 2 subjects (see [Registration Methods](registration_methods.md#choosing-a-route)).
 
 The workflow is:
 
-1. Subjects are registered to `--template` (e.g. ABAv3) as in the `participant`
-   level, and each stain is resampled to template space at `--cohort-template-level`
-   (default: `--registration_level`).
+1. Subjects are affine-registered to `--template` (e.g. ABAv3), and each stain is
+   resampled to template space at `--cohort-template-level` (default:
+   `--registration_level`). No deformable registration or earlier SPIMquant run is
+   needed, and the template's shape comes only from the subjects.
 2. A multivariate template is built from these images with
    [FireANTs](https://github.com/rohitrango/FireANTs) on GPU. All stains are built
    jointly, so every stain template is in the same space.
-3. The cohort template drifts away from the original template's space during
-   building, so the original template's anat is registered (affine + deformable,
-   greedy) to the cohort template. The original atlases, brain mask and anat are
-   warped into cohort template space with this registration.
+3. The cohort template has its own shape, so the original template is registered to the cohort template, with
+   `--cohort-template-reg-method`, by default `antsMulti` (see
+   [Registration Methods](registration_methods.md)). The original atlases, brain
+   mask and anat are warped into cohort template space with this registration.
 4. The `cohort_template_export` level writes a `template_description.json`, a
    SPIMquant `templates:` config entry, and optionally uploads everything to Zenodo.
 
@@ -54,9 +57,9 @@ tpl-lecanemab/
 ├── tpl-lecanemab_anat.nii.gz                      # original anat, warped
 ├── tpl-lecanemab_desc-brain_mask.nii.gz           # original mask, warped
 ├── tpl-lecanemab_seg-<seg>_dseg.nii.gz/.tsv       # original atlases, warped
-├── tpl-lecanemab_from-ABAv3_to-lecanemab_xfm.nii.gz
-├── tpl-lecanemab_from-lecanemab_to-ABAv3_xfm.nii.gz
-└── tpl-lecanemab_stain-YoPro_from-ABAv3_to-lecanemab_regqc.html
+├── tpl-lecanemab_from-ABAv3_to-lecanemab_desc-greedy_xfm.nii.gz
+├── tpl-lecanemab_from-lecanemab_to-ABAv3_desc-greedy_xfm.nii.gz
+└── tpl-lecanemab_stain-YoPro_from-ABAv3_to-lecanemab_desc-greedy_regqc.html
 tpl-ABAv3/
 └── tpl-ABAv3_desc-lecanemab_stain-YoPro_SPIM.nii.gz   # cohort template in ABAv3 space
 ```
@@ -67,7 +70,7 @@ Template building clips each subject image to robust percentiles and rescales it
 to [0,1], and FireANTs sharpens and min-max normalizes the template, so the stain
 templates do not keep the original intensities. The `desc-rawintensity` templates
 do: each is the voxelwise mean of the subjects' un-normalized images (the
-`space-<template>` SPIM images, which have no bias field correction or other
+`space-<template>_desc-affine` SPIM images, which have no bias field correction or other
 intensity changes), warped with the warps from the final template iteration. They
 are in the same space as the stain templates but are not sharpened, so they look
 slightly smoother. Use them when absolute intensity matters, e.g. with uniform
@@ -128,6 +131,20 @@ spimquant /path/to/bids /path/to/output participant \
 
 The registration stain must be one of the cohort template's stains (see
 `--stains_for_reg`).
+
+Packaged templates such as ABAv3 are registered to through their `anat` image. Only
+cohort templates define stain templates. Subjects are registered directly to the
+ones they have a stain for, using all of them when there are two or more (see
+[Registration Methods](registration_methods.md)).
+
+Subjects that were used to build the template are not registered again. Their
+warps to the template are composed from the warps saved by the build, and from
+their `desc-affine` warps to the original template in the dataset the template was
+built in, and are written as `desc-cohort`. Other subjects are registered with
+`--registration_method`, or its multichannel variant. This needs both of those to still be in place at
+the paths in `tpl-lecanemab_spimquant.yml`, and a template built with a version of
+SPIMquant that saves the inverse warps (`*_invwarp.nii.gz` in the build directory);
+otherwise the subject is registered as usual.
 
 To make the template a built-in `--template` choice, open a PR that moves its
 `templates:` entry into `spimquant/config/snakebids.yml` (with the Zenodo URLs, or
