@@ -81,6 +81,33 @@ stain_defaults:
 
 **Limitations:** Can fail on images with unusual histograms (e.g. very sparse pathology that does not form a distinct peak) or when the background is very noisy.
 
+### DoG blobs (`--seg_method dog+s3r4k6`)
+
+Difference-of-Gaussians blob detection, for small punctate signal (e.g. pS129 alpha-synuclein inclusions) that is much dimmer than the brightest structures in the image.  Global histogram methods such as `gmm+n3k1` put their threshold in the bright tail, which picks up stain pooling on the brain surface and misses the puncta.  DoG responds to how much brighter a spot is than its surroundings, at a given size, rather than to absolute intensity.
+
+The method string encodes three parameters, with `p` as the decimal separator (`dog+s2p5r4k6` → s=2.5):
+
+- `s` — sigma of the inner Gaussian in **micrometres**, set to roughly the radius of the features of interest.  It is converted to voxels per axis, so anisotropic voxels are handled.
+- `r` — ratio of the outer (background) to the inner sigma.
+- `k` — threshold in robust standard deviations: `median + k × 1.4826 × MAD` of the DoG response, estimated from tissue voxels in a random subset of chunks.
+
+The steps are:
+
+1. **DoG response** `G(s) − G(r·s)`, computed chunkwise.  The bias-corrected image is zero outside the brain mask, so both blurs are mask-normalised (`G(I·M)/G(M)`); otherwise the brain edge would light up.
+2. **Pool exclusion.**  Bright, large regions (e.g. stain pooling on the surface or in sulci) also give a DoG response along their rim.  On a pyramid level `dog_pool_level_offset` levels coarser than `segmentation_level`, connected components brighter than `dog_pool_factor` × the tissue median and larger than `dog_pool_min_volume_um3` are taken as pools.  Their mask is upsampled, refined at full resolution, dilated by `dog_pool_dilate_um`, and DoG-positive voxels inside it are dropped.  Bright puncta are kept: they are orders of magnitude smaller than the volume cutoff.
+
+Besides the mask, the rule writes a `thresholds.png` QC histogram of the DoG response and a low-resolution `poolmask.nii.gz`.
+
+**Example:**
+
+```bash
+pixi run spimquant /bids /output participant --stains-for-seg aSyn --seg_method dog+s3r4k6
+```
+
+**Tuning:** `dog+s3r4k6` and the default `dog_pool_*` values were tuned on marmoset pS129 aSyn at 3.5 × 3.5 × 5 µm, where puncta are about 10–20 µm across at half maximum.  `s=3` also captures beaded neurite-like processes; `dog+s5r4k8` is more conservative and keeps only the most distinct puncta.  Lower `dog_pool_factor` if moderately bright surface signal still comes through.
+
+**Limitations:** Large but genuine positive structures (bigger than a few times `r·s`) are suppressed by design, as are features within `dog_pool_dilate_um` of a pool.
+
 ### LANTERN plaques (`--seg_method lantern`)
 
 A 5-fold deep-learning ensemble for amyloid-beta plaques, downloaded from Hugging Face (`apooladi/lantern-<name>`, chosen with `--lantern_config`, default `ki3-abeta@v2`).  Unlike the methods above it:

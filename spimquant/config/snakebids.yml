@@ -209,6 +209,16 @@ parse_args:
       may be encoded with 'p' as a decimal separator to keep BIDS-compatible
       filenames, e.g. ``gmm+n2k2p5`` → n=2, k=2.5.
 
+      ``dog+s<s>r<r>k<k>`` – Difference-of-Gaussians blob detection, for
+      small punctate signal (e.g. pS129 alpha-synuclein inclusions) that
+      sits well below the brightest structures in the image.  The DoG
+      response ``G(s) - G(r*s)``, with s in micrometres, is thresholded at
+      ``median + k * 1.4826 * MAD`` of its values in tissue.  Large bright
+      connected components (stain pooling on the brain surface or in sulci)
+      are excluded; see the ``dog_pool_*`` config keys.  'p' is the decimal
+      separator, e.g. ``dog+s2p5r4k6`` → s=2.5 µm.  ``dog+s3r4k6`` is a good
+      starting point; ``dog+s5r4k8`` is more conservative.
+
       ``lantern`` – 5-fold LANTERN deep-learning ensemble for amyloid-beta
       plaques (which ensemble is chosen with ``--lantern_config``).  Unlike
       the histogram-based methods above it reads raw intensities (not the
@@ -852,6 +862,28 @@ seg_metrics:
   - count
   - volume
   - nvoxels
+
+# Difference-of-Gaussians blob segmentation (--seg_method dog+s<s>r<r>k<k>).
+# Pools are large bright connected components (e.g. stain pooling on the
+# brain surface), found on a pyramid level dog_pool_level_offset levels
+# coarser than segmentation_level: voxels above dog_pool_factor x the tissue
+# median, in components larger than dog_pool_min_volume_um3. Bright puncta
+# and aggregates are orders of magnitude smaller (~1e3-3e5 um^3 in marmoset
+# pS129 aSyn). The pool mask is dilated by dog_pool_lowres_dilate_um before
+# upsampling, then refined at full resolution and dilated by
+# dog_pool_dilate_um, to cover the DoG response along the pool rim.
+dog_pool_level_offset: 2
+dog_pool_factor: 4
+dog_pool_min_volume_um3: 1.0e+6
+dog_pool_lowres_dilate_um: 30
+dog_pool_dilate_um: 7
+# The threshold (median + k * robust sigma of the DoG response) is estimated
+# from this many randomly chosen tissue-rich chunks, sampling this many
+# tissue voxels from each.
+dog_stat_blocks: 64
+dog_stat_samples_per_block: 200000
+# chunk edge (voxels) for the full-resolution DoG
+dog_chunk_size: 256
 
 vessel_seg_method: vesselfm
 
