@@ -339,40 +339,47 @@ def main():
         # ---------------------------------------------------------------- #
         # 1. Low-resolution image: tissue median and pool mask
         # ---------------------------------------------------------------- #
-        lowres_level = int(params.pool_level_offset)
-        while True:
-            try:
-                znimg_lo = ZarrNii.from_file(
-                    snakemake.input.corrected, level=lowres_level
-                )
-                break
-            except Exception:
-                if lowres_level == 0:
-                    raise
-                lowres_level -= 1
-        lowres = np.asarray(znimg_lo.data[0].compute(), dtype=np.float32)
-        lo_zooms_um = [z * 1000.0 for z in znimg_lo.get_zooms()]
-        tissue_lo = lowres[lowres > 0]
-        if tissue_lo.size == 0:
-            raise ValueError("Corrected image has no nonzero voxels")
-        tissue_median = float(np.median(tissue_lo))
-        pool_thresh = float(params.pool_factor) * tissue_median
-        pool_lo = pool_mask_lowres(
-            lowres,
-            pool_thresh,
-            float(params.pool_min_volume_um3),
-            lo_zooms_um,
-            float(params.pool_lowres_dilate_um),
-        )
-        pool_frac = float(pool_lo[lowres > 0].mean())
-        print(
-            f"pool mask at level +{lowres_level} (voxel {np.round(lo_zooms_um, 1)} um): "
-            f"tissue median {tissue_median:.1f}, pool threshold {pool_thresh:.1f}, "
-            f"{100 * pool_frac:.2f}% of tissue"
-        )
-        znimg_pool = znimg_lo.copy()
-        znimg_pool.data = da.from_array(pool_lo.astype(np.uint8)[np.newaxis] * 100)
-        znimg_pool.to_nifti(snakemake.output.pool_nii)
+        # The lowres image is GBs for a whole brain (~2 Gvox at level +2), so
+        # it is read and processed in this process with the threaded
+        # scheduler.  With the distributed scheduler, compute() would gather
+        # it on a single worker, whose memory limit is only the job memory
+        # divided by the number of workers.
+        with dask.config.set(scheduler="threads"):
+            lowres_level = int(params.pool_level_offset)
+            while True:
+                try:
+                    znimg_lo = ZarrNii.from_file(
+                        snakemake.input.corrected, level=lowres_level
+                    )
+                    break
+                except Exception:
+                    if lowres_level == 0:
+                        raise
+                    lowres_level -= 1
+            lowres = np.asarray(znimg_lo.data[0].compute(), dtype=np.float32)
+            lo_zooms_um = [z * 1000.0 for z in znimg_lo.get_zooms()]
+            tissue_lo = lowres[lowres > 0]
+            if tissue_lo.size == 0:
+                raise ValueError("Corrected image has no nonzero voxels")
+            tissue_median = float(np.median(tissue_lo))
+            del tissue_lo
+            pool_thresh = float(params.pool_factor) * tissue_median
+            pool_lo = pool_mask_lowres(
+                lowres,
+                pool_thresh,
+                float(params.pool_min_volume_um3),
+                lo_zooms_um,
+                float(params.pool_lowres_dilate_um),
+            )
+            pool_frac = float(pool_lo[lowres > 0].mean())
+            print(
+                f"pool mask at level +{lowres_level} (voxel {np.round(lo_zooms_um, 1)} um): "
+                f"tissue median {tissue_median:.1f}, pool threshold {pool_thresh:.1f}, "
+                f"{100 * pool_frac:.2f}% of tissue"
+            )
+            znimg_pool = znimg_lo.copy()
+            znimg_pool.data = da.from_array(pool_lo.astype(np.uint8)[np.newaxis] * 100)
+            znimg_pool.to_nifti(snakemake.output.pool_nii)
 
         # ---------------------------------------------------------------- #
         # 2. Full-resolution array, rechunked for bounded per-task memory
@@ -397,6 +404,7 @@ def main():
         # 3. Threshold from DoG values sampled in tissue-rich blocks
         # ---------------------------------------------------------------- #
         fractions = tissue_fraction_per_block(lowres, img.chunks, full_shape)
+        del lowres
         stat_blocks = select_stat_blocks(fractions, int(params.stat_blocks))
         if not stat_blocks:
             raise ValueError("No tissue-containing blocks found for DoG statistics")

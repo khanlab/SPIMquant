@@ -882,8 +882,10 @@ dog_pool_dilate_um: 7
 # tissue voxels from each.
 dog_stat_blocks: 64
 dog_stat_samples_per_block: 200000
-# chunk edge (voxels) for the full-resolution DoG
-dog_chunk_size: 256
+# chunk edge (voxels) for the full-resolution DoG. Peak memory per task is
+# ~5x the overlapped float32 chunk (~300 MB at 192); with the distributed
+# scheduler each worker (2 threads) gets job memory / (threads / 2)
+dog_chunk_size: 192
 
 vessel_seg_method: vesselfm
 
