@@ -258,6 +258,52 @@ rule n4_biasfield:
         "../scripts/n4_biasfield.py"
 
 
+rule mask_correction:
+    """No bias-field correction (--correction_method none or log).
+
+    Writes the raw image (none) or log1p of it (log), zeroed outside the brain
+    mask, in a single streaming pass: no bias field is fitted, upsampled or
+    divided out.  Meant for methods that respond to local contrast (DoG, ML),
+    for which the much heavier n4 correction is unnecessary.
+    """
+    input:
+        spim=spim_input,
+        spim_json=spim_json_input,
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level=config["correction_level"],
+            desc="brain",
+            suffix="mask.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        corrected=temp(
+            bids_oz_out(
+                root=work,
+                datatype="seg",
+                stain="{stain}",
+                level="{level}",
+                desc="corrected{method,none|log}",
+                suffix="SPIM.{ext}",
+                **inputs["spim"].wildcards,
+            ),
+            group_jobs=True,
+        ),
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    resources:
+        # streams chunk by chunk, as n4_biasfield does, so memory does not
+        # grow with the image
+        mem_mb=scaled_mem_mb(96000, 0),
+        runtime=scaled_runtime(30, 0.1),
+    params:
+        mask_level=config["correction_level"],
+        zarrnii_kwargs=zarrnii_in_kwargs,
+    script:
+        "../scripts/mask_correction.py"
+
+
 rule multiotsu:
     """Perform multi-Otsu thresholding for segmentation.
 
@@ -431,6 +477,7 @@ rule dogthresh:
     params:
         pool_level_offset=config["dog_pool_level_offset"],
         pool_factor=float(config["dog_pool_factor"]),
+        correction_method=config["correction_method"],
         pool_min_volume_um3=float(config["dog_pool_min_volume_um3"]),
         pool_lowres_dilate_um=float(config["dog_pool_lowres_dilate_um"]),
         pool_dilate_um=float(config["dog_pool_dilate_um"]),

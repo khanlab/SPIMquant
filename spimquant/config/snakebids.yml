@@ -163,10 +163,20 @@ parse_args:
     default: False
 
   --correction_method:
-    help: "Method to use for intensity non-uniformity correction, prior to performing segmentation (default: %(default)s)"
-    choices: 
+    help: >
+      Intensity preprocessing before segmentation (default: %(default)s).
+      ``n4`` and ``gaussian`` fit a smooth bias field at --correction_level and
+      divide it out.  ``none`` uses the raw intensities and ``log`` their
+      log1p, with no bias field; both are zeroed outside the brain mask and
+      are much lighter than n4.  ``none`` and ``log`` are meant for methods
+      that respond to local contrast (``dog+...``, ML); thresholds in absolute
+      intensity units (``th<value>``, ``instance_h`` when set to a number or
+      its fallback) are on the raw or log scale with them.
+    choices:
       - gaussian
       - n4
+      - none
+      - log
     default: n4
 
   --correction_level:

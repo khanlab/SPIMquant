@@ -124,6 +124,16 @@ def robust_threshold(values, k):
     return med + k * sigma, med, sigma
 
 
+def pool_threshold(tissue_median, pool_factor, log_intensity=False):
+    """Intensity above which a voxel counts as bright for pool detection:
+    ``pool_factor`` x the tissue median, or, for log intensities
+    (``--correction_method log``), the same ratio as an offset,
+    ``median + log(pool_factor)``."""
+    if log_intensity:
+        return tissue_median + float(np.log(pool_factor))
+    return pool_factor * tissue_median
+
+
 def pool_mask_lowres(lowres, pool_thresh, min_volume_um3, zooms_um, dilate_um):
     """Large bright connected components ("pools") on a coarse grid.
 
@@ -363,7 +373,10 @@ def main():
                 raise ValueError("Corrected image has no nonzero voxels")
             tissue_median = float(np.median(tissue_lo))
             del tissue_lo
-            pool_thresh = float(params.pool_factor) * tissue_median
+            log_intensity = params.correction_method == "log"
+            pool_thresh = pool_threshold(
+                tissue_median, float(params.pool_factor), log_intensity
+            )
             pool_lo = pool_mask_lowres(
                 lowres,
                 pool_thresh,
@@ -374,7 +387,7 @@ def main():
             pool_frac = float(pool_lo[lowres > 0].mean())
             print(
                 f"pool mask at level +{lowres_level} (voxel {np.round(lo_zooms_um, 1)} um): "
-                f"tissue median {tissue_median:.1f}, pool threshold {pool_thresh:.1f}, "
+                f"tissue median {tissue_median:.4g}, pool threshold {pool_thresh:.4g}, "
                 f"{100 * pool_frac:.2f}% of tissue"
             )
             znimg_pool = znimg_lo.copy()
@@ -432,8 +445,10 @@ def main():
         )
 
         pool_info = (
-            f"tissue median    {tissue_median:.1f}\n"
-            f"pool threshold   {pool_thresh:.1f} ({params.pool_factor:g}x median)\n"
+            f"tissue median    {tissue_median:.{3 if log_intensity else 1}f}\n"
+            f"pool threshold   {pool_thresh:.{3 if log_intensity else 1}f} "
+            f"({params.pool_factor:g}x median"
+            f"{', in log space' if log_intensity else ''})\n"
             f"pool min volume  {float(params.pool_min_volume_um3):.3g} um^3\n"
             f"pool fraction    {100 * pool_frac:.2f}% of tissue (level +{lowres_level})"
         )
