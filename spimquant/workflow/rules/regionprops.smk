@@ -36,6 +36,84 @@ rule compute_filtered_regionprops:
         "../scripts/compute_filtered_regionprops.py"
 
 
+rule compute_instance_regionprops:
+    """Instance-level region props (--object_method inst).
+
+    Splits the mask into instances with a seeded watershed: seeds are
+    prominent local maxima of the smoothed corrected image, and every mask
+    voxel goes to one seed, so touching puncta are counted separately
+    instead of merging into one connected component.  Writes the same
+    columns as compute_filtered_regionprops plus seed position, intensity
+    and elongation, and a JSON file with the parameters used (including the
+    seed prominence h and how it was set).
+    """
+    input:
+        mask=bids_oz_in(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level=config["segmentation_level"],
+            desc="{desc}",
+            suffix="mask.{ext}",
+            **inputs["spim"].wildcards,
+        ),
+        corrected=bids_oz_in(
+            root=work,
+            datatype="seg",
+            stain="{stain}",
+            level=config["segmentation_level"],
+            desc="corrected{method}".format(method=config["correction_method"]),
+            suffix="SPIM.{ext}",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        regionprops_parquet=temp(
+            bids(
+                root=root,
+                datatype="tabular",
+                stain="{stain}",
+                desc="{desc}+inst",
+                suffix="regionprops.parquet",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        stats_json=bids(
+            root=root,
+            datatype="tabular",
+            stain="{stain}",
+            desc="{desc}+inst",
+            suffix="instances.json",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 64 if config["dask_scheduler"] == "distributed" else 32
+    resources:
+        mem_mb=scaled_mem_mb(64000, 120, config["segmentation_level"]),
+        runtime=scaled_runtime(60, 0.25, config["segmentation_level"]),
+    params:
+        sigma_um=config["instance_sigma_um"],
+        min_dist_um=config["instance_min_dist_um"],
+        h=config["instance_h"],
+        noise_k=config["instance_h_noise_k"],
+        noise_percentile=config["instance_h_noise_percentile"],
+        h_fallback=config["instance_h_fallback"],
+        bg_sigma_um=config["instance_bg_sigma_um"],
+        stat_blocks=config["instance_stat_blocks"],
+        stat_samples_per_block=config["instance_stat_samples_per_block"],
+        stat_level_offset=config["instance_stat_level_offset"],
+        min_volume_um3=config["instance_min_volume_um3"],
+        depth_um=config["instance_depth_um"],
+        chunk_size=config["instance_chunk_size"],
+        task_batch=config["instance_task_batch"],
+        output_properties=config["regionprop_outputs"],
+    script:
+        "../scripts/compute_instance_regionprops.py"
+
+
+# A desc ending in +inst could also be read as a connected-components desc;
+# instances own it.
+ruleorder: compute_instance_regionprops > compute_filtered_regionprops
+
+
 rule transform_regionprops_to_template:
     """Transform regionprops coordinates from subject to template space."""
     input:

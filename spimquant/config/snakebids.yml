@@ -236,6 +236,29 @@ parse_args:
       - gmm+n3k1
     nargs: '+'
 
+  --object_method:
+    help: >
+      How the segmentation mask is split into objects for counts, density and
+      the per-object tables (regionprops, colocalization).  Field fraction
+      comes from the mask and is the same for both.
+
+      ``cc`` – connected components (default).  Touching objects merge, so in
+      dense tissue one object can be a network of many.
+
+      ``inst`` – instances: a seeded watershed of the mask, seeded at peaks of
+      the smoothed corrected image, so touching puncta are counted
+      separately.  Outputs use ``desc-<seg_method>+inst``.  See the
+      ``instance_*`` config keys.
+
+      Pass both (``--object_method cc inst``) to compare them.
+      (default: %(default)s)
+    default:
+      - cc
+    choices:
+      - cc
+      - inst
+    nargs: '+'
+
   --lantern_config:
     help: >
       Which LANTERN ensemble ``--seg_method lantern`` runs, as
@@ -887,6 +910,43 @@ dog_stat_samples_per_block: 200000
 # scheduler each worker (2 threads) gets job memory / (threads / 2)
 dog_chunk_size: 192
 
+# Instance objects (--object_method inst): seeded watershed of the mask.
+# Seeds are local maxima of the corrected image smoothed with a Gaussian of
+# instance_sigma_um, at least instance_min_dist_um apart, with a prominence
+# (height above the saddle to a higher peak) of at least h.  The watershed
+# floods the negated smoothed image within the mask.
+instance_sigma_um: 3
+instance_min_dist_um: 4
+# h in corrected-intensity units, or auto: instance_h_noise_k x the noise sd.
+# The noise sd is the robust sd of the high-pass residual (smoothed image
+# minus its blur at instance_bg_sigma_um) in tissue outside the mask, computed
+# in each of instance_stat_blocks tissue-rich chunks; the
+# instance_h_noise_percentile of those is used, since chunks dense with
+# sub-threshold signal have a much larger spread than the noise.
+# instance_h_fallback is used if too few chunks give an estimate.  Tuned on
+# marmoset pS129 aSyn, where the noise sd was ~2.3 and h = 7 split touching
+# puncta without splitting single ones (6-11% of single puncta still get two
+# seeds).
+instance_h: auto
+instance_h_noise_k: 3
+instance_h_noise_percentile: 25
+instance_h_fallback: 7
+instance_bg_sigma_um: 12
+instance_stat_blocks: 32
+instance_stat_samples_per_block: 200000
+instance_stat_level_offset: 3
+# Instances smaller than this are dropped (fragments at the detection limit);
+# 1000 um^3 is a ~12 um sphere.
+instance_min_volume_um3: 1000
+# Chunk overlap; must exceed the radius of the largest instance (~35 um in
+# dense marmoset cortex), so instances are not cut at chunk edges.
+instance_depth_um: 50
+# Chunk edge (voxels).  Peak memory per task is ~20x the overlapped float32
+# chunk (~530 MB at 160); each distributed worker runs 2 tasks.
+instance_chunk_size: 160
+# Blocks computed per batch before their results are written out
+instance_task_batch: 512
+
 vessel_seg_method: vesselfm
 
 vessel_metrics:
@@ -1003,6 +1063,34 @@ column_descriptions:
     LongName: Centroid z-coordinate (subject space)
     Description: Z-axis coordinate of the object centroid in subject (image) space.
     Units: voxels
+  seed_x:
+    LongName: Seed x-coordinate (subject space)
+    Description: X-axis coordinate of the instance's seed (the intensity peak it was grown from), --object_method inst only.
+    Units: mm
+  seed_y:
+    LongName: Seed y-coordinate (subject space)
+    Description: Y-axis coordinate of the instance's seed (the intensity peak it was grown from), --object_method inst only.
+    Units: mm
+  seed_z:
+    LongName: Seed z-coordinate (subject space)
+    Description: Z-axis coordinate of the instance's seed (the intensity peak it was grown from), --object_method inst only.
+    Units: mm
+  mean_intensity:
+    LongName: Mean intensity
+    Description: Mean bias-corrected intensity over the instance's voxels, --object_method inst only.
+    Units: arbitrary
+  max_intensity:
+    LongName: Maximum intensity
+    Description: Maximum bias-corrected intensity over the instance's voxels, --object_method inst only.
+    Units: arbitrary
+  peak_intensity:
+    LongName: Peak intensity
+    Description: Smoothed (instance_sigma_um) bias-corrected intensity at the instance's seed, --object_method inst only.
+    Units: arbitrary
+  elongation:
+    LongName: Elongation
+    Description: Square root of the ratio of the largest to smallest eigenvalue of the instance's second-moment matrix in physical units; 1 for a sphere, large for neurite-like segments. --object_method inst only.
+    Units: ratio
   template_x:
     LongName: Centroid x-coordinate (template space)
     Description: X-axis coordinate of the object centroid after transformation to template space.
