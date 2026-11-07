@@ -174,6 +174,8 @@ Pass both to compare them on the same masks:
 pixi run spimquant /bids /output participant --stains-for-seg aSyn --seg_method dog+s3r4k6 --object_method cc inst
 ```
 
+`--seg_method dog+s3r4k6+inst` is accepted too, and means the same as `--seg_method dog+s3r4k6 --object_method inst` (connected components are still made unless `--object_method` excludes `cc`).
+
 Mask-only QC (segslices, ROI montages, z-profiles, patches) is made once per seg method; everything object-based is made for each `desc`.
 
 **Validation** (marmoset pS129 aSyn, `dog+s3r4k6`): on synthetic puncta, instances found every isolated punctum with no false seeds, and split pairs of equally bright puncta from about 4σ apart, where connected components never split them.  On real dense cortex they gave 1.4–2.3× the connected-component count, and the largest instance was ~1×10⁵ µm³ against up to 6×10⁷ µm³ for connected components.  In sparse regions 6–11% of single puncta still get two seeds, and in tight clusters some puncta remain merged, so dense-region counts are still a lower bound.  Results are independent of the chunk size.
