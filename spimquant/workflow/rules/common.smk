@@ -70,6 +70,23 @@ def bids_oz_in(**kwargs):
     return bids(**kwargs, suffix=suffix.replace("{ext}", zarr_store_ext))
 
 
+def seg_mask_input(**kwargs):
+    """Input function for the segmentation mask of ``{desc}``.
+
+    An object-level desc (e.g. ``dog+s3r4k6+inst``, see ``--object_method``)
+    maps to the mask it was derived from (``dog+s3r4k6``), so mask-based
+    outputs exist under both descs without a second mask.
+    """
+    pattern = bids_oz_in(desc="{desc}", suffix="mask.{ext}", **kwargs)
+
+    def _mask(wildcards):
+        wc = dict(wildcards.items())
+        wc["desc"] = mask_desc(wc["desc"])
+        return pattern.format(**wc)
+
+    return _mask
+
+
 def get_template_path(root, template, template_crop=None, suffix=None):
     """Get template path, optionally cropped based on hemisphere"""
     if suffix is None:

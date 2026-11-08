@@ -8,13 +8,11 @@ rule fieldfrac:
     automatically. Field fraction values range from 0-100.
     """
     input:
-        mask=bids_oz_in(
+        mask=seg_mask_input(
             root=root,
             datatype="{datatype}",
             stain="{stain}",
             level=config["segmentation_level"],
-            desc="{desc}",
-            suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
     output:

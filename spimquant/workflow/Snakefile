@@ -215,6 +215,30 @@ select_registration_methods(reg_stains)
 
 stains_for_seg = sorted(list(set(config["stains_for_seg"]).intersection(set(stains))))
 
+# How the mask is split into objects (--object_method). Connected components
+# keep the seg method as their desc; every other object method appends
+# "+<method>", e.g. desc-dog+s3r4k6+inst, so the two can be run side by side.
+object_methods = list(config.get("object_method") or ["cc"])
+object_suffixes = {"inst": "+inst"}
+
+# An object-level desc given as a seg method (--seg_method dog+s3r4k6+inst)
+# means that seg method with that object method; there is no mask by that name.
+_seg_methods_in = []
+for _m in config["seg_method"]:
+    for _om, _suffix in object_suffixes.items():
+        if _m.endswith(_suffix):
+            print(
+                f"--seg_method {_m}: using seg method {_m[: -len(_suffix)]} with "
+                f"--object_method {_om}"
+            )
+            _m = _m[: -len(_suffix)]
+            if _om not in object_methods:
+                object_methods.append(_om)
+            break
+    if _m not in _seg_methods_in:
+        _seg_methods_in.append(_m)
+config["seg_method"] = _seg_methods_in
+
 # seg methods that use multi-Otsu thresholding (otsu+k{}i{} pattern)
 otsu_seg_methods = [m for m in config["seg_method"] if m.startswith("otsu+")]
 
@@ -304,9 +328,25 @@ else:
     stains_for_seg_methods = [s for s in stains_for_seg if s != stain_for_plaques]
 
 
+def mask_desc(desc):
+    """The seg method (mask desc) an object-level desc was derived from."""
+    for suffix in object_suffixes.values():
+        if desc.endswith(suffix):
+            return desc[: -len(suffix)]
+    return desc
+
+
+def object_descs(seg_method):
+    """Object-level descs for one seg method, one per --object_method."""
+    return [
+        seg_method if m == "cc" else seg_method + object_suffixes[m]
+        for m in object_methods
+    ]
+
+
 def stains_for_desc(desc):
     """Stains that segmentation method `desc` produces a mask for."""
-    if do_plaques and desc == config["plaque_seg_method"]:
+    if do_plaques and mask_desc(desc) == config["plaque_seg_method"]:
         return [stain_for_plaques]
     return stains_for_seg_methods
 
@@ -319,11 +359,14 @@ def stains_for_desc(desc):
 # Keeping it here would schedule cross-stain aggregations (mergedsegstats,
 # aggregated regionprops) with an empty input list, which fail at runtime rather
 # than at parse time.
-all_seg_methods = [
+mask_seg_methods = [
     m
     for m in seg_methods + ([config["plaque_seg_method"]] if do_plaques else [])
     if stains_for_desc(m)
 ]
+
+# Every desc with object-level outputs: each mask method, once per object method.
+all_seg_methods = [d for m in mask_seg_methods for d in object_descs(m)]
 
 
 # Methods that segment two or more stains, and so can be colocalized across them.
@@ -336,7 +379,7 @@ coloc_seg_methods = [m for m in all_seg_methods if len(stains_for_desc(m)) > 1]
 do_coloc = do_seg and len(coloc_seg_methods) > 0
 
 
-def seg_expand(paths, **wildcards):
+def seg_expand(paths, mask_only=False, **wildcards):
     """Expand `paths` over every (desc, stain) segmentation pair.
 
     Replaces `inputs["spim"].expand(..., desc=seg_methods, stain=stains_for_seg)`.
@@ -346,9 +389,12 @@ def seg_expand(paths, **wildcards):
     methods leaking onto the plaque stain.
 
     With no plaque method requested this returns exactly what the cross product did.
+
+    With `mask_only=True` it expands over the mask methods only, for outputs that
+    depend on the mask alone and so are the same for every --object_method.
     """
     out = []
-    for desc in all_seg_methods:
+    for desc in mask_seg_methods if mask_only else all_seg_methods:
         stains = stains_for_desc(desc)
         if stains:
             out += inputs["spim"].expand(paths, desc=[desc], stain=stains, **wildcards)
@@ -974,6 +1020,7 @@ if config["save_patches"]:
                     suffix="mask.patches",
                     **inputs["spim"].wildcards,
                 ),
+                mask_only=True,
                 seg=patch_atlas_segs,
                 template=config["template"],
                 level=config["segmentation_level"],
@@ -1107,6 +1154,7 @@ rule all_qc:
                 suffix="segslices.png",
                 **inputs["spim"].wildcards,
             ),
+            mask_only=True,
         )
         if do_seg
         else [],
@@ -1122,6 +1170,7 @@ rule all_qc:
                 suffix="roimontage.png",
                 **inputs["spim"].wildcards,
             ),
+            mask_only=True,
             seg=atlas_segs,
             template=config["template"],
         )
@@ -1139,6 +1188,7 @@ rule all_qc:
                 suffix="roimontage.png",
                 **inputs["spim"].wildcards,
             ),
+            mask_only=True,
             seg=atlas_segs,
             template=config["template"],
         )
@@ -1207,6 +1257,7 @@ rule all_qc:
                 suffix="zprofile.png",
                 **inputs["spim"].wildcards,
             ),
+            mask_only=True,
         )
         if do_seg
         else [],

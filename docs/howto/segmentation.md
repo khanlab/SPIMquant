@@ -154,6 +154,36 @@ After the initial binary mask is produced, a cleaning step removes two classes o
 
 ---
 
+## Objects: connected components or instances (`--object_method`)
+
+Counts, density, and the per-object tables (regionprops, colocalization) need the mask split into objects.  Field fraction comes from the mask itself and does not depend on this choice.
+
+- `cc` (default) — connected components.  Simple, but touching objects merge: in dense tissue a single "object" can be a network of hundreds of puncta, so counts are too low and sizes too large.
+- `inst` — instances.  A seeded watershed assigns every mask voxel to a seed:
+    1. The corrected image is smoothed with a Gaussian of `instance_sigma_um` (3 µm).
+    2. Seeds are local maxima of the smoothed image inside the mask, at least `instance_min_dist_um` (4 µm) apart, that rise at least **h** above the dip separating them from a brighter neighbour.  Every connected component gets at least one seed.
+    3. The watershed floods the negated smoothed image within the mask.
+
+  Outputs use `desc-<seg_method>+inst`, e.g. `desc-dog+s3r4k6+inst_regionprops.parquet`, and have the same columns as `cc` plus `seed_x/y/z`, `mean_intensity`, `max_intensity`, `peak_intensity` and `elongation` (1 for a sphere; neurite-like segments are elongated).  Instances smaller than `instance_min_volume_um3` (1000 µm³) are dropped.  An `instances.json` file next to the parquet records the parameters used, including h.
+
+**h**, the seed prominence, controls the trade-off: lower values split touching puncta more readily but also split single puncta on noise.  With `instance_h: auto` (default) it is `instance_h_noise_k` (3) × the noise sd, estimated as the 25th percentile, across tissue-rich chunks, of the robust sd of the high-pass residual outside the mask.  A number sets h directly in corrected-intensity units; `instance_h_fallback` (7) is used when the noise cannot be estimated.
+
+Pass both to compare them on the same masks:
+
+```bash
+pixi run spimquant /bids /output participant --stains-for-seg aSyn --seg_method dog+s3r4k6 --object_method cc inst
+```
+
+`--seg_method dog+s3r4k6+inst` is accepted too, and means the same as `--seg_method dog+s3r4k6 --object_method inst` (connected components are still made unless `--object_method` excludes `cc`).
+
+Mask-only QC (segslices, ROI montages, z-profiles, patches) is made once per seg method; everything object-based is made for each `desc`.
+
+**Validation** (marmoset pS129 aSyn, `dog+s3r4k6`): on synthetic puncta, instances found every isolated punctum with no false seeds, and split pairs of equally bright puncta from about 4σ apart, where connected components never split them.  On real dense cortex they gave 1.4–2.3× the connected-component count, and the largest instance was ~1×10⁵ µm³ against up to 6×10⁷ µm³ for connected components.  In sparse regions 6–11% of single puncta still get two seeds, and in tight clusters some puncta remain merged, so dense-region counts are still a lower bound.  Results are independent of the chunk size.
+
+**Cost:** roughly the same as the DoG segmentation itself.  It reads the corrected image, so on an existing run whose corrected image has been removed, adding `inst` recomputes the bias-field correction (and, as a consequence, the mask).
+
+---
+
 ## Per-Stain Configuration
 
 Each stain is configured independently.  A typical `snakebids.yml` block looks like:
