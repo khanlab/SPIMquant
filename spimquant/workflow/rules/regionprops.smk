@@ -242,6 +242,8 @@ rule colocalize_regionprops:
             suffix="coloc.parquet",
             **inputs["spim"].wildcards,
         ),
+    group:
+        "subj_coloc"
     threads: 16
     resources:
         mem_mb=64000,
