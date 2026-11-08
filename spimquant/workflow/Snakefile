@@ -705,7 +705,6 @@ rule all_n4_tune:
         ),
 
 
-
 rule all_dog_tune:
     """Target rule for DoG parameter tuning reports.
 
@@ -729,6 +728,7 @@ rule all_dog_tune:
             stain=stains_for_seg,
             level=config["segmentation_level"],
         ),
+
 
 rule all_register:
     input:

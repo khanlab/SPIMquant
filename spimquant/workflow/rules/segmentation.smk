@@ -488,7 +488,6 @@ rule dogthresh:
         "../scripts/dogthresh.py"
 
 
-
 rule dog_tune_report:
     """DoG parameter tuning report (analysis level ``tune_dog``).
 
@@ -562,6 +561,7 @@ rule dog_tune_report:
         max_noise_fdr=config["dog_tune_max_noise_fdr"],
     script:
         "../scripts/dog_tune_report.py"
+
 
 rule threshold:
     """Apply simple intensity threshold for segmentation.
