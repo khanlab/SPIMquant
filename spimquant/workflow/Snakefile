@@ -705,6 +705,31 @@ rule all_n4_tune:
         ),
 
 
+rule all_dog_tune:
+    """Target rule for DoG parameter tuning reports.
+
+    One HTML report (and JSON of all curves) per subject / stain in
+    --stains-for-seg, at the segmentation level, on the image given by
+    --correction_method.  See ``dog_tune_*`` in the config.
+
+    Invoke with: ``spimquant <bids_dir> <out_dir> tune_dog``
+    """
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="qc",
+                stain="{stain}",
+                level="{level}",
+                desc="dog",
+                suffix="tunereport.html",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains_for_seg,
+            level=config["segmentation_level"],
+        ),
+
+
 rule all_register:
     input:
         inputs["spim"].expand(

@@ -266,6 +266,100 @@ def _sample_tissue_dog(img, sigma1, sigma2, n_samples, seed):
     return values
 
 
+def load_pool_lowres(corrected_path, params):
+    """Low-resolution image, tissue median and pool mask.
+
+    Reads the pyramid level ``params.pool_level_offset`` levels coarser than
+    ``corrected_path`` (or the coarsest available).  The lowres image is GBs
+    for a whole brain (~2 Gvox at level +2), so it is read and processed in
+    this process with the threaded scheduler: with the distributed scheduler,
+    compute() would gather it on a single worker, whose memory limit is only
+    the job memory divided by the number of workers.
+
+    Returns a dict with ``lowres`` (float32), ``zooms_um``, ``level``,
+    ``znimg`` (the lowres ZarrNii), ``tissue_median``, ``pool_thresh``,
+    ``log_intensity``, ``pool`` (bool) and ``pool_frac``.
+    """
+    import dask
+    from zarrnii import ZarrNii
+
+    with dask.config.set(scheduler="threads"):
+        level = int(params.pool_level_offset)
+        while True:
+            try:
+                znimg_lo = ZarrNii.from_file(corrected_path, level=level)
+                break
+            except Exception:
+                if level == 0:
+                    raise
+                level -= 1
+        lowres = np.asarray(znimg_lo.data[0].compute(), dtype=np.float32)
+    zooms_um = [z * 1000.0 for z in znimg_lo.get_zooms()]
+    tissue_lo = lowres[lowres > 0]
+    if tissue_lo.size == 0:
+        raise ValueError("Corrected image has no nonzero voxels")
+    tissue_median = float(np.median(tissue_lo))
+    del tissue_lo
+    log_intensity = params.correction_method == "log"
+    pool_thresh = pool_threshold(
+        tissue_median, float(params.pool_factor), log_intensity
+    )
+    pool = pool_mask_lowres(
+        lowres,
+        pool_thresh,
+        float(params.pool_min_volume_um3),
+        zooms_um,
+        float(params.pool_lowres_dilate_um),
+    )
+    pool_frac = float(pool[lowres > 0].mean())
+    print(
+        f"pool mask at level +{level} (voxel {np.round(zooms_um, 1)} um): "
+        f"tissue median {tissue_median:.4g}, pool threshold {pool_thresh:.4g}, "
+        f"{100 * pool_frac:.2f}% of tissue"
+    )
+    return dict(
+        lowres=lowres,
+        zooms_um=zooms_um,
+        level=level,
+        znimg=znimg_lo,
+        tissue_median=tissue_median,
+        pool_thresh=pool_thresh,
+        log_intensity=log_intensity,
+        pool=pool,
+        pool_frac=pool_frac,
+    )
+
+
+def sample_dog_stats(img, lowres, sigma1, sigma2, n_blocks, n_samples):
+    """DoG values sampled from tissue-rich blocks of the dask array ``img``.
+
+    Chooses up to ``n_blocks`` blocks of ``img``'s chunk grid (tissue
+    fractions from ``lowres``) and samples ``n_samples`` tissue voxels of the
+    DoG in each.  The overlap margin is also sampled; it is real neighbouring
+    tissue, so this does not bias the statistics.  Returns
+    ``(stat_blocks, values)``; the same chunking gives the same blocks, so
+    the DoG tuning report reproduces the k units of a dogthresh run.
+    """
+    import dask
+    import dask.array as da
+
+    fractions = tissue_fraction_per_block(lowres, img.chunks, img.shape)
+    stat_blocks = select_stat_blocks(fractions, n_blocks)
+    if not stat_blocks:
+        raise ValueError("No tissue-containing blocks found for DoG statistics")
+    stat_depth = tuple(int(np.ceil(_TRUNCATE * s2)) for s2 in sigma2)
+    overlapped = da.overlap.overlap(
+        img, depth=stat_depth, boundary=dict.fromkeys(range(3), 0)
+    )
+    samples = [
+        dask.delayed(_sample_tissue_dog)(
+            overlapped.blocks[b], sigma1, sigma2, n_samples, _RANDOM_STATE + i
+        )
+        for i, b in enumerate(stat_blocks)
+    ]
+    return stat_blocks, np.concatenate(dask.compute(*samples))
+
+
 def _make_qc_figure(values, med, sigma, threshold, sigma_um, ratio, k, pool_info):
     import matplotlib
 
@@ -355,48 +449,11 @@ def main():
         # ---------------------------------------------------------------- #
         # 1. Low-resolution image: tissue median and pool mask
         # ---------------------------------------------------------------- #
-        # The lowres image is GBs for a whole brain (~2 Gvox at level +2), so
-        # it is read and processed in this process with the threaded
-        # scheduler.  With the distributed scheduler, compute() would gather
-        # it on a single worker, whose memory limit is only the job memory
-        # divided by the number of workers.
+        lo = load_pool_lowres(snakemake.input.corrected, params)
+        lowres, pool_lo, pool_thresh = lo["lowres"], lo["pool"], lo["pool_thresh"]
+        log_intensity = lo["log_intensity"]
         with dask.config.set(scheduler="threads"):
-            lowres_level = int(params.pool_level_offset)
-            while True:
-                try:
-                    znimg_lo = ZarrNii.from_file(
-                        snakemake.input.corrected, level=lowres_level
-                    )
-                    break
-                except Exception:
-                    if lowres_level == 0:
-                        raise
-                    lowres_level -= 1
-            lowres = np.asarray(znimg_lo.data[0].compute(), dtype=np.float32)
-            lo_zooms_um = [z * 1000.0 for z in znimg_lo.get_zooms()]
-            tissue_lo = lowres[lowres > 0]
-            if tissue_lo.size == 0:
-                raise ValueError("Corrected image has no nonzero voxels")
-            tissue_median = float(np.median(tissue_lo))
-            del tissue_lo
-            log_intensity = params.correction_method == "log"
-            pool_thresh = pool_threshold(
-                tissue_median, float(params.pool_factor), log_intensity
-            )
-            pool_lo = pool_mask_lowres(
-                lowres,
-                pool_thresh,
-                float(params.pool_min_volume_um3),
-                lo_zooms_um,
-                float(params.pool_lowres_dilate_um),
-            )
-            pool_frac = float(pool_lo[lowres > 0].mean())
-            print(
-                f"pool mask at level +{lowres_level} (voxel {np.round(lo_zooms_um, 1)} um): "
-                f"tissue median {tissue_median:.4g}, pool threshold {pool_thresh:.4g}, "
-                f"{100 * pool_frac:.2f}% of tissue"
-            )
-            znimg_pool = znimg_lo.copy()
+            znimg_pool = lo["znimg"].copy()
             znimg_pool.data = da.from_array(pool_lo.astype(np.uint8)[np.newaxis] * 100)
             znimg_pool.to_nifti(snakemake.output.pool_nii)
 
@@ -422,28 +479,15 @@ def main():
         # ---------------------------------------------------------------- #
         # 3. Threshold from DoG values sampled in tissue-rich blocks
         # ---------------------------------------------------------------- #
-        fractions = tissue_fraction_per_block(lowres, img.chunks, full_shape)
-        del lowres
-        stat_blocks = select_stat_blocks(fractions, int(params.stat_blocks))
-        if not stat_blocks:
-            raise ValueError("No tissue-containing blocks found for DoG statistics")
-        stat_depth = tuple(int(np.ceil(_TRUNCATE * s2)) for s2 in sigma2)
-        overlapped = da.overlap.overlap(
-            img, depth=stat_depth, boundary=dict.fromkeys(range(3), 0)
+        stat_blocks, values = sample_dog_stats(
+            img,
+            lowres,
+            sigma1,
+            sigma2,
+            int(params.stat_blocks),
+            int(params.stat_samples_per_block),
         )
-        samples = [
-            dask.delayed(_sample_tissue_dog)(
-                overlapped.blocks[b],
-                sigma1,
-                sigma2,
-                int(params.stat_samples_per_block),
-                _RANDOM_STATE + i,
-            )
-            for i, b in enumerate(stat_blocks)
-        ]
-        # The overlap margin is also sampled; it is real neighbouring tissue,
-        # so this does not bias the statistics.
-        values = np.concatenate(dask.compute(*samples))
+        del lowres
         threshold, med, sigma = robust_threshold(values, k)
         print(
             f"DoG stats from {len(stat_blocks)} blocks ({values.size:,} voxels): "
@@ -451,12 +495,13 @@ def main():
         )
 
         pool_info = (
-            f"tissue median    {tissue_median:.{3 if log_intensity else 1}f}\n"
+            f"tissue median    {lo['tissue_median']:.{3 if log_intensity else 1}f}\n"
             f"pool threshold   {pool_thresh:.{3 if log_intensity else 1}f} "
             f"({params.pool_factor:g}x median"
             f"{', in log space' if log_intensity else ''})\n"
             f"pool min volume  {float(params.pool_min_volume_um3):.3g} um^3\n"
-            f"pool fraction    {100 * pool_frac:.2f}% of tissue (level +{lowres_level})"
+            f"pool fraction    {100 * lo['pool_frac']:.2f}% of tissue "
+            f"(level +{lo['level']})"
         )
         fig = _make_qc_figure(
             values, med, sigma, threshold, sigma_um, ratio, k, pool_info
