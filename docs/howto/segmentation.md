@@ -118,6 +118,24 @@ pixi run spimquant /bids /output participant --stains-for-seg aSyn --seg_method 
 
 **Limitations:** Large but genuine positive structures (bigger than a few times `r·s`) are suppressed by design, as are features within `dog_pool_dilate_um` of a pool.
 
+#### Tuning report (`tune_dog`)
+
+The `tune_dog` analysis level writes an HTML report (and a JSON of all numbers) per subject and stain, to help choose `s` and `k`:
+
+```bash
+pixi run spimquant /bids /output tune_dog --stains-for-seg aSyn --correction_method none
+```
+
+Output: `qc/..._stain-<stain>_level-<level>_desc-dog_tunereport.html`.  On a sample of `dog_tune_blocks` tissue-rich blocks (the first of the blocks dogthresh uses for its statistics, so k means the same as in a `dogthresh` run), for every `s` in `dog_tune_s_um` and `k` in `dog_tune_k` at `r = dog_tune_ratio`, it reports:
+
+- **Contrast detection limits.**  Synthetic puncta (3D Gaussians of sd `dog_tune_spike_sd_um`) are added to background tissue at known contrast, i.e. peak height relative to the local (12 µm) background, and the contrast at which 50% and 90% are detected is found.  This translates k into "detects puncta that are X% brighter than their surroundings".
+- **Noise FDR.**  Objects found in a structureless image with the measured, intensity-dependent noise, divided by objects found in the real image.  In the marmoset pS129 aSyn data this is negligible from s = 3 µm: the robust sd that sets the k units comes from real tissue texture, not camera noise, so k cannot be derived from noise and acts as a contrast criterion.
+- **Object density and masked volume** per (s, k), and **montages** of the masks on three blocks.
+- **Scale census**: the sd of the strongest blobs, from scale-space maxima of the Laplacian of Gaussian.
+- **Suggested k** for each s: the largest k that detects `dog_tune_target_recall` of puncta of sd `dog_tune_target_spike_sd_um` at `dog_tune_target_contrast`, provided the noise FDR is at most `dog_tune_max_noise_fdr`.
+
+k units depend on the image, so the same k corresponds to a different contrast in another subject: tune on representative subjects, then fix `s` and `k` for the study.
+
 ### LANTERN plaques (`--seg_method lantern`)
 
 A 5-fold deep-learning ensemble for amyloid-beta plaques, downloaded from Hugging Face (`apooladi/lantern-<name>`, chosen with `--lantern_config`, default `ki3-abeta@v2`).  Unlike the methods above it:

@@ -3,6 +3,7 @@ analysis_levels: &analysis_levels
  - participant
  - group
  - tune_n4
+ - tune_dog
  - tune_reg
  - cohort_template
  - cohort_template_tune_reg
@@ -16,6 +17,8 @@ targets_by_analysis_level:
     - 'all_group'
   tune_n4:
     - 'all_n4_tune'
+  tune_dog:
+    - 'all_dog_tune'
   tune_reg:
     - 'all_reg_tune'
   cohort_template:
@@ -919,6 +922,31 @@ dog_stat_samples_per_block: 200000
 # ~5x the overlapped float32 chunk (~300 MB at 192); with the distributed
 # scheduler each worker (2 threads) gets job memory / (threads / 2)
 dog_chunk_size: 192
+
+# DoG tuning report (analysis level tune_dog): sweeps s over dog_tune_s_um
+# and k over dog_tune_k at r = dog_tune_ratio, on dog_tune_blocks of the
+# dogthresh statistics blocks (so k units match a dogthresh run).  Synthetic
+# puncta (3D Gaussians of sd dog_tune_spike_sd_um, dog_tune_spikes_per_block
+# per block, at least dog_tune_spike_sep_um apart) give the contrast at which
+# each setting detects 50% / 90% of puncta.  For each s, the suggested k is
+# the largest that detects dog_tune_target_recall of puncta of sd
+# dog_tune_target_spike_sd_um at dog_tune_target_contrast (peak / local
+# background), and whose noise FDR is at most dog_tune_max_noise_fdr.
+dog_tune_s_um: [2, 3, 4, 5, 6]
+dog_tune_ratio: 4
+dog_tune_k: [3, 4, 5, 6, 7, 8, 10, 12]
+dog_tune_montage_k: [4, 6, 8, 10]
+dog_tune_blocks: 12
+dog_tune_workers: 8
+dog_tune_spike_sd_um: [4, 6]
+dog_tune_spikes_per_block: 60
+dog_tune_spike_sep_um: 45
+dog_tune_census_scales_um: [2, 2.5, 3, 3.5, 4, 5, 6, 7, 8.5, 10]
+dog_tune_census_per_block: 400
+dog_tune_target_contrast: 1.0
+dog_tune_target_recall: 0.9
+dog_tune_target_spike_sd_um: 4
+dog_tune_max_noise_fdr: 0.01
 
 # Instance objects (--object_method inst): seeded watershed of the mask.
 # Seeds are local maxima of the corrected image smoothed with a Gaussian of

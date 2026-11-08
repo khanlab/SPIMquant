@@ -488,6 +488,81 @@ rule dogthresh:
         "../scripts/dogthresh.py"
 
 
+
+rule dog_tune_report:
+    """DoG parameter tuning report (analysis level ``tune_dog``).
+
+    For a grid of s and k (at r = dog_tune_ratio), measures on a sample of
+    tissue blocks: the contrast at which synthetic puncta are detected (50%
+    and 90%), object density, masked volume, a noise-only false discovery
+    rate, and the sizes of the strongest blobs; shows mask montages; and
+    suggests k for each s from a detection target.  k units are computed as
+    in dogthresh, so suggested methods can be used directly as --seg_method.
+    """
+    input:
+        corrected=bids_oz_in(
+            root=work,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="corrected{method}".format(method=config["correction_method"]),
+            suffix="SPIM.{ext}",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        html=bids(
+            root=root,
+            datatype="qc",
+            stain="{stain}",
+            level="{level}",
+            desc="dog",
+            suffix="tunereport.html",
+            **inputs["spim"].wildcards,
+        ),
+        json=bids(
+            root=root,
+            datatype="qc",
+            stain="{stain}",
+            level="{level}",
+            desc="dog",
+            suffix="tunereport.json",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 32
+    resources:
+        # the pool mask level is held in memory as in dogthresh; analysis
+        # tasks need ~1-2 GB each, dog_tune_workers at a time
+        mem_mb=scaled_mem_mb(64000, 120),
+        runtime=scaled_runtime(60, 0.25),
+    params:
+        pool_level_offset=config["dog_pool_level_offset"],
+        pool_factor=float(config["dog_pool_factor"]),
+        correction_method=config["correction_method"],
+        pool_min_volume_um3=float(config["dog_pool_min_volume_um3"]),
+        pool_lowres_dilate_um=float(config["dog_pool_lowres_dilate_um"]),
+        pool_dilate_um=float(config["dog_pool_dilate_um"]),
+        stat_blocks=config["dog_stat_blocks"],
+        stat_samples_per_block=config["dog_stat_samples_per_block"],
+        chunk_size=config["dog_chunk_size"],
+        seg_methods=config["seg_method"],
+        s_um=config["dog_tune_s_um"],
+        ratio=config["dog_tune_ratio"],
+        k=config["dog_tune_k"],
+        montage_k=config["dog_tune_montage_k"],
+        blocks=config["dog_tune_blocks"],
+        workers=config["dog_tune_workers"],
+        spike_sd_um=config["dog_tune_spike_sd_um"],
+        spikes_per_block=config["dog_tune_spikes_per_block"],
+        spike_sep_um=config["dog_tune_spike_sep_um"],
+        census_scales_um=config["dog_tune_census_scales_um"],
+        census_per_block=config["dog_tune_census_per_block"],
+        target_contrast=config["dog_tune_target_contrast"],
+        target_recall=config["dog_tune_target_recall"],
+        target_spike_sd_um=config["dog_tune_target_spike_sd_um"],
+        max_noise_fdr=config["dog_tune_max_noise_fdr"],
+    script:
+        "../scripts/dog_tune_report.py"
+
 rule threshold:
     """Apply simple intensity threshold for segmentation.
 
