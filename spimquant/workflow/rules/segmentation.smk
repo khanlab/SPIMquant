@@ -258,6 +258,55 @@ rule n4_biasfield:
         "../scripts/n4_biasfield.py"
 
 
+rule mask_correction:
+    """No bias-field correction (--correction_method none or log).
+
+    Writes the raw image (none) or log1p of it (log), zeroed outside the brain
+    mask, in a single streaming pass: no bias field is fitted, upsampled or
+    divided out.  Meant for methods that respond to local contrast (DoG, ML),
+    for which the much heavier n4 correction is unnecessary.
+    """
+    input:
+        spim=spim_input,
+        spim_json=spim_json_input,
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level=config["correction_level"],
+            desc="brain",
+            suffix="mask.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        corrected=temp(
+            bids_oz_out(
+                root=work,
+                datatype="seg",
+                stain="{stain}",
+                level="{level}",
+                desc="corrected{method,none|log}",
+                suffix="SPIM.{ext}",
+                **inputs["spim"].wildcards,
+            ),
+            group_jobs=True,
+        ),
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    resources:
+        # streams chunk by chunk, as n4_biasfield does, so memory does not
+        # grow with the image. The workers share mem_mb minus the reserve
+        # (64 workers of 2 threads get ~1.9 GB each; 96 GB ran without any
+        # worker pausing on a 250 GB marmoset hemisphere)
+        mem_mb=scaled_mem_mb(128000, 0),
+        runtime=scaled_runtime(30, 0.1),
+    params:
+        dask_reserve_mb=8000,
+        mask_level=config["correction_level"],
+        zarrnii_kwargs=zarrnii_in_kwargs,
+    script:
+        "../scripts/mask_correction.py"
+
+
 rule multiotsu:
     """Perform multi-Otsu thresholding for segmentation.
 
@@ -423,14 +472,20 @@ rule dogthresh:
     resources:
         # dask tasks are bounded by dog_chunk_size; what grows with the image
         # is the in-memory pool mask level (1/64 of the voxels at the default
-        # dog_pool_level_offset of 2), held as float32 plus labels: ~0.12 GB
-        # per GB of uint16 input
-        mem_mb=scaled_mem_mb(64000, 120),
+        # dog_pool_level_offset of 2), held by the script as float32 plus
+        # labels: ~0.12 GB per GB of uint16 input. That part is reserved
+        # (dask_reserve_mb) and the workers share the rest: 32 workers of 4
+        # threads get ~4 GB each. (With 64 workers of 1.46 GB they paused
+        # briefly on a 250 GB marmoset hemisphere.)
+        mem_mb=scaled_mem_mb(160000, 120),
         disk_mb=2097152,
         runtime=scaled_runtime(60, 0.25),
     params:
+        dask_threads_per_worker=4,
+        dask_reserve_mb=lambda wildcards: scaled_mem_mb(16000, 120)(wildcards, 1),
         pool_level_offset=config["dog_pool_level_offset"],
         pool_factor=float(config["dog_pool_factor"]),
+        correction_method=config["correction_method"],
         pool_min_volume_um3=float(config["dog_pool_min_volume_um3"]),
         pool_lowres_dilate_um=float(config["dog_pool_lowres_dilate_um"]),
         pool_dilate_um=float(config["dog_pool_dilate_um"]),

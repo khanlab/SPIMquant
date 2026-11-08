@@ -39,6 +39,16 @@ ANTs N4BiasFieldCorrection is applied.  N4 fits a smooth B-spline model of the b
 !!! tip
     Use `n4` when high quantitative accuracy is required.  Use `gaussian` for faster exploratory runs or when the illumination gradient is mild.
 
+### None (`correction_method: none`) and log (`correction_method: log`)
+
+No bias field: the raw intensities (`none`), or their `log1p` (`log`), set to zero outside the brain mask.  The image is read and written once, with no bias-field fit, upsampling or full-resolution intermediates, so this is much lighter than `n4`.  The brain mask is still applied because downstream steps treat zero as outside the brain.
+
+These are meant for methods that respond to local contrast rather than absolute intensity, such as DoG blobs (`dog+...`) and ML models.  Thresholds in absolute intensity units (`th<value>`, a numeric `instance_h`, or its fallback) are then on the raw or log scale.  With `log`, the DoG pool threshold is applied as a ratio (`median + log(dog_pool_factor)`).
+
+On marmoset pS129 aSyn crops, `dog+s3r4k6` masks from `none` agreed closely with those from N4-corrected intensities (median Dice 0.93; lowest, 0.75–0.81, where the bias field was far from typical).  `log` is not equivalent at the same `k`: in log space the DoG responds to relative contrast, which removed most detections in bright, high-background regions (median Dice 0.75), so it needs its own tuning.
+
+**Config key:** `correction_method: none` (or `log`)
+
 ---
 
 ## Segmentation Methods

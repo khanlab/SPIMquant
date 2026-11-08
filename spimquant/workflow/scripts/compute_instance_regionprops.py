@@ -145,7 +145,13 @@ def main():
 
     with ExitStack() as stack:
         client = stack.enter_context(
-            get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads)
+            get_dask_client(
+                snakemake.config["dask_scheduler"],
+                snakemake.threads,
+                threads_per_worker=int(params.dask_threads_per_worker),
+                mem_mb=snakemake.resources.get("mem_mb"),
+                reserve_mb=float(params.dask_reserve_mb),
+            )
         )
         znimg = ZarrNii.from_file(snakemake.input.corrected)
         znmask = ZarrNii.from_file(snakemake.input.mask)
