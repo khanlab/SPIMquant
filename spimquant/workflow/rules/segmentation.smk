@@ -368,6 +368,79 @@ rule gmmthresh:
         "../scripts/gmmthresh.py"
 
 
+rule dogthresh:
+    """Difference-of-Gaussians blob segmentation with pool exclusion.
+
+    Detects small punctate features on a local background by thresholding a
+    mask-normalised DoG response, G(s) - G(r*s), at median + k * robust sigma
+    (from the MAD of DoG values sampled in tissue).  Large bright connected
+    components ("pools", e.g. stain pooling on the brain surface), found on a
+    coarser pyramid level, are excluded.  Outputs a QC histogram and the
+    low-resolution pool mask alongside the mask.
+
+    Method string format: dog+s{s}r{r}k{k}, with s in micrometres and 'p' as
+    the decimal separator (e.g. dog+s2p5r4k6 -> s=2.5).
+    """
+    input:
+        corrected=bids_oz_in(
+            root=work,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="corrected{method}".format(method=config["correction_method"]),
+            suffix="SPIM.{ext}",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        mask=bids_oz_out(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc,dog[+]s[0-9]+(?:p[0-9]+)?r[0-9]+(?:p[0-9]+)?k[0-9]+(?:p[0-9]+)?}",
+            suffix="mask.{ext}",
+            **inputs["spim"].wildcards,
+        ),
+        thresholds_png=bids(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}",
+            suffix="thresholds.png",
+            **inputs["spim"].wildcards,
+        ),
+        pool_nii=bids(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}",
+            suffix="poolmask.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    resources:
+        # dask tasks are bounded by dog_chunk_size; what grows with the image
+        # is the in-memory pool mask level (1/64 of the voxels at the default
+        # dog_pool_level_offset of 2), held as float32 plus labels: ~0.12 GB
+        # per GB of uint16 input
+        mem_mb=scaled_mem_mb(64000, 120),
+        disk_mb=2097152,
+        runtime=scaled_runtime(60, 0.25),
+    params:
+        pool_level_offset=config["dog_pool_level_offset"],
+        pool_factor=float(config["dog_pool_factor"]),
+        pool_min_volume_um3=float(config["dog_pool_min_volume_um3"]),
+        pool_lowres_dilate_um=float(config["dog_pool_lowres_dilate_um"]),
+        pool_dilate_um=float(config["dog_pool_dilate_um"]),
+        stat_blocks=config["dog_stat_blocks"],
+        stat_samples_per_block=config["dog_stat_samples_per_block"],
+        chunk_size=config["dog_chunk_size"],
+    script:
+        "../scripts/dogthresh.py"
+
+
 rule threshold:
     """Apply simple intensity threshold for segmentation.
 
