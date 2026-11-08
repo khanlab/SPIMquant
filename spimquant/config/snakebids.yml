@@ -954,7 +954,8 @@ instance_depth_um: 50
 # Chunk edge (voxels).  Peak memory per task is ~20x the overlapped float32
 # chunk (~530 MB at 160); each distributed worker runs 2 tasks.
 instance_chunk_size: 160
-# Blocks computed per batch before their results are written out
+# Blocks computed per batch before their results are written out, with the
+# threaded scheduler (the distributed scheduler streams results instead)
 instance_task_batch: 512
 
 vessel_seg_method: vesselfm

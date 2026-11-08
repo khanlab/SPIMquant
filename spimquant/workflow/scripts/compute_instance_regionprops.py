@@ -93,6 +93,46 @@ def _estimate_h(params, img, mask, zooms_um, znimg_path, stat_level):
     return h, sd, source, sds.tolist()
 
 
+def _block_task(img_block, mask_block, grid, depth, block_info=None, **kwargs):
+    """``block_instances`` for one overlapped block, as a (1, 1, 1) object array."""
+    idx = block_info[0]["chunk-location"]
+    starts = [grid[a][i][0] for a, i in enumerate(idx)]
+    sizes = [grid[a][i][1] for a, i in enumerate(idx)]
+    out = np.empty((1, 1, 1), dtype=object)
+    out[0, 0, 0] = block_instances(
+        img_block,
+        mask_block,
+        core_lo=depth,
+        core_hi=tuple(d + n for d, n in zip(depth, sizes)),
+        offset=tuple(s - d for s, d in zip(starts, depth)),
+        **kwargs,
+    )
+    return out
+
+
+def _iter_results(client, tasks, batch):
+    """Results of per-block Delayed ``tasks``, yielded as they become available.
+
+    With a distributed client, all blocks are submitted at once and results
+    are collected as they complete (the scheduler orders the work and frees
+    each result once collected).  Otherwise blocks are computed in batches.
+    """
+    if client is not None:
+        from dask.distributed import as_completed
+
+        futures = client.compute(tasks)
+        for future in as_completed(futures):
+            res = future.result()
+            future.release()
+            yield res[0, 0, 0]
+        return
+    import dask
+
+    for b0 in range(0, len(tasks), batch):
+        for res in dask.compute(*tasks[b0 : b0 + batch]):
+            yield res[0, 0, 0]
+
+
 def main():
     import dask
     import dask.array as da
@@ -104,7 +144,7 @@ def main():
     params = snakemake.params
 
     with ExitStack() as stack:
-        stack.enter_context(
+        client = stack.enter_context(
             get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads)
         )
         znimg = ZarrNii.from_file(snakemake.input.corrected)
@@ -148,25 +188,26 @@ def main():
         depth = tuple(int(np.ceil(float(params.depth_um) / z)) for z in zooms_um)
         oi = da.overlap.overlap(img, depth=depth, boundary=0)
         om = da.overlap.overlap(mask, depth=depth, boundary=0)
-        grid = _block_grid(img.chunks)
-        tasks = []
-        for idx in np.ndindex(img.numblocks):
-            starts = [grid[a][i][0] for a, i in enumerate(idx)]
-            sizes = [grid[a][i][1] for a, i in enumerate(idx)]
-            tasks.append(
-                dask.delayed(block_instances)(
-                    oi.blocks[idx],
-                    om.blocks[idx],
-                    core_lo=depth,
-                    core_hi=tuple(d + s for d, s in zip(depth, sizes)),
-                    offset=tuple(s - d for s, d in zip(starts, depth)),
-                    zooms_um=zooms_um,
-                    sigma_um=float(params.sigma_um),
-                    min_dist_um=float(params.min_dist_um),
-                    h=h,
-                    min_volume_um3=float(params.min_volume_um3),
-                )
-            )
+        # One graph for all blocks, split into per-block Delayed objects once.
+        # (Building a delayed call per ``.blocks[idx]`` costs time proportional
+        # to the whole graph, i.e. quadratic in the number of blocks: hours
+        # for a whole brain.)
+        results = da.map_blocks(
+            _block_task,
+            oi,
+            om,
+            dtype=object,
+            chunks=tuple((1,) * n for n in img.numblocks),
+            meta=np.empty((0, 0, 0), dtype=object),
+            grid=_block_grid(img.chunks),
+            depth=depth,
+            zooms_um=zooms_um,
+            sigma_um=float(params.sigma_um),
+            min_dist_um=float(params.min_dist_um),
+            h=h,
+            min_volume_um3=float(params.min_volume_um3),
+        )
+        tasks = list(results.to_delayed().ravel())
         print(
             f"{len(tasks)} blocks of {img.chunksize}, overlap {depth} voxels",
             flush=True,
@@ -181,12 +222,12 @@ def main():
         schema = pa.schema([pa.field(c, pa.float64()) for c in columns])
 
         n_instances = 0
-        batch = int(params.task_batch)
+        n_done = 0
+        report_every = max(1, len(tasks) // 50)
         with pq.ParquetWriter(snakemake.output.regionprops_parquet, schema) as writer:
-            for b0 in range(0, len(tasks), batch):
-                for res in dask.compute(*tasks[b0 : b0 + batch]):
-                    if res is None:
-                        continue
+            for res in _iter_results(client, tasks, int(params.task_batch)):
+                n_done += 1
+                if res is not None:
                     cen = to_physical(res["centroid"], affine)
                     seed = to_physical(res["seed"], affine)
                     table = {
@@ -208,11 +249,11 @@ def main():
                         )
                     )
                     n_instances += len(res["nvoxels"])
-                print(
-                    f"blocks {min(b0 + batch, len(tasks))}/{len(tasks)}: "
-                    f"{n_instances:,} instances",
-                    flush=True,
-                )
+                if n_done % report_every == 0 or n_done == len(tasks):
+                    print(
+                        f"blocks {n_done}/{len(tasks)}: {n_instances:,} instances",
+                        flush=True,
+                    )
 
     stats = {
         "method": "seeded watershed of the mask from peaks of the smoothed image",
