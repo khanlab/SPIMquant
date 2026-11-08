@@ -83,6 +83,8 @@ if __name__ == "__main__":
         snakemake.config["dask_scheduler"],
         snakemake.threads,
         threads_per_worker=16 if is_imaris else 2,
+        mem_mb=snakemake.resources.get("mem_mb"),
+        reserve_mb=float(snakemake.params.dask_reserve_mb),
     ):
         hires_level = int(snakemake.wildcards.level)
         mask_level = int(snakemake.params.mask_level)

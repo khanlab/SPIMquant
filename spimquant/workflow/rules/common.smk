@@ -227,16 +227,22 @@ def _job_spim_size_gb(wildcards, level):
     return spim_size_gb(wildcards, wildcards.level if level is None else level)
 
 
+def _cap_mem_mb(mem_mb):
+    """mem_mb, at most config max_mem_mb (the memory of a node)."""
+    cap = config.get("max_mem_mb")
+    return int(min(mem_mb, cap) if cap else mem_mb)
+
+
 def scaled_mem_mb(base_mb, mb_per_gb, level=None):
     """mem_mb for a rule whose peak memory grows with the size of its SPIM input.
 
     base_mb + mb_per_gb * GB of one channel of the job's SPIM input at `level`
     (default: the job's {level} wildcard), times the attempt, so that a job
-    retried with --retries gets more memory. Fitted from --benchmark runs, see
-    tools/summarize_benchmarks.py."""
+    retried with --retries gets more memory, up to config max_mem_mb. Fitted
+    from --benchmark runs, see tools/summarize_benchmarks.py."""
 
     def mem_mb(wildcards, attempt):
-        return int(
+        return _cap_mem_mb(
             (base_mb + mb_per_gb * _job_spim_size_gb(wildcards, level)) * attempt
         )
 
@@ -261,7 +267,7 @@ def reg_mem_mb(base):
 
     def mem_mb(wildcards, attempt):
         multichannel = reg_presets[wildcards.reg].get("multichannel")
-        return base * (2 if multichannel else 1) * attempt
+        return _cap_mem_mb(base * (2 if multichannel else 1) * attempt)
 
     return mem_mb
 

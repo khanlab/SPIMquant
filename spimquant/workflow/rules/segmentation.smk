@@ -294,10 +294,13 @@ rule mask_correction:
     threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
         # streams chunk by chunk, as n4_biasfield does, so memory does not
-        # grow with the image
-        mem_mb=scaled_mem_mb(96000, 0),
+        # grow with the image. The workers share mem_mb minus the reserve
+        # (64 workers of 2 threads get ~1.9 GB each; 96 GB ran without any
+        # worker pausing on a 250 GB marmoset hemisphere)
+        mem_mb=scaled_mem_mb(128000, 0),
         runtime=scaled_runtime(30, 0.1),
     params:
+        dask_reserve_mb=8000,
         mask_level=config["correction_level"],
         zarrnii_kwargs=zarrnii_in_kwargs,
     script:
@@ -469,12 +472,17 @@ rule dogthresh:
     resources:
         # dask tasks are bounded by dog_chunk_size; what grows with the image
         # is the in-memory pool mask level (1/64 of the voxels at the default
-        # dog_pool_level_offset of 2), held as float32 plus labels: ~0.12 GB
-        # per GB of uint16 input
-        mem_mb=scaled_mem_mb(64000, 120),
+        # dog_pool_level_offset of 2), held by the script as float32 plus
+        # labels: ~0.12 GB per GB of uint16 input. That part is reserved
+        # (dask_reserve_mb) and the workers share the rest: 32 workers of 4
+        # threads get ~4 GB each. (With 64 workers of 1.46 GB they paused
+        # briefly on a 250 GB marmoset hemisphere.)
+        mem_mb=scaled_mem_mb(160000, 120),
         disk_mb=2097152,
         runtime=scaled_runtime(60, 0.25),
     params:
+        dask_threads_per_worker=4,
+        dask_reserve_mb=lambda wildcards: scaled_mem_mb(16000, 120)(wildcards, 1),
         pool_level_offset=config["dog_pool_level_offset"],
         pool_factor=float(config["dog_pool_factor"]),
         correction_method=config["correction_method"],

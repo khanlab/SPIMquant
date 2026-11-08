@@ -429,7 +429,13 @@ def main():
 
     with ExitStack() as stack:
         stack.enter_context(
-            get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads)
+            get_dask_client(
+                snakemake.config["dask_scheduler"],
+                snakemake.threads,
+                threads_per_worker=int(params.dask_threads_per_worker),
+                mem_mb=snakemake.resources.get("mem_mb"),
+                reserve_mb=float(params.dask_reserve_mb),
+            )
         )
         znimg = ZarrNii.from_file(snakemake.input.corrected)
         zooms_um = [z * 1000.0 for z in znimg.get_zooms()]  # mm -> um

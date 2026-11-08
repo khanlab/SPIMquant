@@ -4,7 +4,9 @@ from contextlib import contextmanager
 
 
 @contextmanager
-def get_dask_client(scheduler, threads, threads_per_worker=2):
+def get_dask_client(
+    scheduler, threads, threads_per_worker=2, mem_mb=None, reserve_mb=0
+):
     """Context manager to set up the Dask scheduler.
 
     Parameters
@@ -17,6 +19,16 @@ def get_dask_client(scheduler, threads, threads_per_worker=2):
     threads_per_worker : int, optional
         Number of threads per worker when using the distributed scheduler.
         Ignored when *scheduler* is ``"threads"``.  Default is 2.
+    mem_mb : int, optional
+        Memory of the job in MB (``snakemake.resources.mem_mb``).  When given,
+        the workers share ``mem_mb - reserve_mb`` evenly (capped at the memory
+        dask detects, e.g. the SLURM cgroup limit).  Otherwise dask's
+        ``"auto"`` limit is used, which gives each worker its share of the
+        machine's memory *per core of the machine*: a job using half of a
+        node's cores gets only half of its memory for the workers.
+    reserve_mb : int, optional
+        Memory in MB kept out of the workers' share, for the script itself
+        (arrays it holds, results it collects) and the scheduler.
 
     Yields
     ------
@@ -38,14 +50,30 @@ def get_dask_client(scheduler, threads, threads_per_worker=2):
         )
 
         n_workers = max(1, int(threads // threads_per_worker))
+        memory_limit = "auto"
+        if mem_mb:
+            from distributed.system import MEMORY_LIMIT
+
+            # snakemake's mem_mb goes to SLURM as --mem in MiB
+            total = min(float(mem_mb) * 2**20, float(MEMORY_LIMIT))
+            usable = max(total - float(reserve_mb) * 2**20, 0.25 * total)
+            memory_limit = int(usable // n_workers)
         cluster = LocalCluster(
             n_workers=n_workers,
             threads_per_worker=threads_per_worker,
-            memory_limit="auto",
+            memory_limit=memory_limit,
             dashboard_address=":8788",
         )
         client = Client(cluster)
         print(cluster.dashboard_link)
+        limits = [
+            w["memory_limit"] for w in client.scheduler_info()["workers"].values()
+        ]
+        print(
+            f"dask: {n_workers} workers x {threads_per_worker} threads, "
+            f"{min(limits, default=0) / 2**30:.2f} GiB each",
+            flush=True,
+        )
         try:
             yield client
         finally:

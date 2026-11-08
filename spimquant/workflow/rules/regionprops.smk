@@ -85,11 +85,23 @@ rule compute_instance_regionprops:
             suffix="instances.json",
             **inputs["spim"].wildcards,
         ),
-    threads: 64 if config["dask_scheduler"] == "distributed" else 32
+    threads: 128 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=scaled_mem_mb(64000, 120, config["segmentation_level"]),
+        # each task (one instance_chunk_size block plus overlap) peaks at
+        # ~0.75 GB, set by h_maxima (~100 bytes per voxel), so the workers
+        # need ~1 GB per thread whatever the image size: 16 workers of 8
+        # threads get ~10 GB each. Fewer, larger workers absorb a few heavy
+        # blocks without being killed. (64 workers of 1.46 GB thrashed for 4 h
+        # on a 250 GB marmoset hemisphere; at 2.9 GB the blocks took ~35 min.)
+        # What grows with the image is the scheduler's task graph (~0.4 GB
+        # serialised for 31k blocks), reserved with the script's memory.
+        mem_mb=scaled_mem_mb(176000, 40, config["segmentation_level"]),
         runtime=scaled_runtime(60, 0.25, config["segmentation_level"]),
     params:
+        dask_threads_per_worker=config["instance_threads_per_worker"],
+        dask_reserve_mb=lambda wildcards: scaled_mem_mb(
+            16000, 40, config["segmentation_level"]
+        )(wildcards, 1),
         sigma_um=config["instance_sigma_um"],
         min_dist_um=config["instance_min_dist_um"],
         h=config["instance_h"],
