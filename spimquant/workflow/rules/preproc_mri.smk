@@ -663,7 +663,7 @@ rule compose_mri_to_spim_warp:
 
 rule all_tune_mri_spim_reg:
     input:
-        inputs["spim"].expand(
+        ref_spim.expand(
             bids(
                 root=root,
                 datatype="xfm",

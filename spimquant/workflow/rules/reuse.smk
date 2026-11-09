@@ -135,12 +135,12 @@ if reuse_root and "transforms" in reuse_outputs:
     _reuse_found = []
     _reuse_legacy = 0
     for desc_path, legacy_path in zip(
-        inputs["spim"].expand(
+        ref_spim.expand(
             reuse_path(rules.compose_subject_to_template_warp.output.xfm_composite),
             template=config["template"],
             reg=_reuse_method,
         ),
-        inputs["spim"].expand(
+        ref_spim.expand(
             reuse_path(rules.select_subject_to_template_warp.output.xfm_composite),
             template=config["template"],
         ),
@@ -169,9 +169,13 @@ if reuse_root and "transforms" in reuse_outputs:
 
 
 def get_regqc_targets(wildcards):
-    """Registration QC reports, for subjects whose transforms are computed here."""
+    """Registration QC reports, for subjects whose transforms are computed here.
+
+    Only reference scans are registered to the template; additional scans
+    (--aux_spim) get the reference scan resampled into them instead.
+    """
     method = config["registration_method"]
-    regqc = inputs["spim"].expand(
+    regqc = ref_spim.expand(
         rules.registration_qc_report.output.report_html,
         template=config["template"],
         reg=method,
@@ -189,12 +193,12 @@ def get_regqc_targets(wildcards):
             qc for qc in regqc if os.path.basename(qc).split("_stain-")[0] not in built
         ]
     if reuse_root and "transforms" in reuse_outputs and not cohort_warps:
-        reused = inputs["spim"].expand(
+        reused = ref_spim.expand(
             reuse_path(rules.compose_subject_to_template_warp.output.xfm_composite),
             template=config["template"],
             reg=method,
         )
-        legacy = inputs["spim"].expand(
+        legacy = ref_spim.expand(
             reuse_path(rules.select_subject_to_template_warp.output.xfm_composite),
             template=config["template"],
         )

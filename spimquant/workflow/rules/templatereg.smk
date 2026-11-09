@@ -848,7 +848,7 @@ rule all_reg_tune:
     Invoke with: ``spimquant <bids_dir> <out_dir> tune_reg``
     """
     input:
-        inputs["spim"].expand(
+        ref_spim.expand(
             rules.reg_tune_report.output.report_html,
             template=config["template"],
         ),
