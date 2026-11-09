@@ -53,3 +53,12 @@ jobs:
       - name: Dry-run Test with MRI reg, no segmentation
         run: |
           ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds_withmri test_out participant -np --register-to-mri --no-segmentation
+
+      # Job groups are only enforced by non-local executors, so a local dry run
+      # cannot catch a rule missing from a group (e.g. subj_quant). The slurm
+      # plugin builds the grouped DAG without needing sbatch for a dry run.
+      - name: Dry-run Test with job groups (slurm executor), two seg stains + coloc
+        run: |
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out participant -np --executor slurm -j 1 --sample_staining AutoF abeta Iba1
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out participant -np --executor slurm -j 1 --sample_staining AutoF abeta Iba1 CD31 --object_method cc inst --qc_instance_seg
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds_withmri test_out participant -np --executor slurm -j 1 --register-to-mri

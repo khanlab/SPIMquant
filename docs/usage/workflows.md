@@ -71,8 +71,9 @@ login node to avoid repeating it.
 
 On a cluster, the many short steps of each subject are submitted together as a
 few jobs, one per stage: brain masking (`subj_mask`), registration
-(`subj_reg`), and the region tables after segmentation (`subj_quant`). This
-grouping applies only to cluster execution.
+(`subj_reg`), the region tables after segmentation (`subj_quant`), and, with
+two or more segmented stains, the heavier colocalization step and its tables
+(`subj_coloc`). This grouping applies only to cluster execution.
 
 Add `--retries 1` on a cluster. A job that fails is then run once more, with
 twice the memory and time for the steps whose resources grow with the image

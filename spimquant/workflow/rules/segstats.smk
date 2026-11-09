@@ -84,6 +84,8 @@ rule map_coloc_to_atlas_rois:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj_coloc"
     threads: 4
     resources:
         mem_mb=32000,
@@ -214,6 +216,8 @@ rule merge_into_colocsegstats_tsv:
                 **inputs["spim"].wildcards,
             )
         ),
+    group:
+        "subj_coloc"
     threads: 1
     resources:
         mem_mb=1500,
@@ -280,7 +284,7 @@ rule merge_indiv_and_coloc_segstats_tsv:
             **inputs["spim"].wildcards,
         ),
     group:
-        "subj_quant"
+        "subj_coloc"
     threads: 1
     resources:
         mem_mb=1500,
