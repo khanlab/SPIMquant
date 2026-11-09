@@ -676,7 +676,7 @@ rule cohort_template_compose_warp:
         " -r {input.cohort_ref} -t {input.warp} {input.xfm_itk} && "
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -o [{output.xfm_composite_inv},1] "
-        " -r {input.orig_ref} -t {input.invwarp} [{input.xfm_itk},1]"
+        " -r {input.orig_ref} -t [{input.xfm_itk},1] {input.invwarp}"
 
 
 # the warps of the method selected with --cohort-template-reg-method
