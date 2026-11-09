@@ -78,8 +78,9 @@ def _cohort_row_name(path, stain):
 def _get_cohort_rows():
     """One row per subject: name and per-stain image paths (cohort_stains order)."""
     rows = []
+    # reference scans only: additional scans (--aux_spim) are registered to those
     per_stain = [
-        inputs["spim"].expand(
+        ref_spim.expand(
             _cohort_input_pattern,
             stain=s,
             level=cohort_level,

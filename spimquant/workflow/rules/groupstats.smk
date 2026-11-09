@@ -4,6 +4,9 @@ Group-level statistical analysis rules for SPIMquant.
 This module performs formula-based statistical modelling on segmentation
 statistics (e.g., fieldfrac, density, volume) across participants, using
 metadata from participants.tsv to fit OLS models and compute pairwise contrasts.
+
+Group-level outputs take the reference scans only: additional scans (--aux_spim)
+are of the same participants, so would be counted twice.
 """
 
 
@@ -20,7 +23,7 @@ rule perform_group_stats:
     Cohen's d) for the specified contrast using the model's covariance matrix.
     """
     input:
-        segstats_tsvs=lambda wildcards: inputs["spim"].expand(
+        segstats_tsvs=lambda wildcards: ref_spim.expand(
             bids(
                 root=root,
                 datatype="tabular",
@@ -159,7 +162,7 @@ rule concat_subj_parquet:
     metadata from participants.tsv.
     """
     input:
-        parquet_files=inputs["spim"].expand(
+        parquet_files=ref_spim.expand(
             bids(
                 root=root,
                 datatype="tabular",
@@ -254,7 +257,7 @@ rule concat_subj_segstats:
     export it to their own statistics tools.
     """
     input:
-        tsv_files=lambda wildcards: inputs["spim"].expand(
+        tsv_files=lambda wildcards: ref_spim.expand(
             bids(
                 root=root,
                 datatype="tabular",
@@ -291,7 +294,7 @@ rule concat_subj_regionpropstats:
     region-level summary statistics for downstream export and QC.
     """
     input:
-        tsv_files=lambda wildcards: inputs["spim"].expand(
+        tsv_files=lambda wildcards: ref_spim.expand(
             bids(
                 root=root,
                 datatype="tabular",

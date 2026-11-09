@@ -288,14 +288,18 @@ rule create_mask_from_gmm_and_prior:
             suffix="dseg.nii",
             **inputs["spim"].wildcards,
         ),
-        template_mask=bids(
-            root=root,
-            datatype="micr",
-            desc="initaffine",
-            from_=config["template"],
-            suffix="mask.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
+        template_mask=lambda wildcards: (
+            rules.warp_ref_mask_to_aux.output.mask
+            if is_aux_scan(wildcards)
+            else bids(
+                root=root,
+                datatype="micr",
+                desc="initaffine",
+                from_=config["template"],
+                suffix="mask.nii.gz",
+                **inputs["spim"].wildcards,
+            )
+        ).format(**wildcards),
     output:
         mask=bids(
             root=root,

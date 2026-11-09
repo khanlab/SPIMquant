@@ -50,6 +50,25 @@ pybids_inputs:
       - acquisition
       - staining
       - extension
+  # Additional SPIM scans of the same samples (e.g. a 12x scan alongside a 1x
+  # scan), enabled with --aux_spim. Each is registered to the sample's scan from
+  # the spim component (the reference scan, which is registered to the
+  # template) to get atlas labels, and segmented and quantified as usual. Use
+  # --filter-spim and --filter-spim_aux to split the scans between the two.
+  spim_aux:
+    filters:
+      suffix: 'SPIM'
+      extension:
+        - ome.zarr
+        - ims
+      sample: brain
+    wildcards:
+      - subject
+      - session
+      - sample
+      - acquisition
+      - staining
+      - extension
   mri:
     filters:
       suffix: 'T2w'
@@ -433,6 +452,32 @@ parse_args:
       - fireantsMulti
     nargs: '+'
 
+  --aux_spim:
+    help: "Also process the additional SPIM scans selected by the spim_aux component (e.g. higher-resolution, narrower field-of-view scans of the same samples). Use --filter-spim to select the reference scan of each sample, which is registered to the template, and --filter-spim_aux to select the additional scans, e.g. --filter-spim acquisition=1x --filter-spim_aux acquisition=12x. Each additional scan is registered to the reference scan of the same subject, session and sample, and gets atlas labels and template-space outputs through it; additional scans without a reference scan are skipped with a warning. (default: %(default)s)"
+    action: store_true
+    default: False
+
+  --aux_reg_method:
+    help: "Registration of additional scans (--aux_spim) to their reference scan, with greedy: rigid, affine (rigid then affine), or deform (affine then deformable). (default: %(default)s)"
+    choices:
+      - rigid
+      - affine
+      - deform
+    default: affine
+
+  --aux_reg_init:
+    help: "Initialization of the registration of additional scans to their reference scan: match finds the translation that best matches the additional scan within the reference scan (normalized cross-correlation over all positions, for a narrower field of view anywhere in the sample), centers aligns the image centers, and physical uses the physical coordinates of the images as they are (only if both scans share a stage coordinate system). (default: %(default)s)"
+    choices:
+      - match
+      - centers
+      - physical
+    default: match
+
+  --aux_reg_stains:
+    help: "Stains (channels) to register additional scans to their reference scan with; all are used together (multichannel). (default: all stains)"
+    default: null
+    nargs: '+'
+
   --reuse_derivatives:
     help: "Path to an existing SPIMquant output dataset to reuse outputs from (see --reuse_outputs), instead of computing them again. Files are matched by the same BIDS paths SPIMquant writes, so they are only reused when the relevant settings (e.g. --template, --registration_level) match; anything not found is computed as usual. Reused files are copied into the output directory (see --reuse_symlink)."
     default: null
@@ -785,6 +830,20 @@ registration:
       smooth_warp_sigma: 0.5
       smooth_grad_sigma: 1.0
       cc_kernel_size: 5
+
+# registration of additional scans (--aux_spim) to their reference scan, with
+# greedy; the additional scan is the fixed image, so the metric is computed over
+# its (narrower) field of view
+aux_reg:
+  metric: NCC 2x2x2
+  rigid_iters: 100x50
+  affine_iters: 100x50
+  deform_iters: 100x50
+  sigma1: 4vox
+  sigma2: 2vox
+  # images are smoothed and matched at the reference scan's resolution, coarsened
+  # to at least this voxel size (um) to keep the search fast
+  match_min_res_um: 50
 
 cohort_template:
   # subject images are clipped to these percentiles (of nonzero voxels) and

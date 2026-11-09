@@ -356,7 +356,7 @@ def get_mri_reg_targets(pattern, **kwargs):
     """Expand a target pattern for SPIM subjects that also have MRI data.
 
     Uses ``inputs['mri']`` to determine which subjects have MRI data, then
-    filters ``inputs['spim']`` to those subjects before expanding *pattern*.
+    filters the reference scans to those subjects before expanding *pattern*.
     This prevents ``all_mri_reg`` from generating targets for SPIM subjects
     that lack a corresponding MRI, which would cause downstream rules (e.g.
     ``average_mri``) to fail with empty input lists.
@@ -372,7 +372,8 @@ def get_mri_reg_targets(pattern, **kwargs):
     if "mri" not in inputs:
         return []
     mri_subjects = set(inputs["mri"].entities.get("subject", []))
-    return inputs["spim"].filter(subject=mri_subjects).expand(pattern, **kwargs)
+    # additional scans (--aux_spim) are not registered to the MRI, only reference scans
+    return ref_spim.filter(subject=mri_subjects).expand(pattern, **kwargs)
 
 
 def get_regionprops_parquet(wildcards):
@@ -561,8 +562,37 @@ def _cohort_warp_paths(wildcards):
     }
 
 
+def _scan_key(wildcards):
+    return tuple(getattr(wildcards, w) for w in _spim_key_wildcards)
+
+
+def is_aux_scan(wildcards):
+    """Whether a job's scan is an additional scan (--aux_spim)."""
+    return _scan_key(wildcards) in aux_ref_keys
+
+
+def ref_scan_wildcards(wildcards):
+    """Wildcards of a job with its additional scan replaced by its reference scan."""
+    ref = dict(zip(_spim_key_wildcards, aux_ref_keys[_scan_key(wildcards)]))
+    return {**dict(wildcards.items()), **ref}
+
+
+def ref_scan_input(pattern):
+    """Input function for `pattern` of the reference scan of an additional scan."""
+
+    def _input(wildcards):
+        return pattern.format(**ref_scan_wildcards(wildcards))
+
+    return _input
+
+
 def subject_reg_method(wildcards):
-    """Registration desc for a subject: its cohort build warps if any, else the method."""
+    """Registration desc for a subject: its cohort build warps if any, else the method.
+
+    Additional scans (--aux_spim) get theirs through their reference scan (viaref).
+    """
+    if is_aux_scan(wildcards):
+        return "viaref"
     if wildcards.template == config["template"] and cohort_warps:
         if all(os.path.exists(f) for f in _cohort_warp_paths(wildcards).values()):
             return "cohort"

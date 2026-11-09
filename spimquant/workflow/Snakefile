@@ -72,9 +72,100 @@ inputs = generate_inputs(
     participant_label=config.get("participant_label", None),
     exclude_participant_label=config.get("exclude_participant_label", None),
     validate=not config.get("plugins.validator.skip", False),
-    limit_to=["spim", "mri"] if config["register_to_mri"] else ["spim"],
+    limit_to=(
+        ["spim"]
+        + (["spim_aux"] if config["aux_spim"] else [])
+        + (["mri"] if config["register_to_mri"] else [])
+    ),
     participant_filter=config.get("participant_filter"),
 )
+
+
+# --aux_spim: additional scans of the same samples (spim_aux), each registered to
+# the sample's reference scan (spim) rather than to the template. From here on
+# the spim component holds both, so that every per-scan rule and target covers
+# the additional scans too; ref_spim_keys and aux_ref_keys tell them apart.
+ref_spim_raw = inputs["spim"]
+aux_spim_raw = inputs["spim_aux"] if "spim_aux" in inputs else None
+
+# the entities that identify a sample, which a reference scan and its additional
+# scans share (the others, e.g. acquisition, tell the scans apart)
+_sample_entities = ("subject", "session", "sample")
+
+
+def _scan_keys(component, wildcards):
+    return [
+        tuple(component.zip_lists[w][i] for w in wildcards)
+        for i in range(len(component.zip_lists[wildcards[0]]))
+    ]
+
+
+if aux_spim_raw is not None:
+    if set(aux_spim_raw.zip_lists) != set(ref_spim_raw.zip_lists) or (
+        aux_spim_raw.path.replace("{extension}", "")
+        != ref_spim_raw.path.replace("{extension}", "")
+    ):
+        raise ValueError(
+            "--aux_spim: the reference scans (spim) and additional scans (spim_aux) "
+            "must have the same BIDS entities, so that their outputs are named the "
+            "same way:\n"
+            f"  spim:     {ref_spim_raw.path}\n  spim_aux: {aux_spim_raw.path}"
+        )
+    _raw_wildcards = list(ref_spim_raw.zip_lists)
+    _pair_wildcards = [w for w in _raw_wildcards if w in _sample_entities]
+    _ref_raw_keys = _scan_keys(ref_spim_raw, _raw_wildcards)
+    _aux_raw_keys = _scan_keys(aux_spim_raw, _raw_wildcards)
+
+    _overlap = set(_ref_raw_keys) & set(_aux_raw_keys)
+    if _overlap:
+        raise ValueError(
+            "--aux_spim: some scans are selected both as reference scans (spim) and "
+            "as additional scans (spim_aux); use --filter-spim and --filter-spim_aux "
+            "to split them, e.g. --filter-spim acquisition=1x --filter-spim_aux "
+            f"acquisition=12x. Scans in both: {sorted(_overlap)}"
+        )
+
+    _refs_by_sample = {}
+    for _key in _ref_raw_keys:
+        _sample = tuple(_key[_raw_wildcards.index(w)] for w in _pair_wildcards)
+        _refs_by_sample.setdefault(_sample, set()).add(
+            tuple(v for w, v in zip(_raw_wildcards, _key) if w != "extension")
+        )
+    _aux_samples = {
+        tuple(k[_raw_wildcards.index(w)] for w in _pair_wildcards)
+        for k in _aux_raw_keys
+    }
+    _multi = {
+        k: v for k, v in _refs_by_sample.items() if len(v) > 1 and k in _aux_samples
+    }
+    if _multi:
+        raise ValueError(
+            "--aux_spim: a sample has more than one reference scan (spim), so its "
+            "additional scans cannot be paired; narrow --filter-spim to one scan per "
+            f"sample. Samples ({', '.join(_pair_wildcards)}) with several: {_multi}"
+        )
+
+    _kept = []
+    for _key in _aux_raw_keys:
+        _sample = tuple(_key[_raw_wildcards.index(w)] for w in _pair_wildcards)
+        if _sample in _refs_by_sample:
+            _kept.append(_key)
+        else:
+            print(
+                "Warning: --aux_spim: skipping additional scan "
+                f"{dict(zip(_raw_wildcards, _key))}, as there is no reference scan "
+                f"(spim) with the same {', '.join(_pair_wildcards)}"
+            )
+    spim_raw = BidsComponent(
+        name="spim",
+        path=ref_spim_raw.path,
+        zip_lists={
+            w: list(ref_spim_raw.zip_lists[w]) + [k[i] for k in _kept]
+            for i, w in enumerate(_raw_wildcards)
+        },
+    )
+else:
+    spim_raw = ref_spim_raw
 
 
 # The spim component is generated with `extension` as a wildcard so that one
@@ -82,7 +173,6 @@ inputs = generate_inputs(
 # .ome.zarr stores). Rules resolve each scan's concrete image path through
 # spim_input(); the component exposed to the rest of the workflow has the
 # extension stripped so it cannot leak into derived output templates.
-spim_raw = inputs["spim"]
 
 _spim_key_wildcards = [w for w in spim_raw.zip_lists if w != "extension"]
 _spim_path_lookup = {}
@@ -113,17 +203,44 @@ def spim_input(wildcards):
         ) from e
 
 
+def _strip_extension(component, name="spim"):
+    return BidsComponent(
+        name=name,
+        path=component.path.replace("{extension}", ""),
+        zip_lists={w: component.zip_lists[w] for w in _spim_key_wildcards},
+    )
+
+
 inputs = BidsDataset(
     {
-        **inputs,
-        "spim": BidsComponent(
-            name=spim_raw.name,
-            path=spim_raw.path.replace("{extension}", ""),
-            zip_lists={w: spim_raw.zip_lists[w] for w in _spim_key_wildcards},
-        ),
+        **{k: v for k, v in inputs.items() if k != "spim_aux"},
+        "spim": _strip_extension(spim_raw),
     },
     layout=inputs.layout,
 )
+
+# Reference scans only, for what concerns template registration itself (its QC,
+# cohort templates, MRI registration): the additional scans get their template
+# transforms through their reference scan instead.
+ref_spim = _strip_extension(ref_spim_raw)
+ref_spim_keys = set(_scan_keys(ref_spim, _spim_key_wildcards))
+
+# additional scan -> its reference scan, both as entity tuples (_spim_key_wildcards)
+aux_ref_keys = {}
+if aux_spim_raw is not None:
+    _ref_by_sample = {
+        tuple(k[_spim_key_wildcards.index(w)] for w in _pair_wildcards): k
+        for k in ref_spim_keys
+    }
+    for _key in _scan_keys(inputs["spim"], _spim_key_wildcards):
+        if _key not in ref_spim_keys:
+            aux_ref_keys[_key] = _ref_by_sample[
+                tuple(_key[_spim_key_wildcards.index(w)] for w in _pair_wildcards)
+            ]
+    print(
+        f"--aux_spim: {len(aux_ref_keys)} additional scan(s), registered to the "
+        f"reference scans of {len(set(aux_ref_keys.values()))} sample(s)"
+    )
 
 
 if "mri" in inputs:
@@ -211,6 +328,16 @@ if stain_for_reg is None:
     raise ValueError(f"a stain for registration was not found in {stains}")
 
 select_registration_methods(reg_stains)
+
+# stains registered together when registering additional scans (--aux_spim) to
+# their reference scan, stain_for_reg first
+if config["aux_reg_stains"]:
+    _missing = [s for s in config["aux_reg_stains"] if s not in stains]
+    if _missing:
+        raise ValueError(f"--aux_reg_stains {_missing} not found in stains {stains}")
+    aux_reg_stains = list(config["aux_reg_stains"])
+else:
+    aux_reg_stains = [stain_for_reg] + [s for s in stains if s != stain_for_reg]
 
 
 stains_for_seg = sorted(list(set(config["stains_for_seg"]).intersection(set(stains))))
@@ -748,6 +875,14 @@ rule all_register:
         ),
         # defined in reuse.smk (included below), so deferred to DAG building
         lambda wildcards: get_regqc_targets(wildcards),
+        # additional scans (--aux_spim): the reference scan resampled into each,
+        # to check their registration (defined in auxreg.smk)
+        lambda wildcards: [
+            rules.aux_reg_to_ref.output.warped.format(
+                **dict(zip(_spim_key_wildcards, key))
+            )
+            for key in aux_ref_keys
+        ],
 
 
 rule all_vessels:
@@ -1617,6 +1752,7 @@ rule all_group:
 include: "rules/import.smk"
 include: "rules/masking.smk"
 include: "rules/templatereg.smk"
+include: "rules/auxreg.smk"
 include: "rules/reuse.smk"
 include: "rules/vessels.smk"
 include: "rules/plaques.smk"
