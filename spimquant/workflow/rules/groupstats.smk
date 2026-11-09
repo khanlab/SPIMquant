@@ -6,7 +6,10 @@ statistics (e.g., fieldfrac, density, volume) across participants, using
 metadata from participants.tsv to fit OLS models and compute pairwise contrasts.
 
 Group-level outputs take the reference scans only: additional scans (--aux_spim)
-are of the same participants, so would be counted twice.
+are of the same participants, so would be counted twice. The additional scans
+get their own group-level outputs instead, for each acquisition (see
+aux_group_entities), with regions their field of view covers too little of left
+out of the statistics (--aux_min_coverage).
 """
 
 
@@ -65,6 +68,8 @@ rule perform_group_stats:
         ),
         within_factors=config.get("group_stats_within") or [],
         group_stats_where=config.get("group_stats_where", None),
+        # only applies to tables with a coverage column (additional scans)
+        min_coverage=config["aux_min_coverage"],
         metric_columns=expand(
             "{stain}+{metric}", stain=stains_for_seg, metric=config["seg_metrics"]
         ),
@@ -324,3 +329,101 @@ rule concat_subj_regionpropstats:
         runtime=10,
     script:
         "../scripts/concat_subj_segstats.py"
+
+
+# Group-level outputs of additional scans (--aux_spim): the rules above, for the
+# scans of each acquisition, with its entities (aux_group_entities) in the names
+# (only defined with additional scans, whose names would otherwise clash).
+if aux_groups:
+
+    def _aux_mergedsegstats(wildcards):
+        return aux_group_scans(
+            wildcards,
+            bids(
+                root=root,
+                datatype="tabular",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="mergedsegstats.tsv",
+                **inputs["spim"].wildcards,
+            ),
+        )
+
+    use rule perform_group_stats as perform_group_stats_aux with:
+        input:
+            segstats_tsvs=_aux_mergedsegstats,
+            participants_tsv=get_bids_root_file("participants.tsv"),
+        output:
+            stats_tsv=bids(
+                root=group_stats_root,
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                contrast="{pairwise_contrast}",
+                suffix="groupstats.tsv",
+                **aux_group_entities,
+            ),
+        log:
+            bids(
+                root="logs",
+                datatype="group_stats",
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                contrast="{pairwise_contrast}",
+                suffix="groupstats.log",
+                **aux_group_entities,
+            ),
+
+    use rule create_stats_heatmap as create_stats_heatmap_aux with:
+        input:
+            stats_tsv=rules.perform_group_stats_aux.output.stats_tsv,
+            label_tsv=bids(
+                root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
+            ),
+        output:
+            heatmap_png=bids(
+                root=group_stats_root,
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                contrast="{pairwise_contrast}",
+                suffix="groupstats.png",
+                **aux_group_entities,
+            ),
+
+    use rule map_groupstats_to_template_nii as map_groupstats_to_template_nii_aux with:
+        input:
+            tsv=rules.perform_group_stats_aux.output.stats_tsv,
+            dseg=bids(
+                root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"
+            ),
+            label_tsv=bids(
+                root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"
+            ),
+        output:
+            nii=bids(
+                root=group_stats_root,
+                seg="{seg}",
+                space="{template}",
+                desc="{desc}",
+                contrast="{pairwise_contrast}",
+                metric="{metric}",
+                suffix="{stat}.nii.gz",
+                **aux_group_entities,
+            ),
+
+    use rule concat_subj_segstats as concat_subj_segstats_aux with:
+        input:
+            tsv_files=_aux_mergedsegstats,
+            participants_tsv=get_bids_root_file("participants.tsv"),
+        output:
+            merged_tsv=bids(
+                root=group_stats_root,
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="allsubjects.tsv",
+                **aux_group_entities,
+            ),

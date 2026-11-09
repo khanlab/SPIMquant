@@ -15,6 +15,8 @@ The output is a greedy (RAS) affine that maps points in the fixed image to the
 moving image, as greedy -ia expects.
 """
 
+import json
+
 import nibabel as nib
 import numpy as np
 from scipy import ndimage
@@ -152,7 +154,7 @@ def match_translation(fixed_vols, fixed_affine, moving_vols, moving_affine, min_
     # fixed grid voxel 0 lands on moving grid voxel `offset`
     p_fixed = f_aff[:3, 3]
     p_moving = (m_aff @ np.append(offset, 1.0))[:3]
-    return p_moving - p_fixed
+    return p_moving - p_fixed, float(score[best])
 
 
 def center_translation(fixed_affine, fixed_shape, moving_affine, moving_shape):
@@ -168,8 +170,9 @@ def main(snakemake):
     moving = [_load(p) for p in snakemake.input.moving]
     fixed_affine, moving_affine = fixed[0][1], moving[0][1]
 
+    ncc = None
     if method == "match":
-        t = match_translation(
+        t, ncc = match_translation(
             [v for v, _ in fixed],
             fixed_affine,
             [v for v, _ in moving],
@@ -189,6 +192,8 @@ def main(snakemake):
     xfm[:3, 3] = t
     print(f"initial translation (mm, fixed to moving): {t}")
     np.savetxt(snakemake.output.xfm_ras, xfm, fmt="%.10g")
+    with open(snakemake.output.info, "w") as f:
+        json.dump({"method": method, "translation_mm": t.tolist(), "ncc": ncc}, f)
 
 
 if __name__ == "__main__":

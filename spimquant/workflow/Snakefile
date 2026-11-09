@@ -242,6 +242,43 @@ if aux_spim_raw is not None:
         f"reference scans of {len(set(aux_ref_keys.values()))} sample(s)"
     )
 
+# Group-level outputs of the additional scans are split by the entities that tell
+# the scans of a sample apart (e.g. acq): one set per acquisition, named with those
+# entities (e.g. acq-12x_...), while the reference scans' keep their names. These
+# entities cannot be empty when there are additional scans, as a scan would then
+# have the same entities as its reference scan.
+aux_group_wildcards = [w for w in _spim_key_wildcards if w not in _sample_entities]
+aux_group_entities = {w: f"{{{w}}}" for w in aux_group_wildcards}
+aux_groups = sorted(
+    {
+        tuple(k[_spim_key_wildcards.index(w)] for w in aux_group_wildcards)
+        for k in aux_ref_keys
+    }
+)
+
+
+def aux_group_expand(pattern, expand_fn=expand, **kwargs):
+    """`expand_fn(pattern, **kwargs)` for every acquisition of additional scans."""
+    return [
+        path
+        for group in aux_groups
+        for path in expand_fn(
+            pattern, **{w: [v] for w, v in zip(aux_group_wildcards, group)}, **kwargs
+        )
+    ]
+
+
+def aux_group_scans(wildcards, pattern):
+    """`pattern` for every additional scan of the acquisition in `wildcards`."""
+    group = tuple(getattr(wildcards, w) for w in aux_group_wildcards)
+    return [
+        pattern.format(
+            **{**dict(wildcards.items()), **dict(zip(_spim_key_wildcards, k))}
+        )
+        for k in sorted(aux_ref_keys)
+        if tuple(k[_spim_key_wildcards.index(w)] for w in aux_group_wildcards) == group
+    ]
+
 
 if "mri" in inputs:
     suffixes = inputs["mri"].entities["suffix"]
@@ -876,12 +913,14 @@ rule all_register:
         # defined in reuse.smk (included below), so deferred to DAG building
         lambda wildcards: get_regqc_targets(wildcards),
         # additional scans (--aux_spim): the reference scan resampled into each,
-        # to check their registration (defined in auxreg.smk)
+        # and the QC report of their registration (defined in auxreg.smk)
         lambda wildcards: [
-            rules.aux_reg_to_ref.output.warped.format(
-                **dict(zip(_spim_key_wildcards, key))
-            )
+            path.format(**dict(zip(_spim_key_wildcards, key)))
             for key in aux_ref_keys
+            for path in (
+                rules.aux_reg_to_ref.output.warped,
+                rules.aux_reg_qc_report.output.report_html,
+            )
         ],
 
 
@@ -1738,8 +1777,93 @@ rule all_participant:
         rules.all_imaris_crops.input if config["save_patches"] else [],
 
 
+rule all_group_aux:
+    """Group-level outputs of additional scans (--aux_spim), for each acquisition.
+
+    The tables and statistics of all_group_merged_tsvs and all_group_stats(_coloc),
+    named with the entities of the acquisition (see aux_group_entities); defined
+    in groupstats.smk.
+    """
+    input:
+        aux_group_expand(
+            bids(
+                root=group_stats_root,
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                suffix="allsubjects.{ext}",
+                **aux_group_entities,
+            ),
+            seg=atlas_segs,
+            desc=all_seg_methods,
+            template=config["template"],
+            ext=["tsv", "json"],
+        )
+        if do_seg
+        else [],
+        aux_group_expand(
+            bids(
+                root=group_stats_root,
+                seg="{seg}",
+                from_="{template}",
+                desc="{desc}",
+                contrast="{pairwise_contrast}",
+                suffix="groupstats.{ext}",
+                **aux_group_entities,
+            ),
+            seg=atlas_segs,
+            desc=all_seg_methods,
+            template=config["template"],
+            pairwise_contrast=pairwise_contrast_labels,
+            ext=["png", "tsv", "json"],
+        )
+        if do_seg and pairwise_contrast_labels
+        else [],
+        aux_group_expand(
+            bids(
+                root=group_stats_root,
+                seg="{seg}",
+                space="{template}",
+                desc="{desc}",
+                contrast="{pairwise_contrast}",
+                metric="{stain}+{metric}",
+                suffix="{stat}.nii.gz",
+                **aux_group_entities,
+            ),
+            expand_fn=seg_expand_plain,
+            seg=atlas_segs,
+            template=config["template"],
+            metric=config["seg_metrics"],
+            stat=config["stats_maps"],
+            pairwise_contrast=pairwise_contrast_labels,
+        )
+        if do_seg and pairwise_contrast_labels
+        else [],
+        aux_group_expand(
+            bids(
+                root=group_stats_root,
+                seg="{seg}",
+                space="{template}",
+                desc="{desc}",
+                contrast="{pairwise_contrast}",
+                metric="coloc+{metric}",
+                suffix="{stat}.nii.gz",
+                **aux_group_entities,
+            ),
+            seg=atlas_segs,
+            desc=coloc_seg_methods,
+            template=config["template"],
+            metric=config["coloc_seg_metrics"],
+            stat=config["stats_maps"],
+            pairwise_contrast=pairwise_contrast_labels,
+        )
+        if do_coloc and pairwise_contrast_labels
+        else [],
+
+
 rule all_group:
     input:
+        rules.all_group_aux.input,
         rules.all_group_merged_tsvs.input,
         rules.all_group_merged_regionpropstats_tsvs.input,
         rules.all_group_stats.input if do_seg and pairwise_contrast_labels else [],

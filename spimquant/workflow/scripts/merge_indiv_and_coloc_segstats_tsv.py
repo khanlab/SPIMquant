@@ -13,6 +13,8 @@ indiv_files = snakemake.input.indiv_tsvs
 # Single-stain methods resolve coloc_tsv to an empty list rather than dropping the
 # key, so an empty value has to be treated the same as a missing one.
 coloc_file = getattr(snakemake.input, "coloc_tsv", None) or None
+# field-of-view coverage of each region, for additional scans (--aux_spim) only
+coverage_file = getattr(snakemake.input, "coverage_tsv", None) or None
 
 output_file = snakemake.output.merged_tsv
 stains = snakemake.params.stains  # list aligned to indiv_files
@@ -45,6 +47,13 @@ if coloc_file is not None:
     # Load coloc + merge with prefix
     coloc_df = load_and_prefix(coloc_file, "coloc")
     merged = merged.merge(coloc_df, on=["index", "name"], how="outer")
+
+if coverage_file is not None:
+    # unprefixed, right after the region columns, as it applies to every stain
+    coverage = pd.read_csv(coverage_file, sep="\t")[["index", "name", "coverage"]]
+    merged = merged.merge(coverage, on=["index", "name"], how="left")
+    cols = ["index", "name", "coverage"]
+    merged = merged[cols + [c for c in merged.columns if c not in cols]]
 
 
 # Save output

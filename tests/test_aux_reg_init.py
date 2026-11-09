@@ -49,14 +49,17 @@ def test_match_finds_subvolume_with_unrelated_physical_origin(flip_x):
     # arbitrary origin offset (zoom keeps the corner voxel centres aligned)
     true_t = true_corner - fixed_aff[:3, 3]
 
-    t = aux_reg_init.match_translation(
+    t, ncc = aux_reg_init.match_translation(
         [fixed], fixed_aff, [moving], moving_aff, min_res=0.1
     )
     np.testing.assert_allclose(t, true_t, atol=0.1 + 1e-6)
+    assert ncc > 0.9
 
 
 def test_center_translation_aligns_centers():
     fixed_aff = _affine((0.05,) * 3, (1.0, 2.0, 3.0))
     moving_aff = _affine((0.1,) * 3, (0.0, 0.0, 0.0))
-    t = aux_reg_init.center_translation(fixed_aff, (21, 21, 21), moving_aff, (11, 11, 11))
+    t = aux_reg_init.center_translation(
+        fixed_aff, (21, 21, 21), moving_aff, (11, 11, 11)
+    )
     np.testing.assert_allclose(t, [-1.0, -2.0, -3.0])
