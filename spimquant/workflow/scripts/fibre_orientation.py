@@ -465,13 +465,19 @@ def estimate_threshold(frangi_values, method="yen"):
     """Global fibre-mask threshold on the Frangi response.
 
     ``method`` is ``"yen"`` (as Foa3D), ``"otsu"`` or ``"li"``, applied to
-    the sampled tissue responses.
+    the *positive* sampled responses (most tissue voxels are not tube-like
+    and score exactly 0; that spike would otherwise pull the threshold to
+    ~0), or a number, used as the threshold itself.
     """
+    try:
+        return float(method)
+    except (TypeError, ValueError):
+        pass
     from skimage import filters
 
     values = np.asarray(frangi_values, dtype=np.float64)
-    values = values[np.isfinite(values)]
-    if values.size == 0 or values.max() <= values.min():
+    values = values[np.isfinite(values) & (values > 0)]
+    if values.size < 2 or values.max() <= values.min():
         return float("inf")
     fn = {
         "yen": filters.threshold_yen,
@@ -840,23 +846,6 @@ def metrics_from_dask_moments(moments):
     )
 
 
-def read_overlapped_block(darr, block_id, depth):
-    """Numpy array of one chunk plus ``depth`` voxels on each side.
-
-    Regions outside the array are zero-padded, matching ``fibre_moments``.
-    """
-    starts = [sum(ch[:i]) for ch, i in zip(darr.chunks, block_id)]
-    stops = [s + ch[i] for s, ch, i in zip(starts, darr.chunks, block_id)]
-    lo = [max(s - d, 0) for s, d in zip(starts, depth)]
-    hi = [min(e + d, n) for e, d, n in zip(stops, depth, darr.shape)]
-    sub = np.asarray(darr[tuple(slice(a, b) for a, b in zip(lo, hi))])
-    pad = [
-        (a - (s - d), (e + d) - b)
-        for a, b, s, e, d in zip(lo, hi, starts, stops, depth)
-    ]
-    return np.pad(sub, pad)
-
-
 def sample_frangi_parameters(
     darr,
     spacing_um,
@@ -886,23 +875,27 @@ def sample_frangi_parameters(
     and ``eig_samples`` (for QC).
     """
     import dask
+    import dask.array as da
 
     depth = overlap_depth(scales_um, spacing_um)
-
-    def one(block_id, k):
-        img = read_overlapped_block(darr, block_id, depth)
-        return sample_eigenvalues(
-            img,
-            spacing_um,
-            scales_um,
-            n_samples_per_block,
-            edge_min_weight=edge_min_weight,
-            seed=seed + k,
-            trim=depth,
-        )
-
+    # same zero padding as fibre_moments; blocks are passed to the tasks as
+    # dask arrays (no compute inside a task)
+    ov = da.overlap.overlap(
+        darr, depth=dict(enumerate(depth)), boundary={0: 0, 1: 0, 2: 0}
+    )
     parts = dask.compute(
-        *[dask.delayed(one)(tuple(b), k) for k, b in enumerate(block_ids)]
+        *[
+            dask.delayed(sample_eigenvalues)(
+                ov.blocks[tuple(b)],
+                spacing_um,
+                scales_um,
+                n_samples_per_block,
+                edge_min_weight=edge_min_weight,
+                seed=seed + k,
+                trim=depth,
+            )
+            for k, b in enumerate(block_ids)
+        ]
     )
     parts = [p for p in parts if p.shape[1]]
     if not parts:
