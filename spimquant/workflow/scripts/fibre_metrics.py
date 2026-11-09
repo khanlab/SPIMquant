@@ -7,7 +7,9 @@ Reads the per-super-voxel moments written by fibre_moments.py and writes:
 * the principal fibre direction (3 volumes, world x/y/z) and its
   direction-encoded colour map (|direction| x FA),
 * the ODF as even-order real SH coefficients in the MRtrix3 convention
-  (view with ``mrview -odf.load_sh``).
+  (view with ``mrview -odf.load_sh``),
+* the non-SH moments (counts, sums and orientation tensor; ``SH_START``
+  volumes) as a 4D NIfTI, for warping to the template.
 """
 
 import numpy as np
@@ -63,12 +65,14 @@ def main():
         moments = np.asarray(znimg.data.compute(), dtype=np.float64)
 
     maps = compute_maps(moments)
-    single = znimg.select_channels([0]) if hasattr(znimg, "select_channels") else None
     for name in SCALAR_METRICS:
-        write_nifti(single or znimg, maps[name], getattr(snakemake.output, name))
+        write_nifti(znimg, maps[name], getattr(snakemake.output, name))
     write_nifti(znimg, maps["dir"], snakemake.output.dir)
     write_nifti(znimg, maps["dec"], snakemake.output.dec)
     write_nifti(znimg, maps["odf"], snakemake.output.odf)
+    from fibre_orientation import SH_START
+
+    write_nifti(znimg, moments[:SH_START], snakemake.output.moments_nii)
 
 
 if __name__ == "__main__":

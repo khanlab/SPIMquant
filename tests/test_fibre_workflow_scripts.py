@@ -36,7 +36,14 @@ def _load(name):
 def scripts():
     sys.path.insert(0, str(SCRIPTS_DIR))
     try:
-        yield _load("fibre_moments"), _load("fibre_metrics")
+        yield SimpleNamespace(
+            moments=_load("fibre_moments"),
+            metrics=_load("fibre_metrics"),
+            roi=_load("fibre_roi_stats"),
+            merge=_load("merge_fibre_roi_stats"),
+            template=_load("fibre_metrics_template"),
+            lib=_load("fibre_orientation"),
+        )
     finally:
         sys.path.remove(str(SCRIPTS_DIR))
 
@@ -72,7 +79,7 @@ def _phantom(shape, spacing_um, seed=0):
 def test_moments_and_metrics(scripts, tmp_path):
     import dask.array as da
 
-    moments_mod, metrics_mod = scripts
+    moments_mod, metrics_mod = scripts.moments, scripts.metrics
     spacing_um = (4.0, 4.0, 4.0)
     shape = (64, 64, 64)
     img = _phantom(shape, spacing_um)
@@ -120,7 +127,7 @@ def test_moments_and_metrics(scripts, tmp_path):
     assert len(params["gammas"]) == 2
     assert Path(out.qc_png).exists()
 
-    names = list(metrics_mod.SCALAR_METRICS) + ["dir", "dec", "odf"]
+    names = list(metrics_mod.SCALAR_METRICS) + ["dir", "dec", "odf", "moments_nii"]
     mout = SimpleNamespace(**{n: str(tmp_path / f"{n}.nii.gz") for n in names})
     metrics_mod.snakemake = SimpleNamespace(
         input=SimpleNamespace(moments=out.moments), output=mout, threads=2
@@ -149,3 +156,67 @@ def test_moments_and_metrics(scripts, tmp_path):
     assert np.median(np.abs(direction[..., 1][upper])) > 0.9
     odf = nib.load(mout.odf)
     assert odf.shape == (8, 8, 8, 15)
+
+    # ---- atlas-region stats: two labels splitting the volume along axis 0
+    import pandas as pd
+
+    moments = np.asarray(
+        zarrnii.ZarrNii.from_file(out.moments).data.compute(), dtype=np.float64
+    )
+    labels = np.ones(moments.shape[1:], dtype=np.float32)
+    labels[4:] = 2
+    template_zn = zarrnii.ZarrNii.from_file(out.moments)
+    dseg_path = str(tmp_path / "dseg.nii.gz")
+    metrics_mod.write_nifti(template_zn, labels, dseg_path)
+    label_tsv = tmp_path / "dseg.tsv"
+    pd.DataFrame(
+        {"index": [0, 1, 2, 3], "name": ["bg", "lower", "upper", "absent"]}
+    ).to_csv(label_tsv, sep="\t", index=False)
+    roi_tsv = tmp_path / "fibrestats.tsv"
+    scripts.roi.snakemake = SimpleNamespace(
+        input=SimpleNamespace(
+            moments=out.moments, dseg=dseg_path, label_tsv=str(label_tsv)
+        ),
+        output=SimpleNamespace(tsv=str(roi_tsv)),
+        params=SimpleNamespace(metrics=list(metrics_mod.SCALAR_METRICS)),
+        threads=1,
+    )
+    scripts.roi.main()
+    roi = pd.read_csv(roi_tsv, sep="\t").set_index("name")
+    # pooled moments: identical to summing the moments by hand
+    for lab, name in ((1, "lower"), (2, "upper")):
+        pooled = moments[:, labels.astype(int) == lab].sum(axis=1)
+        expected = scripts.lib.moments_to_metrics(pooled)
+        for m in metrics_mod.SCALAR_METRICS:
+            assert roi.loc[name, m] == pytest.approx(float(expected[m]), abs=1e-5)
+    # one fibre direction per half: well aligned within each region
+    assert roi.loc["lower", "odi"] < 0.1 and roi.loc["upper", "odi"] < 0.1
+    assert roi.loc["absent", "fibrevoxels"] == 0
+    assert roi.loc["absent", "odi"] == 0
+
+    # ---- merged across stains, segstats-style column names
+    merged = scripts.merge.merge_tables(
+        [pd.read_csv(roi_tsv, sep="\t")] * 2, ["VAChT", "MOG"]
+    )
+    assert "VAChT+odi" in merged.columns and "MOG+fibredensity" in merged.columns
+    assert len(merged) == 4
+
+    # ---- template-space metrics from the moments NIfTI (identity warp)
+    tpl_metrics = [m for m in metrics_mod.SCALAR_METRICS if m != "gfa"]
+    tout = SimpleNamespace(
+        **{m: str(tmp_path / f"tpl_{m}.nii.gz") for m in tpl_metrics}
+    )
+    scripts.template.snakemake = SimpleNamespace(
+        input=SimpleNamespace(moments_nii=mout.moments_nii),
+        output=tout,
+        params=SimpleNamespace(metrics=tpl_metrics, min_tissue_fraction=0.0),
+    )
+    scripts.template.main()
+    assert nib.load(mout.moments_nii).shape[-1] == scripts.lib.SH_START
+    for m in ("fibredensity", "frangi", "scale", "odi", "odipri", "fa"):
+        a = nib.load(getattr(tout, m))
+        b = nib.load(getattr(mout, m))
+        np.testing.assert_allclose(a.affine, b.affine, atol=1e-9)
+        np.testing.assert_allclose(
+            np.asarray(a.dataobj), np.squeeze(np.asarray(b.dataobj)), atol=1e-5
+        )

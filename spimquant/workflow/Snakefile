@@ -412,6 +412,8 @@ FIBRE_SCALAR_METRICS = [
     "fa",
     "gfa",
 ]
+# template-space maps: all but gfa, which needs the SH moments (not warped)
+FIBRE_TEMPLATE_METRICS = [m for m in FIBRE_SCALAR_METRICS if m != "gfa"]
 if config["fibres"] and not do_fibres:
     print(
         f"Warning: --fibres: none of --stains_for_fibres {config['stains_for_fibres']} "
@@ -1000,6 +1002,35 @@ rule all_fibres:
             level=config["fibre_level"],
             stain=stains_for_fibres,
         ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="fibres",
+                stain="{stain}",
+                level="{level}",
+                space="{template}",
+                desc="frangi",
+                suffix="{metric}.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["fibre_level"],
+            stain=stains_for_fibres,
+            template=config["template"],
+            metric=FIBRE_TEMPLATE_METRICS,
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                seg="{seg}",
+                from_="{template}",
+                desc="frangi",
+                suffix="mergedsegstats.tsv",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+        ),
 
 
 rule all_plaques:
@@ -1307,6 +1338,42 @@ rule all_group_stats:
             ),
             template=config["template"],
             level=range(4),
+        ),
+
+
+rule all_group_stats_fibres:
+    """Target rule for group-level statistics of the fibre ROI metrics."""
+    input:
+        expand(
+            bids(
+                root=group_stats_root,
+                seg="{seg}",
+                from_="{template}",
+                desc="frangi",
+                contrast="{pairwise_contrast}",
+                suffix="groupstats.{ext}",
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+            pairwise_contrast=pairwise_contrast_labels,
+            ext=["png", "tsv"],
+        ),
+        expand(
+            bids(
+                root=group_stats_root,
+                seg="{seg}",
+                space="{template}",
+                desc="frangi",
+                contrast="{pairwise_contrast}",
+                metric="{stain}+{metric}",
+                suffix="{stat}.nii.gz",
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+            stain=stains_for_fibres,
+            metric=config["fibre_roi_metrics"],
+            stat=config["stats_maps"],
+            pairwise_contrast=pairwise_contrast_labels,
         ),
 
 
@@ -1713,6 +1780,20 @@ rule all_group_merged_tsvs:
         )
         if do_seg
         else [],
+        # fibre ROI stats (--fibres)
+        expand(
+            bids(
+                root=group_stats_root,
+                seg="{seg}",
+                from_="{template}",
+                desc="frangi",
+                suffix="allsubjects.tsv",
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+        )
+        if do_fibres
+        else [],
 
 
 rule all_group_merged_regionpropstats_tsvs:
@@ -1801,6 +1882,9 @@ rule all_group:
         rules.all_group_stats.input if do_seg and pairwise_contrast_labels else [],
         rules.all_group_stats_coloc.input
         if do_coloc and pairwise_contrast_labels
+        else [],
+        rules.all_group_stats_fibres.input
+        if do_fibres and pairwise_contrast_labels
         else [],
         rules.all_group_stats_tabular_sidecars.input,
 

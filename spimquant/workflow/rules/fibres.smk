@@ -115,6 +115,17 @@ rule fibre_metrics:
             )
             for metric in FIBRE_SCALAR_METRICS + ["dir", "dec", "odf"]
         },
+        moments_nii=temp(
+            bids(
+                root=root,
+                datatype="fibres",
+                stain="{stain}",
+                level="{level}",
+                desc="frangi",
+                suffix="moments.nii.gz",
+                **inputs["spim"].wildcards,
+            )
+        ),
     group:
         "subj_quant"
     threads: 4
@@ -123,3 +134,205 @@ rule fibre_metrics:
         runtime=10,
     script:
         "../scripts/fibre_metrics.py"
+
+
+rule deform_template_dseg_to_fibre_grid:
+    """Atlas labels on the fibre super-voxel grid (nearest neighbour)."""
+    input:
+        ref=bids(
+            root=root,
+            datatype="fibres",
+            stain="{stain}",
+            level="{level}",
+            desc="frangi",
+            suffix="fibredensity.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
+        xfm_composite_inv=bids(
+            root=root,
+            datatype="xfm",
+            from_="{template}",
+            to="subject",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        dseg=bids(
+            root=root,
+            datatype="fibres",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            level="{level}",
+            desc="frangi",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj_quant"
+    conda:
+        "../envs/ants.yaml"
+    threads: 8
+    resources:
+        mem_mb=8000,
+        runtime=10,
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -v -n NearestNeighbor "
+        " -i {input.dseg} -o {output.dseg} "
+        " -r {input.ref} -t {input.xfm_composite_inv}"
+
+
+rule fibre_roi_stats:
+    """Per-region fibre metrics from moments pooled over each atlas region."""
+    input:
+        moments=bids_oz_in(
+            root=root,
+            datatype="fibres",
+            stain="{stain}",
+            level="{level}",
+            desc="frangi",
+            suffix="moments.{ext}",
+            **inputs["spim"].wildcards,
+        ),
+        dseg=rules.deform_template_dseg_to_fibre_grid.output.dseg,
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
+    output:
+        tsv=bids(
+            root=root,
+            datatype="tabular",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            level="{level}",
+            desc="frangi",
+            suffix="fibrestats.tsv",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj_quant"
+    threads: 4
+    resources:
+        mem_mb=scaled_mem_mb(4000, 2),
+        runtime=10,
+    params:
+        metrics=config["fibre_roi_metrics"],
+    script:
+        "../scripts/fibre_roi_stats.py"
+
+
+rule merge_fibre_roi_stats:
+    """Fibre ROI statistics of all fibre stains as ``desc-frangi`` segstats.
+
+    Columns are ``{stain}+{metric}``, as for the segmentation statistics, so
+    the group-level concatenation, statistics and heatmap rules apply.
+    """
+    input:
+        tsvs=lambda wildcards: [
+            bids(
+                root=root,
+                datatype="tabular",
+                seg="{seg}",
+                from_="{template}",
+                stain=stain,
+                level=config["fibre_level"],
+                desc="frangi",
+                suffix="fibrestats.tsv",
+                **inputs["spim"].wildcards,
+            ).format(**wildcards)
+            for stain in stains_for_fibres
+        ],
+    output:
+        tsv=bids(
+            root=root,
+            datatype="tabular",
+            seg="{seg}",
+            from_="{template}",
+            desc="frangi",
+            suffix="mergedsegstats.tsv",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj_quant"
+    threads: 1
+    resources:
+        mem_mb=1500,
+        runtime=10,
+    params:
+        stains=stains_for_fibres,
+    script:
+        "../scripts/merge_fibre_roi_stats.py"
+
+
+rule deform_fibre_moments_to_template:
+    """Warp the non-SH fibre moments (4D) to the template, linear interpolation."""
+    input:
+        flo=rules.fibre_metrics.output.moments_nii,
+        ref=rules.import_template_anat.output.anat,
+        xfm_composite=bids(
+            root=root,
+            datatype="xfm",
+            from_="subject",
+            to="{template}",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        nii=temp(
+            bids(
+                root=root,
+                datatype="fibres",
+                stain="{stain}",
+                level="{level}",
+                space="{template}",
+                desc="frangi",
+                suffix="moments.nii.gz",
+                **inputs["spim"].wildcards,
+            )
+        ),
+    group:
+        "subj_quant"
+    conda:
+        "../envs/ants.yaml"
+    threads: 8
+    resources:
+        # 10 template-sized volumes, in and out (double precision)
+        mem_mb=24000,
+        runtime=15,
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -e 3 -v -n Linear "
+        " -i {input.flo} -o {output.nii} "
+        " -r {input.ref} -t {input.xfm_composite}"
+
+
+rule fibre_metrics_template:
+    """Template-space scalar fibre maps, computed from the warped moments."""
+    input:
+        moments_nii=rules.deform_fibre_moments_to_template.output.nii,
+    output:
+        **{
+            metric: bids(
+                root=root,
+                datatype="fibres",
+                stain="{stain}",
+                level="{level}",
+                space="{template}",
+                desc="frangi",
+                suffix=f"{metric}.nii.gz",
+                **inputs["spim"].wildcards,
+            )
+            for metric in FIBRE_TEMPLATE_METRICS
+        },
+    group:
+        "subj_quant"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=10,
+    params:
+        metrics=FIBRE_TEMPLATE_METRICS,
+        min_tissue_fraction=0.1,
+    script:
+        "../scripts/fibre_metrics_template.py"
