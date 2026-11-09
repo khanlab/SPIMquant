@@ -332,8 +332,11 @@ rule cohort_template_inputs:
         images=lambda wildcards: [img for row in cohort_rows for img in row["images"]],
     output:
         images=temp(directory(os.path.join(cohort_work, "inputs"))),
-        image_list=os.path.join(cohort_work, "images.txt"),
-        fireants_config=os.path.join(cohort_work, "config", "cohort.yaml"),
+        # temp: only build_cohort_template reads these, and it keeps copies in
+        # {build_dir}/buildinfo/ for provenance, so losing them never forces a
+        # rebuild of the template
+        image_list=temp(os.path.join(cohort_work, "images.txt")),
+        fireants_config=temp(os.path.join(cohort_work, "config", "cohort.yaml")),
     threads: 1
     resources:
         mem_mb=16000,
@@ -358,7 +361,9 @@ rule cohort_template_inputs:
 rule build_cohort_template:
     """Build the multivariate cohort template with FireANTs (GPU).
 
-    Also writes each subject's final-iteration warp to {build_dir}/warps/.
+    Also writes each subject's final-iteration warp to {build_dir}/warps/, and
+    copies the image list and FireANTs config to {build_dir}/buildinfo/ so that
+    downstream (export) rules never depend on the temp inputs.
     """
     input:
         images=rules.cohort_template_inputs.output.images,
@@ -378,7 +383,6 @@ rule build_cohort_template:
         # rough estimate: ~30s per subject per iteration, split across GPUs
         runtime=int(15 + 0.5 * len(cohort_rows) * cohort_iterations / cohort_n_gpus),
     params:
-        script=os.path.join(workflow.basedir, "scripts", "cohort_template_build.py"),
         config_dir=lambda wildcards, input: os.path.abspath(
             os.path.dirname(input.fireants_config)
         ),
@@ -395,9 +399,13 @@ rule build_cohort_template:
         # fragmentation otherwise causes OOM after a few subjects
         "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True "
         "torchrun --standalone --nproc_per_node {resources.gpu} "
-        " {params.script} "
+        # script path in the shell (not a param), so moving or reinstalling
+        # SPIMquant does not count as a params change and rebuild the template
+        " {workflow.basedir}/scripts/cohort_template_build.py "
         " --config-dir {params.config_dir} --config-name {params.config_name} "
-        " hydra.run.dir={params.hydra_dir} &> {log}"
+        " hydra.run.dir={params.hydra_dir} &> {log} && "
+        "mkdir -p {output.build_dir}/buildinfo && "
+        "cp {input.image_list} {input.fireants_config} {output.build_dir}/buildinfo/"
 
 
 rule cohort_template_stain:
@@ -962,15 +970,18 @@ rule all_cohort_template_export:
 rule cohort_template_buildinfo:
     """Archive of the inputs used to build the template, for provenance."""
     input:
-        image_list=rules.cohort_template_inputs.output.image_list,
-        fireants_config=rules.cohort_template_inputs.output.fireants_config,
         # logs cannot be inputs; these outputs guarantee the logs were written
+        # (build_dir also holds buildinfo/, the image list and FireANTs config)
         build_dir=rules.build_cohort_template.output.build_dir,
         warp=_cohort_xfm,
     output:
         cohort_buildinfo,
     localrule: True
     params:
+        buildinfo=lambda wildcards, input: [
+            os.path.join(input.build_dir, "buildinfo", f)
+            for f in ("images.txt", "cohort.yaml")
+        ],
         logs=[rules.build_cohort_template.log[0]]
         + {
             "greedy": [
@@ -983,15 +994,19 @@ rule cohort_template_buildinfo:
             "fireants": [],
         }[reg_presets[cohort_reg_method]["backend"]],
     shell:
+        # templates built before buildinfo/ existed are archived without it
+        "files=(); for f in {params.buildinfo}; do"
+        "  if [ -f $f ]; then files+=($f);"
+        '  else echo "Warning: $f not found, not archived" >&2; fi;'
+        " done; "
         "tar -czf {output} --transform 's,.*/,,' "
-        " {input.image_list} {input.fireants_config} {params.logs}"
+        " ${{files[@]}} {params.logs}"
 
 
 rule cohort_template_description:
     """template_description.json and a SPIMquant templates: config snippet."""
     input:
         files=cohort_export_files,
-        image_list=rules.cohort_template_inputs.output.image_list,
         build_dir=rules.build_cohort_template.output.build_dir,
     output:
         description=cohort_description,
