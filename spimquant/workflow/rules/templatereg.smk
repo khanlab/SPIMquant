@@ -745,7 +745,7 @@ rule warp_stain_for_report:
     output:
         temp(_qc_warped),
     wildcard_constraints:
-        reg=reg_constraint(),
+        reg=qc_reg_constraint(),
         stain="|".join(_report_stains),
     conda:
         "../envs/ants.yaml"
@@ -781,7 +781,7 @@ rule registration_qc_report:
     output:
         report_html=_reg_xfm("regqc.html", from_="SPIM", stain=stain_for_reg),
     wildcard_constraints:
-        reg=reg_constraint(),
+        reg=qc_reg_constraint(),
     threads: 1
     resources:
         mem_mb=16000,
@@ -791,7 +791,7 @@ rule registration_qc_report:
         template=lambda wildcards: f"tpl-{wildcards.template}",
         stains=_report_stains,
         method=lambda wildcards: wildcards.reg,
-        parameters=lambda wildcards: reg_note(reg_presets[wildcards.reg]),
+        parameters=lambda wildcards: reg_method_note(wildcards.reg),
     script:
         "../scripts/reg_qc_report.py"
 

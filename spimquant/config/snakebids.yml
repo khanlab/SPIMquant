@@ -611,6 +611,11 @@ parse_args:
     help: "Label for this group-stats run. Outputs are placed under group/{label}/ so that different analyses (e.g. different models or --group-stats-where filters) do not overwrite each other. (default: %(default)s)"
     default: "1"
 
+  --reg-cohort-template:
+    help: "Register subjects to --template through a cohort template built in the same run: each subject's affine to --template, its warp from building the cohort template, and the cohort template's registration to --template (--cohort-template-reg-method) are combined into one subject<->template warp (desc-viacohort). Outputs stay in --template space. The template is built from all subjects in the run (see the --cohort-template-* options) on a GPU, so all subjects must be run together. With --reuse_derivatives, subjects with no desc-viacohort warps in the prior dataset are registered (--registration_method) to its cohort template instead of building a new one. (default: %(default)s)"
+    action: store_true
+    default: False
+
   --cohort-template-name:
     help: "Name (tpl- label) for the cohort template built by the cohort_template analysis level. Must be alphanumeric and must not clash with an existing --template choice. (default: %(default)s)"
     default: cohort

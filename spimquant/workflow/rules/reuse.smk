@@ -123,15 +123,16 @@ if reuse_root and "transforms" in reuse_outputs:
             xfm_composite=rules.compose_subject_to_template_warp.output.xfm_composite,
             xfm_composite_inv=rules.compose_subject_to_template_warp.output.xfm_composite_inv,
         wildcard_constraints:
-            reg=reg_constraint(),
+            reg=qc_reg_constraint(),
         localrule: True
         shell:
             f"{reuse_cmd} {{input.xfm_composite}} {{output.xfm_composite}} && "
             f"{reuse_cmd} {{input.xfm_composite_inv}} {{output.xfm_composite_inv}}"
 
+    # (and > the --reg-cohort-template compose rules, in cohort_template.smk)
     ruleorder: reuse_composite_warps > compose_subject_to_template_warp
 
-    _reuse_method = config["registration_method"]
+    _reuse_method = subject_template_method()
     _reuse_found = []
     _reuse_legacy = 0
     for desc_path, legacy_path in zip(
@@ -174,7 +175,7 @@ def get_regqc_targets(wildcards):
     Only reference scans are registered to the template; additional scans
     (--aux_spim) get the reference scan resampled into them instead.
     """
-    method = config["registration_method"]
+    method = subject_template_method()
     regqc = ref_spim.expand(
         rules.registration_qc_report.output.report_html,
         template=config["template"],
@@ -208,4 +209,7 @@ def get_regqc_targets(wildcards):
             if not os.path.exists(xfm)
             and not (method == "greedy" and os.path.exists(old))
         ]
+    if reg_via_cohort and regqc and not prior_cohort:
+        # the cohort template's registration to --template, built in this run
+        regqc.append(rules.cohort_template_regqc.output.report_html)
     return regqc
