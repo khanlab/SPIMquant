@@ -395,6 +395,30 @@ else:
         do_vessels = False
 
 
+# fibre orientation analysis (--fibres) runs on every matching stain
+stains_for_fibres = (
+    [s for s in config["stains_for_fibres"] if s in stains] if config["fibres"] else []
+)
+do_fibres = len(stains_for_fibres) > 0
+# scalar maps written by rule fibre_metrics (see scripts/fibre_metrics.py)
+FIBRE_SCALAR_METRICS = [
+    "fibredensity",
+    "frangi",
+    "scale",
+    "odi",
+    "odipri",
+    "odisec",
+    "odianis",
+    "fa",
+    "gfa",
+]
+if config["fibres"] and not do_fibres:
+    print(
+        f"Warning: --fibres: none of --stains_for_fibres {config['stains_for_fibres']} "
+        f"are in the stains {stains}; skipping fibre orientation analysis"
+    )
+
+
 # The LANTERN plaque ensemble is opt-in via --seg_method, but it is trained on
 # amyloid-beta only, so it is resolved to a single stain the same way vessels are
 # rather than being fanned out over every stain in stains_for_seg.
@@ -944,6 +968,37 @@ rule all_vessels:
             level=config["segmentation_level"],
             desc=config["vessel_seg_method"],
             stain=stain_for_vessels,
+        ),
+
+
+rule all_fibres:
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="fibres",
+                stain="{stain}",
+                level="{level}",
+                desc="frangi",
+                suffix="{metric}.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["fibre_level"],
+            stain=stains_for_fibres,
+            metric=FIBRE_SCALAR_METRICS + ["dir", "dec", "odf"],
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="fibres",
+                stain="{stain}",
+                level="{level}",
+                desc="frangi",
+                suffix="thresholds.png",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["fibre_level"],
+            stain=stains_for_fibres,
         ),
 
 
@@ -1727,6 +1782,7 @@ rule all_participant:
         ),
         rules.all_register.input,
         rules.all_vessels.input if do_vessels else [],
+        rules.all_fibres.input if do_fibres else [],
         rules.all_plaques.input if do_plaques else [],
         rules.all_segment.input if do_seg else [],
         rules.all_mri_reg.input if config["register_to_mri"] else [],
@@ -1755,6 +1811,7 @@ include: "rules/templatereg.smk"
 include: "rules/auxreg.smk"
 include: "rules/reuse.smk"
 include: "rules/vessels.smk"
+include: "rules/fibres.smk"
 include: "rules/plaques.smk"
 include: "rules/segmentation.smk"
 include: "rules/counts.smk"
