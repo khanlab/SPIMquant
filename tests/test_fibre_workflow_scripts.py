@@ -184,7 +184,7 @@ def test_moments_and_metrics(scripts, tmp_path):
             moments=out.moments, dseg=dseg_path, label_tsv=str(label_tsv)
         ),
         output=SimpleNamespace(tsv=str(roi_tsv)),
-        params=SimpleNamespace(metrics=list(metrics_mod.SCALAR_METRICS)),
+        params=SimpleNamespace(metrics=list(metrics_mod.SCALAR_METRICS), min_fibre=0),
         threads=1,
     )
     scripts.roi.main()
@@ -198,7 +198,7 @@ def test_moments_and_metrics(scripts, tmp_path):
     # one fibre direction per half: well aligned within each region
     assert roi.loc["lower", "odi"] < 0.1 and roi.loc["upper", "odi"] < 0.1
     assert roi.loc["absent", "fibrevoxels"] == 0
-    assert roi.loc["absent", "odi"] == 0
+    assert np.isnan(roi.loc["absent", "odi"])
 
     # ---- merged across stains, segstats-style column names
     merged = scripts.merge.merge_tables(
@@ -215,7 +215,9 @@ def test_moments_and_metrics(scripts, tmp_path):
     scripts.template.snakemake = SimpleNamespace(
         input=SimpleNamespace(moments_nii=mout.moments_nii),
         output=tout,
-        params=SimpleNamespace(metrics=tpl_metrics, min_tissue_fraction=0.0),
+        params=SimpleNamespace(
+            metrics=tpl_metrics, min_tissue_fraction=0.0, min_fibre=0
+        ),
     )
     scripts.template.main()
     assert nib.load(mout.moments_nii).shape[-1] == scripts.lib.SH_START

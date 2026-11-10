@@ -38,7 +38,7 @@ def pooled_moments(moments, labels, n_labels, slab_bytes=5e8):
     return pooled
 
 
-def region_table(moments, labels, label_df, metrics, max_label=None):
+def region_table(moments, labels, label_df, metrics, max_label=None, min_fibre=0.0):
     """Per-region metrics as a DataFrame (one row per ``label_df`` row).
 
     Parameters
@@ -49,6 +49,9 @@ def region_table(moments, labels, label_df, metrics, max_label=None):
     metrics : list of metric names (keys of ``moments_to_metrics``)
     max_label : int, optional
         Largest label value in ``labels`` (computed if not given).
+    min_fibre : float
+        Orientation metrics are NaN for regions with at most this many
+        (weighted) fibre voxels.
     """
     from fibre_orientation import N_FIBRE, N_TISSUE, moments_to_metrics
 
@@ -57,7 +60,7 @@ def region_table(moments, labels, label_df, metrics, max_label=None):
         max_label = int(np.asarray(labels).max(initial=0))
     n_labels = int(max(idx.max(initial=0), max_label)) + 1
     pooled = pooled_moments(moments, labels, n_labels)
-    values = moments_to_metrics(pooled)
+    values = moments_to_metrics(pooled, min_fibre=min_fibre, missing=np.nan)
     out = label_df[["index", "name"]].copy()
     for m in metrics:
         out[m] = values[m][idx]
@@ -76,7 +79,13 @@ def main():
         # labels on the super-voxel grid are small (1/n_moments of moments)
         labels = np.asarray(dseg.data[0].compute()).astype(np.int64)
         label_df = pd.read_csv(snakemake.input.label_tsv, sep="\t")
-        df = region_table(moments, labels, label_df, list(snakemake.params.metrics))
+        df = region_table(
+            moments,
+            labels,
+            label_df,
+            list(snakemake.params.metrics),
+            min_fibre=float(snakemake.params.min_fibre),
+        )
     df.to_csv(snakemake.output.tsv, sep="\t", index=False)
 
 

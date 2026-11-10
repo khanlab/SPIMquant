@@ -233,6 +233,7 @@ rule fibre_roi_stats:
         runtime=scaled_runtime(10, 0.1),
     params:
         metrics=config["fibre_roi_metrics"],
+        min_fibre=config["fibre_min_voxels"],
     script:
         "../scripts/fibre_roi_stats.py"
 
@@ -349,5 +350,6 @@ rule fibre_metrics_template:
     params:
         metrics=FIBRE_TEMPLATE_METRICS,
         min_tissue_fraction=0.1,
+        min_fibre=config["fibre_min_voxels"],
     script:
         "../scripts/fibre_metrics_template.py"

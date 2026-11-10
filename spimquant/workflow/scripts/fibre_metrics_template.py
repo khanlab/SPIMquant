@@ -28,7 +28,10 @@ def main():
     moments[:2] = np.clip(moments[:2], 0, None)
     # a single l=0 SH channel (its value is irrelevant to the metrics kept)
     moments = np.concatenate([moments, moments[N_FIBRE][None]])
-    metrics = moments_to_metrics(moments)
+    # orientation metrics need enough (interpolated) fibre: NaN otherwise
+    metrics = moments_to_metrics(
+        moments, min_fibre=float(snakemake.params.min_fibre), missing=np.nan
+    )
     # Near the mask edge the interpolated counts become tiny and their ratios
     # are noise: keep voxels with at least min_tissue_fraction of a full
     # super-voxel of tissue (a full one taken as the 99th percentile).
