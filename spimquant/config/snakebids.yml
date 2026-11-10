@@ -1048,6 +1048,11 @@ fibre_psf_fwhm_um: auto
 # fibre_soft_threshold x the threshold to 1 at the threshold (1 = hard
 # threshold). Fibre density is then the weighted fraction of tissue.
 fibre_soft_threshold: 0.25
+# Orientation metrics (ODI, FA, GFA, direction) of a super-voxel are only
+# reported (NaN otherwise) if it holds more than this many (weighted) fibre
+# voxels: with one short fibre segment, FA is ~1 and ODI ~0 regardless of the
+# local architecture. Fibre density is always reported.
+fibre_min_voxels: 30
 # fibre_block_um is snapped to a divisor of the chunk edge per axis (e.g. 30
 # um -> 8 voxels at 4 or 3.25 um), keeping chunks aligned with the stored ones.
 # Peak memory per task is ~0.3 GB at 128.

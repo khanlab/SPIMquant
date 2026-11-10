@@ -133,7 +133,10 @@ def test_moments_and_metrics(scripts, tmp_path):
     names = list(metrics_mod.SCALAR_METRICS) + ["dir", "dec", "odf", "moments_nii"]
     mout = SimpleNamespace(**{n: str(tmp_path / f"{n}.nii.gz") for n in names})
     metrics_mod.snakemake = SimpleNamespace(
-        input=SimpleNamespace(moments=out.moments), output=mout, threads=2
+        input=SimpleNamespace(moments=out.moments),
+        output=mout,
+        threads=2,
+        params=SimpleNamespace(min_fibre=0),
     )
     metrics_mod.main()
 
