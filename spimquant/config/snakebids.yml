@@ -393,7 +393,7 @@ parse_args:
   --max_mem_mb:
     help: "Upper limit on the memory (MB) a job requests, e.g. the memory of a cluster node. Memory that scales with the input size or with the retry attempt (--retries) is capped here, so that a retried job is still schedulable (default: %(default)s)"
     type: int
-    default: 250000
+    default: 450000
 
   --qc_instance_seg:
     help: "Generate instance-level QC outputs, including animated gifs (default: %(default)s)"
@@ -1043,9 +1043,11 @@ instance_min_volume_um3: 1000
 # Chunk overlap; must exceed the radius of the largest instance (~35 um in
 # dense marmoset cortex), so instances are not cut at chunk edges.
 instance_depth_um: 50
-# Chunk edge (voxels).  Peak memory per task is ~110 bytes per voxel of the
-# overlapped chunk (~0.75 GB at 160), mostly h_maxima; the rule's mem_mb
-# allows ~1 GB per thread, so scale it if you raise this.
+# Chunk edge (voxels).  Peak memory per task is ~100-110 bytes per voxel of
+# the overlapped chunk, mostly h_maxima: ~0.75 GB at 160 with isotropic
+# ~1.5 um voxels, but ~1.6 GB with 0.975 um in-plane voxels, since the
+# instance_depth_um overlap is then more voxels.  The rule's mem_mb allows
+# ~3 GB per thread, so scale it if you raise this.
 instance_chunk_size: 160
 # Threads per dask worker (distributed scheduler).  The workers share the
 # job's memory evenly, so fewer, larger workers ride out a few heavy blocks.
