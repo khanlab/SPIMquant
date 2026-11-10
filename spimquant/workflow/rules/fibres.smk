@@ -132,5 +132,7 @@ rule fibre_metrics:
         # and 30 s at level 2 of a mouse brain (8.8 GB), ~15 GB at level 1
         mem_mb=scaled_mem_mb(2000, 250),
         runtime=scaled_runtime(10, 0.2),
+    params:
+        min_fibre=config["fibre_min_voxels"],
     script:
         "../scripts/fibre_metrics.py"
