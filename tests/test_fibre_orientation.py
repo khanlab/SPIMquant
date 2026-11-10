@@ -500,3 +500,25 @@ def test_zarrnii_wrapper(fo, orientation):
     m = out.darr.compute()
     assert m[fo.N_FIBRE].sum() > 100
     assert params["threshold"] > 0
+
+
+def test_store_moments_by_slab(fo, tmp_path):
+    da = pytest.importorskip("dask.array")
+    img, spacing = _crossing_phantom()
+    darr = da.from_array(img, chunks=(16, 24, 28))
+    kw = dict(
+        spacing_um=spacing,
+        scales_um=SCALES,
+        gammas=GAMMA,
+        threshold=0.2,
+        factor=(4, 4, 4),
+        lmax=2,
+        chunk_size=(16, 24, 28),
+    )
+    lazy = fo.fibre_moments(darr, **kw)
+    assert len(lazy.chunks[1]) == 4
+    stored = fo.store_moments_by_slab(
+        fo.fibre_moments(darr, **kw), str(tmp_path / "m.zarr"), slab_chunks=3
+    )
+    with __import__("dask").config.set(scheduler="synchronous"):
+        np.testing.assert_allclose(stored.compute(), lazy.compute(), rtol=1e-6)
