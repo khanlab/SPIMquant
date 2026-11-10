@@ -522,3 +522,93 @@ def test_store_moments_by_slab(fo, tmp_path):
     )
     with __import__("dask").config.set(scheduler="synchronous"):
         np.testing.assert_allclose(stored.compute(), lazy.compute(), rtol=1e-6)
+
+
+# ----------------------------------------------------------------------
+# PSF equalisation and soft threshold
+# ----------------------------------------------------------------------
+
+
+def _blobs(shape, spacing, sigma_um, n=200, seed=11):
+    """Gaussian blobs of per-axis sigma ``sigma_um`` (array order)."""
+    rng = np.random.default_rng(seed)
+    coords = np.stack(
+        np.meshgrid(*[np.arange(k) * s for k, s in zip(shape, spacing)], indexing="ij"),
+        -1,
+    )
+    ext = np.asarray(shape) * np.asarray(spacing)
+    img = np.zeros(shape, np.float32)
+    for c in rng.uniform(0.1, 0.9, size=(n, 3)) * ext:
+        img += 100 * np.exp(-np.sum(((coords - c) / sigma_um) ** 2, -1) / 2)
+    return img + 10 + rng.normal(0, 0.5, shape).astype(np.float32)
+
+
+def test_psf_equalizing_sigma(fo):
+    fwhm = np.array([6.0, 3.6, 3.6])
+    extra = fo.psf_equalizing_sigma(fwhm)
+    assert extra[0] == 0
+    total = (fwhm / 2.3548) ** 2 + extra**2
+    np.testing.assert_allclose(total, total[0])
+
+
+def test_psf_correction_removes_axial_bias(fo):
+    """Point-like blobs blurred by an axially elongated PSF look like axial
+    tubes; equalising the PSF makes them blob-like again, so their Frangi
+    response collapses (and they fall below a fibre threshold)."""
+    spacing = (2.0, 1.625, 1.625)
+    psf_fwhm = np.array([6.0, 3.6, 3.6])
+    img = _blobs((96, 128, 128), spacing, psf_fwhm / 2.3548, n=60)
+    core = img > 60
+    res = []
+    for extra in (None, fo.psf_equalizing_sigma(psf_fwhm)):
+        fr, vec, *_ = fo.multiscale_frangi(
+            img, spacing, (2.0, 3.0), 50.0, psf_sigma_um=extra
+        )
+        sel = core & (fr > 0)
+        res.append((np.abs(vec[sel][:, 0]).mean(), fr[core].mean()))
+    assert res[0][0] > 0.85  # spurious axial orientation without correction
+    assert res[1][1] < res[0][1] / 3  # blobs no longer tube-like
+
+
+def test_puncta_fwhm(fo):
+    spacing = (2.0, 1.625, 1.625)
+    fwhm = np.array([6.0, 3.5, 3.5])
+    img = _blobs((80, 96, 96), spacing, fwhm / 2.3548, n=60)
+    rows = fo.puncta_fwhm(img, spacing, quantile=0.99)
+    assert len(rows) > 20
+    np.testing.assert_allclose(np.median(rows, 0), fwhm, rtol=0.15)
+
+
+def test_soft_weights(fo):
+    f = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.8])
+    np.testing.assert_allclose(fo.soft_weights(f, 0.4, 1.0), [0, 0, 0, 0, 0, 1])
+    np.testing.assert_allclose(
+        fo.soft_weights(f, 0.4, 0.25), [0, 0, 1 / 3, 2 / 3, 1, 1], atol=1e-6
+    )
+
+
+def test_soft_dask_matches_numpy(fo):
+    da = pytest.importorskip("dask.array")
+    img, spacing = _crossing_phantom()
+    kw = dict(
+        spacing_um=spacing,
+        scales_um=SCALES,
+        gammas=GAMMA,
+        threshold=0.4,
+        factor=(4, 4, 4),
+        lmax=2,
+        soft_lo=0.25,
+        psf_sigma_um=(1.0, 0.0, 0.0),
+    )
+    depth = fo.overlap_depth(SCALES, spacing, psf_sigma_um=kw["psf_sigma_um"])
+    ref = fo.fibre_moments_block(np.pad(img, [(d, d) for d in depth]), trim=depth, **kw)
+    with __import__("dask").config.set(scheduler="synchronous"):
+        out = fo.fibre_moments(
+            da.from_array(img, chunks=(24, 16, 20)), chunk_size=(24, 16, 20), **kw
+        ).compute()
+    np.testing.assert_allclose(out, ref, rtol=1e-4, atol=1e-3)
+    # soft weights: fractional fibre counts, more than with the hard threshold
+    hard = fo.fibre_moments_block(
+        np.pad(img, [(d, d) for d in depth]), trim=depth, **{**kw, "soft_lo": 1.0}
+    )
+    assert ref[fo.N_FIBRE].sum() > hard[fo.N_FIBRE].sum()
