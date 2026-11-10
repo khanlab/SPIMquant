@@ -870,20 +870,44 @@ def sh_gfa(coeffs):
     return np.sqrt(np.clip(1 - _safe_div(c[0] ** 2, power), 0, 1)) * (power > 0)
 
 
-def moments_to_metrics(moments):
+# orientation metrics, which need enough fibre in a block to be meaningful
+ORIENTATION_METRICS = (
+    "odi",
+    "odipri",
+    "odisec",
+    "odianis",
+    "fa",
+    "gfa",
+    "dirx",
+    "diry",
+    "dirz",
+)
+
+
+def moments_to_metrics(moments, min_fibre=0.0, missing=0.0):
     """All scalar/vector metrics from moments.
 
     Parameters
     ----------
     moments : ndarray (n_moments, ...)
+    min_fibre : float
+        Minimum (weighted) number of fibre voxels for the orientation
+        metrics (``ORIENTATION_METRICS``).  A block holding a single short
+        fibre segment has FA ~1 and ODI ~0, which reflects that one segment
+        rather than the local fibre architecture; on light-sheet crops FA >
+        0.95 dropped from ~60% of blocks below 5 fibre voxels to ~5% above 30.
+    missing : float
+        Value of the orientation metrics where there is no fibre, or less
+        than ``min_fibre`` (0 by default; NaN keeps "no estimate" apart from
+        "aligned", ODI 0).
 
     Returns
     -------
-    dict name -> ndarray (...), keys as in ``METRIC_NAMES``.  Voxels or
-    regions without fibres get 0 for every orientation metric.
+    dict name -> ndarray (...), keys as in ``METRIC_NAMES``.  Fibre density,
+    mean Frangi response and mean scale are always reported.
     """
     m = np.asarray(moments, dtype=np.float64)
-    has = m[N_FIBRE] > 0
+    has = m[N_FIBRE] > max(float(min_fibre), 0.0)
     t = orientation_tensor(m)
     w, v = np.linalg.eigh(t)
     w = w[..., ::-1]  # descending
@@ -892,19 +916,21 @@ def moments_to_metrics(moments):
         "fibredensity": _safe_div(m[N_FIBRE], m[N_TISSUE]),
         "frangi": _safe_div(m[SUM_FRANGI], m[N_TISSUE]),
         "scale": _safe_div(m[SUM_SCALE], m[N_FIBRE]),
-        **{k: np.where(has, d, 0.0) for k, d in disp.items()},
-        "fa": np.where(has, tensor_fa(w), 0.0),
+        **disp,
+        "fa": tensor_fa(w),
         "gfa": sh_gfa(odf_coefficients(m)),
     }
     e1 = v[..., :, 2]
     for k, name in enumerate(("dirx", "diry", "dirz")):
-        out[name] = np.where(has, e1[..., k], 0.0)
+        out[name] = e1[..., k]
+    for k in ORIENTATION_METRICS:
+        out[k] = np.where(has, out[k], missing)
     return {k: out[k].astype(np.float32) for k in METRIC_NAMES}
 
 
-def metrics_array(moments):
+def metrics_array(moments, **kwargs):
     """``moments_to_metrics`` stacked along axis 0 (``METRIC_NAMES`` order)."""
-    d = moments_to_metrics(moments)
+    d = moments_to_metrics(moments, **kwargs)
     return np.stack([d[k] for k in METRIC_NAMES])
 
 
@@ -1023,7 +1049,7 @@ def fibre_moments(
     )
 
 
-def metrics_from_dask_moments(moments):
+def metrics_from_dask_moments(moments, **kwargs):
     """``metrics_array`` applied chunkwise to a dask moment array."""
     import dask.array as da
 
@@ -1031,6 +1057,7 @@ def metrics_from_dask_moments(moments):
     return da.map_blocks(
         metrics_array,
         moments,
+        **kwargs,
         chunks=((len(METRIC_NAMES),),) + moments.chunks[1:],
         dtype=np.float32,
     )

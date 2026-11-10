@@ -612,3 +612,18 @@ def test_soft_dask_matches_numpy(fo):
         np.pad(img, [(d, d) for d in depth]), trim=depth, **{**kw, "soft_lo": 1.0}
     )
     assert ref[fo.N_FIBRE].sum() > hard[fo.N_FIBRE].sum()
+
+
+def test_min_fibre(fo):
+    rng = np.random.default_rng(12)
+    few = _moments_from_vectors(fo, random_directions(3, rng))
+    many = _moments_from_vectors(fo, random_directions(300, rng))
+    m = np.stack([few, many], axis=1)
+    out = fo.moments_to_metrics(m, min_fibre=30, missing=np.nan)
+    for k in fo.ORIENTATION_METRICS:
+        assert np.isnan(out[k][0]) and np.isfinite(out[k][1]), k
+    # density and scale are always reported
+    assert out["fibredensity"][0] > 0
+    np.testing.assert_allclose(
+        fo.moments_to_metrics(m)["fa"], fo.moments_to_metrics(m, min_fibre=0)["fa"]
+    )
