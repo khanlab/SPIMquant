@@ -469,8 +469,8 @@ rule build_cohort_template:
         tasks_per_gpu=0,
         cpus_per_gpu=8,
         mem_mb=64000,
-        # rough estimate: ~30s per subject per iteration, split across GPUs
-        runtime=int(15 + 0.5 * len(cohort_rows) * cohort_iterations / cohort_n_gpus),
+        # rough estimate: ~1m per subject per iteration, split across GPUs
+        runtime=int(30 + len(cohort_rows) * cohort_iterations / cohort_n_gpus),
     params:
         config_dir=lambda wildcards, input: os.path.abspath(
             os.path.dirname(input.fireants_config)
