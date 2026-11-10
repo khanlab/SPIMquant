@@ -54,6 +54,10 @@ jobs:
         run: |
           ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds_withmri test_out participant -np --register-to-mri --no-segmentation
 
+      - name: Dry-run Test with fibre orientation analysis
+        run: |
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out participant -np --fibres --stains_for_fibres Abeta
+
       # Job groups are only enforced by non-local executors, so a local dry run
       # cannot catch a rule missing from a group (e.g. subj_quant). The slurm
       # plugin builds the grouped DAG without needing sbatch for a dry run.

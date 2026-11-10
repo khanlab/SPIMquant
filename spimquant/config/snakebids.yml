@@ -184,6 +184,29 @@ parse_args:
     action: store_true
     default: False
 
+  --fibres:
+    help: >
+      Run fibre orientation analysis (multiscale Frangi filter, orientation
+      distribution functions, dispersion and anisotropy maps) on the stains in
+      --stains_for_fibres (default: %(default)s).
+    action: store_true
+    default: False
+
+  --stains_for_fibres:
+    help: "List of stains to use for fibre orientation analysis with --fibres (will analyse any that match the data)\n (default: %(default)s)"
+    default:
+      - VAChT
+      - vAChT
+      - MOG
+      - Mog
+    action: store
+    nargs: '+'
+
+  --fibre_level:
+    help: "Pyramid level for fibre orientation analysis (default: %(default)s)"
+    type: int
+    default: 1
+
   --correction_method:
     help: >
       Intensity preprocessing before segmentation (default: %(default)s).
@@ -986,6 +1009,57 @@ dog_stat_samples_per_block: 200000
 # ~5x the overlapped float32 chunk (~300 MB at 192); with the distributed
 # scheduler each worker (2 threads) gets job memory / (threads / 2)
 dog_chunk_size: 192
+
+# Fibre orientation analysis (--fibres), after Foa3D (Sorelli et al. 2023).
+# A multiscale Frangi filter (Gaussian sigmas fibre_scales_um, in um) gives the
+# fibre axis at each voxel of the bias-corrected image at --fibre_level; voxels
+# whose response is above a global threshold are fibre voxels. These are
+# summarised over super-voxels of about fibre_block_um (snapped to a divisor
+# of fibre_chunk_size voxels per axis) as additive moments (counts, orientation
+# tensor and spherical harmonic sums up to order fibre_lmax), from which the
+# ODF, dispersion and anisotropy maps are derived.
+fibre_scales_um: [4, 8]
+fibre_block_um: 30
+fibre_lmax: 6
+# Frangi plate (alpha) and blob (beta) parameters (Foa3D defaults); gamma
+# (background) is fibre_gamma_factor x the fibre_gamma_quantile of the Hessian
+# norm per scale, and the fibre threshold is fibre_threshold_method (yen, otsu
+# or li) on the Frangi response, both from voxels sampled in
+# fibre_stat_blocks tissue-rich chunks (chosen on a level
+# fibre_stat_level_offset coarser).
+fibre_alpha: 0.001
+fibre_beta: 1.0
+fibre_gamma_quantile: 0.999
+fibre_gamma_factor: 0.5
+fibre_threshold_method: yen
+fibre_stat_blocks: 32
+fibre_stat_samples_per_block: 20000
+fibre_stat_level_offset: 3
+# A voxel is analysed at a scale only if at least this fraction of its
+# Gaussian neighbourhood is in the brain mask (suppresses the mask edge).
+fibre_edge_min_weight: 0.5
+# Light-sheet PSFs are longer axially, so point-like structures (e.g. axon
+# varicosities) look like short axial tubes and bias orientations to the
+# axial axis. The PSF is equalised (extra Gaussian smoothing of the sharper
+# axes) before filtering: FWHM in um as [z, y, x], auto (estimated from bright
+# puncta in the sampled chunks), or null for no correction.
+fibre_psf_fwhm_um: auto
+# Soft fibre threshold: a voxel's fibre weight ramps from 0 at
+# fibre_soft_threshold x the threshold to 1 at the threshold (1 = hard
+# threshold). Fibre density is then the weighted fraction of tissue.
+fibre_soft_threshold: 0.25
+# Orientation metrics (ODI, FA, GFA, direction) of a super-voxel are only
+# reported (NaN otherwise) if it holds more than this many (weighted) fibre
+# voxels: with one short fibre segment, FA is ~1 and ODI ~0 regardless of the
+# local architecture. Fibre density is always reported.
+fibre_min_voxels: 30
+# fibre_block_um is snapped to a divisor of the chunk edge per axis (e.g. 30
+# um -> 8 voxels at 4 or 3.25 um), keeping chunks aligned with the stored ones.
+# Peak memory per task is ~0.3 GB at 128.
+fibre_chunk_size: 128
+# chunk planes computed at a time: bounds the halo data dask holds (1 is the
+# lowest memory, for ~8% more run time than computing the whole image at once)
+fibre_slab_chunks: 1
 
 # DoG tuning report (analysis level tune_dog): sweeps s over dog_tune_s_um
 # and k over dog_tune_k at r = dog_tune_ratio, on dog_tune_blocks of the
