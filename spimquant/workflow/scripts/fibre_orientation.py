@@ -89,14 +89,43 @@ def sigma_vox(sigma_um, spacing_um):
     return tuple(float(sigma_um) / float(s) for s in spacing_um)
 
 
-def overlap_depth(scales_um, spacing_um, truncate=TRUNCATE):
+def scale_sigma_vox(scale_um, spacing_um, psf_sigma_um=None):
+    """Per-axis Gaussian sigma (voxels) of a Frangi scale.
+
+    With ``psf_sigma_um`` (extra smoothing per axis, see
+    ``psf_equalizing_sigma``) the scale's Gaussian is combined with it,
+    ``sqrt(scale^2 + extra^2)``, so that the effective resolution is
+    isotropic before the Hessian (as Foa3D's anisotropy correction).
+    """
+    extra = np.zeros(3) if psf_sigma_um is None else np.asarray(psf_sigma_um, float)
+    return tuple(
+        float(np.sqrt(float(scale_um) ** 2 + e**2)) / float(s)
+        for e, s in zip(extra, spacing_um)
+    )
+
+
+def psf_equalizing_sigma(psf_fwhm_um):
+    """Extra Gaussian sigma per axis (um) that makes an anisotropic PSF
+    isotropic: ``sqrt(max(var) - var)`` with ``var = (fwhm / 2.355)^2``.
+
+    Light-sheet data typically has an axial PSF ~1.5-2x the lateral one, so
+    point-like structures look like short tubes along the axial axis and the
+    Frangi filter reports a spurious axial orientation; equalising first
+    removes that bias (at the cost of in-plane resolution).
+    """
+    var = (np.asarray(psf_fwhm_um, dtype=float) / 2.3548) ** 2
+    return np.sqrt(np.max(var) - var)
+
+
+def overlap_depth(scales_um, spacing_um, truncate=TRUNCATE, psf_sigma_um=None):
     """Per-axis overlap (voxels) a block needs for the largest scale.
 
     The kernel radius plus 2 voxels for the two central differences.
     """
     smax = max(float(s) for s in scales_um)
     return tuple(
-        int(math.ceil(truncate * sv)) + 2 for sv in sigma_vox(smax, spacing_um)
+        int(math.ceil(truncate * sv)) + 2
+        for sv in scale_sigma_vox(smax, spacing_um, psf_sigma_um)
     )
 
 
@@ -300,7 +329,14 @@ def structureness(eigvals):
 
 
 def _scale_eigen(
-    img, weight, candidates, spacing_um, scale_um, edge_min_weight, tubes_only
+    img,
+    weight,
+    candidates,
+    spacing_um,
+    scale_um,
+    edge_min_weight,
+    tubes_only,
+    psf_sigma_um=None,
 ):
     """Scale-normalised Hessian eigen at one scale.
 
@@ -310,7 +346,9 @@ def _scale_eigen(
     |l1| <= |l2|).  Returns ``(idx, eigvals, vec)`` with ``idx`` the flat
     indices of the analysed voxels.
     """
-    blur, den = normalized_blur(img, weight, sigma_vox(scale_um, spacing_um))
+    blur, den = normalized_blur(
+        img, weight, scale_sigma_vox(scale_um, spacing_um, psf_sigma_um)
+    )
     idx = np.flatnonzero(candidates & (den >= edge_min_weight))
     del den
     if idx.size == 0:
@@ -344,6 +382,7 @@ def multiscale_frangi(
     beta=1.0,
     edge_min_weight=0.5,
     trim=None,
+    psf_sigma_um=None,
 ):
     """Multiscale Frangi filter of one 3D block.
 
@@ -365,6 +404,9 @@ def multiscale_frangi(
     trim : sequence of 3 int, optional
         Overlap to drop from each face: only the core is analysed and
         returned.
+    psf_sigma_um : sequence of 3 float, optional
+        Extra smoothing per axis to equalise an anisotropic PSF (see
+        ``psf_equalizing_sigma``).
 
     Returns
     -------
@@ -390,7 +432,14 @@ def multiscale_frangi(
     scale_idx = np.full(img.size, -1, dtype=np.int8)
     for s, scale_um in enumerate(scales_um):
         idx, w, v = _scale_eigen(
-            img, weight, candidates, spacing_um, scale_um, edge_min_weight, True
+            img,
+            weight,
+            candidates,
+            spacing_um,
+            scale_um,
+            edge_min_weight,
+            True,
+            psf_sigma_um,
         )
         if idx.size == 0:
             continue
@@ -413,7 +462,14 @@ def multiscale_frangi(
 
 
 def sample_eigenvalues(
-    img, spacing_um, scales_um, n_samples, edge_min_weight=0.5, seed=0, trim=None
+    img,
+    spacing_um,
+    scales_um,
+    n_samples,
+    edge_min_weight=0.5,
+    seed=0,
+    trim=None,
+    psf_sigma_um=None,
 ):
     """Sorted Hessian eigenvalues at random tissue voxels of a block.
 
@@ -449,7 +505,14 @@ def sample_eigenvalues(
     sampled = sampled.reshape(img.shape)
     for s, scale_um in enumerate(scales_um):
         idx, w, _ = _scale_eigen(
-            img, weight, sampled, spacing_um, scale_um, edge_min_weight, False
+            img,
+            weight,
+            sampled,
+            spacing_um,
+            scale_um,
+            edge_min_weight,
+            False,
+            psf_sigma_um,
         )
         # idx is a sorted subset of cand (voxels too near the mask edge drop)
         out[s, np.searchsorted(cand, idx)] = w
@@ -505,6 +568,90 @@ def estimate_threshold(frangi_values, method="yen"):
         "li": filters.threshold_li,
     }[method]
     return float(fn(values))
+
+
+def _fwhm_1d(profile, spacing):
+    p = np.asarray(profile, dtype=np.float64)
+    p = p - p.min()
+    c = len(p) // 2
+    half = p[c] / 2
+    if p[c] <= 0:
+        return np.nan
+    lo = c
+    while lo > 0 and p[lo] > half:
+        lo -= 1
+    hi = c
+    while hi < len(p) - 1 and p[hi] > half:
+        hi += 1
+    if lo == 0 or hi == len(p) - 1:
+        return np.nan
+    left = lo + (half - p[lo]) / (p[lo + 1] - p[lo])
+    right = hi - 1 + (p[hi - 1] - half) / (p[hi - 1] - p[hi])
+    return (right - left) * spacing
+
+
+def puncta_fwhm(
+    img, spacing_um, quantile=0.995, max_peaks=2000, half_width=10, min_snr=10.0
+):
+    """FWHM (um) along each axis of the brightest local maxima of a block.
+
+    Point-like bright structures (e.g. axon varicosities) are blurred by the
+    PSF, so their median FWHM estimates it (an upper bound, since they have
+    a size of their own).  Maxima must be above the ``quantile`` of the
+    tissue intensity, ``min_snr`` robust noise SDs above its median, and
+    prominent over their neighbourhood.  Returns an
+    (n, 3) array, one row per punctum.
+    """
+    from skimage.feature import peak_local_max
+
+    img = np.asarray(img, dtype=np.float32)
+    if not np.any(img > 0):
+        return np.zeros((0, 3))
+    w = int(half_width)
+    peaks = peak_local_max(
+        img, min_distance=max(3, w // 2), num_peaks=max_peaks, exclude_border=w + 1
+    )
+    if len(peaks) == 0:
+        return np.zeros((0, 3))
+    vals = img[tuple(peaks.T)]
+    tissue = img[img > 0]
+    background = float(np.median(tissue))
+    noise = 1.4826 * float(np.median(np.abs(tissue - background)))
+    floor = max(np.quantile(tissue, quantile), background + min_snr * noise)
+    peaks = peaks[vals >= floor]
+    rows = []
+    for z, y, x in peaks:
+        # isolated, prominent maxima only: at least half of the peak height
+        # above the background is local (not noise riding on a structure)
+        win = img[z - w : z + w + 1, y - w : y + w + 1, x - w : x + w + 1]
+        if img[z, y, x] - np.median(win) < 0.5 * (img[z, y, x] - background):
+            continue
+        rows.append(
+            [
+                _fwhm_1d(img[z - w : z + w + 1, y, x], spacing_um[0]),
+                _fwhm_1d(img[z, y - w : y + w + 1, x], spacing_um[1]),
+                _fwhm_1d(img[z, y, x - w : x + w + 1], spacing_um[2]),
+            ]
+        )
+    rows = np.asarray(rows, dtype=np.float64).reshape(-1, 3)
+    return rows[np.all(np.isfinite(rows), axis=1)]
+
+
+def soft_weights(frangi, threshold, soft_lo=1.0):
+    """Fibre weight per voxel from the Frangi response.
+
+    ``soft_lo`` < 1 gives a soft threshold: the weight ramps linearly from 0
+    at ``soft_lo * threshold`` to 1 at ``threshold`` (and is 1 above), so
+    faint fibres still contribute in proportion.  ``soft_lo = 1`` is the hard
+    threshold (weight 0 or 1).
+    """
+    frangi = np.asarray(frangi, dtype=np.float32)
+    if soft_lo >= 1.0:
+        return (frangi > threshold).astype(np.float32)
+    lo = float(soft_lo) * float(threshold)
+    return np.clip((frangi - lo) / max(float(threshold) - lo, 1e-12), 0, 1).astype(
+        np.float32
+    )
 
 
 # ----------------------------------------------------------------------
@@ -582,8 +729,11 @@ def reduce_to_moments(frangi, vec_world, scale_um, tissue, fibre, factor, lmax):
         Unit fibre axes in world (x, y, z).
     scale_um : ndarray (3D)
         Selected scale (um) per voxel.
-    tissue, fibre : ndarray bool (3D)
-        Tissue mask and fibre mask (fibre implies tissue).
+    tissue : ndarray bool (3D)
+        Tissue mask.
+    fibre : ndarray (3D), bool or float in [0, 1]
+        Fibre mask, or per-voxel fibre weights (``soft_weights``): counts,
+        scale, tensor and SH sums are weighted by it.
     factor : sequence of 3 int
         Super-voxel size in voxels per axis.  Blocks at the far faces may
         be partial.
@@ -598,21 +748,25 @@ def reduce_to_moments(frangi, vec_world, scale_um, tissue, fibre, factor, lmax):
     nb = int(np.prod(grid))
     out = np.zeros((n_moments(lmax), nb), dtype=np.float64)
     t = tissue.ravel()
-    f = fibre.ravel()
+    wts = np.asarray(fibre, dtype=np.float64).ravel()
+    f = wts > 0
     out[N_TISSUE] = np.bincount(ids, weights=t, minlength=nb)
-    out[N_FIBRE] = np.bincount(ids, weights=f, minlength=nb)
     out[SUM_FRANGI] = np.bincount(ids[t], weights=frangi.ravel()[t], minlength=nb)
     fid = ids[f]
     if fid.size:
-        out[SUM_SCALE] = np.bincount(fid, weights=scale_um.ravel()[f], minlength=nb)
+        wf = wts[f]
+        out[N_FIBRE] = np.bincount(fid, weights=wf, minlength=nb)
+        out[SUM_SCALE] = np.bincount(
+            fid, weights=wf * scale_um.ravel()[f], minlength=nb
+        )
         v = vec_world.reshape(-1, 3)[f].astype(np.float64)
         for k, (i, j) in enumerate(_TENSOR_IDX):
             out[TENSOR.start + k] = np.bincount(
-                fid, weights=v[:, i] * v[:, j], minlength=nb
+                fid, weights=wf * v[:, i] * v[:, j], minlength=nb
             )
         sh = real_sh_basis(v, lmax)
         for k in range(sh.shape[1]):
-            out[SH_START + k] = np.bincount(fid, weights=sh[:, k], minlength=nb)
+            out[SH_START + k] = np.bincount(fid, weights=wf * sh[:, k], minlength=nb)
     return out.reshape((-1,) + grid).astype(np.float32)
 
 
@@ -629,16 +783,27 @@ def fibre_moments_block(
     beta=1.0,
     edge_min_weight=0.5,
     trim=None,
+    psf_sigma_um=None,
+    soft_lo=1.0,
 ):
     """Moments of one (possibly overlapped) block.
 
     ``trim`` is the overlap to remove from each face after filtering; the
-    trimmed shape is what ``factor`` divides into super-voxels.
+    trimmed shape is what ``factor`` divides into super-voxels.  Fibre voxels
+    are weighted by ``soft_weights(frangi, threshold, soft_lo)``.
     """
     frangi, vec, sidx, tissue = multiscale_frangi(
-        img, spacing_um, scales_um, gammas, alpha, beta, edge_min_weight, trim
+        img,
+        spacing_um,
+        scales_um,
+        gammas,
+        alpha,
+        beta,
+        edge_min_weight,
+        trim,
+        psf_sigma_um,
     )
-    fibre = tissue & (frangi > threshold) & (sidx >= 0)
+    fibre = soft_weights(frangi, threshold, soft_lo) * (tissue & (sidx >= 0))
     rot = np.eye(3) if rotation is None else np.asarray(rotation, np.float64)
     vec_world = vec @ rot.T.astype(np.float32)
     scale_lut = np.append(np.asarray(scales_um, np.float32), np.float32(0))
@@ -799,13 +964,16 @@ def fibre_moments(
     beta=1.0,
     edge_min_weight=0.5,
     chunk_size=None,
+    psf_sigma_um=None,
+    soft_lo=1.0,
 ):
     """Per-super-voxel fibre moments of a 3D dask array.
 
     The array is rechunked so chunk sizes are multiples of ``factor`` (so
     no super-voxel straddles chunks), overlapped by the largest kernel
     radius (zero padding at the array boundary, which counts as
-    non-tissue), filtered and reduced chunk by chunk.
+    non-tissue), filtered and reduced chunk by chunk.  ``psf_sigma_um`` and
+    ``soft_lo`` are as in ``fibre_moments_block``.
 
     Returns
     -------
@@ -816,7 +984,7 @@ def fibre_moments(
     factor = tuple(int(f) for f in factor)
     if chunk_size is None:
         chunk_size = tuple(c[0] for c in darr.chunks)
-    depth = overlap_depth(scales_um, spacing_um)
+    depth = overlap_depth(scales_um, spacing_um, psf_sigma_um=psf_sigma_um)
     chunks = aligned_chunks(darr.shape, chunk_size, factor)
     # overlap needs every chunk to be at least as deep as the overlap
     for ax, (ch, d) in enumerate(zip(chunks, depth)):
@@ -846,6 +1014,8 @@ def fibre_moments(
         alpha=alpha,
         beta=beta,
         edge_min_weight=edge_min_weight,
+        psf_sigma_um=None if psf_sigma_um is None else np.asarray(psf_sigma_um, float),
+        soft_lo=float(soft_lo),
         new_axis=0,
         chunks=out_chunks,
         dtype=np.float32,
@@ -923,6 +1093,7 @@ def sample_frangi_parameters(
     gamma_factor=0.5,
     threshold_method="yen",
     seed=0,
+    psf_sigma_um=None,
 ):
     """Estimate global ``gammas`` and fibre threshold from sampled chunks.
 
@@ -941,7 +1112,7 @@ def sample_frangi_parameters(
     import dask
     import dask.array as da
 
-    depth = overlap_depth(scales_um, spacing_um)
+    depth = overlap_depth(scales_um, spacing_um, psf_sigma_um=psf_sigma_um)
     # same zero padding as fibre_moments; blocks are passed to the tasks as
     # dask arrays (no compute inside a task)
     ov = da.overlap.overlap(
@@ -957,6 +1128,7 @@ def sample_frangi_parameters(
                 edge_min_weight=edge_min_weight,
                 seed=seed + k,
                 trim=depth,
+                psf_sigma_um=psf_sigma_um,
             )
             for k, b in enumerate(block_ids)
         ]
@@ -971,6 +1143,30 @@ def sample_frangi_parameters(
     return dict(
         gammas=gammas, threshold=threshold, frangi_samples=frangi, eig_samples=eig
     )
+
+
+def estimate_psf_fwhm(darr, spacing_um, block_ids, max_peaks=2000):
+    """PSF FWHM (um) per array axis from bright puncta in sampled chunks.
+
+    The median of ``puncta_fwhm`` over the chunks ``block_ids`` of ``darr``.
+    Returns ``(fwhm, n_puncta)``.
+    """
+    import dask
+
+    parts = dask.compute(
+        *[
+            dask.delayed(puncta_fwhm)(
+                darr.blocks[tuple(b)], spacing_um, max_peaks=max_peaks
+            )
+            for b in block_ids
+        ]
+    )
+    rows = np.concatenate([p for p in parts if len(p)] or [np.zeros((0, 3))])
+    if len(rows) < 20:
+        raise ValueError(
+            f"only {len(rows)} puncta found to estimate the PSF; give it explicitly"
+        )
+    return np.median(rows, axis=0), len(rows)
 
 
 def tissue_blocks(darr, n_blocks, min_fraction=0.5, seed=0):
@@ -1019,6 +1215,8 @@ def zarrnii_fibre_moments(
     spacing_scale=1000.0,
     slab_store=None,
     slab_chunks=2,
+    psf_fwhm_um=None,
+    soft_lo=1.0,
     **kwargs,
 ):
     """Fibre moments of a single-channel ZarrNii, as a ZarrNii.
@@ -1043,6 +1241,12 @@ def zarrnii_fibre_moments(
         at a time, into this zarr array (see ``store_moments_by_slab``), which
         bounds memory for large images; the returned ZarrNii reads from it.
         Otherwise the result is lazy.
+    psf_fwhm_um : None, "auto" or sequence of 3 float
+        PSF FWHM per spatial axis (array order, um) to equalise before
+        filtering (``psf_equalizing_sigma``); "auto" estimates it from bright
+        puncta in the sampled chunks (``estimate_psf_fwhm``).
+    soft_lo : float
+        Soft threshold (``soft_weights``); 1 is a hard threshold.
     **kwargs
         Passed to ``fibre_moments`` / ``sample_frangi_parameters``
         (``alpha``, ``beta``, ``edge_min_weight``, ...).
@@ -1067,10 +1271,27 @@ def zarrnii_fibre_moments(
     filt_keys = ("alpha", "beta", "edge_min_weight")
     filt = {k: kwargs[k] for k in filt_keys if k in kwargs}
     params = {}
+    sample_arr = darr.rechunk(aligned_chunks(darr.shape, chunk_size, factor))
+    need_blocks = (
+        gammas is None
+        or threshold is None
+        or (isinstance(psf_fwhm_um, str) and psf_fwhm_um == "auto")
+    )
+    if need_blocks and block_ids is None:
+        block_ids = tissue_blocks(sample_arr, n_sample_blocks)
+
+    psf_sigma_um = None
+    if isinstance(psf_fwhm_um, str):
+        if psf_fwhm_um != "auto":
+            raise ValueError("psf_fwhm_um must be None, 'auto' or 3 numbers")
+        psf_fwhm_um, n_puncta = estimate_psf_fwhm(sample_arr, spacing_um, block_ids)
+        params["psf_n_puncta"] = int(n_puncta)
+    if psf_fwhm_um is not None:
+        psf_fwhm_um = np.asarray(psf_fwhm_um, dtype=float)
+        psf_sigma_um = psf_equalizing_sigma(psf_fwhm_um)
+        params.update(psf_fwhm_um=psf_fwhm_um, psf_sigma_um=psf_sigma_um)
+
     if gammas is None or threshold is None:
-        sample_arr = darr.rechunk(aligned_chunks(darr.shape, chunk_size, factor))
-        if block_ids is None:
-            block_ids = tissue_blocks(sample_arr, n_sample_blocks)
         est_keys = filt_keys + (
             "n_samples_per_block",
             "gamma_quantile",
@@ -1078,17 +1299,22 @@ def zarrnii_fibre_moments(
             "threshold_method",
             "seed",
         )
-        params = sample_frangi_parameters(
-            sample_arr,
-            spacing_um,
-            scales_um,
-            block_ids,
-            **{k: kwargs[k] for k in est_keys if k in kwargs},
+        params.update(
+            sample_frangi_parameters(
+                sample_arr,
+                spacing_um,
+                scales_um,
+                block_ids,
+                psf_sigma_um=psf_sigma_um,
+                **{k: kwargs[k] for k in est_keys if k in kwargs},
+            )
         )
         gammas = params["gammas"] if gammas is None else gammas
         threshold = params["threshold"] if threshold is None else threshold
     params.update(
-        gammas=np.broadcast_to(gammas, (len(scales_um),)), threshold=threshold
+        gammas=np.broadcast_to(gammas, (len(scales_um),)),
+        threshold=threshold,
+        soft_lo=float(soft_lo),
     )
 
     moments = fibre_moments(
@@ -1101,6 +1327,8 @@ def zarrnii_fibre_moments(
         lmax=lmax,
         rotation=rotation,
         chunk_size=chunk_size,
+        psf_sigma_um=psf_sigma_um,
+        soft_lo=soft_lo,
         **filt,
     )
     if slab_store is not None:
