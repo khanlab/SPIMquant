@@ -14,27 +14,49 @@ import numpy as np
 import pandas as pd
 
 
-def region_table(moments, labels, label_df, metrics):
+def pooled_moments(moments, labels, n_labels, slab_bytes=5e8):
+    """Moments summed per label, reading (c, z, y, x) ``moments`` in z-slabs.
+
+    ``moments`` and ``labels`` may be dask or numpy arrays on the same grid.
+    Returns float64 (n_moments, n_labels).
+    """
+    from fibre_orientation import aggregate_moments
+
+    if tuple(labels.shape) != tuple(moments.shape[1:]):
+        raise ValueError(
+            f"label grid {tuple(labels.shape)} does not match the moments grid "
+            f"{tuple(moments.shape[1:])}"
+        )
+    c, nz, ny, nx = moments.shape
+    step = max(1, int(slab_bytes // (8 * c * ny * nx)))
+    pooled = np.zeros((c, n_labels), dtype=np.float64)
+    for z0 in range(0, nz, step):
+        z1 = min(z0 + step, nz)
+        m = np.asarray(moments[:, z0:z1], dtype=np.float64)
+        lab = np.clip(np.asarray(labels[z0:z1]).astype(np.int64), 0, None)
+        pooled += aggregate_moments(m, lab, n_labels)
+    return pooled
+
+
+def region_table(moments, labels, label_df, metrics, max_label=None):
     """Per-region metrics as a DataFrame (one row per ``label_df`` row).
 
     Parameters
     ----------
-    moments : ndarray (n_moments, z, y, x)
-    labels : ndarray int (z, y, x)
+    moments : array (n_moments, z, y, x), numpy or dask
+    labels : array int (z, y, x), numpy or dask
     label_df : DataFrame with ``index`` and ``name`` columns
     metrics : list of metric names (keys of ``moments_to_metrics``)
+    max_label : int, optional
+        Largest label value in ``labels`` (computed if not given).
     """
-    from fibre_orientation import N_FIBRE, N_TISSUE, aggregate_moments
-    from fibre_orientation import moments_to_metrics
+    from fibre_orientation import N_FIBRE, N_TISSUE, moments_to_metrics
 
-    if labels.shape != moments.shape[1:]:
-        raise ValueError(
-            f"label grid {labels.shape} does not match the moments grid "
-            f"{moments.shape[1:]}"
-        )
     idx = label_df["index"].to_numpy(dtype=np.int64)
-    n_labels = int(max(idx.max(initial=0), labels.max(initial=0))) + 1
-    pooled = aggregate_moments(moments, np.clip(labels, 0, None), n_labels)
+    if max_label is None:
+        max_label = int(np.asarray(labels).max(initial=0))
+    n_labels = int(max(idx.max(initial=0), max_label)) + 1
+    pooled = pooled_moments(moments, labels, n_labels)
     values = moments_to_metrics(pooled)
     out = label_df[["index", "name"]].copy()
     for m in metrics:
@@ -49,14 +71,12 @@ def main():
     from zarrnii import ZarrNii
 
     with dask.config.set(scheduler="threads", num_workers=snakemake.threads):
-        moments = np.asarray(
-            ZarrNii.from_file(snakemake.input.moments).data.compute(),
-            dtype=np.float64,
-        )
+        moments = ZarrNii.from_file(snakemake.input.moments).data
         dseg = ZarrNii.from_nifti(snakemake.input.dseg, axes_order="ZYX")
+        # labels on the super-voxel grid are small (1/n_moments of moments)
         labels = np.asarray(dseg.data[0].compute()).astype(np.int64)
-    label_df = pd.read_csv(snakemake.input.label_tsv, sep="\t")
-    df = region_table(moments, labels, label_df, list(snakemake.params.metrics))
+        label_df = pd.read_csv(snakemake.input.label_tsv, sep="\t")
+        df = region_table(moments, labels, label_df, list(snakemake.params.metrics))
     df.to_csv(snakemake.output.tsv, sep="\t", index=False)
 
 

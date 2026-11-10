@@ -223,8 +223,10 @@ rule fibre_roi_stats:
         "subj_quant"
     threads: 4
     resources:
-        mem_mb=scaled_mem_mb(4000, 2),
-        runtime=10,
+        # moments are read in slabs; the labels on the super-voxel grid
+        # (int64) are what grows: ~0.4 GB at level 1 of a mouse brain
+        mem_mb=scaled_mem_mb(2000, 30),
+        runtime=scaled_runtime(10, 0.1),
     params:
         metrics=config["fibre_roi_metrics"],
     script:
