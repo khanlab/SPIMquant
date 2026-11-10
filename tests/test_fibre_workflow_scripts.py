@@ -106,6 +106,7 @@ def test_moments_and_metrics(scripts, tmp_path):
             stat_level_offset=2,
             edge_min_weight=0.5,
             chunk_size=32,
+            slab_chunks=1,
             dask_threads_per_worker=1,
             dask_reserve_mb=0,
         ),
@@ -149,3 +150,26 @@ def test_moments_and_metrics(scripts, tmp_path):
     assert np.median(np.abs(direction[..., 1][upper])) > 0.9
     odf = nib.load(mout.odf)
     assert odf.shape == (8, 8, 8, 15)
+
+
+def test_block_factor_snaps_to_chunk(scripts):
+    moments_mod, _ = scripts
+    # level 1 of a 4x mouse brain: 30 um -> 7.5 and 9.2 voxels
+    assert moments_mod.block_factor(30, (4.0, 3.25, 3.25)) == (8, 9, 9)
+    assert moments_mod.block_factor(30, (4.0, 3.25, 3.25), 128) == (8, 8, 8)
+    assert moments_mod.block_factor(100, (4.0, 1.0, 1.0), 128) == (32, 128, 128)
+
+
+def test_slabwise_metrics_equal_whole(scripts):
+    da = pytest.importorskip("dask.array")
+    _, metrics_mod = scripts
+    rng = np.random.default_rng(1)
+    m = np.abs(rng.normal(size=(19, 7, 5, 6))) + 1  # lmax 2
+    darr = da.from_array(m, chunks=(4, 3, 5, 6))
+    slabs = list(metrics_mod.z_slabs(darr, slab_bytes=8 * m.shape[0] * 5 * 6 * 2))
+    assert len(slabs) == 4  # 2 z-planes per slab
+    whole = metrics_mod.compute_maps(m)
+    for z0, z1, part in slabs:
+        res = metrics_mod.compute_maps(part)
+        for k in ("odi", "fa", "gfa", "odf"):
+            np.testing.assert_allclose(res[k], whole[k][..., z0:z1, :, :], rtol=1e-5)

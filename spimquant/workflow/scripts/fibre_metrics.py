@@ -25,11 +25,15 @@ SCALAR_METRICS = (
 )
 
 
-def compute_maps(moments):
+# float64 working memory per slab of moments read at a time (bytes)
+_SLAB_BYTES = 5e8
+
+
+def compute_maps(moments, odf=True):
     """All maps from a moment array (n_moments, z, y, x) as numpy.
 
     Returns a dict of ``SCALAR_METRICS`` (3D), ``dir`` and ``dec``
-    (3, z, y, x) and ``odf`` (n_coeffs, z, y, x).
+    (3, z, y, x) and, if ``odf``, ``odf`` (n_coeffs, z, y, x).
     """
     from fibre_orientation import moments_to_metrics, odf_coefficients
 
@@ -38,8 +42,18 @@ def compute_maps(moments):
     direction = np.stack([m["dirx"], m["diry"], m["dirz"]])
     out["dir"] = direction
     out["dec"] = (np.abs(direction) * m["fa"][None]).astype(np.float32)
-    out["odf"] = odf_coefficients(moments).astype(np.float32)
+    if odf:
+        out["odf"] = odf_coefficients(moments).astype(np.float32)
     return out
+
+
+def z_slabs(darr, slab_bytes=_SLAB_BYTES):
+    """Yield ``(z0, z1, moments)`` float64 slabs of a (c, z, y, x) array."""
+    c, nz, ny, nx = darr.shape
+    step = max(1, int(slab_bytes // (8 * c * ny * nx)))
+    for z0 in range(0, nz, step):
+        z1 = min(z0 + step, nz)
+        yield z0, z1, np.asarray(darr[:, z0:z1], dtype=np.float64)
 
 
 def write_nifti(template, data, path):
@@ -56,19 +70,36 @@ def write_nifti(template, data, path):
 
 def main():
     import dask
+    from fibre_orientation import SH_START, odf_coefficients
     from zarrnii import ZarrNii
 
+    out = snakemake.output
     with dask.config.set(scheduler="threads", num_workers=snakemake.threads):
         znimg = ZarrNii.from_file(snakemake.input.moments)
-        moments = np.asarray(znimg.data.compute(), dtype=np.float64)
+        darr = znimg.data
+        _, nz, ny, nx = darr.shape
 
-    maps = compute_maps(moments)
-    single = znimg.select_channels([0]) if hasattr(znimg, "select_channels") else None
-    for name in SCALAR_METRICS:
-        write_nifti(single or znimg, maps[name], getattr(snakemake.output, name))
-    write_nifti(znimg, maps["dir"], snakemake.output.dir)
-    write_nifti(znimg, maps["dec"], snakemake.output.dec)
-    write_nifti(znimg, maps["odf"], snakemake.output.odf)
+        # scalar maps, direction and DEC (float32, filled slab by slab)
+        names = list(SCALAR_METRICS)
+        maps = np.zeros((len(names) + 6, nz, ny, nx), dtype=np.float32)
+        for z0, z1, m in z_slabs(darr):
+            res = compute_maps(m, odf=False)
+            for i, name in enumerate(names):
+                maps[i, z0:z1] = res[name]
+            maps[len(names) : len(names) + 3, z0:z1] = res["dir"]
+            maps[len(names) + 3 :, z0:z1] = res["dec"]
+        for i, name in enumerate(names):
+            write_nifti(znimg, maps[i], getattr(out, name))
+        write_nifti(znimg, maps[len(names) : len(names) + 3], out.dir)
+        write_nifti(znimg, maps[len(names) + 3 :], out.dec)
+        del maps
+
+        # ODF (SH coefficients)
+        odf = np.zeros((darr.shape[0] - SH_START, nz, ny, nx), dtype=np.float32)
+        for z0, z1, m in z_slabs(darr):
+            odf[:, z0:z1] = odf_coefficients(m)
+        write_nifti(znimg, odf, out.odf)
+        del odf
 
 
 if __name__ == "__main__":
