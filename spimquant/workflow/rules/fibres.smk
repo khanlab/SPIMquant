@@ -56,16 +56,22 @@ rule fibre_moments:
             suffix="thresholds.png",
             **inputs["spim"].wildcards,
         ),
-    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    # ~0.7 core-s per Mvox for two scales: ~12 core-h for a mouse brain at
+    # level 1 (68 GB), ~15 min on 64 threads
+    threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        # dask tasks are bounded by fibre_chunk_size (~0.45 GB per 128^3 task);
-        # the moments are 1/512 of the voxels or less, so little else grows
-        # with the image.
-        mem_mb=scaled_mem_mb(64000, 0),
+        # bounded by the threads, not the image: each task (a 128^3 chunk and
+        # its halo) peaks at ~0.3 GB, a 2-thread worker at ~1.0-1.3 GB with
+        # the moments computed one chunk plane at a time (measured on a mouse
+        # brain at levels 2 and 3). 1.25 GB per thread leaves room for dask's
+        # unmanaged memory, plus 8 GB for the scheduler and the script.
+        mem_mb=lambda wildcards, threads, attempt: _cap_mem_mb(
+            (8000 + 1250 * threads) * attempt
+        ),
         disk_mb=2097152,
-        runtime=scaled_runtime(30, 0.25),
+        runtime=scaled_runtime(15, 0.5),
     params:
-        dask_threads_per_worker=4,
+        dask_threads_per_worker=2,
         dask_reserve_mb=8000,
         scales_um=config["fibre_scales_um"],
         block_um=config["fibre_block_um"],
@@ -80,6 +86,7 @@ rule fibre_moments:
         stat_level_offset=config["fibre_stat_level_offset"],
         edge_min_weight=config["fibre_edge_min_weight"],
         chunk_size=config["fibre_chunk_size"],
+        slab_chunks=config["fibre_slab_chunks"],
     script:
         "../scripts/fibre_moments.py"
 
@@ -130,8 +137,10 @@ rule fibre_metrics:
         "subj_quant"
     threads: 4
     resources:
-        mem_mb=scaled_mem_mb(4000, 2),
-        runtime=10,
+        # the maps are held in float32 (moments are read in slabs): 2.2 GB
+        # and 30 s at level 2 of a mouse brain (8.8 GB), ~15 GB at level 1
+        mem_mb=scaled_mem_mb(2000, 250),
+        runtime=scaled_runtime(10, 0.2),
     script:
         "../scripts/fibre_metrics.py"
 

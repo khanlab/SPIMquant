@@ -1014,10 +1014,10 @@ dog_chunk_size: 192
 # A multiscale Frangi filter (Gaussian sigmas fibre_scales_um, in um) gives the
 # fibre axis at each voxel of the bias-corrected image at --fibre_level; voxels
 # whose response is above a global threshold are fibre voxels. These are
-# summarised over super-voxels of about fibre_block_um (rounded to whole voxels
-# per axis) as additive moments (counts, orientation tensor and spherical
-# harmonic sums up to order fibre_lmax), from which the ODF, dispersion and
-# anisotropy maps are derived.
+# summarised over super-voxels of about fibre_block_um (snapped to a divisor
+# of fibre_chunk_size voxels per axis) as additive moments (counts, orientation
+# tensor and spherical harmonic sums up to order fibre_lmax), from which the
+# ODF, dispersion and anisotropy maps are derived.
 fibre_scales_um: [4, 8]
 fibre_block_um: 30
 fibre_lmax: 6
@@ -1038,9 +1038,13 @@ fibre_stat_level_offset: 3
 # A voxel is analysed at a scale only if at least this fraction of its
 # Gaussian neighbourhood is in the brain mask (suppresses the mask edge).
 fibre_edge_min_weight: 0.5
-# chunk edge (voxels), rounded to a multiple of the super-voxel size. Peak
-# memory per task is ~30x the overlapped float32 chunk (~0.45 GB at 128).
+# fibre_block_um is snapped to a divisor of the chunk edge per axis (e.g. 30
+# um -> 8 voxels at 4 or 3.25 um), keeping chunks aligned with the stored ones.
+# Peak memory per task is ~0.3 GB at 128.
 fibre_chunk_size: 128
+# chunk planes computed at a time: bounds the halo data dask holds (1 is the
+# lowest memory, for ~8% more run time than computing the whole image at once)
+fibre_slab_chunks: 1
 # metrics in the atlas-region tables (desc-frangi_mergedsegstats, as
 # {stain}+{metric}), which the group statistics use. Computed from moments
 # pooled over each region.
