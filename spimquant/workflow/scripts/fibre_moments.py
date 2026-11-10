@@ -158,10 +158,12 @@ def main():
         del lowres
         print(f"sampling {len(block_ids)} chunks (chosen on level +{lowres_level})")
 
-        moments, est = zarrnii_fibre_moments(
-            znimg,
-            scales_um,
-            factor,
+        psf = params.psf_fwhm_um
+        if isinstance(psf, (list, tuple)):
+            psf = [float(v) for v in psf]  # (z, y, x) in um
+        kwargs = dict(
+            scales_um=scales_um,
+            factor=factor,
             lmax=int(params.lmax),
             block_ids=block_ids,
             chunk_size=(chunk,) * 3,
@@ -181,10 +183,23 @@ def main():
                 )
             ),
             slab_chunks=int(params.slab_chunks),
+            soft_lo=float(params.soft_lo),
         )
+        try:
+            moments, est = zarrnii_fibre_moments(znimg, psf_fwhm_um=psf, **kwargs)
+        except ValueError as e:
+            if psf != "auto":
+                raise
+            print(f"WARNING: PSF estimate failed ({e}); no PSF equalisation")
+            moments, est = zarrnii_fibre_moments(znimg, psf_fwhm_um=None, **kwargs)
         print("moments computed")
         gammas = [float(g) for g in est["gammas"]]
         print(f"gammas {np.round(gammas, 4)}, threshold {est['threshold']:.4f}")
+        if "psf_fwhm_um" in est:
+            print(
+                f"PSF FWHM (z, y, x) {np.round(est['psf_fwhm_um'], 2)} um, "
+                f"equalised by extra sigma {np.round(est['psf_sigma_um'], 2)} um"
+            )
 
         fig = make_qc_figure(est, scales_um, params.threshold_method)
         fig.savefig(snakemake.output.qc_png)
@@ -206,6 +221,18 @@ def main():
                     "threshold": float(est["threshold"]),
                     "threshold_method": params.threshold_method,
                     "edge_min_weight": float(params.edge_min_weight),
+                    "psf_fwhm_um": (
+                        [float(v) for v in est["psf_fwhm_um"]]
+                        if "psf_fwhm_um" in est
+                        else None
+                    ),
+                    "psf_sigma_um": (
+                        [float(v) for v in est["psf_sigma_um"]]
+                        if "psf_sigma_um" in est
+                        else None
+                    ),
+                    "psf_n_puncta": est.get("psf_n_puncta"),
+                    "soft_threshold": float(params.soft_lo),
                     "stat_blocks": [list(map(int, b)) for b in block_ids],
                     "sampled_voxels": int(est["frangi_samples"].size),
                 },
