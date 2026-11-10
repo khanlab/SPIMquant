@@ -87,6 +87,8 @@ rule fibre_moments:
         edge_min_weight=config["fibre_edge_min_weight"],
         chunk_size=config["fibre_chunk_size"],
         slab_chunks=config["fibre_slab_chunks"],
+        psf_fwhm_um=config["fibre_psf_fwhm_um"],
+        soft_lo=config["fibre_soft_threshold"],
     script:
         "../scripts/fibre_moments.py"
 

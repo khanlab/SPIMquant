@@ -1038,6 +1038,16 @@ fibre_stat_level_offset: 3
 # A voxel is analysed at a scale only if at least this fraction of its
 # Gaussian neighbourhood is in the brain mask (suppresses the mask edge).
 fibre_edge_min_weight: 0.5
+# Light-sheet PSFs are longer axially, so point-like structures (e.g. axon
+# varicosities) look like short axial tubes and bias orientations to the
+# axial axis. The PSF is equalised (extra Gaussian smoothing of the sharper
+# axes) before filtering: FWHM in um as [z, y, x], auto (estimated from bright
+# puncta in the sampled chunks), or null for no correction.
+fibre_psf_fwhm_um: auto
+# Soft fibre threshold: a voxel's fibre weight ramps from 0 at
+# fibre_soft_threshold x the threshold to 1 at the threshold (1 = hard
+# threshold). Fibre density is then the weighted fraction of tissue.
+fibre_soft_threshold: 0.25
 # fibre_block_um is snapped to a divisor of the chunk edge per axis (e.g. 30
 # um -> 8 voxels at 4 or 3.25 um), keeping chunks aligned with the stored ones.
 # Peak memory per task is ~0.3 GB at 128.
