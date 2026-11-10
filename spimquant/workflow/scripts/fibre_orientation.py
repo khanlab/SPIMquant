@@ -48,6 +48,9 @@ from scipy.special import gammaln, lpmv
 # Gaussian kernels are truncated at this many sigmas; overlap depth follows.
 TRUNCATE = 4.0
 
+# Voxels per batch in the analytic eigensolver (bounds its float64 temporaries).
+_EIGEN_BATCH = 1 << 18
+
 # Below this, the blur weight G(M) is treated as "no tissue nearby".
 _MIN_WEIGHT = 1e-3
 
@@ -161,6 +164,21 @@ def normalized_blur(img, weight, sigma, truncate=TRUNCATE):
     return out, den
 
 
+def _iter_hessian_components(smoothed, spacing_um):
+    """Yield the six Hessian components one at a time (see below)."""
+    grads = {}
+    for i, j in _TENSOR_IDX:
+        if i == j:
+            kernel = np.array([1.0, -2.0, 1.0], dtype=np.float32) / spacing_um[i] ** 2
+            yield ndi.correlate1d(smoothed, kernel, axis=i, mode="nearest")
+        else:
+            if i not in grads:
+                grads[i] = np.gradient(smoothed, spacing_um[i], axis=i)
+            yield np.gradient(grads[i], spacing_um[j], axis=j)
+            if j == 2:  # last mixed term using grads[i]
+                del grads[i]
+
+
 def hessian_components(smoothed, spacing_um):
     """Six Hessian components (00, 01, 02, 11, 12, 22) in physical units.
 
@@ -170,15 +188,7 @@ def hessian_components(smoothed, spacing_um):
     on the diagonal, which over-smooths coarsely sampled axes and biases
     angles by several degrees on anisotropic voxels.)
     """
-    out = []
-    for i, j in _TENSOR_IDX:
-        if i == j:
-            kernel = np.array([1.0, -2.0, 1.0], dtype=np.float32) / spacing_um[i] ** 2
-            out.append(ndi.correlate1d(smoothed, kernel, axis=i, mode="nearest"))
-        else:
-            g = np.gradient(smoothed, spacing_um[i], axis=i)
-            out.append(np.gradient(g, spacing_um[j], axis=j))
-    return out
+    return list(_iter_hessian_components(smoothed, spacing_um))
 
 
 def _eigvals_sym3(a, b, c, d, e, f):
@@ -217,6 +227,14 @@ def sorted_eigen(h6, method="analytic"):
     n = h6.shape[0]
     if method == "lapack":
         return _sorted_eigen_lapack(h6)
+    if n > _EIGEN_BATCH:
+        # bounded float64 temporaries (~150 B per voxel per batch)
+        w = np.empty((n, 3), dtype=np.float32)
+        vec = np.empty((n, 3), dtype=np.float32)
+        for start in range(0, n, _EIGEN_BATCH):
+            sl = slice(start, start + _EIGEN_BATCH)
+            w[sl], vec[sl] = sorted_eigen(h6[sl], method)
+        return w, vec
     h = h6.astype(np.float64)
     a, b, c, d, e, f = (h[:, k] for k in range(6))
     w = _eigvals_sym3(a, b, c, d, e, f)
@@ -297,10 +315,12 @@ def _scale_eigen(
     del den
     if idx.size == 0:
         return idx, np.zeros((0, 3), np.float32), np.zeros((0, 3), np.float32)
-    comps = hessian_components(blur, spacing_um)
+    # gather each component at the analysed voxels as soon as it is computed,
+    # rather than holding all six full blocks
+    h6 = np.empty((idx.size, 6), dtype=np.float32)
+    for k, comp in enumerate(_iter_hessian_components(blur, spacing_um)):
+        h6[:, k] = comp.ravel()[idx]
     del blur
-    h6 = np.stack([c.ravel()[idx] for c in comps], axis=1)
-    del comps
     h6 *= np.float32(float(scale_um) ** 2)
     if tubes_only:
         keep = (h6[:, 0] + h6[:, 3] + h6[:, 5]) < 0
