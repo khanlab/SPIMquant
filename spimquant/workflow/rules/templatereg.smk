@@ -464,7 +464,7 @@ rule compose_subject_to_template_warp:
         " -r {input.ref} -t {input.warp} {input.xfm_itk} && "
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
         "antsApplyTransforms -d 3 -o [{output.xfm_composite_inv},1] "
-        " -r {input.subject} -t {input.invwarp} [{input.xfm_itk},1]"
+        " -r {input.subject} -t [{input.xfm_itk},1] {input.invwarp}"
 
 
 rule compose_subject_warp_from_cohort_build:
