@@ -85,17 +85,21 @@ rule compute_instance_regionprops:
             suffix="instances.json",
             **inputs["spim"].wildcards,
         ),
-    threads: 128 if config["dask_scheduler"] == "distributed" else 32
+    threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
         # each task (one instance_chunk_size block plus overlap) peaks at
-        # ~0.75 GB, set by h_maxima (~100 bytes per voxel), so the workers
-        # need ~1 GB per thread whatever the image size: 16 workers of 8
-        # threads get ~10 GB each. Fewer, larger workers absorb a few heavy
-        # blocks without being killed. (64 workers of 1.46 GB thrashed for 4 h
-        # on a 250 GB marmoset hemisphere; at 2.9 GB the blocks took ~35 min.)
-        # What grows with the image is the scheduler's task graph (~0.4 GB
-        # serialised for 31k blocks), reserved with the script's memory.
-        mem_mb=scaled_mem_mb(176000, 40, config["segmentation_level"]),
+        # ~100 bytes per voxel of the overlapped block, mostly h_maxima. The
+        # overlap is instance_depth_um on each side, so in voxels it grows as
+        # the voxels shrink: at 1.5 x 0.975 x 0.975 um, 160^3 blocks become
+        # 228 x 264 x 264 (~16M voxels), ~1.6 GB per task. With ~1.7 GB per
+        # thread (128 threads, 16 workers of 13.4 GB), dense blocks pushed
+        # workers past 95% and killed them repeatedly (KilledWorker) on a
+        # 250 GB marmoset hemisphere. So the job uses 64 threads and ~3 GB per
+        # thread (8 workers of 8 threads get ~24 GB each), whatever the image
+        # size. What grows with the image is the scheduler's task graph
+        # (~0.4 GB serialised for 31k blocks), reserved with the script's
+        # memory.
+        mem_mb=scaled_mem_mb(208000, 40, config["segmentation_level"]),
         runtime=scaled_runtime(60, 0.25, config["segmentation_level"]),
     params:
         dask_threads_per_worker=config["instance_threads_per_worker"],
