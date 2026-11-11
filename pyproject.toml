@@ -124,6 +124,15 @@ docutils = "<0.22"
 [tool.pixi.feature.runtime.dependencies]
 spimquant = { path = "." }
 
+# TEMPORARY, for testing khanlab/zarrnii#275 (block-wise apply_transform):
+# zarrnii from its PR branch, over the conda package. Remove, and raise the
+# zarrnii pin above, once it is released.
+[tool.pixi.feature.runtime.pypi-dependencies]
+zarrnii = { git = "https://github.com/khanlab/zarrnii.git", branch = "resample-revamp" }
+# keep ngff-zarr at the conda version; zarrnii's extras would otherwise pull the
+# latest from PyPI
+ngff-zarr = "==0.34.0"
+
 # the CUDA platform is only solved for the gpu environment
 [tool.pixi.feature.cpu]
 platforms = ["linux-64"]

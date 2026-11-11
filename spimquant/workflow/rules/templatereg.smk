@@ -543,8 +543,36 @@ rule select_subject_to_template_warp:
         "ln -srf {input.xfm_composite_inv} {output.xfm_composite_inv}"
 
 
-rule deform_zarr_to_template_nii:
+def _template_zarr_input(wildcards):
+    """SPIM input for deform_spim_to_template_zarr: raw or intensity corrected."""
+    if wildcards.desc == "raw":
+        return spim_input(wildcards)
+    return bids_oz_in(
+        root=work,
+        datatype="seg",
+        stain="{stain}",
+        level="{level}",
+        desc="{desc}",
+        suffix="SPIM.{ext}",
+        **inputs["spim"].wildcards,
+    ).format(**wildcards)
+
+
+rule deform_spim_to_template_zarr:
+    """Resample SPIM data into template space on a zoomed template grid (OME-Zarr).
+
+    The output covers the registration template's field of view with voxels
+    {zoom} times smaller than the template's (zoom 10 on a 25 um template gives
+    2.5 um), sampled from the SPIM image at pyramid {level} through the
+    subject-to-template composite warp with zarrnii's block-wise resampler.
+    desc-raw uses the raw channel; desc-corrected<method> uses the intensity
+    corrected image at the same level (--template_spim_corrected).
+    """
     input:
+        spim=_template_zarr_input,
+        spim_json=lambda wildcards: (
+            spim_json_input(wildcards) if wildcards.desc == "raw" else []
+        ),
         xfm_composite=bids(
             root=root,
             datatype="xfm",
@@ -553,73 +581,35 @@ rule deform_zarr_to_template_nii:
             suffix="xfm.nii.gz",
             **inputs["spim"].wildcards,
         ),
-        ref_nii=get_template_for_reg,
+        ref=get_template_for_reg,
     output:
-        nii=bids(
+        spim=bids_oz_out(
             root=root,
             datatype="micr",
-            desc="deform",
-            space="{template}",
             stain="{stain}",
-            suffix="SPIM.nii.gz",
+            space="{template}",
+            res="{zoom}x",
+            desc="{desc}",
+            level="{level}",
+            suffix="SPIM.{ext}",
             **inputs["spim"].wildcards,
         ),
+    wildcard_constraints:
+        zoom="[0-9]+(p[0-9]+)?",
+        desc="raw|corrected[a-z0-9]+",
     threads: 32
     resources:
-        mem_mb=16000,
-        runtime=15,
+        mem_mb=scaled_mem_mb(32000, 0),
+        runtime=scaled_runtime(30, 1),
     params:
-        ome_zarr=spim_input,
-        flo_opts={"level": 2},  #downsampling level to use (TODO: set this automatically based on ref resolution?)
-        do_downsample=True,  #whether to perform further downsampling before transforming
-        downsample_opts={"along_z": 4},  #could also be determined automatically 
-        ref_opts={"chunks": (1, 100, 100, 100)},
-    script:
-        "../scripts/deform_to_template_nii.py"
-
-
-rule deform_to_template_nii_zoomed:
-    input:
-        ome_zarr=spim_input,
-        spim_json=spim_json_input,
-        xfm_composite=bids(
-            root=root,
-            datatype="xfm",
-            from_="subject",
-            to="{template}",
-            suffix="xfm.nii.gz",
-            **inputs["spim"].wildcards,
+        corrected=lambda wildcards: wildcards.desc != "raw",
+        zarrnii_kwargs=lambda wildcards, input: (
+            zarrnii_in_kwargs(wildcards, input) if wildcards.desc == "raw" else {}
         ),
-        ref_nii=get_template_for_reg,
-    output:
-        nii=bids(
-            root=root,
-            datatype="micr",
-            desc="deform",
-            space="{template}",
-            stain="{stain}",
-            res="{res}um",
-            suffix="SPIM.nii.gz",
-            **inputs["spim"].wildcards,
-        ),
-    threads: 4
-    resources:
-        mem_mb=16000,
-        runtime=15,
-    params:
-        flo_opts={},  #any additional flo znimg options
-        do_downsample=True,  #whether to perform further downsampling before transforming
-        downsample_opts={"along_z": 4},  #could also be determined automatically 
-        ref_opts=lambda wildcards: {
-            "chunks": (1, 50, 50, 50),
-            "zooms": (
-                float(wildcards.res) / 1000,
-                float(wildcards.res) / 1000,
-                float(wildcards.res) / 1000,
-            ),
-        },
+        chunks=config["template_spim_chunks"],
+        io=config["template_spim_io"],
     script:
-        "../scripts/deform_to_template_nii.py"
+        "../scripts/deform_spim_to_template_zarr.py"
 
 
 rule deform_spim_nii_to_template_nii:

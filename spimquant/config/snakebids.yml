@@ -571,6 +571,38 @@ parse_args:
     action: store_true
     default: False
 
+  --template_spim_zooms:
+    help: >
+      Resample the SPIM data into template space as OME-Zarr, on the template's
+      field of view with voxels this many times smaller than the template's
+      (e.g. 10 on the 25 um ABAv3 template gives 2.5 um voxels). One output per
+      value, named res-<zoom>x (e.g. res-10x, res-2p5x) (default: %(default)s)
+    type: float
+    nargs: '+'
+    default: null
+
+  --template_spim_level:
+    help: "Pyramid level of the SPIM data to resample with --template_spim_zooms (default: %(default)s)"
+    type: int
+    default: 0
+
+  --template_spim_corrected:
+    help: "Resample the intensity corrected image (--correction_method, at --template_spim_level) instead of the raw data with --template_spim_zooms; outputs are named desc-corrected<method> instead of desc-raw (default: %(default)s)"
+    action: store_true
+    default: False
+
+  --template_spim_chunks:
+    help: "Chunk size (voxels per axis) of the template-space OME-Zarr from --template_spim_zooms; each output chunk is one task (default: %(default)s)"
+    type: int
+    default: 128
+
+  --template_spim_io:
+    help: "How --template_spim_zooms resampling reads its input: graph (each input chunk read once and shared between output chunks) or direct (each output chunk reads its own input, re-reading overlaps; independent tasks, which may suit the distributed scheduler with object storage) (default: %(default)s)"
+    choices:
+      - graph
+      - direct
+    default: graph
+
   --bbox_config:
     help: >
       Path to a YAML file defining custom bounding boxes for extracting cropped regions
@@ -767,8 +799,6 @@ models:
   
 templatereg:
   desc: N4brain
-  zooms:
-    - 40
 
 masking:
   gmm_init_k: 9
