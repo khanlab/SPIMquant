@@ -478,6 +478,11 @@ parse_args:
     default: null
     nargs: '+'
 
+  --aux_min_coverage:
+    help: "In the group statistics of additional scans (--aux_spim), which are computed separately for each acquisition, a region's metrics are only used for scans whose field of view covers at least this fraction of the region (the coverage column of their mergedsegstats.tsv). (default: %(default)s)"
+    type: float
+    default: 0.5
+
   --reuse_derivatives:
     help: "Path to an existing SPIMquant output dataset to reuse outputs from (see --reuse_outputs), instead of computing them again. Files are matched by the same BIDS paths SPIMquant writes, so they are only reused when the relevant settings (e.g. --template, --registration_level) match; anything not found is computed as usual. Reused files are copied into the output directory (see --reuse_symlink)."
     default: null
@@ -1160,6 +1165,13 @@ column_descriptions:
       Fraction of brain tissue occupied by the segmented pathology marker within the
       atlas region, expressed as a percentage (0–100).
     Units: percent
+  coverage:
+    LongName: Field-of-view coverage
+    Description: >
+      Fraction (0–1) of the atlas region, as segmented in the reference scan, that lies
+      within the field of view of this additional scan (--aux_spim). The volume,
+      and so the density, of a region in an additional scan are over the covered
+      part only.
   pos_x:
     LongName: Centroid x-coordinate (subject space)
     Description: X-axis coordinate of the object centroid in subject (image) space.

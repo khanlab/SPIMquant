@@ -123,6 +123,42 @@ def apply_group_stats_filter(df, where_expr, log):
     return filtered
 
 
+def apply_min_coverage(df, metrics, min_coverage, log):
+    """Blank out metrics of regions a scan's field of view covers too little of.
+
+    Only applies to tables with a ``coverage`` column (additional scans,
+    --aux_spim), whose metrics are computed over the covered part of each region:
+    rows with less than ``min_coverage`` coverage get NaN metrics, so they are
+    left out of the model fits and group counts for that region.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+    metrics : list[str]
+    min_coverage : float or None
+    log : logging.Logger
+
+    Returns
+    -------
+    pd.DataFrame
+        A copy of *df* with the metrics blanked out.
+    """
+    if "coverage" not in df.columns or not min_coverage:
+        return df
+    low = ~(df["coverage"] >= min_coverage)
+    present = [m for m in metrics if m in df.columns]
+    df = df.copy()
+    df.loc[low, present] = np.nan
+    log.info(
+        "[min-coverage] %d of %d region rows have coverage below %g: their metrics "
+        "are left out.",
+        int(low.sum()),
+        len(df),
+        min_coverage,
+    )
+    return df
+
+
 def load_segstats_with_metadata(segstats_paths, participants_df, log):
     """Load all segstats files and merge with participant metadata.
 
@@ -482,6 +518,9 @@ def main():
 
     # Apply subject-level filter before model fitting and contrast evaluation.
     combined_data = apply_group_stats_filter(combined_data, where_expr, log)
+    combined_data = apply_min_coverage(
+        combined_data, metrics, snakemake.params.get("min_coverage", None), log
+    )
 
     if not formula:
         raise ValueError("No model formula supplied (--model is required).")

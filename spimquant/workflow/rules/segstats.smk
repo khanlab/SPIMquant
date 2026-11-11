@@ -269,10 +269,18 @@ def get_indiv_segstats_tsvs(wildcards):
     return [path.format(**wildcards) for path in paths]
 
 
+def get_coverage_tsv_input(wildcards):
+    """Field-of-view coverage of each region, for additional scans (--aux_spim) only."""
+    if not is_aux_scan(wildcards):
+        return []
+    return rules.aux_coverage_tsv.output.tsv.format(**wildcards)
+
+
 rule merge_indiv_and_coloc_segstats_tsv:
     input:
         coloc_tsv=get_coloc_tsv_input,
         indiv_tsvs=get_indiv_segstats_tsvs,
+        coverage_tsv=get_coverage_tsv_input,
     output:
         merged_tsv=bids(
             root=root,

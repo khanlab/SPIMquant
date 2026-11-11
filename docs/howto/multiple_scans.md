@@ -73,21 +73,48 @@ scan, with its own entities. In addition:
 - `xfm/..._acq-12x_from-ref_to-subject_desc-affine_type-ras_xfm.txt`: the greedy
   affine from the additional scan to its reference scan
 - `xfm/..._acq-12x_space-subject_from-ref_stain-<stain>_SPIM.nii.gz`: the
-  reference scan resampled into the additional scan, to check the registration
-  (overlay it on the additional scan's `level-<registration_level>` image)
+  reference scan resampled into the additional scan
+- `xfm/..._acq-12x_from-ref_to-subject_regqc.html`: a QC report of the
+  registration, with the reference scan resampled into the additional scan with the
+  initial translation (and its match score) and with the registration, for each of
+  `--aux_reg_stains`, and the atlas labels the additional scan gets through it
 - `xfm/..._acq-12x_from-subject_to-<template>_desc-viaref_xfm.nii.gz` (and its
   inverse): the composite warps to and from the template, through the reference
   scan
+- a `coverage` column in `tabular/..._acq-12x_..._mergedsegstats.tsv`: the
+  fraction (0–1) of each atlas region, as labelled in the reference scan, that the
+  additional scan's field of view (its nonzero voxels) covers
 
 The brain mask of an additional scan uses the reference scan's brain mask,
 resampled into it, as its spatial prior (in place of the template mask), so it is
 only as good as the reference scan's.
 
 Only reference scans are used for template registration QC reports, `tune_reg`,
-cohort templates, MRI registration and the `group` analysis level (where the
-additional scans would count their participants twice); the additional scans'
-per-scan tables are under each scan's own entities.
+cohort templates and MRI registration.
 
 !!! note
-    Atlas regions only partly covered by an additional scan's field of view have
-    their volume (and so density) computed over the covered part only.
+    The volume, and so the density, of an atlas region in an additional scan is over
+    the part its field of view covers. Field fraction and density are comparable
+    between scans when the covered part is representative of the region; volumes
+    and counts are not, so use `coverage` to judge them (the covered volume is
+    about `coverage` times the region's volume in the reference scan).
+
+## Group analysis
+
+At the `group` analysis level, the reference scans give the usual outputs, and
+the additional scans give their own for each acquisition (the entities that tell
+the scans of a sample apart, e.g. `acq-`), named with it, so that no participant
+counts twice in the same statistics:
+
+```
+group/<label>/seg-roi22_from-ABAv3_desc-otsu+k3i2_allsubjects.tsv
+group/<label>/acq-12x_seg-roi22_from-ABAv3_desc-otsu+k3i2_allsubjects.tsv
+group/<label>/acq-12x_seg-roi22_from-ABAv3_..._contrast-<contrast>_..._groupstats.tsv
+```
+
+The additional scans have the merged tables (`allsubjects.tsv`, with the coverage
+column), and with `--group-stats-pairwise`, the group statistics, their heatmaps and
+template-space maps. In their statistics, a region's metrics are only used for
+scans that cover at least `--aux_min_coverage` (default 0.5) of it, so the number
+of scans in the statistics can differ between regions. The template-space count maps and the
+regionprops tables of the group level are for the reference scans only.

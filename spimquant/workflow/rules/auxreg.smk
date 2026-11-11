@@ -108,6 +108,8 @@ rule aux_reg_init:
         moving=_aux_ref_images,
     output:
         xfm_ras=temp(_aux_xfm("xfm.txt", desc="init", type_="ras")),
+        # the translation and match score, for aux_reg_qc_report
+        info=temp(_aux_xfm("xfm.json", desc="init")),
     log:
         bids(
             root="logs",
@@ -271,3 +273,154 @@ rule warp_ref_mask_to_aux:
     shell:
         "greedy -threads {threads} -d 3 -rf {input.ref} -ri NN "
         " -rm {input.mask} {output.mask} -r {params.to_ref}"
+
+
+def _scan_name(key):
+    """BIDS name of a scan, from its entity tuple (_spim_key_wildcards)."""
+    return os.path.basename(inputs["spim"].path).format(
+        **dict(zip(_spim_key_wildcards, key))
+    )
+
+
+def _ref_to_aux(input):
+    """greedy -r transforms from the reference scan to its additional scan (G^-1)."""
+    return (
+        f"{input.xfm_ras},-1 {input.invwarp}" if aux_deform else f"{input.xfm_ras},-1"
+    )
+
+
+rule aux_coverage_tsv:
+    """Fraction of each atlas region that an additional scan's field of view covers.
+
+    The field of view (the additional scan's nonzero voxels) is resampled into its
+    reference scan, and averaged over each region of the reference scan's atlas
+    labels, which cover the whole sample: the coverage column of the additional
+    scan's mergedsegstats.tsv.
+    """
+    input:
+        **({"invwarp": rules.aux_reg_to_ref.output.invwarp} if aux_deform else {}),
+        fov=_aux_reg_image(stain_for_reg),
+        xfm_ras=rules.aux_reg_to_ref.output.xfm_ras,
+        dseg=ref_scan_input(
+            bids(
+                root=root,
+                datatype="parc",
+                seg="{seg}",
+                level=config["registration_level"],
+                from_="{template}",
+                suffix="dseg.nii.gz",
+                **inputs["spim"].wildcards,
+            )
+        ),
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
+    output:
+        tsv=temp(
+            bids(
+                root=root,
+                datatype="tabular",
+                seg="{seg}",
+                from_="{template}",
+                suffix="coveragestats.tsv",
+                **inputs["spim"].wildcards,
+            )
+        ),
+    group:
+        "subj_quant"
+    threads: 8
+    resources:
+        mem_mb=8000,
+        runtime=10,
+    params:
+        to_aux=lambda wildcards, input: _ref_to_aux(input),
+    script:
+        "../scripts/aux_coverage.py"
+
+
+# the reference scan resampled into an additional scan, with the initial
+# transform (init) or the registration (final), for aux_reg_qc_report
+_aux_qc_warped = bids(
+    root=root,
+    datatype="xfm",
+    from_="ref",
+    stain="{stain}",
+    desc="{stage}",
+    suffix="auxqc.nii.gz",
+    **inputs["spim"].wildcards,
+)
+
+
+rule warp_ref_to_aux_for_report:
+    """Resample a stain of the reference scan into an additional scan, for the report."""
+    input:
+        **({"warp": rules.aux_reg_to_ref.output.warp} if aux_deform else {}),
+        fixed=_aux_reg_image("{stain}"),
+        moving=ref_scan_input(_aux_reg_image("{stain}")),
+        init=rules.aux_reg_init.output.xfm_ras,
+        xfm_ras=rules.aux_reg_to_ref.output.xfm_ras,
+    output:
+        temp(_aux_qc_warped),
+    wildcard_constraints:
+        stage="init|final",
+    threads: 8
+    resources:
+        mem_mb=8000,
+        runtime=10,
+    params:
+        xfms=lambda wildcards, input: (
+            input.init if wildcards.stage == "init" else _aux_to_ref(input)
+        ),
+    shell:
+        "greedy -threads {threads} -d 3 -rf {input.fixed} "
+        " -rm {input.moving} {output} -r {params.xfms}"
+
+
+rule aux_reg_qc_report:
+    """QC report of an additional scan's registration to its reference scan.
+
+    Shows the reference scan resampled into the additional scan with the initial
+    translation (--aux_reg_init) and with the registration (--aux_reg_method), for
+    each of --aux_reg_stains, with the atlas labels the additional scan gets
+    through its reference scan.
+    """
+    input:
+        **({"warp": rules.aux_reg_to_ref.output.warp} if aux_deform else {}),
+        fixed=expand(
+            _aux_reg_image("{stain}"), stain=aux_reg_stains, allow_missing=True
+        ),
+        warped_init=expand(
+            _aux_qc_warped, stain=aux_reg_stains, stage="init", allow_missing=True
+        ),
+        warped_final=expand(
+            _aux_qc_warped, stain=aux_reg_stains, stage="final", allow_missing=True
+        ),
+        dseg=bids(
+            root=root,
+            datatype="parc",
+            seg=list(atlas_segs)[0],
+            level=config["registration_level"],
+            from_=config["template"],
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        init_info=rules.aux_reg_init.output.info,
+    output:
+        report_html=_aux_xfm("regqc.html"),
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=30,
+    params:
+        scan=lambda wildcards: _scan_name(_scan_key(wildcards)),
+        ref=lambda wildcards: _scan_name(aux_ref_keys[_scan_key(wildcards)]),
+        stains=aux_reg_stains,
+        init=config["aux_reg_init"],
+        method=config["aux_reg_method"],
+        # those of the stages --aux_reg_method runs
+        parameters=" ".join(
+            f"{k}={config['aux_reg'][k]}"
+            for k in ["metric", "rigid_iters"]
+            + (["affine_iters"] if config["aux_reg_method"] != "rigid" else [])
+            + (["deform_iters", "sigma1", "sigma2"] if aux_deform else [])
+        ),
+    script:
+        "../scripts/aux_reg_qc_report.py"
