@@ -561,8 +561,9 @@ def _template_zarr_input(wildcards):
 rule deform_spim_to_template_zarr:
     """Resample SPIM data into template space at {res} um (OME-Zarr).
 
-    The output covers the registration template's field of view with isotropic
-    {res} um voxels ({res} uses p for a decimal point, e.g. 2p5), sampled from
+    The output has isotropic {res} um voxels ({res} uses p for a decimal point,
+    e.g. 2p5) and covers the registration template's field of view (extended
+    by under a voxel where needed), sampled from
     the SPIM image at pyramid {level} through the subject-to-template composite
     warp with zarrnii's block-wise resampler, and is written with pyramid
     levels down to ~128 voxels, as Imaris does.

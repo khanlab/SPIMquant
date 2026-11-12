@@ -1,11 +1,12 @@
 """Resample SPIM OME-Zarr data into template space at a given resolution.
 
-The output grid covers the registration template's field of view with
-isotropic voxels of the requested resolution (``{res}`` in um, with p for a
-decimal point, e.g. 2p5 for 2.5 um). Each output voxel is pulled from the SPIM image (at the
-requested pyramid level) through the subject-to-template composite warp, using
-zarrnii's block-wise resampler, and the result is written as an OME-Zarr
-pyramid.
+The output grid has isotropic voxels of exactly the requested resolution
+(``{res}`` in um, with p for a decimal point, e.g. 2p5 for 2.5 um) and covers
+the registration template's field of view, extending past it by less than a
+voxel where the resolution does not divide the template's extent. Each output
+voxel is pulled from the SPIM image (at the requested pyramid level) through
+the subject-to-template composite warp, using zarrnii's block-wise resampler,
+and the result is written as an OME-Zarr pyramid.
 
 The input is either the raw SPIM channel (``desc-raw``) or its intensity
 corrected image at the same level (``desc-corrected<method>``).
@@ -24,25 +25,37 @@ from dask_setup import get_dask_client
 from zarrnii import DisplacementTransform, ZarrNii
 
 
-def template_grid(path, chunks=64):
-    """Lazy ZYX reference grid with the geometry of a NIfTI image.
+def template_grid(path, res_mm, chunks=128):
+    """Lazy ZYX grid with res_mm voxels over a NIfTI template's field of view.
 
-    Built from the NIfTI affine rather than ZarrNii.from_nifti(axes_order="ZYX"),
-    which in zarrnii <= 0.22 swaps the x and z offsets (and voxel sizes).
+    The grid has the template's orientation and starts at the outer corner of
+    its first voxel; each axis has as many res_mm voxels as cover the
+    template's extent, so the grid can extend past the template by less than
+    a voxel. Built from the NIfTI affine rather than
+    ZarrNii.from_nifti(axes_order="ZYX"), which in zarrnii <= 0.22 swaps the x
+    and z offsets (and voxel sizes).
     """
     img = nib.load(path)
     aff = img.affine
     zooms = img.header.get_zooms()[:3]
-    # for each voxel axis (i, j, k): its world axis and the offset along it
-    rows = [int(np.argmax(np.abs(aff[:3, j]))) for j in range(3)]
-    offsets = [float(aff[rows[j], 3]) for j in range(3)]
-    nx, ny, nz = img.shape[:3]
+    shape, origin = [], []
+    for j in range(3):  # NIfTI voxel axes i, j, k
+        row = int(np.argmax(np.abs(aff[:3, j])))  # world axis of voxel axis j
+        sign = np.sign(aff[row, j])
+        extent = img.shape[j] * float(zooms[j])
+        # an exact multiple (up to float32 voxel sizes in NIfTI headers) does
+        # not get an extra voxel
+        n = extent / res_mm
+        shape.append(max(1, round(n) if abs(n - round(n)) < 1e-3 else math.ceil(n)))
+        # centre of the first voxel: template corner + half a new voxel
+        origin.append(float(aff[row, 3]) + sign * (res_mm - float(zooms[j])) / 2)
+    nx, ny, nz = shape
     return ZarrNii.from_darr(
         da.zeros((1, nz, ny, nx), dtype=np.float32, chunks=(1, chunks, chunks, chunks)),
         axes_order="ZYX",
         orientation="".join(nib.aff2axcodes(aff)),
-        spacing=tuple(float(z) for z in zooms[::-1]),
-        origin=tuple(offsets[::-1]),
+        spacing=(res_mm, res_mm, res_mm),
+        origin=tuple(origin[::-1]),
         axes_units={"x": "millimeter", "y": "millimeter", "z": "millimeter"},
     )
 
@@ -95,7 +108,7 @@ def main():
                 print(f"reading input chunks {flo.data.chunksize} as {chunks}")
                 flo = ZarrNii.from_file(snakemake.input.spim, chunks=chunks, **load)
 
-        template = template_grid(snakemake.input.ref)
+        grid = template_grid(snakemake.input.ref, res_mm, chunks=params.chunks)
         # subject -> template warp, defined on the template grid: maps template
         # points to subject points, as used by antsApplyTransforms -r template.
         # Saved to zarr so that each output block reads only the part it needs,
@@ -107,16 +120,10 @@ def main():
             warp_dir
         )
 
-        # zoom of the template grid along each axis (ZYX) to get res_mm voxels;
-        # the grid keeps the template's field of view, so the spacing is
-        # adjusted slightly where res_mm does not divide it
-        zoom = tuple(float(sp) / res_mm for sp in template.get_zooms())
-
         t0 = time.time()
         out = flo.apply_transform(
             warp,
-            ref_znimg=template,
-            ref_zoom=zoom,
+            ref_znimg=grid,
             chunks=params.chunks,
             io=params.io,
         )

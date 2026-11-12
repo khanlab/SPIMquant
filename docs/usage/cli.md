@@ -181,9 +181,11 @@ it is used as the output's `desc` label.
 
 Use `--template_spim_res` to resample whole SPIM channels into template space
 as OME-Zarr, at an isotropic resolution in microns, e.g. close to the input's.
-The output grid covers the registration template's field of view; e.g. with the
-25 um ABAv3 template, `--template_spim_res 2.5` gives a grid 10 times finer
-than the template's. Data are sampled from pyramid level
+The output grid covers the registration template's field of view with voxels
+of exactly that size; e.g. with the 25 um ABAv3 template, `--template_spim_res
+2.5` gives a grid 10 times finer than the template's. Where the resolution
+does not divide the template's extent, the grid extends past it by less than a
+voxel. Data are sampled from pyramid level
 `--template_spim_level` (default `0`, full resolution) through the
 subject-to-template warp, and written with pyramid levels down to about 128
 voxels per axis, as in Imaris files.

@@ -573,9 +573,10 @@ parse_args:
 
   --template_spim_res:
     help: >
-      Resample the SPIM data into template space as OME-Zarr, at this isotropic
-      resolution in microns (e.g. 2.5), on the registration template's field of
-      view. One output per value, named res-<res>um, with p for a decimal point
+      Resample the SPIM data into template space as OME-Zarr, at exactly this
+      isotropic resolution in microns (e.g. 2.5), covering the registration
+      template's field of view (extended by under a voxel if the resolution does
+      not divide it). One output per value, named res-<res>um, with p for a decimal point
       (e.g. res-2p5um, res-10um) (default: %(default)s)
     type: float
     nargs: '+'
