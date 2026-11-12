@@ -456,7 +456,7 @@ rule compose_subject_to_template_warp:
         "../envs/ants.yaml"
     threads: 4
     resources:
-        mem_mb=10000,
+        mem_mb=20000,
         runtime=15,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
@@ -500,7 +500,7 @@ rule compose_subject_warp_from_cohort_build:
         "../envs/ants.yaml"
     threads: 4
     resources:
-        mem_mb=10000,
+        mem_mb=20000,
         runtime=15,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "

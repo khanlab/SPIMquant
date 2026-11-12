@@ -756,7 +756,7 @@ rule cohort_template_compose_warp:
         "../envs/ants.yaml"
     threads: 4
     resources:
-        mem_mb=16000,
+        mem_mb=26000,
         runtime=15,
     shell:
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
@@ -1195,7 +1195,7 @@ if reg_via_cohort and not prior_cohort:
             "../envs/ants.yaml"
         threads: 4
         resources:
-            mem_mb=10000,
+            mem_mb=20000,
             runtime=15,
         params:
             # inside the build directory, so they cannot be declared as inputs
