@@ -743,42 +743,6 @@ wildcard_constraints:
     n4_iters="[0-9]+",
 
 
-rule all_templatereg_deform_zooms:
-    input:
-        spim_zoomed=inputs["spim"].expand(
-            bids(
-                root=root,
-                datatype="micr",
-                desc="deform",
-                space="{template}",
-                stain="{stain}",
-                res="{res}um",
-                suffix="SPIM.nii.gz",
-                **inputs["spim"].wildcards,
-            ),
-            template=config["template"],
-            stain=stains,
-            res=config["templatereg"]["zooms"],
-        ),
-
-
-rule all_templatereg_deform:
-    input:
-        spim=inputs["spim"].expand(
-            bids(
-                root=root,
-                datatype="micr",
-                desc="deform",
-                space="{template}",
-                stain="{stain}",
-                suffix="SPIM.nii.gz",
-                **inputs["spim"].wildcards,
-            ),
-            template=config["template"],
-            stain=stains,
-        ),
-
-
 rule all_templatereg_lbl:
     input:
         dseg=inputs["spim"].expand(
@@ -1721,6 +1685,44 @@ rule all_group_merged_regionpropstats_tsvs:
         else [],
 
 
+def _res_entity(res_um):
+    """Resolution in um as a res- entity value: 2.5 -> '2p5', 10 -> '10'."""
+    r = float(res_um)
+    return str(int(r)) if r.is_integer() else f"{r:g}".replace(".", "p")
+
+
+template_spim_desc = (
+    "corrected{method}".format(method=config["correction_method"])
+    if config.get("template_spim_corrected")
+    else "raw"
+)
+
+
+rule all_template_spim_zarr:
+    """Target rule for SPIM data resampled into template space (OME-Zarr).
+
+    One OME-Zarr per subject, stain and --template_spim_res resolution, sampled
+    from pyramid level --template_spim_level.
+    """
+    input:
+        inputs["spim"].expand(
+            bids_oz_in(
+                root=root,
+                datatype="micr",
+                stain="{stain}",
+                space="{template}",
+                res="{res}um",
+                desc=template_spim_desc,
+                level=config["template_spim_level"],
+                suffix="SPIM.{ext}",
+                **inputs["spim"].wildcards,
+            ),
+            stain=stains,
+            template=config["template"],
+            res=[_res_entity(r) for r in config.get("template_spim_res") or []],
+        ),
+
+
 rule all_bbox_template_crops:
     """Target rule to generate all custom bounding box crops in template space.
 
@@ -1773,6 +1775,7 @@ rule all_participant:
         rules.all_qc.input,
         rules.all_tabular_sidecars.input,
         rules.all_bbox_template_crops.input if do_bbox else [],
+        (rules.all_template_spim_zarr.input if config.get("template_spim_res") else []),
         rules.all_spim_patches.input if config["save_patches"] else [],
         rules.all_imaris_crops.input if config["save_patches"] else [],
 

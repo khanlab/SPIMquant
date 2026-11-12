@@ -6,7 +6,7 @@ platforms:
   - __linux=4.18
   - __glibc=2.28
   - __archspec=0=x86_64
-- name: linux-64-cuda
+- name: p1
   subdir: linux-64
   virtual-packages:
   - __cuda=12.0
@@ -640,8 +640,8 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/imaris-ims-zarr-0.2.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/ngff-zarr-0.34.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
-      - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.0-pyh4616a5c_0.conda
-      - conda_source: spimquant[02e5125a] @ .
+      - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.3-pyh4616a5c_0.conda
+      - conda_source: spimquant[d1dfa241] @ .
   dev:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -1426,8 +1426,8 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/imaris-ims-zarr-0.2.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/ngff-zarr-0.34.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
-      - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.0-pyh4616a5c_0.conda
-      - conda_source: spimquant[02e5125a] @ .
+      - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.3-pyh4616a5c_0.conda
+      - conda_source: spimquant[d1dfa241] @ .
   dev-only:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -1594,7 +1594,7 @@ environments:
     - url: https://conda.anaconda.org/bioconda/
     - url: https://prefix.dev/akhanf/khanlab/
     packages:
-      linux-64-cuda:
+      p1:
       - conda: https://conda.anaconda.org/bioconda/noarch/snakebids-0.16.0-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-9.27.1-hdfd78af_0.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-executor-plugin-slurm-1.9.2-pyhdfd78af_0.conda
@@ -2244,8 +2244,8 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/imaris-ims-zarr-0.2.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/ngff-zarr-0.34.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
-      - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.0-pyh4616a5c_0.conda
-      - conda_source: spimquant[02e5125a] @ .
+      - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.3-pyh4616a5c_0.conda
+      - conda_source: spimquant[d1dfa241] @ .
 packages:
 - conda: https://conda.anaconda.org/bioconda/noarch/snakebids-0.16.0-pyhdfd78af_0.conda
   sha256: 12d38f256b68016d5936c05bf1e97949f559401bf456e25c2b530778dc11bc2f
@@ -14884,9 +14884,9 @@ packages:
   run_exports: {}
   size: 70296
   timestamp: 1792393284138
-- conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.0-pyh4616a5c_0.conda
-  sha256: be1427202fdcc64c15b732165817722390bf1914e15eb4e15a728135f3e79c9e
-  md5: 29a9cf16207b527403577a4d9f97a141
+- conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.3-pyh4616a5c_0.conda
+  sha256: e9e94cafab03720216bc2e05b597f611a747ab22a8cfe978b3a9b1f60cfdb678
+  md5: 87141fb8407c4908d4423c1a5ddd84d2
   depends:
   - dask-image
   - itk >=5.3.0
@@ -14910,9 +14910,9 @@ packages:
   - tifffile >=2024.1.30
   license: MIT
   run_exports: {}
-  size: 129749
-  timestamp: 1793075503652
-- conda_source: spimquant[02e5125a] @ .
+  size: 144634
+  timestamp: 1794506440162
+- conda_source: spimquant[d1dfa241] @ .
   variants:
     target_platform: noarch
   depends:
@@ -14928,7 +14928,7 @@ packages:
   - gcsfs >=2025.5.1,<2026
   - s3fs >=2025.5.1,<2026
   - universal-pathlib >=0.2.6,<0.3
-  - zarrnii >=0.22.0,<0.23.0
+  - zarrnii >=0.22.3,<0.23.0
   - zarr >=3.1.6,<4
   - dask >=2026.3.0
   - h5py >=3.14.0

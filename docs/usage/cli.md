@@ -177,6 +177,35 @@ Set `use_brain_mask: true` instead of coordinates and `size` to derive the box
 extent from the selected template's brain mask. Each `name` must be unique;
 it is used as the output's `desc` label.
 
+### Full-Resolution Template-Space OME-Zarr
+
+Use `--template_spim_res` to resample whole SPIM channels into template space
+as OME-Zarr, at an isotropic resolution in microns, e.g. close to the input's.
+The output grid covers the registration template's field of view with voxels
+of exactly that size; e.g. with the 25 um ABAv3 template, `--template_spim_res
+2.5` gives a grid 10 times finer than the template's. Where the resolution
+does not divide the template's extent, the grid extends past it by less than a
+voxel. Data are sampled from pyramid level
+`--template_spim_level` (default `0`, full resolution) through the
+subject-to-template warp, and written with pyramid levels down to about 128
+voxels per axis, as in Imaris files.
+
+```bash
+pixi run spimquant /path/to/bids /path/to/output participant \
+  --template_spim_res 2.5 \
+  --cores all
+```
+
+Each subject, stain and resolution gives
+`micr/sub-*_stain-<stain>_space-<template>_res-<res>um_level-<level>_desc-raw_SPIM.ome.zarr`,
+with `p` for a decimal point (e.g. `res-2p5um`, `res-10um`). With
+`--template_spim_corrected`, the intensity corrected image at the same level
+(`--correction_method`) is resampled instead, and `desc-raw` becomes
+`desc-corrected<method>`. `--template_spim_chunks` sets the output chunk size
+(default 256), and `--template_spim_io` how input chunks are read (`graph`, the
+default, reads each once; `direct` lets every output chunk read its own, which
+may suit the distributed scheduler with object storage).
+
 ### Cloud Storage
 
 ```bash

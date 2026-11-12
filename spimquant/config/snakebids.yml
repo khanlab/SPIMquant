@@ -571,6 +571,39 @@ parse_args:
     action: store_true
     default: False
 
+  --template_spim_res:
+    help: >
+      Resample the SPIM data into template space as OME-Zarr, at exactly this
+      isotropic resolution in microns (e.g. 2.5), covering the registration
+      template's field of view (extended by under a voxel if the resolution does
+      not divide it). One output per value, named res-<res>um, with p for a decimal point
+      (e.g. res-2p5um, res-10um) (default: %(default)s)
+    type: float
+    nargs: '+'
+    default: null
+
+  --template_spim_level:
+    help: "Pyramid level of the SPIM data to resample with --template_spim_res (default: %(default)s)"
+    type: int
+    default: 0
+
+  --template_spim_corrected:
+    help: "Resample the intensity corrected image (--correction_method, at --template_spim_level) instead of the raw data with --template_spim_res; outputs are named desc-corrected<method> instead of desc-raw (default: %(default)s)"
+    action: store_true
+    default: False
+
+  --template_spim_chunks:
+    help: "Chunk size (voxels per axis) of the template-space OME-Zarr from --template_spim_res; each output chunk is one task (default: %(default)s)"
+    type: int
+    default: 256
+
+  --template_spim_io:
+    help: "How --template_spim_res resampling reads its input: graph (each input chunk read once and shared between output chunks) or direct (each output chunk reads its own input, re-reading overlaps; independent tasks, which may suit the distributed scheduler with object storage) (default: %(default)s)"
+    choices:
+      - graph
+      - direct
+    default: graph
+
   --bbox_config:
     help: >
       Path to a YAML file defining custom bounding boxes for extracting cropped regions
@@ -777,8 +810,6 @@ models:
   
 templatereg:
   desc: N4brain
-  zooms:
-    - 40
 
 masking:
   gmm_init_k: 9
