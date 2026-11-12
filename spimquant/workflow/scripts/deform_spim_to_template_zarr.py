@@ -31,9 +31,7 @@ def template_grid(path, res_mm, chunks=128):
     The grid has the template's orientation and starts at the outer corner of
     its first voxel; each axis has as many res_mm voxels as cover the
     template's extent, so the grid can extend past the template by less than
-    a voxel. Built from the NIfTI affine rather than
-    ZarrNii.from_nifti(axes_order="ZYX"), which in zarrnii <= 0.22 swaps the x
-    and z offsets (and voxel sizes).
+    a voxel.
     """
     img = nib.load(path)
     aff = img.affine
