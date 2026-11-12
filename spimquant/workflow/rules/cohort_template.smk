@@ -287,7 +287,9 @@ rule all_cohort_template:
         expand(bids_cohort(stain="{stain}", suffix="SPIM.nii.gz"), stain=cohort_stains),
         (
             expand(
-                bids_cohort(desc="rawintensity", stain="{stain}", suffix="SPIM.nii.gz"),
+                bids_cohort(
+                    desc="rawintensity", stain="{stain}", suffix="SPIM.nii.gz"
+                ),
                 stain=cohort_stains,
             )
             if cohort_warp_raw
