@@ -559,12 +559,13 @@ def _template_zarr_input(wildcards):
 
 
 rule deform_spim_to_template_zarr:
-    """Resample SPIM data into template space on a zoomed template grid (OME-Zarr).
+    """Resample SPIM data into template space at {res} um (OME-Zarr).
 
-    The output covers the registration template's field of view with voxels
-    {zoom} times smaller than the template's (zoom 10 on a 25 um template gives
-    2.5 um), sampled from the SPIM image at pyramid {level} through the
-    subject-to-template composite warp with zarrnii's block-wise resampler.
+    The output covers the registration template's field of view with isotropic
+    {res} um voxels ({res} uses p for a decimal point, e.g. 2p5), sampled from
+    the SPIM image at pyramid {level} through the subject-to-template composite
+    warp with zarrnii's block-wise resampler, and is written with pyramid
+    levels down to ~128 voxels, as Imaris does.
     desc-raw uses the raw channel; desc-corrected<method> uses the intensity
     corrected image at the same level (--template_spim_corrected).
     """
@@ -588,14 +589,14 @@ rule deform_spim_to_template_zarr:
             datatype="micr",
             stain="{stain}",
             space="{template}",
-            res="{zoom}x",
+            res="{res}um",
             desc="{desc}",
             level="{level}",
             suffix="SPIM.{ext}",
             **inputs["spim"].wildcards,
         ),
     wildcard_constraints:
-        zoom="[0-9]+(p[0-9]+)?",
+        res="[0-9]+(p[0-9]+)?",
         desc="raw|corrected[a-z0-9]+",
     threads: 32
     resources:

@@ -1,8 +1,8 @@
-"""Resample SPIM OME-Zarr data into template space, on a zoomed template grid.
+"""Resample SPIM OME-Zarr data into template space at a given resolution.
 
-The output grid covers the registration template's field of view with voxels
-``zoom`` times smaller than the template's (e.g. zoom 10 on a 25 um template
-gives 2.5 um voxels). Each output voxel is pulled from the SPIM image (at the
+The output grid covers the registration template's field of view with
+isotropic voxels of the requested resolution (``{res}`` in um, with p for a
+decimal point, e.g. 2p5 for 2.5 um). Each output voxel is pulled from the SPIM image (at the
 requested pyramid level) through the subject-to-template composite warp, using
 zarrnii's block-wise resampler, and the result is written as an OME-Zarr
 pyramid.
@@ -11,6 +11,7 @@ The input is either the raw SPIM channel (``desc-raw``) or its intensity
 corrected image at the same level (``desc-corrected<method>``).
 """
 
+import math
 import shutil
 import tempfile
 import time
@@ -62,10 +63,16 @@ def coarse_chunks(znimg, target_mm=0.4):
     return lead + tuple(c * f for c, f in zip(spatial, factors))
 
 
+def pyramid_levels(shape, coarsest=128):
+    """Number of pyramid levels (incl. level 0), halving until every axis is at
+    most ``coarsest`` voxels, as Imaris does (e.g. 7 for 3200x5280x4560)."""
+    return 1 + max(0, math.ceil(math.log2(max(shape) / coarsest)))
+
+
 def main():
     wildcards = snakemake.wildcards
     params = snakemake.params
-    zoom = float(wildcards.zoom.replace("p", "."))
+    res_mm = float(wildcards.res.replace("p", ".")) / 1000
 
     with get_dask_client(
         snakemake.config["dask_scheduler"],
@@ -100,6 +107,11 @@ def main():
             warp_dir
         )
 
+        # zoom of the template grid along each axis (ZYX) to get res_mm voxels;
+        # the grid keeps the template's field of view, so the spacing is
+        # adjusted slightly where res_mm does not divide it
+        zoom = tuple(float(sp) / res_mm for sp in template.get_zooms())
+
         t0 = time.time()
         out = flo.apply_transform(
             warp,
@@ -118,7 +130,9 @@ def main():
         t0 = time.time()
         try:
             out.to_ome_zarr(
-                snakemake.output.spim, **snakemake.config["zarrnii_out_kwargs"]
+                snakemake.output.spim,
+                max_layer=pyramid_levels(out.shape[-3:]),
+                **snakemake.config["zarrnii_out_kwargs"],
             )
         finally:
             shutil.rmtree(warp_dir, ignore_errors=True)

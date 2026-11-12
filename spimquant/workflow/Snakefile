@@ -1685,10 +1685,10 @@ rule all_group_merged_regionpropstats_tsvs:
         else [],
 
 
-def _zoom_entity(zoom):
-    """Zoom factor as a res- entity value: 10 -> '10', 2.5 -> '2p5'."""
-    z = float(zoom)
-    return str(int(z)) if z.is_integer() else f"{z:g}".replace(".", "p")
+def _res_entity(res_um):
+    """Resolution in um as a res- entity value: 2.5 -> '2p5', 10 -> '10'."""
+    r = float(res_um)
+    return str(int(r)) if r.is_integer() else f"{r:g}".replace(".", "p")
 
 
 template_spim_desc = (
@@ -1699,9 +1699,9 @@ template_spim_desc = (
 
 
 rule all_template_spim_zarr:
-    """Target rule for SPIM data resampled into zoomed template space (OME-Zarr).
+    """Target rule for SPIM data resampled into template space (OME-Zarr).
 
-    One OME-Zarr per subject, stain and --template_spim_zooms factor, sampled
+    One OME-Zarr per subject, stain and --template_spim_res resolution, sampled
     from pyramid level --template_spim_level.
     """
     input:
@@ -1711,7 +1711,7 @@ rule all_template_spim_zarr:
                 datatype="micr",
                 stain="{stain}",
                 space="{template}",
-                res="{zoom}x",
+                res="{res}um",
                 desc=template_spim_desc,
                 level=config["template_spim_level"],
                 suffix="SPIM.{ext}",
@@ -1719,7 +1719,7 @@ rule all_template_spim_zarr:
             ),
             stain=stains,
             template=config["template"],
-            zoom=[_zoom_entity(z) for z in config.get("template_spim_zooms") or []],
+            res=[_res_entity(r) for r in config.get("template_spim_res") or []],
         ),
 
 
@@ -1775,11 +1775,7 @@ rule all_participant:
         rules.all_qc.input,
         rules.all_tabular_sidecars.input,
         rules.all_bbox_template_crops.input if do_bbox else [],
-        (
-            rules.all_template_spim_zarr.input
-            if config.get("template_spim_zooms")
-            else []
-        ),
+        (rules.all_template_spim_zarr.input if config.get("template_spim_res") else []),
         rules.all_spim_patches.input if config["save_patches"] else [],
         rules.all_imaris_crops.input if config["save_patches"] else [],
 
