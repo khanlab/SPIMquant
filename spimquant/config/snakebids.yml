@@ -763,6 +763,44 @@ templates:
         custom_csv: https://www.mouseimaging.ca/repo/DSURQE_40micron/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/mappings/DSURQE_40micron_R_mapping.csv
         tsv: tpl-DSURQE/seg-all_tpl-DSURQE_dseg.tsv
 
+  vachtchatyopro:
+    anat: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_anat.nii.gz
+    mask: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_desc-brain_mask.nii.gz
+    spim_templates:
+      YoPro: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_stain-YoPro_SPIM.nii.gz
+      ChAT: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_stain-ChAT_SPIM.nii.gz
+      VAChT: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_stain-VAChT_SPIM.nii.gz
+    default_segs:
+    - all
+    - coarse
+    - mid
+    - fine
+    atlases:
+      all:
+        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-all_dseg.nii.gz
+        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-all_dseg.tsv
+      allsym:
+        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-allsym_dseg.nii.gz
+        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-allsym_dseg.tsv
+      coarse:
+        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-coarse_dseg.nii.gz
+        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-coarse_dseg.tsv
+      mid:
+        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-mid_dseg.nii.gz
+        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-mid_dseg.tsv
+      fine:
+        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-fine_dseg.nii.gz
+        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-fine_dseg.tsv
+      roi22:
+        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-roi22_dseg.nii.gz
+        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-roi22_dseg.tsv
+      roi82:
+        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-roi82_dseg.nii.gz
+        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-roi82_dseg.tsv
+      roi198:
+        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-roi198_dseg.nii.gz
+        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-roi198_dseg.tsv
+
 
 models:
   vesselfm: https://huggingface.co/bwittmann/vesselFM/resolve/main/vesselFM_base.pt
