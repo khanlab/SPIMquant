@@ -102,8 +102,10 @@ description = {
     "Stains": list(p.stains),
     # the subjects' un-normalized images averaged with the final-iteration warps;
     # the stain templates in spim_templates are normalized for registration
+    # (--cohort-template-warp-raw)
     "RawIntensityTemplates": [
-        f"tpl-{name}_desc-rawintensity_stain-{stain}_SPIM.nii.gz" for stain in p.stains
+        f"tpl-{name}_desc-rawintensity_stain-{stain}_SPIM.nii.gz"
+        for stain in (p.stains if p.warp_raw else [])
     ],
     "InputLevel": p.level,
     # isotropic voxel size (mm) the inputs were resampled to, null if not resampled

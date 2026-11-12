@@ -10,8 +10,9 @@ Key workflow stages:
    (plus images from any --cohort-template-extra-inputs SPIMquant output directories)
 2. Robust intensity normalization of the subject images
 3. Multivariate template building with FireANTs (all stains share one space)
-   and a desc-rawintensity template per stain: the subjects' un-normalized images
-   warped with the final-iteration warps and averaged
+   and, with --cohort-template-warp-raw, a desc-rawintensity template per stain:
+   the subjects' un-normalized images warped with the final-iteration warps and
+   averaged
 4. Registration of the original template (moving) to the cohort template
    (fixed), since the cohort template drifts away from the original template
    space during building, with --cohort-template-reg-method. The
@@ -43,6 +44,7 @@ cohort_n_gpus = config["cohort_template_n_gpus"]
 cohort_zenodo_deposition = config["cohort_template_zenodo_deposition"]
 cohort_reg_method = config["cohort_template_reg_method"]
 cohort_reg_tune_methods = config["cohort_template_reg_tune_methods"]
+cohort_warp_raw = config.get("cohort_template_warp_raw", False)
 
 # final outputs in cohort_root/tpl-{name}/, intermediate files in cohort_work
 cohort_root = os.path.join(root, "cohort_template")
@@ -283,9 +285,13 @@ cohort_buildinfo = os.path.join(cohort_root, f"tpl-{cohort_name}_buildinfo.tar.g
 rule all_cohort_template:
     input:
         expand(bids_cohort(stain="{stain}", suffix="SPIM.nii.gz"), stain=cohort_stains),
-        expand(
-            bids_cohort(desc="rawintensity", stain="{stain}", suffix="SPIM.nii.gz"),
-            stain=cohort_stains,
+        (
+            expand(
+                bids_cohort(desc="rawintensity", stain="{stain}", suffix="SPIM.nii.gz"),
+                stain=cohort_stains,
+            )
+            if cohort_warp_raw
+            else []
         ),
         bids_cohort(suffix="anat.nii.gz"),
         bids_cohort(desc="brain", suffix="mask.nii.gz") if cohort_has_mask else [],
@@ -1026,7 +1032,7 @@ cohort_export_files = (
     + [bids_cohort(stain=s, suffix="SPIM.nii.gz") for s in cohort_stains]
     + [
         bids_cohort(desc="rawintensity", stain=s, suffix="SPIM.nii.gz")
-        for s in cohort_stains
+        for s in (cohort_stains if cohort_warp_raw else [])
     ]
     + [
         bids_cohort(seg=seg, suffix=f"dseg.{ext}")
@@ -1106,6 +1112,7 @@ rule cohort_template_description:
         orig_template=orig_template,
         orig_template_config=template,
         stains=cohort_stains,
+        warp_raw=cohort_warp_raw,
         level=cohort_level,
         iterations=cohort_iterations,
         resample_mm=config["cohort_template_resample_mm"],

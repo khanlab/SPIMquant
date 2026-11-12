@@ -667,6 +667,11 @@ parse_args:
       - fireantsMulti
     nargs: '+'
 
+  --cohort-template-warp-raw:
+    help: "Also make a desc-rawintensity template per stain: the subjects' un-normalized images warped with the final template-building warps and averaged, keeping the original intensities. (default: %(default)s)"
+    action: store_true
+    default: False
+
   --cohort-template-zenodo-deposition:
     help: "Zenodo deposition ID (an unpublished draft you created) to upload the exported cohort template to, in the cohort_template_export analysis level. Requires SNAKEMAKE_STORAGE_ZENODO_ACCESS_TOKEN to be set. When absent, the export is only prepared locally. (default: %(default)s)"
     default: null
