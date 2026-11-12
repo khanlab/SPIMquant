@@ -21,6 +21,41 @@ The workflow is:
 4. The `cohort_template_export` level writes a `template_description.json`, a
    SPIMquant `templates:` config entry, and optionally uploads everything to Zenodo.
 
+## In one run: `--reg-cohort-template`
+
+To register subjects to `--template` through a cohort template without the
+separate `cohort_template` and `cohort_template_export` steps, add
+`--reg-cohort-template` to a participant run:
+
+```
+spimquant /path/to/bids /path/to/output participant --reg-cohort-template
+```
+
+The cohort template is built in the same run, from all the subjects in it (steps 1
+to 3 above, with the same `--cohort-template-*` options), and written to
+`cohort_template/tpl-cohort/`. Each subject's warps to `--template` then chain its
+affine to `--template`, its warp from the build, and the cohort template's
+registration to `--template`, and are written as `desc-viacohort`. Unlike
+`--template` with an exported cohort template, outputs stay in `--template` space
+and use its atlases directly, so they can be compared with other runs registered
+to it.
+
+Since the template needs every subject, all subjects must be in the run (not one
+`--participant_label` per job), and adding subjects later builds a new template.
+To add subjects to a dataset without rebuilding, run with
+`--reuse_derivatives <earlier output>`: subjects with `desc-viacohort` warps in it
+reuse them, and the rest are registered with `--registration_method` (its
+multichannel variant for a multi-stain template) to the cohort template in that
+dataset, instead of a new one being built, so that every subject goes through
+the same cohort template. See [Reusing Derivatives](reuse_derivatives.md).
+
+The registration QC report of each subject (`xfm/*_desc-viacohort_regqc.html`)
+shows its affine and its `desc-viacohort` warp, and the template's own
+registration to `--template` has a report in `cohort_template/tpl-cohort/`.
+
+`--template_crop` and cohort `--template`s are not supported with
+`--reg-cohort-template`.
+
 ## Building the template
 
 ```
@@ -53,7 +88,7 @@ Outputs are in `<output>/cohort_template/`:
 ```
 tpl-lecanemab/
 ├── tpl-lecanemab_stain-YoPro_SPIM.nii.gz          # one per stain, normalized to [0,1]
-├── tpl-lecanemab_desc-rawintensity_stain-YoPro_SPIM.nii.gz   # one per stain, original intensities
+├── tpl-lecanemab_desc-rawintensity_stain-YoPro_SPIM.nii.gz   # with --cohort-template-warp-raw
 ├── tpl-lecanemab_anat.nii.gz                      # original anat, warped
 ├── tpl-lecanemab_desc-brain_mask.nii.gz           # original mask, warped
 ├── tpl-lecanemab_seg-<seg>_dseg.nii.gz/.tsv       # original atlases, warped
@@ -68,8 +103,8 @@ Check the `regqc.html` report to confirm the atlases line up with the cohort tem
 
 Template building clips each subject image to robust percentiles and rescales it
 to [0,1], and FireANTs sharpens and min-max normalizes the template, so the stain
-templates do not keep the original intensities. The `desc-rawintensity` templates
-do: each is the voxelwise mean of the subjects' un-normalized images (the
+templates do not keep the original intensities. The `desc-rawintensity` templates,
+made with `--cohort-template-warp-raw`, do: each is the voxelwise mean of the subjects' un-normalized images (the
 `space-<template>_desc-affine` SPIM images, which have no bias field correction or other
 intensity changes), warped with the warps from the final template iteration. They
 are in the same space as the stain templates but are not sharpened, so they look

@@ -52,6 +52,11 @@ again if you need accurate labels. Anything not found is
 computed as usual, per subject and per file, including subjects missing from
 the prior dataset.
 
+With `--reg-cohort-template`, the `desc-viacohort` warps are reused, and subjects
+without them are registered to the cohort template of the prior dataset
+(`cohort_template/tpl-<name>/`) rather than a new template being built; see
+[Cohort templates](cohort_template.md#in-one-run-reg-cohort-template).
+
 The registration QC report (`xfm/*_regqc.html`) is not made for subjects whose
 transforms are reused, since it would only re-check the prior run; see the
 prior dataset's report instead.

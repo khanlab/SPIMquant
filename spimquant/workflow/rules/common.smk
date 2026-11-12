@@ -416,10 +416,10 @@ reg_presets = {
     name: _resolve_reg_preset(name) for name in config["registration"]["presets"]
 }
 for _name, _preset in reg_presets.items():
-    if not _name.isalnum() or _name == "cohort":
+    if not _name.isalnum() or _name in ("cohort", "viacohort", "viaref"):
         raise ValueError(
             f"Registration method name {repr(_name)} must be alphanumeric, and "
-            "cohort is reserved for warps from a cohort template build"
+            "cohort, viacohort and viaref are reserved for warps that combine others"
         )
     if _preset["backend"] not in ("greedy", "ants", "fireants"):
         raise ValueError(f"Unknown backend in registration method {_name}: {_preset}")
@@ -483,6 +483,21 @@ def reg_note(preset):
     return ", ".join(f"{k}: {v}" for k, v in preset.items())
 
 
+def reg_method_note(reg):
+    """reg_note of a method, or a description of the via-cohort warps."""
+    if reg == "viacohort":
+        return (
+            f"affine to {config['template']}, then via cohort template "
+            f"tpl-{config['cohort_template_name']} (--reg-cohort-template)"
+        )
+    return reg_note(reg_presets[reg])
+
+
+def qc_reg_constraint():
+    """reg_constraint() plus viacohort, for the rules that report on warps."""
+    return reg_constraint() + ("|viacohort" if reg_via_cohort else "")
+
+
 def ants_reg_args(preset, fixed, moving, center_init, extra_fixed=(), extra_moving=()):
     """antsRegistration stages for a preset (the output prefix is added by the rule).
 
@@ -528,6 +543,11 @@ reg_identity_itk = (
 # --- subject warps from a cohort template build, when --template is that cohort ---
 
 cohort_warps = config["templates"][config["template"]].get("cohort_warps")
+
+# --reg-cohort-template: subject<->template warps via a cohort template built in
+# the same run (or the one in --reuse_derivatives), desc-viacohort, see
+# cohort_template.smk
+reg_via_cohort = bool(config.get("reg_cohort_template"))
 
 
 def _cohort_warp_paths(wildcards):
@@ -586,13 +606,22 @@ def ref_scan_input(pattern):
     return _input
 
 
+def subject_template_method():
+    """desc- of the subject<->template warps of reference scans (when not cohort)."""
+    return "viacohort" if reg_via_cohort else config["registration_method"]
+
+
 def subject_reg_method(wildcards):
     """Registration desc for a subject: its cohort build warps if any, else the method.
+
+    With --reg-cohort-template, every reference scan goes via the cohort template.
 
     Additional scans (--aux_spim) get theirs through their reference scan (viaref).
     """
     if is_aux_scan(wildcards):
         return "viaref"
+    if reg_via_cohort and wildcards.template == config["template"]:
+        return "viacohort"
     if wildcards.template == config["template"] and cohort_warps:
         if all(os.path.exists(f) for f in _cohort_warp_paths(wildcards).values()):
             return "cohort"

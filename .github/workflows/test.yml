@@ -54,6 +54,18 @@ jobs:
         run: |
           ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds_withmri test_out participant -np --register-to-mri --no-segmentation
 
+      # a cohort template needs 2+ subjects: add a second, linked to the first
+      - name: Dry-run Test with --reg-cohort-template
+        run: |
+          ds=$RUNNER_TEMP/bids_ds2
+          cp -r $GITHUB_WORKSPACE/tests/bids_ds $ds
+          mkdir -p $ds/sub-B/micr
+          ln -s $ds/sub-AS36F2/micr/sub-AS36F2_sample-brain_acq-downsampled_SPIM.ome.zarr $ds/sub-B/micr/sub-B_sample-brain_acq-downsampled_SPIM.ome.zarr
+          printf 'sub-B\tcontrol\t12\tM\n' >> $ds/participants.tsv
+          printf 'sub-B\tsample-brain\ttissue\n' >> $ds/samples.tsv
+          ./spimquant/run.py $ds test_out participant -np --reg-cohort-template
+          ./spimquant/run.py $ds test_out participant -np --executor slurm -j 1 --reg-cohort-template
+
       # Job groups are only enforced by non-local executors, so a local dry run
       # cannot catch a rule missing from a group (e.g. subj_quant). The slurm
       # plugin builds the grouped DAG without needing sbatch for a dry run.
