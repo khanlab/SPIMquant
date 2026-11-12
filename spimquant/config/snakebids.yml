@@ -597,11 +597,11 @@ parse_args:
     default: 256
 
   --template_spim_io:
-    help: "How --template_spim_zooms resampling reads its input: graph (each input chunk read once and shared between output chunks) or direct (each output chunk reads its own input, re-reading overlaps; independent tasks, which may suit the distributed scheduler with object storage) (default: %(default)s)"
+    help: "How --template_spim_zooms resampling reads its input: direct (each output chunk reads its own input chunks one at a time; independent tasks with low memory, suited to the distributed scheduler) or graph (each input chunk read once and shared between output chunks; fewer reads, but more memory per task and transfers between workers) (default: %(default)s)"
     choices:
-      - graph
       - direct
-    default: graph
+      - graph
+    default: direct
 
   --bbox_config:
     help: >

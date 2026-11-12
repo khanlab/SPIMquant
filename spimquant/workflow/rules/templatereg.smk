@@ -599,7 +599,12 @@ rule deform_spim_to_template_zarr:
         desc="raw|corrected[a-z0-9]+",
     threads: 32
     resources:
-        mem_mb=scaled_mem_mb(32000, 0),
+        # dask splits this between workers of 2 threads; a 256^3 block peaks
+        # at ~0.3 GB with io=direct (~0.8 GB with io=graph), plus per-worker
+        # overhead
+        mem_mb=lambda wildcards, threads, attempt: _cap_mem_mb(
+            (8000 + 2000 * threads) * attempt
+        ),
         runtime=scaled_runtime(30, 1),
     params:
         corrected=lambda wildcards: wildcards.desc != "raw",
