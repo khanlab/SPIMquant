@@ -644,7 +644,7 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.1-pyh4616a5c_0.conda
       - conda_source: spimquant[02e5125a] @ .
-      - pypi: git+https://github.com/khanlab/zarrnii.git?branch=resample-memory#47cb3982f08b6cc18bf58092896541903f665838
+      - pypi: git+https://github.com/khanlab/zarrnii.git?branch=main#dea557ae46fd4f34fa6cbabc9a19119d8645521e
       - pypi: https://files.pythonhosted.org/packages/48/c4/7748c764c297c2469f26902fa70d72dbf026219e2a7a5ce2dc53fc519eff/ngff_zarr-0.34.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/5d/10af2dd18ad4ac8c074e700805482d9fa7b8a02d285781b41079c9c1b437/itkwasm_image_io-1.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5c/76/bac5e891715e47ffc415a5010aaf1282a78142c466762b2da5a9162ac679/itk_filtering-5.4.7-cp311-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -1442,7 +1442,7 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.1-pyh4616a5c_0.conda
       - conda_source: spimquant[02e5125a] @ .
-      - pypi: git+https://github.com/khanlab/zarrnii.git?branch=resample-memory#47cb3982f08b6cc18bf58092896541903f665838
+      - pypi: git+https://github.com/khanlab/zarrnii.git?branch=main#dea557ae46fd4f34fa6cbabc9a19119d8645521e
       - pypi: https://files.pythonhosted.org/packages/48/c4/7748c764c297c2469f26902fa70d72dbf026219e2a7a5ce2dc53fc519eff/ngff_zarr-0.34.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/5d/10af2dd18ad4ac8c074e700805482d9fa7b8a02d285781b41079c9c1b437/itkwasm_image_io-1.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5c/76/bac5e891715e47ffc415a5010aaf1282a78142c466762b2da5a9162ac679/itk_filtering-5.4.7-cp311-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -2272,7 +2272,7 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.1-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.1-pyh4616a5c_0.conda
       - conda_source: spimquant[02e5125a] @ .
-      - pypi: git+https://github.com/khanlab/zarrnii.git?branch=resample-memory#47cb3982f08b6cc18bf58092896541903f665838
+      - pypi: git+https://github.com/khanlab/zarrnii.git?branch=main#dea557ae46fd4f34fa6cbabc9a19119d8645521e
       - pypi: https://files.pythonhosted.org/packages/48/c4/7748c764c297c2469f26902fa70d72dbf026219e2a7a5ce2dc53fc519eff/ngff_zarr-0.34.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/5d/10af2dd18ad4ac8c074e700805482d9fa7b8a02d285781b41079c9c1b437/itkwasm_image_io-1.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5c/76/bac5e891715e47ffc415a5010aaf1282a78142c466762b2da5a9162ac679/itk_filtering-5.4.7-cp311-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -16290,9 +16290,9 @@ packages:
   - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
   - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
   - conda: https://conda.anaconda.org/conda-forge/noarch/vcs_versioning-2.6.0-pyh5ded981_0.conda
-- pypi: git+https://github.com/khanlab/zarrnii.git?branch=resample-memory#47cb3982f08b6cc18bf58092896541903f665838
+- pypi: git+https://github.com/khanlab/zarrnii.git?branch=main#dea557ae46fd4f34fa6cbabc9a19119d8645521e
   name: zarrnii
-  version: 0.22.3.dev1
+  version: 0.22.2
   requires_dist:
   - dask>=2026.3.0
   - h5py>=3.14.0

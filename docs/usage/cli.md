@@ -198,10 +198,9 @@ Each subject, stain and zoom gives
 `--template_spim_corrected`, the intensity corrected image at the same level
 (`--correction_method`) is resampled instead, and `desc-raw` becomes
 `desc-corrected<method>`. `--template_spim_chunks` sets the output chunk size
-(default 256), and `--template_spim_io` how input chunks are read (`direct`, the
-default, lets every output chunk read its own input one chunk at a time, which
-keeps memory low and suits the distributed scheduler; `graph` reads each input
-chunk once and shares it, with more memory per task).
+(default 256), and `--template_spim_io` how input chunks are read (`graph`, the
+default, reads each once; `direct` lets every output chunk read its own, which
+may suit the distributed scheduler with object storage).
 
 ### Cloud Storage
 
