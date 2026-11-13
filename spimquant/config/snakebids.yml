@@ -654,6 +654,10 @@ parse_args:
     action: store_true
     default: False
 
+  --via-template:
+    help: "Register subjects to this template instead of --template, and append its warps to --template, giving subject<->template warps (desc-via<name>) whose outputs stay in --template space with its atlases. For a pre-built cohort template in the subjects' own contrast (e.g. vachtchatyopro), which they register to more accurately than to --template. Its templates: entry needs xfms: for --template, as written by the cohort_template_export analysis level. Use --reg-cohort-template to build a cohort template from the subjects in the run instead. (default: %(default)s)"
+    default: null
+
   --cohort-template-name:
     help: "Name (tpl- label) for the cohort template built by the cohort_template analysis level. Must be alphanumeric and must not clash with an existing --template choice. (default: %(default)s)"
     default: cohort
@@ -797,6 +801,11 @@ templates:
         tsv: tpl-DSURQE/seg-all_tpl-DSURQE_dseg.tsv
 
   vachtchatyopro:
+    # for --via-template, add its warps to and from ABAv3 once they are on Zenodo:
+    # xfms:
+    #   ABAv3:
+    #     from: <tpl-vachtchatyopro_from-ABAv3_to-vachtchatyopro_desc-*_xfm.nii.gz>
+    #     to: <tpl-vachtchatyopro_from-vachtchatyopro_to-ABAv3_desc-*_xfm.nii.gz>
     anat: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_anat.nii.gz
     mask: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_desc-brain_mask.nii.gz
     spim_templates:
