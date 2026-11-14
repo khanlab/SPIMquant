@@ -54,6 +54,21 @@ entry["cohort_warps"] = {
     "reg_stain": p.stains[0],
 }
 
+# warps to and from the original template, so that subjects can be registered
+# to this template with outputs in the original template's space (--via-template)
+entry["xfms"] = {
+    p.orig_template: {
+        # resamples original template images into this template's space
+        "from": ref(
+            f"tpl-{name}_from-{p.orig_template}_to-{name}_desc-{p.reg_method}_xfm.nii.gz"
+        ),
+        # resamples this template's images into the original template's space
+        "to": ref(
+            f"tpl-{name}_from-{name}_to-{p.orig_template}_desc-{p.reg_method}_xfm.nii.gz"
+        ),
+    }
+}
+
 if p.zenodo_deposition is not None:
     location = (
         f"# Files are in Zenodo deposition {p.zenodo_deposition}; the URLs resolve\n"

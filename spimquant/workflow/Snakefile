@@ -348,7 +348,17 @@ template = config["templates"][config["template"]]
 # contrast as the subjects and aligned to their atlases: register to every one we
 # have the stain for. The first, from the --stains_for_reg priority list if it can
 # be, is the single stain that single-channel steps use.
-_shared_stains = [s for s in template.get("spim_templates") or {} if s in stains]
+# With --via-template, subjects are registered to that template instead.
+_shared_stains = [
+    s
+    for s in config["templates"][reg_template].get("spim_templates") or {}
+    if s in stains
+]
+if via_template and not _shared_stains:
+    raise ValueError(
+        f"--via-template {via_template} has no SPIM template of the subjects' "
+        f"stains {stains}"
+    )
 reg_stains = [s for s in config["stains_for_reg"] if s in _shared_stains]
 reg_stains += [s for s in _shared_stains if s not in reg_stains]
 use_spim_template = bool(reg_stains)
