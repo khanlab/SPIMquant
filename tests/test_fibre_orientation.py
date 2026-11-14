@@ -627,3 +627,49 @@ def test_min_fibre(fo):
     np.testing.assert_allclose(
         fo.moments_to_metrics(m)["fa"], fo.moments_to_metrics(m, min_fibre=0)["fa"]
     )
+
+
+def test_frangi_scales(fo):
+    # the example in the --fibre_scale_max_factor help
+    np.testing.assert_allclose(
+        fo.frangi_scales((4, 2, 2), 3), [2, 2 * 3 ** (1 / 3), 2 * 3 ** (2 / 3), 6]
+    )
+    # about two scales per doubling, always including both ends
+    for factor, n in ((1, 1), (1.5, 2), (2, 3), (4, 5), (8, 7)):
+        scales = fo.frangi_scales((3.25, 3.25, 5.5), factor)
+        assert len(scales) == n
+        assert scales[0] == pytest.approx(3.25)
+        assert scales[-1] == pytest.approx(3.25 * factor)
+        if n > 2:  # geometric
+            np.testing.assert_allclose(
+                np.diff(np.log(scales)), np.log(factor) / (n - 1)
+            )
+    assert fo.frangi_scales((2, 2, 2), 4, min_factor=2, per_octave=1) == pytest.approx(
+        [4, 8]
+    )
+    with pytest.raises(ValueError):
+        fo.frangi_scales((2, 2, 2), 0.5)
+    assert fo.block_edge_um([3.25, 6.5], 4) == pytest.approx(26)
+
+
+def test_quantile_threshold(fo):
+    rng = np.random.default_rng(3)
+    values = np.concatenate([np.zeros(5000), rng.uniform(0, 1, 20000)])
+    thr = fo.estimate_threshold(values, "quantile", 0.25, 0.99)
+    # zeros (non-tube voxels) are ignored
+    assert thr == pytest.approx(0.25 * 0.99, abs=0.005)
+    assert fo.estimate_threshold(values, "quantile", 0.1, 0.5) == pytest.approx(
+        0.05, abs=0.005
+    )
+    # a number is still the threshold itself, whatever the factor
+    assert fo.estimate_threshold(values, 0.3, 0.1) == 0.3
+    assert fo.estimate_threshold(np.zeros(10), "quantile") == float("inf")
+
+
+def test_min_fibre_from_params(fo, tmp_path):
+    import json
+
+    assert fo.min_fibre_voxels((4, 8, 8), 0.12) == pytest.approx(30.72)
+    path = tmp_path / "params.json"
+    path.write_text(json.dumps({"block_factor": [4, 8, 8]}))
+    assert fo.min_fibre_from_params(path, 0.5) == 128

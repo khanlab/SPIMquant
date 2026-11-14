@@ -12,11 +12,13 @@ derived.  See scripts/fibre_orientation.py.
 rule fibre_moments:
     """Multiscale Frangi filter and per-super-voxel fibre orientation moments.
 
-    The Frangi background parameter (gamma, per scale) and the fibre threshold
-    are global, estimated from voxels sampled in tissue-rich chunks, and saved
-    to the params JSON with a QC histogram.  The moments are written as an
-    OME-Zarr with one channel per moment, on a grid of super-voxels of about
-    fibre_block_um.
+    The scales run from the voxel size up to --fibre_scale_max_factor times
+    it, and the super-voxels are about --fibre_block_factor times the largest
+    scale (both unless given in um).  The Frangi background parameter (gamma,
+    per scale) and the fibre threshold (--fibre_threshold) are global,
+    estimated from voxels sampled in tissue-rich chunks, and saved to the
+    params JSON with a QC histogram.  The moments are written as an OME-Zarr
+    with one channel per moment, on the super-voxel grid.
     """
     input:
         corrected=bids_oz_in(
@@ -57,7 +59,8 @@ rule fibre_moments:
             **inputs["spim"].wildcards,
         ),
     # ~0.7 core-s per Mvox for two scales: ~12 core-h for a mouse brain at
-    # level 1 (68 GB), ~15 min on 64 threads
+    # level 1 (68 GB), ~15 min on 64 threads; run time grows with the number
+    # of scales (three at the default --fibre_scale_max_factor of 2)
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
         # bounded by the threads, not the image: each task (a 128^3 chunk and
@@ -74,13 +77,19 @@ rule fibre_moments:
         dask_threads_per_worker=2,
         dask_reserve_mb=8000,
         scales_um=config["fibre_scales_um"],
+        scale_max_factor=config["fibre_scale_max_factor"],
+        scale_min_factor=config["fibre_scale_min_factor"],
+        scales_per_octave=config["fibre_scales_per_octave"],
         block_um=config["fibre_block_um"],
+        block_factor=config["fibre_block_factor"],
         lmax=config["fibre_lmax"],
         alpha=config["fibre_alpha"],
         beta=config["fibre_beta"],
         gamma_quantile=config["fibre_gamma_quantile"],
         gamma_factor=config["fibre_gamma_factor"],
         threshold_method=config["fibre_threshold_method"],
+        threshold_factor=config["fibre_threshold"],
+        threshold_quantile=config["fibre_threshold_quantile"],
         stat_blocks=config["fibre_stat_blocks"],
         stat_samples_per_block=config["fibre_stat_samples_per_block"],
         stat_level_offset=config["fibre_stat_level_offset"],
@@ -111,6 +120,7 @@ rule fibre_metrics:
             suffix="moments.{ext}",
             **inputs["spim"].wildcards,
         ),
+        params_json=rules.fibre_moments.output.params_json,
     output:
         **{
             metric: bids(
@@ -144,7 +154,7 @@ rule fibre_metrics:
         mem_mb=scaled_mem_mb(2000, 250),
         runtime=scaled_runtime(10, 0.2),
     params:
-        min_fibre=config["fibre_min_voxels"],
+        min_fraction=config["fibre_min_fraction"],
     script:
         "../scripts/fibre_metrics.py"
 
@@ -210,6 +220,7 @@ rule fibre_roi_stats:
             **inputs["spim"].wildcards,
         ),
         dseg=rules.deform_template_dseg_to_fibre_grid.output.dseg,
+        params_json=rules.fibre_moments.output.params_json,
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     output:
         tsv=bids(
@@ -233,7 +244,7 @@ rule fibre_roi_stats:
         runtime=scaled_runtime(10, 0.1),
     params:
         metrics=config["fibre_roi_metrics"],
-        min_fibre=config["fibre_min_voxels"],
+        min_fraction=config["fibre_min_fraction"],
     script:
         "../scripts/fibre_roi_stats.py"
 
@@ -327,6 +338,7 @@ rule fibre_metrics_template:
     """Template-space scalar fibre maps, computed from the warped moments."""
     input:
         moments_nii=rules.deform_fibre_moments_to_template.output.nii,
+        params_json=rules.fibre_moments.output.params_json,
     output:
         **{
             metric: bids(
@@ -350,6 +362,6 @@ rule fibre_metrics_template:
     params:
         metrics=FIBRE_TEMPLATE_METRICS,
         min_tissue_fraction=0.1,
-        min_fibre=config["fibre_min_voxels"],
+        min_fraction=config["fibre_min_fraction"],
     script:
         "../scripts/fibre_metrics_template.py"

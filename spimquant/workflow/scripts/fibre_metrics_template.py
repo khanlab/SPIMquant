@@ -19,7 +19,13 @@ import numpy as np
 
 def main():
     import nibabel as nib
-    from fibre_orientation import N_FIBRE, N_TISSUE, SH_START, moments_to_metrics
+    from fibre_orientation import (
+        N_FIBRE,
+        N_TISSUE,
+        SH_START,
+        min_fibre_from_params,
+        moments_to_metrics,
+    )
 
     img = nib.load(snakemake.input.moments_nii)
     data = np.asarray(img.dataobj, dtype=np.float64)  # x, y, z, moment
@@ -29,9 +35,10 @@ def main():
     # a single l=0 SH channel (its value is irrelevant to the metrics kept)
     moments = np.concatenate([moments, moments[N_FIBRE][None]])
     # orientation metrics need enough (interpolated) fibre: NaN otherwise
-    metrics = moments_to_metrics(
-        moments, min_fibre=float(snakemake.params.min_fibre), missing=np.nan
+    min_fibre = min_fibre_from_params(
+        snakemake.input.params_json, snakemake.params.min_fraction
     )
+    metrics = moments_to_metrics(moments, min_fibre=min_fibre, missing=np.nan)
     # Near the mask edge the interpolated counts become tiny and their ratios
     # are noise: keep voxels with at least min_tissue_fraction of a full
     # super-voxel of tissue (a full one taken as the 99th percentile).

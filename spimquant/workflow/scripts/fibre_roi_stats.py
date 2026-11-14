@@ -71,8 +71,12 @@ def region_table(moments, labels, label_df, metrics, max_label=None, min_fibre=0
 
 def main():
     import dask
+    from fibre_orientation import min_fibre_from_params
     from zarrnii import ZarrNii
 
+    min_fibre = min_fibre_from_params(
+        snakemake.input.params_json, snakemake.params.min_fraction
+    )
     with dask.config.set(scheduler="threads", num_workers=snakemake.threads):
         moments = ZarrNii.from_file(snakemake.input.moments).data
         dseg = ZarrNii.from_nifti(snakemake.input.dseg, axes_order="ZYX")
@@ -84,7 +88,7 @@ def main():
             labels,
             label_df,
             list(snakemake.params.metrics),
-            min_fibre=float(snakemake.params.min_fibre),
+            min_fibre=min_fibre,
         )
     df.to_csv(snakemake.output.tsv, sep="\t", index=False)
 
