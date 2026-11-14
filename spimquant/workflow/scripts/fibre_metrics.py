@@ -4,11 +4,14 @@ Reads the per-super-voxel moments written by fibre_moments.py and writes:
 
 * one scalar NIfTI per metric (fibre density, mean Frangi response, mean
   scale, dispersion indices, orientation-tensor FA, ODF GFA); orientation
-  metrics are NaN in blocks with too little fibre (``fibre_min_voxels``),
+  metrics are NaN in blocks with too little fibre (``fibre_min_fraction``
+  of a super-voxel),
 * the principal fibre direction (3 volumes, world x/y/z) and its
   direction-encoded colour map (|direction| x FA),
 * the ODF as even-order real SH coefficients in the MRtrix3 convention
-  (view with ``mrview -odf.load_sh``).
+  (view with ``mrview -odf.load_sh``),
+* the non-SH moments (counts, sums and orientation tensor; ``SH_START``
+  volumes) as a 4D NIfTI, for warping to the template.
 """
 
 import numpy as np
@@ -74,10 +77,13 @@ def write_nifti(template, data, path):
 
 def main():
     import dask
-    from fibre_orientation import SH_START, odf_coefficients
+    from fibre_orientation import SH_START, min_fibre_from_params, odf_coefficients
     from zarrnii import ZarrNii
 
     out = snakemake.output
+    min_fibre = min_fibre_from_params(
+        snakemake.input.params_json, snakemake.params.min_fraction
+    )
     with dask.config.set(scheduler="threads", num_workers=snakemake.threads):
         znimg = ZarrNii.from_file(snakemake.input.moments)
         darr = znimg.data
@@ -90,7 +96,7 @@ def main():
             res = compute_maps(
                 m,
                 odf=False,
-                min_fibre=float(snakemake.params.min_fibre),
+                min_fibre=min_fibre,
                 missing=np.nan,
             )
             for i, name in enumerate(names):
@@ -109,6 +115,13 @@ def main():
             odf[:, z0:z1] = odf_coefficients(m)
         write_nifti(znimg, odf, out.odf)
         del odf
+
+        # non-SH moments, for warping to the template
+        write_nifti(
+            znimg,
+            np.asarray(darr[:SH_START], dtype=np.float32),
+            out.moments_nii,
+        )
 
 
 if __name__ == "__main__":

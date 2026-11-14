@@ -12,11 +12,13 @@ derived.  See scripts/fibre_orientation.py.
 rule fibre_moments:
     """Multiscale Frangi filter and per-super-voxel fibre orientation moments.
 
-    The Frangi background parameter (gamma, per scale) and the fibre threshold
-    are global, estimated from voxels sampled in tissue-rich chunks, and saved
-    to the params JSON with a QC histogram.  The moments are written as an
-    OME-Zarr with one channel per moment, on a grid of super-voxels of about
-    fibre_block_um.
+    The scales run from the voxel size up to --fibre_scale_max_factor times
+    it, and the super-voxels are about --fibre_block_factor times the largest
+    scale (both unless given in um).  The Frangi background parameter (gamma,
+    per scale) and the fibre threshold (--fibre_threshold) are global,
+    estimated from voxels sampled in tissue-rich chunks, and saved to the
+    params JSON with a QC histogram.  The moments are written as an OME-Zarr
+    with one channel per moment, on the super-voxel grid.
     """
     input:
         corrected=bids_oz_in(
@@ -57,7 +59,8 @@ rule fibre_moments:
             **inputs["spim"].wildcards,
         ),
     # ~0.7 core-s per Mvox for two scales: ~12 core-h for a mouse brain at
-    # level 1 (68 GB), ~15 min on 64 threads
+    # level 1 (68 GB), ~15 min on 64 threads; run time grows with the number
+    # of scales (three at the default --fibre_scale_max_factor of 2)
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
         # bounded by the threads, not the image: each task (a 128^3 chunk and
@@ -74,13 +77,19 @@ rule fibre_moments:
         dask_threads_per_worker=2,
         dask_reserve_mb=8000,
         scales_um=config["fibre_scales_um"],
+        scale_max_factor=config["fibre_scale_max_factor"],
+        scale_min_factor=config["fibre_scale_min_factor"],
+        scales_per_octave=config["fibre_scales_per_octave"],
         block_um=config["fibre_block_um"],
+        block_factor=config["fibre_block_factor"],
         lmax=config["fibre_lmax"],
         alpha=config["fibre_alpha"],
         beta=config["fibre_beta"],
         gamma_quantile=config["fibre_gamma_quantile"],
         gamma_factor=config["fibre_gamma_factor"],
         threshold_method=config["fibre_threshold_method"],
+        threshold_factor=config["fibre_threshold"],
+        threshold_quantile=config["fibre_threshold_quantile"],
         stat_blocks=config["fibre_stat_blocks"],
         stat_samples_per_block=config["fibre_stat_samples_per_block"],
         stat_level_offset=config["fibre_stat_level_offset"],
@@ -111,6 +120,7 @@ rule fibre_metrics:
             suffix="moments.{ext}",
             **inputs["spim"].wildcards,
         ),
+        params_json=rules.fibre_moments.output.params_json,
     output:
         **{
             metric: bids(
@@ -124,6 +134,17 @@ rule fibre_metrics:
             )
             for metric in FIBRE_SCALAR_METRICS + ["dir", "dec", "odf"]
         },
+        moments_nii=temp(
+            bids(
+                root=root,
+                datatype="fibres",
+                stain="{stain}",
+                level="{level}",
+                desc="frangi",
+                suffix="moments.nii.gz",
+                **inputs["spim"].wildcards,
+            )
+        ),
     group:
         "subj_quant"
     threads: 4
@@ -133,6 +154,214 @@ rule fibre_metrics:
         mem_mb=scaled_mem_mb(2000, 250),
         runtime=scaled_runtime(10, 0.2),
     params:
-        min_fibre=config["fibre_min_voxels"],
+        min_fraction=config["fibre_min_fraction"],
     script:
         "../scripts/fibre_metrics.py"
+
+
+rule deform_template_dseg_to_fibre_grid:
+    """Atlas labels on the fibre super-voxel grid (nearest neighbour)."""
+    input:
+        ref=bids(
+            root=root,
+            datatype="fibres",
+            stain="{stain}",
+            level="{level}",
+            desc="frangi",
+            suffix="fibredensity.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+        dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
+        xfm_composite_inv=bids(
+            root=root,
+            datatype="xfm",
+            from_="{template}",
+            to="subject",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        dseg=bids(
+            root=root,
+            datatype="fibres",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            level="{level}",
+            desc="frangi",
+            suffix="dseg.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj_quant"
+    conda:
+        "../envs/ants.yaml"
+    threads: 8
+    resources:
+        mem_mb=8000,
+        runtime=10,
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -v -n NearestNeighbor "
+        " -i {input.dseg} -o {output.dseg} "
+        " -r {input.ref} -t {input.xfm_composite_inv}"
+
+
+rule fibre_roi_stats:
+    """Per-region fibre metrics from moments pooled over each atlas region."""
+    input:
+        moments=bids_oz_in(
+            root=root,
+            datatype="fibres",
+            stain="{stain}",
+            level="{level}",
+            desc="frangi",
+            suffix="moments.{ext}",
+            **inputs["spim"].wildcards,
+        ),
+        dseg=rules.deform_template_dseg_to_fibre_grid.output.dseg,
+        params_json=rules.fibre_moments.output.params_json,
+        label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
+    output:
+        tsv=bids(
+            root=root,
+            datatype="tabular",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            level="{level}",
+            desc="frangi",
+            suffix="fibrestats.tsv",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj_quant"
+    threads: 4
+    resources:
+        # moments are read in slabs; the labels on the super-voxel grid
+        # (int64) are what grows: ~0.4 GB at level 1 of a mouse brain
+        mem_mb=scaled_mem_mb(2000, 30),
+        runtime=scaled_runtime(10, 0.1),
+    params:
+        metrics=config["fibre_roi_metrics"],
+        min_fraction=config["fibre_min_fraction"],
+    script:
+        "../scripts/fibre_roi_stats.py"
+
+
+rule merge_fibre_roi_stats:
+    """Fibre ROI statistics of all fibre stains as ``desc-frangi`` segstats.
+
+    Columns are ``{stain}+{metric}``, as for the segmentation statistics, so
+    the group-level concatenation, statistics and heatmap rules apply.
+    """
+    input:
+        tsvs=lambda wildcards: [
+            bids(
+                root=root,
+                datatype="tabular",
+                seg="{seg}",
+                from_="{template}",
+                stain=stain,
+                level=config["fibre_level"],
+                desc="frangi",
+                suffix="fibrestats.tsv",
+                **inputs["spim"].wildcards,
+            ).format(**wildcards)
+            for stain in stains_for_fibres
+        ],
+    output:
+        tsv=bids(
+            root=root,
+            datatype="tabular",
+            seg="{seg}",
+            from_="{template}",
+            desc="frangi",
+            suffix="mergedsegstats.tsv",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj_quant"
+    threads: 1
+    resources:
+        mem_mb=1500,
+        runtime=10,
+    params:
+        stains=stains_for_fibres,
+    script:
+        "../scripts/merge_fibre_roi_stats.py"
+
+
+rule deform_fibre_moments_to_template:
+    """Warp the non-SH fibre moments (4D) to the template, linear interpolation."""
+    input:
+        flo=rules.fibre_metrics.output.moments_nii,
+        ref=rules.import_template_anat.output.anat,
+        xfm_composite=bids(
+            root=root,
+            datatype="xfm",
+            from_="subject",
+            to="{template}",
+            suffix="xfm.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
+    output:
+        nii=temp(
+            bids(
+                root=root,
+                datatype="fibres",
+                stain="{stain}",
+                level="{level}",
+                space="{template}",
+                desc="frangi",
+                suffix="moments.nii.gz",
+                **inputs["spim"].wildcards,
+            )
+        ),
+    group:
+        "subj_quant"
+    conda:
+        "../envs/ants.yaml"
+    threads: 8
+    resources:
+        # 10 template-sized volumes, in and out (double precision)
+        mem_mb=24000,
+        runtime=15,
+    shell:
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+        "antsApplyTransforms -d 3 -e 3 -v -n Linear "
+        " -i {input.flo} -o {output.nii} "
+        " -r {input.ref} -t {input.xfm_composite}"
+
+
+rule fibre_metrics_template:
+    """Template-space scalar fibre maps, computed from the warped moments."""
+    input:
+        moments_nii=rules.deform_fibre_moments_to_template.output.nii,
+        params_json=rules.fibre_moments.output.params_json,
+    output:
+        **{
+            metric: bids(
+                root=root,
+                datatype="fibres",
+                stain="{stain}",
+                level="{level}",
+                space="{template}",
+                desc="frangi",
+                suffix=f"{metric}.nii.gz",
+                **inputs["spim"].wildcards,
+            )
+            for metric in FIBRE_TEMPLATE_METRICS
+        },
+    group:
+        "subj_quant"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=10,
+    params:
+        metrics=FIBRE_TEMPLATE_METRICS,
+        min_tissue_fraction=0.1,
+        min_fraction=config["fibre_min_fraction"],
+    script:
+        "../scripts/fibre_metrics_template.py"

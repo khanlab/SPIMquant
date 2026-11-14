@@ -2,10 +2,13 @@
 
 Runs the multiscale Frangi filter chunk by chunk and reduces each chunk to
 per-super-voxel moments (see ``fibre_orientation.py``), written as an
-OME-Zarr with one channel per moment.  The Frangi background parameter
-``gamma`` and the fibre threshold are estimated first from voxels sampled in
-tissue-rich chunks (chosen on a coarser pyramid level, as in dogthresh), and
-saved with the other parameters to a JSON file, alongside a QC histogram.
+OME-Zarr with one channel per moment.  The Frangi scales and the super-voxel
+size follow the voxel size of the image (``resolve_scales``,
+``resolve_block_um``) unless given in micrometres.  The Frangi background
+parameter ``gamma`` and the fibre threshold are estimated first from voxels
+sampled in tissue-rich chunks (chosen on a coarser pyramid level, as in
+dogthresh), and saved with the other parameters to a JSON file, alongside a
+QC histogram.
 """
 
 import json
@@ -13,6 +16,28 @@ import json
 import numpy as np
 
 _RANDOM_STATE = 42
+
+
+def resolve_scales(
+    spacing_um, scales_um=None, max_factor=2.0, min_factor=1.0, per_octave=2.0
+):
+    """Frangi scales (um): ``scales_um`` if given, else from the voxel size
+    (``fibre_orientation.frangi_scales``)."""
+    from fibre_orientation import frangi_scales
+
+    if scales_um:
+        return [float(s) for s in scales_um]
+    return frangi_scales(spacing_um, max_factor, min_factor, per_octave)
+
+
+def resolve_block_um(scales_um, block_um=None, block_factor=4.0):
+    """Super-voxel edge (um): ``block_um`` if given, else ``block_factor``
+    times the largest scale."""
+    from fibre_orientation import block_edge_um
+
+    if block_um:
+        return float(block_um)
+    return block_edge_um(scales_um, block_factor)
 
 
 def block_factor(block_um, spacing_um, chunk=None):
@@ -59,6 +84,13 @@ def choose_blocks(lowres, chunks, shape, n_blocks):
     if not blocks:
         raise ValueError("No tissue-containing chunks found for Frangi statistics")
     return blocks
+
+
+def threshold_label(method, factor, quantile):
+    """How the fibre threshold was set, for the QC figure."""
+    if method == "quantile":
+        return f"{float(factor):g} x q{100 * float(quantile):g}"
+    return str(method)
 
 
 def make_qc_figure(est, scales_um, method):
@@ -123,7 +155,6 @@ def main():
     from zarrnii import ZarrNii
 
     params = snakemake.params
-    scales_um = [float(s) for s in params.scales_um]
 
     with ExitStack() as stack:
         stack.enter_context(
@@ -141,14 +172,22 @@ def main():
                 f"Expected a (c, z, y, x) image, got shape {znimg.data.shape}"
             )
         spacing_um = [z * 1000.0 for z in znimg.get_zooms()]  # mm -> um
+        scales_um = resolve_scales(
+            spacing_um,
+            params.scales_um,
+            params.scale_max_factor,
+            params.scale_min_factor,
+            params.scales_per_octave,
+        )
+        block_um = resolve_block_um(scales_um, params.block_um, params.block_factor)
         chunk = int(params.chunk_size)
-        factor = block_factor(params.block_um, spacing_um, chunk)
+        factor = block_factor(block_um, spacing_um, chunk)
         shape = znimg.data.shape[1:]
         chunks = aligned_chunks(shape, (chunk,) * 3, factor)
         print(
             f"voxel size (um) {np.round(spacing_um, 3)}, super-voxel {factor} vox "
             f"({np.round(np.multiply(factor, spacing_um), 1)} um), "
-            f"chunks {[c[0] for c in chunks]}, scales {scales_um} um"
+            f"chunks {[c[0] for c in chunks]}, scales {np.round(scales_um, 2)} um"
         )
 
         lowres, lowres_level = load_lowres(
@@ -174,6 +213,8 @@ def main():
             gamma_quantile=float(params.gamma_quantile),
             gamma_factor=float(params.gamma_factor),
             threshold_method=params.threshold_method,
+            threshold_factor=float(params.threshold_factor),
+            threshold_quantile=float(params.threshold_quantile),
             seed=_RANDOM_STATE,
             # computed slab by slab into a temporary zarr: bounds the halo
             # data dask holds on the workers (see store_moments_by_slab)
@@ -201,15 +242,30 @@ def main():
                 f"equalised by extra sigma {np.round(est['psf_sigma_um'], 2)} um"
             )
 
-        fig = make_qc_figure(est, scales_um, params.threshold_method)
+        fig = make_qc_figure(
+            est,
+            scales_um,
+            threshold_label(
+                params.threshold_method,
+                params.threshold_factor,
+                params.threshold_quantile,
+            ),
+        )
         fig.savefig(snakemake.output.qc_png)
 
         with open(snakemake.output.params_json, "w") as f:
             json.dump(
                 {
-                    "scales_um": scales_um,
+                    "scales_um": [float(s) for s in scales_um],
+                    # None when the scales were given in um (fibre_scales_um)
+                    "scale_factors": (
+                        None
+                        if params.scales_um
+                        else [float(s) / min(spacing_um) for s in scales_um]
+                    ),
                     "spacing_um": [float(s) for s in spacing_um],
                     "block_factor": list(factor),
+                    "block_voxels": int(np.prod(factor)),
                     "block_um": [float(f * s) for f, s in zip(factor, spacing_um)],
                     "lmax": int(params.lmax),
                     "n_moments": n_moments(int(params.lmax)),
@@ -220,6 +276,16 @@ def main():
                     "gamma_factor": float(params.gamma_factor),
                     "threshold": float(est["threshold"]),
                     "threshold_method": params.threshold_method,
+                    "threshold_factor": (
+                        float(params.threshold_factor)
+                        if params.threshold_method == "quantile"
+                        else None
+                    ),
+                    "threshold_quantile": (
+                        float(params.threshold_quantile)
+                        if params.threshold_method == "quantile"
+                        else None
+                    ),
                     "edge_min_weight": float(params.edge_min_weight),
                     "psf_fwhm_um": (
                         [float(v) for v in est["psf_fwhm_um"]]

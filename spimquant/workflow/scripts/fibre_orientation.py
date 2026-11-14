@@ -89,6 +89,54 @@ def sigma_vox(sigma_um, spacing_um):
     return tuple(float(sigma_um) / float(s) for s in spacing_um)
 
 
+def frangi_scales(spacing_um, max_factor=2.0, min_factor=1.0, per_octave=2.0):
+    """Frangi scales (sigma, um) set by the voxel size.
+
+    The scales run geometrically from ``min_factor`` to ``max_factor`` times
+    the finest voxel edge, with about ``per_octave`` scales per doubling:
+    ``round(per_octave * log2(max_factor / min_factor)) + 1`` of them.  E.g.
+    2 x 2 x 4 um voxels and ``max_factor`` 3 give 2, 2.9, 4.2 and 6 um.
+
+    A Gaussian much narrower than a voxel is poorly sampled, so the smallest
+    usable scale follows the voxel size rather than the anatomy; tying the
+    scales to it keeps them valid when the pyramid level changes (the fibre
+    calibre the filter responds to changes with them).
+    """
+    base = float(min(spacing_um))
+    lo, hi = float(min_factor), float(max_factor)
+    if not (lo > 0 and hi >= lo):
+        raise ValueError(f"scale factors must satisfy 0 < min ({lo}) <= max ({hi})")
+    n = int(round(float(per_octave) * math.log2(hi / lo))) + 1
+    if n == 1:
+        return [base * lo]
+    return [base * lo * (hi / lo) ** (k / (n - 1)) for k in range(n)]
+
+
+def block_edge_um(scales_um, block_factor):
+    """Super-voxel edge (um): ``block_factor`` times the largest scale.
+
+    The local orientation metrics describe the arrangement of fibres within
+    a super-voxel, so it has to span several of the largest structures the
+    filter detects.
+    """
+    return float(block_factor) * max(float(s) for s in scales_um)
+
+
+def min_fibre_voxels(block_factor_vox, min_fraction):
+    """Fibre voxels a super-voxel needs for orientation metrics: a fraction
+    of the voxels in one super-voxel (``block_factor_vox`` per axis)."""
+    return float(min_fraction) * float(np.prod([int(f) for f in block_factor_vox]))
+
+
+def min_fibre_from_params(params_json, min_fraction):
+    """``min_fibre_voxels`` for the super-voxels of a ``fibre_moments`` run,
+    read from its parameter JSON (``block_factor``)."""
+    import json
+
+    with open(params_json) as f:
+        return min_fibre_voxels(json.load(f)["block_factor"], min_fraction)
+
+
 def scale_sigma_vox(scale_um, spacing_um, psf_sigma_um=None):
     """Per-axis Gaussian sigma (voxels) of a Frangi scale.
 
@@ -544,24 +592,31 @@ def sampled_frangi(eig_samples, gammas, alpha=0.001, beta=1.0):
     return np.max(np.stack(resp), axis=0)
 
 
-def estimate_threshold(frangi_values, method="yen"):
+def estimate_threshold(frangi_values, method="yen", factor=0.05, quantile=0.99):
     """Global fibre-mask threshold on the Frangi response.
 
-    ``method`` is ``"yen"`` (as Foa3D), ``"otsu"`` or ``"li"``, applied to
-    the *positive* sampled responses (most tissue voxels are not tube-like
-    and score exactly 0; that spike would otherwise pull the threshold to
-    ~0), or a number, used as the threshold itself.
+    ``method`` is ``"quantile"`` (``factor`` times the ``quantile`` of the
+    responses: a fixed fraction of the response of the strongest fibres, so
+    it follows the staining contrast of the sample; the response grows with
+    the square of the contrast below saturation, so 0.05 is about a quarter
+    of the contrast of the strongest fibres), ``"yen"`` (as Foa3D),
+    ``"otsu"`` or ``"li"``, or a number, used as the threshold itself.  All
+    but the last use the *positive* sampled responses (most tissue voxels are
+    not tube-like and score exactly 0; that spike would otherwise pull the
+    threshold to ~0).
     """
     try:
         return float(method)
     except (TypeError, ValueError):
         pass
-    from skimage import filters
-
     values = np.asarray(frangi_values, dtype=np.float64)
     values = values[np.isfinite(values) & (values > 0)]
     if values.size < 2 or values.max() <= values.min():
         return float("inf")
+    if method == "quantile":
+        return float(factor) * float(np.quantile(values, float(quantile)))
+    from skimage import filters
+
     fn = {
         "yen": filters.threshold_yen,
         "otsu": filters.threshold_otsu,
@@ -1121,6 +1176,8 @@ def sample_frangi_parameters(
     threshold_method="yen",
     seed=0,
     psf_sigma_um=None,
+    threshold_factor=0.05,
+    threshold_quantile=0.99,
 ):
     """Estimate global ``gammas`` and fibre threshold from sampled chunks.
 
@@ -1166,7 +1223,9 @@ def sample_frangi_parameters(
     eig = np.concatenate(parts, axis=1)
     gammas = estimate_gammas(eig, quantile=gamma_quantile, factor=gamma_factor)
     frangi = sampled_frangi(eig, gammas, alpha, beta)
-    threshold = estimate_threshold(frangi, threshold_method)
+    threshold = estimate_threshold(
+        frangi, threshold_method, threshold_factor, threshold_quantile
+    )
     return dict(
         gammas=gammas, threshold=threshold, frangi_samples=frangi, eig_samples=eig
     )
@@ -1324,6 +1383,8 @@ def zarrnii_fibre_moments(
             "gamma_quantile",
             "gamma_factor",
             "threshold_method",
+            "threshold_factor",
+            "threshold_quantile",
             "seed",
         )
         params.update(

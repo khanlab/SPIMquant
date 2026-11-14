@@ -207,6 +207,39 @@ parse_args:
     type: int
     default: 1
 
+  --fibre_scale_max_factor:
+    help: >
+      Largest Frangi scale (Gaussian sigma) for --fibres, as a multiple of the
+      finest voxel edge at --fibre_level. The scales run geometrically from
+      one voxel edge up to this, about two per doubling: 2 x 2 x 4 um voxels
+      and a factor of 3 give 2, 2.9, 4.2 and 6 um. The filter responds to
+      fibres and bundles of radius about 1.4 x the scale, so raise the factor
+      (or the level) for thick bundles and lower it for fine fibres. Ignored
+      if fibre_scales_um is set in the config (default: %(default)s).
+    type: float
+    default: 2.0
+
+  --fibre_block_factor:
+    help: >
+      Edge of the super-voxels that the local fibre metrics (density,
+      dispersion, anisotropy, ODF) are computed over, as a multiple of the
+      largest Frangi scale. Ignored if fibre_block_um is set in the config
+      (default: %(default)s).
+    type: float
+    default: 4.0
+
+  --fibre_threshold:
+    help: >
+      Fibre threshold for --fibres, as a fraction of the 99th percentile of
+      the Frangi response in tissue: voxels responding more strongly than
+      this fraction of the strongest fibres are fibre. Lower it to include
+      fainter fibres. The Frangi response rises with the square of the
+      contrast before it saturates, so 0.05 is about a quarter of the contrast
+      of the strongest fibres. Used when fibre_threshold_method is quantile
+      (default: %(default)s).
+    type: float
+    default: 0.05
+
   --correction_method:
     help: >
       Intensity preprocessing before segmentation (default: %(default)s).
@@ -1011,27 +1044,48 @@ dog_stat_samples_per_block: 200000
 dog_chunk_size: 192
 
 # Fibre orientation analysis (--fibres), after Foa3D (Sorelli et al. 2023).
-# A multiscale Frangi filter (Gaussian sigmas fibre_scales_um, in um) gives the
-# fibre axis at each voxel of the bias-corrected image at --fibre_level; voxels
-# whose response is above a global threshold are fibre voxels. These are
-# summarised over super-voxels of about fibre_block_um (snapped to a divisor
-# of fibre_chunk_size voxels per axis) as additive moments (counts, orientation
-# tensor and spherical harmonic sums up to order fibre_lmax), from which the
-# ODF, dispersion and anisotropy maps are derived.
-fibre_scales_um: [4, 8]
-fibre_block_um: 30
+# A multiscale Frangi filter gives the fibre axis at each voxel of the
+# bias-corrected image at --fibre_level; voxels whose response is above a
+# global threshold are fibre voxels. These are summarised over super-voxels
+# (snapped to a divisor of fibre_chunk_size voxels per axis) as additive
+# moments (counts, orientation tensor and spherical harmonic sums up to order
+# fibre_lmax), from which the ODF, dispersion and anisotropy maps are derived.
+#
+# The scales (Gaussian sigmas) follow the voxel size: geometrically spaced
+# from fibre_scale_min_factor to --fibre_scale_max_factor times the finest
+# voxel edge at --fibre_level, about fibre_scales_per_octave per doubling
+# (3.25 um voxels and a maximum factor of 2 give 3.25, 4.6 and 6.5 um). A
+# Gaussian much narrower than a voxel is poorly sampled, so the smallest
+# usable scale is set by the voxel, not the anatomy. Set fibre_scales_um (a
+# list, in um) to give the scales explicitly instead. The scales used are
+# recorded in the desc-frangi params.json.
+fibre_scales_um: null
+fibre_scale_min_factor: 1.0
+fibre_scales_per_octave: 2
+# The super-voxel edge is --fibre_block_factor times the largest scale, so
+# that a super-voxel spans several of the largest structures detected; set
+# fibre_block_um (in um) to fix it instead.
+fibre_block_um: null
 fibre_lmax: 6
 # Frangi plate (alpha) and blob (beta) parameters (Foa3D defaults); gamma
 # (background) is fibre_gamma_factor x the fibre_gamma_quantile of the Hessian
-# norm per scale, and the fibre threshold is fibre_threshold_method (yen, otsu
-# or li) on the Frangi response, both from voxels sampled in
+# norm per scale. The fibre threshold on the Frangi response is set by
+# fibre_threshold_method: quantile (--fibre_threshold x the
+# fibre_threshold_quantile of the positive responses, i.e. a fixed fraction of
+# the response of the strongest fibres, which follows the staining contrast
+# of the sample), yen, otsu or li (automatic), or a number (the threshold
+# itself). On striatal bundles in MOG and NFH stained mouse brains (4
+# animals, levels 1 and 2) a factor of 0.05 agreed best with an intensity
+# segmentation of the bundles at level 0 (mean Dice 0.68-0.78; with 0.25:
+# 0.45-0.60; with yen: 0.16-0.30). Gamma and the threshold are estimated from voxels sampled in
 # fibre_stat_blocks tissue-rich chunks (chosen on a level
 # fibre_stat_level_offset coarser).
 fibre_alpha: 0.001
 fibre_beta: 1.0
 fibre_gamma_quantile: 0.999
 fibre_gamma_factor: 0.5
-fibre_threshold_method: yen
+fibre_threshold_method: quantile
+fibre_threshold_quantile: 0.99
 fibre_stat_blocks: 32
 fibre_stat_samples_per_block: 20000
 fibre_stat_level_offset: 3
@@ -1049,17 +1103,32 @@ fibre_psf_fwhm_um: auto
 # threshold). Fibre density is then the weighted fraction of tissue.
 fibre_soft_threshold: 0.25
 # Orientation metrics (ODI, FA, GFA, direction) of a super-voxel are only
-# reported (NaN otherwise) if it holds more than this many (weighted) fibre
-# voxels: with one short fibre segment, FA is ~1 and ODI ~0 regardless of the
-# local architecture. Fibre density is always reported.
-fibre_min_voxels: 30
-# fibre_block_um is snapped to a divisor of the chunk edge per axis (e.g. 30
-# um -> 8 voxels at 4 or 3.25 um), keeping chunks aligned with the stored ones.
+# reported (NaN otherwise) if it holds more (weighted) fibre voxels than this
+# fraction of the voxels in one super-voxel (0.12 of an 8 x 8 x 4 super-voxel
+# is 31 voxels): with one short fibre segment, FA is ~1 and ODI ~0 regardless
+# of the local architecture. The same count applies to the atlas regions.
+# Fibre density is always reported.
+fibre_min_fraction: 0.12
+# the super-voxel edge is snapped to a divisor of the chunk edge per axis (e.g.
+# 26 um -> 8 voxels at 4 or 3.25 um), keeping chunks aligned with the stored ones.
 # Peak memory per task is ~0.3 GB at 128.
 fibre_chunk_size: 128
 # chunk planes computed at a time: bounds the halo data dask holds (1 is the
 # lowest memory, for ~8% more run time than computing the whole image at once)
 fibre_slab_chunks: 1
+# metrics in the atlas-region tables (desc-frangi_mergedsegstats, as
+# {stain}+{metric}), which the group statistics use. Computed from moments
+# pooled over each region.
+fibre_roi_metrics:
+  - fibredensity
+  - frangi
+  - scale
+  - odi
+  - odipri
+  - odisec
+  - odianis
+  - fa
+  - gfa
 
 # DoG tuning report (analysis level tune_dog): sweeps s over dog_tune_s_um
 # and k over dog_tune_k at r = dog_tune_ratio, on dog_tune_blocks of the

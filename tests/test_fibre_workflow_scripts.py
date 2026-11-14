@@ -36,7 +36,14 @@ def _load(name):
 def scripts():
     sys.path.insert(0, str(SCRIPTS_DIR))
     try:
-        yield _load("fibre_moments"), _load("fibre_metrics")
+        yield SimpleNamespace(
+            moments=_load("fibre_moments"),
+            metrics=_load("fibre_metrics"),
+            roi=_load("fibre_roi_stats"),
+            merge=_load("merge_fibre_roi_stats"),
+            template=_load("fibre_metrics_template"),
+            lib=_load("fibre_orientation"),
+        )
     finally:
         sys.path.remove(str(SCRIPTS_DIR))
 
@@ -72,7 +79,7 @@ def _phantom(shape, spacing_um, seed=0):
 def test_moments_and_metrics(scripts, tmp_path):
     import dask.array as da
 
-    moments_mod, metrics_mod = scripts
+    moments_mod, metrics_mod = scripts.moments, scripts.metrics
     spacing_um = (4.0, 4.0, 4.0)
     shape = (64, 64, 64)
     img = _phantom(shape, spacing_um)
@@ -93,14 +100,21 @@ def test_moments_and_metrics(scripts, tmp_path):
         input=SimpleNamespace(corrected=str(corrected)),
         output=out,
         params=SimpleNamespace(
-            scales_um=[6, 10],
-            block_um=32,
+            # 4 um voxels: scales 6 and 10 um, super-voxels of 3.2 x 10 um
+            scales_um=None,
+            scale_max_factor=2.5,
+            scale_min_factor=1.5,
+            scales_per_octave=1.4,
+            block_um=None,
+            block_factor=3.2,
             lmax=4,
             alpha=0.001,
             beta=1.0,
             gamma_quantile=0.999,
             gamma_factor=0.5,
-            threshold_method="yen",
+            threshold_method="quantile",
+            threshold_factor=0.05,
+            threshold_quantile=0.99,
             stat_blocks=4,
             stat_samples_per_block=5000,
             stat_level_offset=2,
@@ -120,16 +134,22 @@ def test_moments_and_metrics(scripts, tmp_path):
 
     params = json.loads(Path(out.params_json).read_text())
     assert params["block_factor"] == [8, 8, 8]
+    assert params["block_voxels"] == 512
+    assert params["scales_um"] == pytest.approx([6.0, 10.0])
+    assert params["scale_factors"] == pytest.approx([1.5, 2.5])
+    assert params["threshold_factor"] == 0.05
+    # the threshold is the given fraction of the 99th percentile response
+    assert 0 < params["threshold"] < 0.05
     assert len(params["gammas"]) == 2
     assert Path(out.qc_png).exists()
 
-    names = list(metrics_mod.SCALAR_METRICS) + ["dir", "dec", "odf"]
+    names = list(metrics_mod.SCALAR_METRICS) + ["dir", "dec", "odf", "moments_nii"]
     mout = SimpleNamespace(**{n: str(tmp_path / f"{n}.nii.gz") for n in names})
     metrics_mod.snakemake = SimpleNamespace(
-        input=SimpleNamespace(moments=out.moments),
+        input=SimpleNamespace(moments=out.moments, params_json=out.params_json),
         output=mout,
         threads=2,
-        params=SimpleNamespace(min_fibre=0),
+        params=SimpleNamespace(min_fraction=0),
     )
     metrics_mod.main()
 
@@ -156,25 +176,117 @@ def test_moments_and_metrics(scripts, tmp_path):
     odf = nib.load(mout.odf)
     assert odf.shape == (8, 8, 8, 15)
 
+    # ---- atlas-region stats: two labels splitting the volume along axis 0
+    import pandas as pd
 
-def test_block_factor_snaps_to_chunk(scripts):
-    moments_mod, _ = scripts
-    # level 1 of a 4x mouse brain: 30 um -> 7.5 and 9.2 voxels
-    assert moments_mod.block_factor(30, (4.0, 3.25, 3.25)) == (8, 9, 9)
-    assert moments_mod.block_factor(30, (4.0, 3.25, 3.25), 128) == (8, 8, 8)
-    assert moments_mod.block_factor(100, (4.0, 1.0, 1.0), 128) == (32, 128, 128)
+    moments = np.asarray(
+        zarrnii.ZarrNii.from_file(out.moments).data.compute(), dtype=np.float64
+    )
+    labels = np.ones(moments.shape[1:], dtype=np.float32)
+    labels[4:] = 2
+    template_zn = zarrnii.ZarrNii.from_file(out.moments)
+    dseg_path = str(tmp_path / "dseg.nii.gz")
+    metrics_mod.write_nifti(template_zn, labels, dseg_path)
+    label_tsv = tmp_path / "dseg.tsv"
+    pd.DataFrame(
+        {"index": [0, 1, 2, 3], "name": ["bg", "lower", "upper", "absent"]}
+    ).to_csv(label_tsv, sep="\t", index=False)
+    roi_tsv = tmp_path / "fibrestats.tsv"
+    scripts.roi.snakemake = SimpleNamespace(
+        input=SimpleNamespace(
+            moments=out.moments,
+            dseg=dseg_path,
+            label_tsv=str(label_tsv),
+            params_json=out.params_json,
+        ),
+        output=SimpleNamespace(tsv=str(roi_tsv)),
+        params=SimpleNamespace(
+            metrics=list(metrics_mod.SCALAR_METRICS), min_fraction=0
+        ),
+        threads=1,
+    )
+    scripts.roi.main()
+    roi = pd.read_csv(roi_tsv, sep="\t").set_index("name")
+    # pooled moments: identical to summing the moments by hand
+    for lab, name in ((1, "lower"), (2, "upper")):
+        pooled = moments[:, labels.astype(int) == lab].sum(axis=1)
+        expected = scripts.lib.moments_to_metrics(pooled)
+        for m in metrics_mod.SCALAR_METRICS:
+            assert roi.loc[name, m] == pytest.approx(float(expected[m]), abs=1e-5)
+    # one fibre direction per half: well aligned within each region
+    assert roi.loc["lower", "odi"] < 0.1 and roi.loc["upper", "odi"] < 0.1
+    assert roi.loc["absent", "fibrevoxels"] == 0
+    assert np.isnan(roi.loc["absent", "odi"])
+
+    # ---- merged across stains, segstats-style column names
+    merged = scripts.merge.merge_tables(
+        [pd.read_csv(roi_tsv, sep="\t")] * 2, ["VAChT", "MOG"]
+    )
+    assert "VAChT+odi" in merged.columns and "MOG+fibredensity" in merged.columns
+    assert len(merged) == 4
+
+    # ---- template-space metrics from the moments NIfTI (identity warp)
+    tpl_metrics = [m for m in metrics_mod.SCALAR_METRICS if m != "gfa"]
+    tout = SimpleNamespace(
+        **{m: str(tmp_path / f"tpl_{m}.nii.gz") for m in tpl_metrics}
+    )
+    scripts.template.snakemake = SimpleNamespace(
+        input=SimpleNamespace(
+            moments_nii=mout.moments_nii, params_json=out.params_json
+        ),
+        output=tout,
+        params=SimpleNamespace(
+            metrics=tpl_metrics, min_tissue_fraction=0.0, min_fraction=0
+        ),
+    )
+    scripts.template.main()
+    assert nib.load(mout.moments_nii).shape[-1] == scripts.lib.SH_START
+    for m in ("fibredensity", "frangi", "scale", "odi", "odipri", "fa"):
+        a = nib.load(getattr(tout, m))
+        b = nib.load(getattr(mout, m))
+        np.testing.assert_allclose(a.affine, b.affine, atol=1e-9)
+        np.testing.assert_allclose(
+            np.asarray(a.dataobj), np.squeeze(np.asarray(b.dataobj)), atol=1e-5
+        )
 
 
-def test_slabwise_metrics_equal_whole(scripts):
+def test_slabwise_equals_whole(scripts):
+    """Slab-wise reading gives the same maps and pooled moments."""
     da = pytest.importorskip("dask.array")
-    _, metrics_mod = scripts
+    lib = scripts.lib
     rng = np.random.default_rng(1)
-    m = np.abs(rng.normal(size=(19, 7, 5, 6))) + 1  # lmax 2
+    m = np.abs(rng.normal(size=(lib.n_moments(2), 7, 5, 6))) + 1
     darr = da.from_array(m, chunks=(4, 3, 5, 6))
-    slabs = list(metrics_mod.z_slabs(darr, slab_bytes=8 * m.shape[0] * 5 * 6 * 2))
+    slabs = list(scripts.metrics.z_slabs(darr, slab_bytes=8 * m.shape[0] * 5 * 6 * 2))
     assert len(slabs) == 4  # 2 z-planes per slab
-    whole = metrics_mod.compute_maps(m)
+    whole = scripts.metrics.compute_maps(m)
     for z0, z1, part in slabs:
-        res = metrics_mod.compute_maps(part)
+        res = scripts.metrics.compute_maps(part)
         for k in ("odi", "fa", "gfa", "odf"):
             np.testing.assert_allclose(res[k], whole[k][..., z0:z1, :, :], rtol=1e-5)
+    labels = rng.integers(0, 4, size=m.shape[1:])
+    pooled = scripts.roi.pooled_moments(darr, labels, 4, slab_bytes=8 * m[:, :1].size)
+    np.testing.assert_allclose(pooled, lib.aggregate_moments(m, labels, 4))
+
+
+def test_block_factor_snaps_to_chunk(scripts):
+    bf = scripts.moments.block_factor
+    # level 1 of a 4x mouse brain: 30 um -> 7.5 and 9.2 voxels
+    assert bf(30, (4.0, 3.25, 3.25)) == (8, 9, 9)
+    assert bf(30, (4.0, 3.25, 3.25), 128) == (8, 8, 8)
+    assert bf(100, (4.0, 1.0, 1.0), 128) == (32, 128, 128)
+
+
+def test_scales_and_block_follow_voxel_size(scripts):
+    mod = scripts.moments
+    # level 1 of a 4x mouse brain, default factors
+    scales = mod.resolve_scales((5.5, 3.25, 3.25))
+    assert scales == pytest.approx([3.25, 3.25 * 2**0.5, 6.5])
+    block_um = mod.resolve_block_um(scales)
+    assert block_um == pytest.approx(26.0)
+    assert mod.block_factor(block_um, (5.5, 3.25, 3.25), 128) == (4, 8, 8)
+    # explicit values in um take precedence
+    assert mod.resolve_scales((5.5, 3.25, 3.25), [4, 8], 5.0) == [4.0, 8.0]
+    assert mod.resolve_block_um(scales, 30, 10.0) == 30.0
+    assert mod.threshold_label("quantile", 0.05, 0.99) == "0.05 x q99"
+    assert mod.threshold_label("yen", 0.25, 0.99) == "yen"

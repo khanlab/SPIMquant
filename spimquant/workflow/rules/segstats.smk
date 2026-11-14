@@ -279,7 +279,8 @@ rule merge_indiv_and_coloc_segstats_tsv:
             datatype="tabular",
             seg="{seg}",
             from_="{template}",
-            desc="{desc}",
+            # desc-frangi (fibre ROI stats) is made by merge_fibre_roi_stats
+            desc="{desc,(?!frangi_)[^_/]+}",
             suffix="mergedsegstats.tsv",
             **inputs["spim"].wildcards,
         ),
