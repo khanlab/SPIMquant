@@ -100,14 +100,21 @@ def test_moments_and_metrics(scripts, tmp_path):
         input=SimpleNamespace(corrected=str(corrected)),
         output=out,
         params=SimpleNamespace(
-            scales_um=[6, 10],
-            block_um=32,
+            # 4 um voxels: scales 6 and 10 um, super-voxels of 3.2 x 10 um
+            scales_um=None,
+            scale_max_factor=2.5,
+            scale_min_factor=1.5,
+            scales_per_octave=1.4,
+            block_um=None,
+            block_factor=3.2,
             lmax=4,
             alpha=0.001,
             beta=1.0,
             gamma_quantile=0.999,
             gamma_factor=0.5,
-            threshold_method="yen",
+            threshold_method="quantile",
+            threshold_factor=0.05,
+            threshold_quantile=0.99,
             stat_blocks=4,
             stat_samples_per_block=5000,
             stat_level_offset=2,
@@ -127,16 +134,22 @@ def test_moments_and_metrics(scripts, tmp_path):
 
     params = json.loads(Path(out.params_json).read_text())
     assert params["block_factor"] == [8, 8, 8]
+    assert params["block_voxels"] == 512
+    assert params["scales_um"] == pytest.approx([6.0, 10.0])
+    assert params["scale_factors"] == pytest.approx([1.5, 2.5])
+    assert params["threshold_factor"] == 0.05
+    # the threshold is the given fraction of the 99th percentile response
+    assert 0 < params["threshold"] < 0.05
     assert len(params["gammas"]) == 2
     assert Path(out.qc_png).exists()
 
     names = list(metrics_mod.SCALAR_METRICS) + ["dir", "dec", "odf", "moments_nii"]
     mout = SimpleNamespace(**{n: str(tmp_path / f"{n}.nii.gz") for n in names})
     metrics_mod.snakemake = SimpleNamespace(
-        input=SimpleNamespace(moments=out.moments),
+        input=SimpleNamespace(moments=out.moments, params_json=out.params_json),
         output=mout,
         threads=2,
-        params=SimpleNamespace(min_fibre=0),
+        params=SimpleNamespace(min_fraction=0),
     )
     metrics_mod.main()
 
@@ -181,10 +194,15 @@ def test_moments_and_metrics(scripts, tmp_path):
     roi_tsv = tmp_path / "fibrestats.tsv"
     scripts.roi.snakemake = SimpleNamespace(
         input=SimpleNamespace(
-            moments=out.moments, dseg=dseg_path, label_tsv=str(label_tsv)
+            moments=out.moments,
+            dseg=dseg_path,
+            label_tsv=str(label_tsv),
+            params_json=out.params_json,
         ),
         output=SimpleNamespace(tsv=str(roi_tsv)),
-        params=SimpleNamespace(metrics=list(metrics_mod.SCALAR_METRICS), min_fibre=0),
+        params=SimpleNamespace(
+            metrics=list(metrics_mod.SCALAR_METRICS), min_fraction=0
+        ),
         threads=1,
     )
     scripts.roi.main()
@@ -213,10 +231,12 @@ def test_moments_and_metrics(scripts, tmp_path):
         **{m: str(tmp_path / f"tpl_{m}.nii.gz") for m in tpl_metrics}
     )
     scripts.template.snakemake = SimpleNamespace(
-        input=SimpleNamespace(moments_nii=mout.moments_nii),
+        input=SimpleNamespace(
+            moments_nii=mout.moments_nii, params_json=out.params_json
+        ),
         output=tout,
         params=SimpleNamespace(
-            metrics=tpl_metrics, min_tissue_fraction=0.0, min_fibre=0
+            metrics=tpl_metrics, min_tissue_fraction=0.0, min_fraction=0
         ),
     )
     scripts.template.main()
@@ -255,3 +275,18 @@ def test_block_factor_snaps_to_chunk(scripts):
     assert bf(30, (4.0, 3.25, 3.25)) == (8, 9, 9)
     assert bf(30, (4.0, 3.25, 3.25), 128) == (8, 8, 8)
     assert bf(100, (4.0, 1.0, 1.0), 128) == (32, 128, 128)
+
+
+def test_scales_and_block_follow_voxel_size(scripts):
+    mod = scripts.moments
+    # level 1 of a 4x mouse brain, default factors
+    scales = mod.resolve_scales((5.5, 3.25, 3.25))
+    assert scales == pytest.approx([3.25, 3.25 * 2**0.5, 6.5])
+    block_um = mod.resolve_block_um(scales)
+    assert block_um == pytest.approx(26.0)
+    assert mod.block_factor(block_um, (5.5, 3.25, 3.25), 128) == (4, 8, 8)
+    # explicit values in um take precedence
+    assert mod.resolve_scales((5.5, 3.25, 3.25), [4, 8], 5.0) == [4.0, 8.0]
+    assert mod.resolve_block_um(scales, 30, 10.0) == 30.0
+    assert mod.threshold_label("quantile", 0.05, 0.99) == "0.05 x q99"
+    assert mod.threshold_label("yen", 0.25, 0.99) == "yen"
