@@ -132,6 +132,26 @@ def get_stains_all_subjects(ignore_stains=None):
         )
 
 
+def get_stains_per_scan(ignore_stains=None, sample_staining=None):
+    """Stains of each scan (by SPIM path), in channel order.
+
+    For the qc analysis level, where scans may have different stains."""
+    ignore_set = set(ignore_stains) if ignore_stains else set()
+    table = {
+        str(path): [
+            s
+            for s in (sample_staining or get_spim_channels(path))
+            if s not in ignore_set
+        ]
+        for path in spim_raw.expand()
+    }
+    if not table:
+        raise ValueError(
+            "No SPIM inputs found. Check your filters or participant_label."
+        )
+    return table
+
+
 def _open_spim_level(spim_path, level):
     """(dims, shape, chunks, dtype) of a stored pyramid level, or None if the
     pyramid has fewer levels; read from metadata only, without any image data."""

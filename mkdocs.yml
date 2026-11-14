@@ -26,6 +26,7 @@ nav:
       - Multiple Scans of a Sample: howto/multiple_scans.md
       - Reusing Previous Outputs: howto/reuse_derivatives.md
       - Cohort Templates: howto/cohort_template.md
+      - Dataset QC Report: howto/dataset_qc.md
   - Reference:
       - CLI Reference: reference/cli_reference.md
       - Output Files: reference/outputs.md

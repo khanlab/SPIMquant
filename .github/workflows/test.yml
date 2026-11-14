@@ -66,6 +66,12 @@ jobs:
           ./spimquant/run.py $ds test_out participant -np --reg-cohort-template
           ./spimquant/run.py $ds test_out participant -np --executor slurm -j 1 --reg-cohort-template
 
+      - name: Dry-run Test of the qc analysis level
+        run: |
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out qc -np
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out qc -np --qc_no_reg
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out qc -np --executor slurm -j 1
+
       # Job groups are only enforced by non-local executors, so a local dry run
       # cannot catch a rule missing from a group (e.g. subj_quant). The slurm
       # plugin builds the grouped DAG without needing sbatch for a dry run.

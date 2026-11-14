@@ -8,6 +8,7 @@ analysis_levels: &analysis_levels
  - cohort_template
  - cohort_template_tune_reg
  - cohort_template_export
+ - qc
 
 #mapping from analysis_level to set of target rules or files
 targets_by_analysis_level:
@@ -27,6 +28,8 @@ targets_by_analysis_level:
     - 'all_cohort_template_reg_tune'
   cohort_template_export:
     - 'all_cohort_template_export'
+  qc:
+    - 'all_qcreport'
 
 # Configure components:
 # Each entry creates a new component that can be retreived within the workflow
@@ -502,6 +505,40 @@ parse_args:
       - transforms
     nargs: '+'
 
+  --qc_no_reg:
+    help: "qc analysis level: skip the quick registration to the template, and place the high-resolution crops evenly through the tissue instead of in atlas regions (default: %(default)s)"
+    action: store_true
+    default: False
+
+  --qc_atlas_seg:
+    help: "qc analysis level: atlas segmentation of the template whose regions the high-resolution crops are placed in, and whose outlines are drawn on the overviews (default: coarse if the template has it, or else the first of its segmentations)"
+    default: null
+
+  --qc_crop_labels:
+    help: "qc analysis level: atlas regions (names, abbreviations or indices in --qc_atlas_seg) to take high-resolution crops from (default: the --qc_n_crops largest regions)"
+    default: null
+    nargs: '+'
+
+  --qc_n_crops:
+    help: "qc analysis level: number of high-resolution crops per scan (default: %(default)s)"
+    type: int
+    default: 6
+
+  --qc_crop_size:
+    help: "qc analysis level: size of the high-resolution crops, in pixels of --qc_crop_level (default: %(default)s)"
+    type: int
+    default: 512
+
+  --qc_crop_level:
+    help: "qc analysis level: pyramid level of the high-resolution crops (default: %(default)s)"
+    type: int
+    default: 0
+
+  --qc_group_by:
+    help: "qc analysis level: columns of participants.tsv to show and filter by in the report, e.g. a staining protocol (default: all columns)"
+    default: null
+    nargs: '+'
+
   --sloppy:
     help: "Use low-quality parameters for speed (USE FOR TESTING ONLY)"
     action: store_true
@@ -848,6 +885,19 @@ models:
   
 templatereg:
   desc: N4brain
+
+# qc analysis level: a report on the raw data, without segmentation. Unlike the
+# other levels, scans do not need to have the same stains.
+qc:
+  reg_preset: greedy # registration.presets entry for the quick registration
+  overview_slices: 5 # overview slices per plane
+  overview_size: 320 # longest side of the overview slices, in pixels
+  image_quality: 82 # WebP quality of the embedded images
+  # stain labels shown in the same column of the report (canonical: [aliases]);
+  # labels are otherwise matched ignoring case
+  stain_aliases:
+    YOPRO: [YoPro, YoPro1]
+    Abeta: [BetaAmyloid]
 
 masking:
   gmm_init_k: 9

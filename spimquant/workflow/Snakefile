@@ -327,10 +327,22 @@ def get_zarrnii_in_kwargs(wildcards, input):
 
 zarrnii_in_kwargs = get_zarrnii_in_kwargs
 
+# stains of each scan, for the qc analysis level, where they may differ
+qc_scan_stains = (
+    get_stains_per_scan(config["ignore_stains"], config["sample_staining"])
+    if config.get("analysis_level") == "qc"
+    else {}
+)
+
 if config["sample_staining"]:
     print(f"Using sample_staining override at data import: {config['sample_staining']}")
     stains = config["sample_staining"]
     zarrnii_cli_kwargs["set_channel_labels"] = stains
+elif config.get("analysis_level") == "qc":
+    # the qc level reports on each scan's own stains (rules/qcreport.smk); the
+    # rest of the workflow, which is not run at this level, is set up with all
+    # of them
+    stains = sorted({s for scan in qc_scan_stains.values() for s in scan})
 else:
     stains = get_stains_all_subjects(ignore_stains=config["ignore_stains"])
 
@@ -362,7 +374,11 @@ else:
             break
 
 if stain_for_reg is None:
-    raise ValueError(f"a stain for registration was not found in {stains}")
+    if config.get("analysis_level") == "qc" and stains:
+        # scans without a registration stain are reported without registration
+        stain_for_reg = stains[0]
+    else:
+        raise ValueError(f"a stain for registration was not found in {stains}")
 
 select_registration_methods(reg_stains)
 
@@ -1892,6 +1908,7 @@ include: "rules/segstats.smk"
 include: "rules/patches.smk"
 include: "rules/groupstats.smk"
 include: "rules/qc.smk"
+include: "rules/qcreport.smk"
 include: "rules/sidecars.smk"
 include: "rules/cohort_template.smk"
 
