@@ -847,7 +847,7 @@ templates:
     xfms:
       ABAv3:
         from: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_from-ABAv3_to-vachtchatyopro_desc-antsMulti_xfm.nii.gz
-  to: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_from-vachtchatyopro_to-ABAv3_desc-antsMulti_xfm.nii.gz
+        to: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_from-vachtchatyopro_to-ABAv3_desc-antsMulti_xfm.nii.gz
 
   NeuN10:
     anat: https://zenodo.org/records/24202310/files/tpl-NeuN10_anat.nii.gz

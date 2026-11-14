@@ -574,7 +574,12 @@ if via_template:
         )
     if via_template == config["template"]:
         raise ValueError("--via-template must differ from --template")
-    if config["template"] not in (config["templates"][via_template].get("xfms") or {}):
+    _via_xfms = (config["templates"][via_template].get("xfms") or {}).get(
+        config["template"]
+    ) or {}
+    # checked here, as an error in a rule's input function can be hidden by
+    # Snakemake when another file the failed job would have made is already there
+    if not ("from" in _via_xfms and "to" in _via_xfms):
         raise ValueError(
             f"--via-template {via_template} has no warps to --template "
             f"{config['template']}: its templates: entry needs "
