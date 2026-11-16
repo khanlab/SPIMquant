@@ -238,7 +238,12 @@ def main():
             ],
             "crop_level": int(params.crop_level),
             "overview_level": int(params.level),
-            "overview_voxel_um": [round(1000 * s, 2) for s in spacing],
+            # x, y, z, like voxel_um (spacing is in the axis order of the image)
+            "overview_voxel_um": [
+                round(1000 * spacing[list(low.dims[-3:]).index(d)], 2)
+                for d in ("x", "y", "z")
+            ],
+            "crop_size": [int(patch[0]), int(patch[1])],
             "bits": 8 * int(params.itemsize),
         },
         "scan": {

@@ -298,6 +298,12 @@ section { background: var(--surface); border: 1px solid var(--line);
   border-radius: 8px; padding: 16px 18px; min-width: 0; }
 .table-wrap { overflow-x: auto; }
 table { border-collapse: collapse; font-size: 14px; }
+.methods { display: grid; gap: 8px; margin: 10px 0 0; max-width: 110ch; }
+.methods div { display: grid; grid-template-columns: minmax(130px, 210px) 1fr; gap: 4px 18px; }
+.methods dt { font-weight: 600; font-size: 14px; }
+.methods dd { margin: 0; font-size: 14px; }
+.methods code, .hint code { font-family: var(--font-mono); font-size: 0.92em; }
+@media (max-width: 640px) { .methods div { grid-template-columns: 1fr; } }
 th, td { padding: 7px 12px 7px 0; border-bottom: 1px solid var(--line);
   text-align: left; vertical-align: top; }
 thead th { color: var(--muted); font-weight: 500; font-size: 13px; }
@@ -563,10 +569,11 @@ function renderDetail() {
   });
   const meta = scan.meta, reg = scan.registration;
   const facts = {
-    'Size (x, y, z)': meta.shape.join(' × '),
-    'Voxel (µm)': meta.voxel_um.join(' × '),
+    [`Size (x, y, z), level ${meta.crop_level}`]: meta.shape.join(' × '),
     'Orientation': meta.orientation,
     'Bits': meta.bits,
+    'Metrics at': `level ${meta.overview_level}, ${meta.overview_voxel_um.join(' × ')} µm`,
+    'Crops at': `level ${meta.crop_level}, ${meta.voxel_um.join(' × ')} µm`,
     'Registered': reg ? `${reg.stain} to ${reg.template}, atlas ${reg.atlas}` : 'no',
     ...scan.groups,
   };
@@ -795,6 +802,210 @@ syncWindow(); renderPlanes(); renderMatrix(); renderDetail(); renderCompare();
 """
 
 
+def _voxel_text(sizes):
+    """Voxel sizes (x, y, z in µm) of the scans, as one line of text."""
+    unique = sorted({tuple(v) for v in sizes}, key=lambda v: float(np.prod(v)))
+    if not unique:
+        return "unknown"
+    text = [" × ".join(f"{x:g}" for x in v) for v in (unique[0], unique[-1])]
+    return f"{text[0]} µm" if len(unique) == 1 else f"{text[0]} to {text[1]} µm"
+
+
+def _levels_text(values):
+    unique = sorted(set(values))
+    return ", ".join(str(v) for v in unique) if unique else "unknown"
+
+
+def resolution_summary(scans):
+    """Pyramid levels, voxel sizes and crop sizes the metrics were computed at."""
+    metas = [s["meta"] for s in scans]
+    crop_sizes = sorted({tuple(m["crop_size"]) for m in metas if m.get("crop_size")})
+    return {
+        "overview_level": _levels_text(m["overview_level"] for m in metas),
+        "overview_voxel": _voxel_text(m["overview_voxel_um"] for m in metas),
+        "crop_level": _levels_text(m["crop_level"] for m in metas),
+        "crop_voxel": _voxel_text(m["voxel_um"] for m in metas),
+        "crop_size": (
+            ", ".join(f"{a} × {b}" for a, b in crop_sizes)
+            if crop_sizes
+            else "up to --qc_crop_size × --qc_crop_size"
+        ),
+        "bits": _levels_text(m["bits"] for m in metas),
+    }
+
+
+# how each metric is computed, for the report: (heading, intro, [(term, text)]);
+# the text is HTML, formatted with the keys of resolution_summary
+METHODS = [
+    (
+        "Downsampled volume (metrics level)",
+        "Pyramid level {overview_level} of the OME-Zarr (the registration level), "
+        "read with its finer axes downsampled further to be near isotropic: voxels "
+        "of {overview_voxel} (x × y × z). Every stain is read at the same level, and "
+        "everything below except the crop metrics is computed on this volume. "
+        "Downsampling averages noise away, so noise-based metrics (SNR) are much "
+        "higher than they would be per voxel at full resolution: compare them only "
+        "between scans read at the same level.",
+        [
+            (
+                "Tissue mask",
+                "From the registration stain if the scan has one, else from the mean "
+                "of all stains, each divided by its 99th percentile. "
+                "<code>log(1 + I)</code>, Gaussian smoothing with σ = 1 voxel, Otsu "
+                "threshold, then the largest connected component with its holes "
+                "filled. The same mask is used for every stain of the scan; "
+                "everything outside it is background.",
+            ),
+            (
+                "Tissue median, p99.9",
+                "The 50th and 99.9th percentiles of the stain's intensity over the "
+                "tissue voxels.",
+            ),
+            (
+                "SNR",
+                "<code>(tissue median − background median) / background noise</code>, "
+                "where background noise is the robust standard deviation of the "
+                "background voxels, <code>1.4826 × median(|b − median(b)|)</code>. "
+                "Empty when that noise is 0 (e.g. a background of zero padding).",
+            ),
+            (
+                "Tissue / background",
+                "<code>tissue median / background median</code>.",
+            ),
+            (
+                "Signal range",
+                "<code>tissue p99.9 / tissue median</code>: high for sparse bright "
+                "labelling on a dim background, near 1 for flat signal.",
+            ),
+            (
+                "Depth non-uniformity",
+                "For each of the three axes, the median tissue intensity of each "
+                "slice divided by the median of all tissue, leaving out slices with "
+                "less than 20% of the tissue of the fullest slice (the curves under "
+                "<em>Intensity through the sample</em>). The coefficient of "
+                "variation (standard deviation / mean) of each curve; the metric is "
+                "the largest of the three.",
+            ),
+            (
+                "Intensity histogram",
+                "Tissue voxels with positive intensity, in 64 log-spaced bins from "
+                "the 0.1th percentile to the maximum.",
+            ),
+            (
+                "Correlation between stains",
+                "Pearson correlation of <code>log(1 + I)</code> between two stains, "
+                "over the tissue voxels. Near 1 suggests bleed-through or a shared "
+                "background such as autofluorescence.",
+            ),
+            (
+                "Tissue volume",
+                "Number of voxels in the tissue mask × the voxel volume at this "
+                "level.",
+            ),
+            (
+                "At field-of-view edge",
+                "Surface voxels of the tissue mask (the mask minus its erosion by "
+                "one voxel) that lie on a face of the volume, over all its surface "
+                "voxels. Flagged above {edge_limit}.",
+            ),
+        ],
+    ),
+    (
+        "Full-resolution crops (crop level)",
+        "Pyramid level {crop_level} (<code>--qc_crop_level</code>), voxels of "
+        "{crop_voxel}: one x-y plane of {crop_size} pixels per region, centred on the "
+        "voxel deepest inside the atlas region (the maximum of its distance "
+        "transform), or for scans without registration, on voxels spread through "
+        "the tissue (the deepest, then each next the furthest from those chosen). "
+        "The same places are cropped in every stain of the scan.",
+        [
+            (
+                "Sharpness",
+                "In each crop, <code>std(G₁ − G₂) / std(G₂ − G₈)</code>, where "
+                "<code>Gσ</code> is the crop smoothed by a Gaussian of σ pixels: "
+                "detail at 1–2 pixels relative to structure at 2–8 pixels, so it "
+                "does not depend on brightness. The metric is the median over the "
+                "crops. It depends on the tissue too, so compare it between scans of "
+                "the same stain and region.",
+            ),
+            (
+                "Saturated",
+                "In each crop, the fraction of pixels at or above the top of the "
+                "data type (<code>2<sup>bits</sup> − 1</code>, here {bits}-bit); the "
+                "metric is the worst crop. Not computed for float data. This is the "
+                "top of the data type, not of the camera: a 12-bit camera stored as "
+                "16-bit never reaches it. Only the crops are checked, not the whole "
+                "scan. Flagged above {saturated_limit}.",
+            ),
+        ],
+    ),
+    (
+        "Registration (template resolution)",
+        "Affine (12 degrees of freedom) then deformable greedy registration of the "
+        "registration stain at pyramid level {overview_level}, without bias field "
+        "correction or masking, to the template image of that stain (or its "
+        "anatomical image). Used only for the atlas outlines and the crop places.",
+        [
+            (
+                "Atlas overlap",
+                "Dice overlap, <code>2|A ∩ T| / (|A| + |T|)</code>, of the atlas "
+                "labels (warped to the scan with nearest neighbour interpolation) "
+                "and the tissue mask, on the downsampled volume. Flagged below "
+                "{dice_limit}.",
+            ),
+            (
+                "Template similarity",
+                "Pearson correlation of the template and the warped scan over the "
+                "template voxels above 0, at the template resolution, taking every "
+                "4th voxel along each axis.",
+            ),
+        ],
+    ),
+    (
+        "Flags",
+        "",
+        [
+            (
+                "Outliers",
+                "Against the other scans of the same stain: robust z-score "
+                "<code>(x − median) / (1.4826 × MAD)</code> beyond ±{outlier_z:g} in "
+                "the direction that is a problem for the metric, when at least "
+                "{min_scans} scans have the stain.",
+            ),
+            (
+                "Fixed limits",
+                "Saturated above {saturated_limit}, at field-of-view edge above "
+                "{edge_limit}, atlas overlap below {dice_limit}, whatever the other "
+                "scans.",
+            ),
+        ],
+    ),
+]
+
+
+def methods_html(scans):
+    """The section of the report on how the metrics are computed."""
+    fields = {k: html.escape(v) for k, v in resolution_summary(scans).items()}
+    fields.update(
+        outlier_z=OUTLIER_Z,
+        min_scans=MIN_SCANS_FOR_OUTLIERS,
+        saturated_limit=f"{100 * LIMITS['saturated'][1]:g}%",
+        edge_limit=f"{LIMITS['edge_touch'][1]:g}",
+        dice_limit=f"{LIMITS['reg_dice'][1]:g}",
+    )
+    parts = []
+    for heading, intro, items in METHODS:
+        parts.append(f"<h3>{html.escape(heading)}</h3>")
+        if intro:
+            parts.append(f'<p class="hint">{intro.format(**fields)}</p>')
+        terms = "".join(
+            f"<div><dt>{html.escape(term)}</dt><dd>{text.format(**fields)}</dd></div>"
+            for term, text in items
+        )
+        parts.append(f'<dl class="methods">{terms}</dl>')
+    return "\n".join(parts)
+
+
 def render_report(output_html, data):
     """Write the report as one HTML file with everything embedded."""
     scans = data["scans"]
@@ -861,6 +1072,7 @@ def render_report(output_html, data):
 <h3>Metrics</h3>
 <div class="table-wrap"><table id="d-metrics"></table></div>
 <div class="table-wrap"><table id="d-scanmetrics" style="margin-top: 14px"></table></div>
+<p class="hint">Hover a metric for a summary; <a href="#methods">how each is computed</a>, and at which pyramid level, is at the end of the page.</p>
 <h3 id="d-corr-title">Correlation between stains</h3>
 <div class="table-wrap"><table id="d-corr"></table></div>
 </div>
@@ -891,6 +1103,10 @@ def render_report(output_html, data):
 </div>
 <div class="grid" id="c-grid" style="--panel: 280px"></div>
 <p class="hint" id="c-hint"></p>
+</section>
+<section aria-labelledby="methods-title" id="methods">
+<h2 id="methods-title">How the metrics are computed</h2>
+{methods_html(scans)}
 </section>
 </main>
 <div id="tip" hidden></div>

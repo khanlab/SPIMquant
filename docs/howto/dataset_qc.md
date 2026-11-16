@@ -65,6 +65,12 @@ A value is flagged when it is far from the other scans of the same stain
 (which needs at least four of them), or beyond a fixed limit. Flags say where
 to look; they do not decide whether a scan is usable.
 
+The section *How the metrics are computed* at the end of the report gives the
+algorithm of each metric, with the pyramid levels and voxel sizes it was
+computed at. Sharpness and saturation come from the crops at `--qc_crop_level`;
+the other metrics from the downsampled image, where noise is averaged away, so
+compare SNR only between scans at the same `--registration_level`.
+
 ## Registration and crops
 
 Each scan is registered to the template with a quick greedy registration of

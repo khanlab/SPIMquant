@@ -146,6 +146,7 @@ def _scan(subject, stains, snr, registered=True):
             "crop_level": 0,
             "overview_level": 1,
             "overview_voxel_um": [2, 2, 2],
+            "crop_size": [512, 512],
             "bits": 16,
         },
         "scan": {"tissue_volume_mm3": 400.0, "edge_touch": 0.0, "correlation": None},
@@ -205,5 +206,9 @@ def test_report_with_different_stains(tmp_path):
     report.render_report(out, data)
     page = out.read_text()
     assert "sub-06" in page and "NeuN" in page
+    # how the metrics are computed, with the levels they were computed at
+    assert "How the metrics are computed" in page
+    assert "Pyramid level 1 of the OME-Zarr" in page and "2 × 2 × 2 µm" in page
+    assert "Pyramid level 0 (" in page and "512 × 512 pixels" in page
     # self-contained: nothing loaded from elsewhere
     assert 'src="http' not in page and 'href="http' not in page
