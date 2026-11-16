@@ -12,20 +12,22 @@ derived.  See scripts/fibre_orientation.py.
 rule fibre_moments:
     """Multiscale Frangi filter and per-super-voxel fibre orientation moments.
 
-    The scales run from the voxel size up to --fibre_scale_max_factor times
-    it, and the super-voxels are about --fibre_block_factor times the largest
-    scale (both unless given in um).  The Frangi background parameter (gamma,
-    per scale) and the fibre threshold (--fibre_threshold) are global,
-    estimated from voxels sampled in tissue-rich chunks, and saved to the
-    params JSON with a QC histogram.  The moments are written as an OME-Zarr
-    with one channel per moment, on the super-voxel grid.
+    The image is filtered at --fibre_level and the moments are written at the
+    output level (the level wildcard, --fibre_output_level): each of its
+    voxels is one super-voxel, as for the field fraction.  The scales run from
+    the voxel size at --fibre_level up to --fibre_scale_max_factor times it
+    (unless given in um).  The Frangi background parameter (gamma, per scale)
+    and the fibre threshold (--fibre_threshold) are global, estimated from
+    voxels sampled in tissue-rich chunks, and saved to the params JSON with a
+    QC histogram.  The moments are written as an OME-Zarr with one channel per
+    moment.
     """
     input:
         corrected=bids_oz_in(
             root=work,
             datatype="seg",
             stain="{stain}",
-            level="{level}",
+            level=config["fibre_level"],
             desc="corrected{method}".format(method=config["correction_method"]),
             suffix="SPIM.{ext}",
             **inputs["spim"].wildcards,
@@ -80,8 +82,7 @@ rule fibre_moments:
         scale_max_factor=config["fibre_scale_max_factor"],
         scale_min_factor=config["fibre_scale_min_factor"],
         scales_per_octave=config["fibre_scales_per_octave"],
-        block_um=config["fibre_block_um"],
-        block_factor=config["fibre_block_factor"],
+        filter_level=config["fibre_level"],
         lmax=config["fibre_lmax"],
         alpha=config["fibre_alpha"],
         beta=config["fibre_beta"],
@@ -263,7 +264,7 @@ rule merge_fibre_roi_stats:
                 seg="{seg}",
                 from_="{template}",
                 stain=stain,
-                level=config["fibre_level"],
+                level=config["fibre_output_level"],
                 desc="frangi",
                 suffix="fibrestats.tsv",
                 **inputs["spim"].wildcards,

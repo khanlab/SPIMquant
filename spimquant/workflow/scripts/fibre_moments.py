@@ -2,9 +2,11 @@
 
 Runs the multiscale Frangi filter chunk by chunk and reduces each chunk to
 per-super-voxel moments (see ``fibre_orientation.py``), written as an
-OME-Zarr with one channel per moment.  The Frangi scales and the super-voxel
-size follow the voxel size of the image (``resolve_scales``,
-``resolve_block_um``) unless given in micrometres.  The Frangi background
+OME-Zarr with one channel per moment.  The image is filtered at one pyramid
+level and the moments are written at a coarser one: each voxel of the output
+level is one super-voxel (``level_factor``).  The Frangi scales follow the
+voxel size of the filtered image (``resolve_scales``) unless given in
+micrometres.  The Frangi background
 parameter ``gamma`` and the fibre threshold are estimated first from voxels
 sampled in tissue-rich chunks (chosen on a coarser pyramid level, as in
 dogthresh), and saved with the other parameters to a JSON file, alongside a
@@ -30,31 +32,45 @@ def resolve_scales(
     return frangi_scales(spacing_um, max_factor, min_factor, per_octave)
 
 
-def resolve_block_um(scales_um, block_um=None, block_factor=4.0):
-    """Super-voxel edge (um): ``block_um`` if given, else ``block_factor``
-    times the largest scale."""
-    from fibre_orientation import block_edge_um
-
-    if block_um:
-        return float(block_um)
-    return block_edge_um(scales_um, block_factor)
+# a super-voxel should span several of the largest structures detected
+_MIN_BLOCK_SCALES = 3.0
 
 
-def block_factor(block_um, spacing_um, chunk=None):
-    """Super-voxel size in voxels per axis for an edge of ``block_um``.
+def level_factor(path, level_offset):
+    """Voxels of ``path`` per voxel of its pyramid level ``level_offset``,
+    per spatial axis.
 
-    With ``chunk``, each factor is snapped (in log scale) to the nearest
-    divisor of ``chunk``, so that chunks stay aligned with the stored ones
-    and the input needs no rechunking (~12% faster on a mouse brain).
+    The super-voxels are the voxels of that coarser level, so the factor is
+    the ratio of the two voxel sizes.  Pyramids written by zarrnii keep a
+    coarse axis until the others catch up (near-isotropic), so the factor can
+    differ between axes: 3.25 x 3.25 x 5.5 um voxels and an offset of 3 give
+    8 x 8 x 4 voxels (26 x 26 x 22 um).  A level beyond the stored ones is
+    derived by zarrnii from the coarsest stored one.
     """
-    out = []
-    for s in spacing_um:
-        f = max(1.0, float(block_um) / float(s))
-        if chunk:
-            divisors = [d for d in range(1, int(chunk) + 1) if int(chunk) % d == 0]
-            f = min(divisors, key=lambda d: abs(np.log(d / f)))
-        out.append(max(1, int(round(f))))
-    return tuple(out)
+    from zarrnii import ZarrNii
+
+    level_offset = int(level_offset)
+    if level_offset < 0:
+        raise ValueError("the fibre output level cannot be finer than the fibre level")
+    if level_offset == 0:
+        return (1, 1, 1)
+    fine = ZarrNii.from_file(path).get_zooms()
+    coarse = ZarrNii.from_file(path, level=level_offset).get_zooms()
+    return tuple(max(1, int(round(c / f))) for c, f in zip(coarse, fine))
+
+
+def block_warning(factor, spacing_um, scales_um):
+    """A warning if the super-voxels are small for the largest scale, else None."""
+    edge = min(f * s for f, s in zip(factor, spacing_um))
+    need = _MIN_BLOCK_SCALES * max(scales_um)
+    if edge >= need:
+        return None
+    return (
+        f"WARNING: super-voxels of {edge:.3g} um are less than "
+        f"{_MIN_BLOCK_SCALES:g}x the largest scale ({max(scales_um):.3g} um): "
+        "the local orientation metrics will describe single structures; use a "
+        "coarser --fibre_output_level"
+    )
 
 
 def load_lowres(path, level_offset):
@@ -179,12 +195,22 @@ def main():
             params.scale_min_factor,
             params.scales_per_octave,
         )
-        block_um = resolve_block_um(scales_um, params.block_um, params.block_factor)
+        filter_level = int(params.filter_level)
+        output_level = int(snakemake.wildcards.level)
         chunk = int(params.chunk_size)
-        factor = block_factor(block_um, spacing_um, chunk)
+        factor = level_factor(snakemake.input.corrected, output_level - filter_level)
+        if any(chunk % f for f in factor):
+            raise ValueError(
+                f"super-voxel {factor} voxels does not divide fibre_chunk_size "
+                f"({chunk}); use a finer --fibre_output_level or a larger chunk"
+            )
+        warning = block_warning(factor, spacing_um, scales_um)
+        if warning:
+            print(warning, flush=True)
         shape = znimg.data.shape[1:]
         chunks = aligned_chunks(shape, (chunk,) * 3, factor)
         print(
+            f"level {filter_level} -> {output_level}: "
             f"voxel size (um) {np.round(spacing_um, 3)}, super-voxel {factor} vox "
             f"({np.round(np.multiply(factor, spacing_um), 1)} um), "
             f"chunks {[c[0] for c in chunks]}, scales {np.round(scales_um, 2)} um"
@@ -263,6 +289,8 @@ def main():
                         if params.scales_um
                         else [float(s) / min(spacing_um) for s in scales_um]
                     ),
+                    "level": filter_level,
+                    "output_level": output_level,
                     "spacing_um": [float(s) for s in spacing_um],
                     "block_factor": list(factor),
                     "block_voxels": int(np.prod(factor)),

@@ -100,13 +100,13 @@ def test_moments_and_metrics(scripts, tmp_path):
         input=SimpleNamespace(corrected=str(corrected)),
         output=out,
         params=SimpleNamespace(
-            # 4 um voxels: scales 6 and 10 um, super-voxels of 3.2 x 10 um
+            # 4 um voxels: scales 6 and 10 um; super-voxels are the voxels
+            # three levels up (8 voxels, 32 um)
             scales_um=None,
             scale_max_factor=2.5,
             scale_min_factor=1.5,
             scales_per_octave=1.4,
-            block_um=None,
-            block_factor=3.2,
+            filter_level=1,
             lmax=4,
             alpha=0.001,
             beta=1.0,
@@ -126,6 +126,7 @@ def test_moments_and_metrics(scripts, tmp_path):
             dask_threads_per_worker=1,
             dask_reserve_mb=0,
         ),
+        wildcards=SimpleNamespace(level="4"),
         threads=2,
         resources={},
         config={"dask_scheduler": "threads", "zarrnii_out_kwargs": {}},
@@ -135,6 +136,7 @@ def test_moments_and_metrics(scripts, tmp_path):
     params = json.loads(Path(out.params_json).read_text())
     assert params["block_factor"] == [8, 8, 8]
     assert params["block_voxels"] == 512
+    assert (params["level"], params["output_level"]) == (1, 4)
     assert params["scales_um"] == pytest.approx([6.0, 10.0])
     assert params["scale_factors"] == pytest.approx([1.5, 2.5])
     assert params["threshold_factor"] == 0.05
@@ -157,6 +159,13 @@ def test_moments_and_metrics(scripts, tmp_path):
     assert ref.shape == (8, 8, 8)
     # block grid: 8x the voxel size (mm), centred on the blocks
     np.testing.assert_allclose(np.abs(np.diag(ref.affine)[:3]), 0.032, rtol=1e-5)
+    # ... which is the grid of the image three pyramid levels up
+    lowres = zarrnii.ZarrNii.from_file(str(corrected), level=3)
+    assert lowres.data.shape[1:] == ref.shape
+    # (the zarrnii affine takes z, y, x indices; the NIfTI one x, y, z)
+    np.testing.assert_allclose(
+        ref.affine, np.asarray(lowres.get_affine_matrix())[:, [2, 1, 0, 3]], atol=1e-6
+    )
     dens = np.asarray(nib.load(mout.fibredensity).dataobj)
     fa = np.asarray(ref.dataobj)
     assert dens.max() > 0.01
@@ -269,24 +278,39 @@ def test_slabwise_equals_whole(scripts):
     np.testing.assert_allclose(pooled, lib.aggregate_moments(m, labels, 4))
 
 
-def test_block_factor_snaps_to_chunk(scripts):
-    bf = scripts.moments.block_factor
-    # level 1 of a 4x mouse brain: 30 um -> 7.5 and 9.2 voxels
-    assert bf(30, (4.0, 3.25, 3.25)) == (8, 9, 9)
-    assert bf(30, (4.0, 3.25, 3.25), 128) == (8, 8, 8)
-    assert bf(100, (4.0, 1.0, 1.0), 128) == (32, 128, 128)
+def test_level_factor(scripts, tmp_path):
+    """Super-voxels are the voxels of a coarser level of the image's pyramid."""
+    import dask.array as da
+
+    mod = scripts.moments
+    path = str(tmp_path / "aniso.ome.zarr")
+    # level 1 of a 4x mouse brain
+    zarrnii.ZarrNii.from_darr(
+        da.zeros((1, 70, 200, 200), chunks=(1, 32, 64, 64), dtype="float32"),
+        spacing=(0.0055, 0.00325, 0.00325),
+        axes_units={"x": "millimeter", "y": "millimeter", "z": "millimeter"},
+    ).to_ome_zarr(path, max_layer=2)
+    assert mod.level_factor(path, 0) == (1, 1, 1)
+    # the pyramid keeps z until x and y catch up
+    assert mod.level_factor(path, 1) == (1, 2, 2)
+    assert mod.level_factor(path, 2) == (2, 4, 4)
+    # beyond the stored levels
+    assert mod.level_factor(path, 3) == (4, 8, 8)
+    with pytest.raises(ValueError):
+        mod.level_factor(path, -1)
+    spacing_um = (5.5, 3.25, 3.25)
+    assert mod.block_warning((4, 8, 8), spacing_um, [3.25, 6.5]) is None
+    assert "coarser --fibre_output_level" in mod.block_warning(
+        (2, 4, 4), spacing_um, [3.25, 6.5]
+    )
 
 
-def test_scales_and_block_follow_voxel_size(scripts):
+def test_scales_follow_voxel_size(scripts):
     mod = scripts.moments
     # level 1 of a 4x mouse brain, default factors
     scales = mod.resolve_scales((5.5, 3.25, 3.25))
     assert scales == pytest.approx([3.25, 3.25 * 2**0.5, 6.5])
-    block_um = mod.resolve_block_um(scales)
-    assert block_um == pytest.approx(26.0)
-    assert mod.block_factor(block_um, (5.5, 3.25, 3.25), 128) == (4, 8, 8)
     # explicit values in um take precedence
     assert mod.resolve_scales((5.5, 3.25, 3.25), [4, 8], 5.0) == [4.0, 8.0]
-    assert mod.resolve_block_um(scales, 30, 10.0) == 30.0
     assert mod.threshold_label("quantile", 0.05, 0.99) == "0.05 x q99"
     assert mod.threshold_label("yen", 0.25, 0.99) == "yen"

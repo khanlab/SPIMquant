@@ -112,16 +112,6 @@ def frangi_scales(spacing_um, max_factor=2.0, min_factor=1.0, per_octave=2.0):
     return [base * lo * (hi / lo) ** (k / (n - 1)) for k in range(n)]
 
 
-def block_edge_um(scales_um, block_factor):
-    """Super-voxel edge (um): ``block_factor`` times the largest scale.
-
-    The local orientation metrics describe the arrangement of fibres within
-    a super-voxel, so it has to span several of the largest structures the
-    filter detects.
-    """
-    return float(block_factor) * max(float(s) for s in scales_um)
-
-
 def min_fibre_voxels(block_factor_vox, min_fraction):
     """Fibre voxels a super-voxel needs for orientation metrics: a fraction
     of the voxels in one super-voxel (``block_factor_vox`` per axis)."""

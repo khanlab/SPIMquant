@@ -447,6 +447,15 @@ stains_for_fibres = (
     [s for s in config["stains_for_fibres"] if s in stains] if config["fibres"] else []
 )
 do_fibres = len(stains_for_fibres) > 0
+# the fibre maps are written at fibre_output_level: each of its voxels is a
+# super-voxel of the image filtered at fibre_level (as fieldfrac's level)
+if config["fibre_output_level"] is None:
+    config["fibre_output_level"] = config["fibre_level"] + 3
+if config["fibre_output_level"] < config["fibre_level"]:
+    raise ValueError(
+        f"--fibre_output_level ({config['fibre_output_level']}) cannot be finer "
+        f"than --fibre_level ({config['fibre_level']})"
+    )
 # scalar maps written by rule fibre_metrics (see scripts/fibre_metrics.py)
 FIBRE_SCALAR_METRICS = [
     "fibredensity",
@@ -998,7 +1007,7 @@ rule all_fibres:
                 suffix="{metric}.nii.gz",
                 **inputs["spim"].wildcards,
             ),
-            level=config["fibre_level"],
+            level=config["fibre_output_level"],
             stain=stains_for_fibres,
             metric=FIBRE_SCALAR_METRICS + ["dir", "dec", "odf"],
         ),
@@ -1012,7 +1021,7 @@ rule all_fibres:
                 suffix="thresholds.png",
                 **inputs["spim"].wildcards,
             ),
-            level=config["fibre_level"],
+            level=config["fibre_output_level"],
             stain=stains_for_fibres,
         ),
         inputs["spim"].expand(
@@ -1026,7 +1035,7 @@ rule all_fibres:
                 suffix="{metric}.nii.gz",
                 **inputs["spim"].wildcards,
             ),
-            level=config["fibre_level"],
+            level=config["fibre_output_level"],
             stain=stains_for_fibres,
             template=config["template"],
             metric=FIBRE_TEMPLATE_METRICS,

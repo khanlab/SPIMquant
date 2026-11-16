@@ -649,7 +649,6 @@ def test_frangi_scales(fo):
     )
     with pytest.raises(ValueError):
         fo.frangi_scales((2, 2, 2), 0.5)
-    assert fo.block_edge_um([3.25, 6.5], 4) == pytest.approx(26)
 
 
 def test_quantile_threshold(fo):
