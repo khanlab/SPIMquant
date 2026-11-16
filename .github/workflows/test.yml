@@ -66,6 +66,14 @@ jobs:
           ./spimquant/run.py $ds test_out participant -np --reg-cohort-template
           ./spimquant/run.py $ds test_out participant -np --executor slurm -j 1 --reg-cohort-template
 
+      # the via template needs warps to --template in its templates: entry
+      - name: Dry-run Test with --via-template
+        run: |
+          touch $RUNNER_TEMP/from.nii.gz $RUNNER_TEMP/to.nii.gz
+          printf 'templates:\n  vachtchatyopro:\n    xfms:\n      ABAv3:\n        from: %s/from.nii.gz\n        to: %s/to.nii.gz\n' $RUNNER_TEMP $RUNNER_TEMP > $RUNNER_TEMP/via.yml
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out participant -np --via-template vachtchatyopro --configfile $RUNNER_TEMP/via.yml
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out participant -np --executor slurm -j 1 --via-template vachtchatyopro --configfile $RUNNER_TEMP/via.yml
+
       # Job groups are only enforced by non-local executors, so a local dry run
       # cannot catch a rule missing from a group (e.g. subj_quant). The slurm
       # plugin builds the grouped DAG without needing sbatch for a dry run.

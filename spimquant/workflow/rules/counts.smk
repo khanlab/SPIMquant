@@ -25,7 +25,7 @@ rule counts_per_voxel:
         "subj_quant"
     threads: 16
     resources:
-        mem_mb=scaled_mem_mb(2000, 20000),
+        mem_mb=scaled_mem_mb(10000, 30000),
         runtime=10,
     params:
         coord_column_names=config["coord_column_names"],
@@ -61,7 +61,7 @@ rule counts_per_voxel_template:
         "subj_quant"
     threads: 16
     resources:
-        mem_mb=scaled_mem_mb(8000, 20, config["segmentation_level"]),
+        mem_mb=scaled_mem_mb(10000, 30000, config["segmentation_level"]),
         runtime=10,
     params:
         coord_column_names=config["template_coord_column_names"],

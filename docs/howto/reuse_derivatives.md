@@ -57,6 +57,9 @@ without them are registered to the cohort template of the prior dataset
 (`cohort_template/tpl-<name>/`) rather than a new template being built; see
 [Cohort templates](cohort_template.md#in-one-run-reg-cohort-template).
 
+With `--via-template`, the `desc-via<name>` warps are reused, or else the
+subject's warps to the via template, with only the rest registered.
+
 The registration QC report (`xfm/*_regqc.html`) is not made for subjects whose
 transforms are reused, since it would only re-check the prior run; see the
 prior dataset's report instead.

@@ -166,7 +166,9 @@ _reg_moving = _reg_moving_stain(stain_for_reg)
 
 def _reg_other_stains(wildcards):
     """Stains registered as well as stain_for_reg, for multichannel methods."""
-    return reg_stains[1:] if reg_presets[wildcards.reg].get("multichannel") else []
+    if not reg_presets[wildcards.reg].get("multichannel"):
+        return []
+    return template_reg_stains(wildcards.template)[1:]
 
 
 def _reg_extra_fixed(wildcards):
@@ -511,6 +513,75 @@ rule compose_subject_warp_from_cohort_build:
         " -r {input.subject} -t {input.from_orig} {input.invwarp}"
 
 
+if via_template:
+
+    def _via_template_xfm(from_, to):
+        return bids(
+            root=root, template=via_template, from_=from_, to=to, suffix="xfm.nii.gz"
+        )
+
+    rule import_via_template_xfm:
+        """Import the --via-template's warps to and from --template."""
+        input:
+            xfm=lambda wildcards: storage(
+                ancient(
+                    resources_path(
+                        config["templates"][via_template]["xfms"][config["template"]][
+                            "from" if wildcards.xfmto == via_template else "to"
+                        ]
+                    )
+                )
+            ),
+        output:
+            xfm=_via_template_xfm("{xfmfrom}", "{xfmto}"),
+        wildcard_constraints:
+            xfmfrom=f"{via_template}|{config['template']}",
+            xfmto=f"{via_template}|{config['template']}",
+        localrule: True
+        script:
+            "../scripts/copy_nii.py"
+
+    rule compose_subject_warp_via_template:
+        """Subject<->--template warps via the --via-template.
+
+        Chains the subject's warps to the via template with the via template's
+        warps to --template. A point in the output space goes through the first
+        transform listed after -t first.
+        """
+        input:
+            ref=bids(root=root, template=config["template"], suffix="anat.nii.gz"),
+            subject=rules.compose_subject_to_template_warp.input.subject,
+            to_via=lambda wildcards: _reg_xfm("xfm.nii.gz", to=via_template).format(
+                reg=subject_direct_method(wildcards), **wildcards
+            ),
+            from_via=lambda wildcards: _reg_xfm(
+                "xfm.nii.gz", from_=via_template, to="subject"
+            ).format(reg=subject_direct_method(wildcards), **wildcards),
+            # from-{via}_to-{template} resamples via template images into --template
+            via_to_template=_via_template_xfm(via_template, config["template"]),
+            template_to_via=_via_template_xfm(config["template"], via_template),
+        output:
+            xfm_composite=_reg_xfm("xfm.nii.gz", to=config["template"], desc=via_desc),
+            xfm_composite_inv=_reg_xfm(
+                "xfm.nii.gz", from_=config["template"], to="subject", desc=via_desc
+            ),
+        group:
+            "subj_reg"
+        conda:
+            "../envs/ants.yaml"
+        threads: 4
+        resources:
+            mem_mb=20000,
+            runtime=15,
+        shell:
+            "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+            "antsApplyTransforms -d 3 -o [{output.xfm_composite},1] -r {input.ref} "
+            " -t {input.via_to_template} {input.to_via} && "
+            "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={threads} "
+            "antsApplyTransforms -d 3 -o [{output.xfm_composite_inv},1] "
+            " -r {input.subject} -t {input.from_via} {input.template_to_via}"
+
+
 rule select_subject_to_template_warp:
     """Link the warps every downstream rule uses to the subject's selected method."""
     input:
@@ -723,8 +794,12 @@ _qc_warped = bids(
 _report_stains = reg_stains or [stain_for_reg]
 
 
+def _template_report_stains(wildcards):
+    return template_reg_stains(wildcards.template) or [stain_for_reg]
+
+
 def _report_fixed(wildcards, stain):
-    suffix = stain if use_spim_template else None
+    suffix = stain if template_reg_stains(wildcards.template) else None
     return get_template_path(
         root, wildcards.template, config.get("template_crop"), suffix
     )
@@ -761,10 +836,12 @@ rule registration_qc_report:
         warped_deform=_reg_warped("{reg}deformwarped"),
         warp=_reg_xfm("xfm.nii.gz"),
         extra_fixed=lambda wildcards: [
-            _report_fixed(wildcards, stain) for stain in _report_stains[1:]
+            _report_fixed(wildcards, stain)
+            for stain in _template_report_stains(wildcards)[1:]
         ],
         extra_warped=lambda wildcards: [
-            _qc_warped.format(stain=stain, **wildcards) for stain in _report_stains[1:]
+            _qc_warped.format(stain=stain, **wildcards)
+            for stain in _template_report_stains(wildcards)[1:]
         ],
         dseg=lambda wildcards: bids(
             root=root,
@@ -783,7 +860,7 @@ rule registration_qc_report:
     params:
         subject=lambda wildcards: f"sub-{wildcards.subject}",
         template=lambda wildcards: f"tpl-{wildcards.template}",
-        stains=_report_stains,
+        stains=_template_report_stains,
         method=lambda wildcards: wildcards.reg,
         parameters=lambda wildcards: reg_method_note(wildcards.reg),
     script:
@@ -795,13 +872,14 @@ rule reg_tune_report:
     input:
         fixed=get_template_for_reg,
         extra_fixed=lambda wildcards: [
-            _report_fixed(wildcards, stain) for stain in _report_stains[1:]
+            _report_fixed(wildcards, stain)
+            for stain in _template_report_stains(wildcards)[1:]
         ],
         # from the composite warps, which are kept, so that the report can be
         # written again without repeating the registrations
         warped=lambda wildcards: [
             _qc_warped.format(reg=reg, stain=stain, **wildcards)
-            for stain in _report_stains
+            for stain in _template_report_stains(wildcards)
             for reg in config["registration_tune_methods"]
         ],
         warps=lambda wildcards: [
@@ -828,7 +906,7 @@ rule reg_tune_report:
     params:
         subject=lambda wildcards: f"sub-{wildcards.subject}",
         template=lambda wildcards: f"tpl-{wildcards.template}",
-        stains=_report_stains,
+        stains=_template_report_stains,
         methods=config["registration_tune_methods"],
         selected=config["registration_method"],
         notes={m: reg_note(reg_presets[m]) for m in reg_presets},
@@ -844,5 +922,5 @@ rule all_reg_tune:
     input:
         ref_spim.expand(
             rules.reg_tune_report.output.report_html,
-            template=config["template"],
+            template=reg_template,
         ),

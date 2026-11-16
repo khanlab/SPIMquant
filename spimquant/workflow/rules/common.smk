@@ -90,7 +90,7 @@ def seg_mask_input(**kwargs):
 def get_template_path(root, template, template_crop=None, suffix=None):
     """Get template path, optionally cropped based on hemisphere"""
     if suffix is None:
-        suffix = stain_for_reg if use_spim_template else "anat"
+        suffix = stain_for_reg if template_reg_stains(template) else "anat"
 
     if template_crop is not None:
         return bids(
@@ -101,6 +101,15 @@ def get_template_path(root, template, template_crop=None, suffix=None):
         )
     else:
         return bids(root=root, template=template, suffix=f"{suffix}.nii.gz")
+
+
+def template_reg_stains(template):
+    """Stains of a template's SPIM templates that subjects are registered to.
+
+    Only the template subjects are registered to (--via-template if set, else
+    --template) uses its SPIM templates; any other is used through its anat.
+    """
+    return reg_stains if template == reg_template else []
 
 
 def get_template_for_reg(wildcards):
@@ -416,10 +425,11 @@ reg_presets = {
     name: _resolve_reg_preset(name) for name in config["registration"]["presets"]
 }
 for _name, _preset in reg_presets.items():
-    if not _name.isalnum() or _name in ("cohort", "viacohort", "viaref"):
+    if not _name.isalnum() or _name == "cohort" or _name.startswith("via"):
         raise ValueError(
             f"Registration method name {repr(_name)} must be alphanumeric, and "
-            "cohort, viacohort and viaref are reserved for warps that combine others"
+            "cohort and names starting with via are reserved for warps that "
+            "combine others"
         )
     if _preset["backend"] not in ("greedy", "ants", "fireants"):
         raise ValueError(f"Unknown backend in registration method {_name}: {_preset}")
@@ -485,6 +495,11 @@ def reg_note(preset):
 
 def reg_method_note(reg):
     """reg_note of a method, or a description of the via-cohort warps."""
+    if reg == via_desc:
+        return (
+            f"{config['registration_method']} to tpl-{via_template}, then its "
+            f"warp to tpl-{config['template']} (--via-template)"
+        )
     if reg == "viacohort":
         return (
             f"affine to {config['template']}, then via cohort template "
@@ -494,8 +509,12 @@ def reg_method_note(reg):
 
 
 def qc_reg_constraint():
-    """reg_constraint() plus viacohort, for the rules that report on warps."""
-    return reg_constraint() + ("|viacohort" if reg_via_cohort else "")
+    """reg_constraint() plus the via warps, for the rules that report on or reuse warps."""
+    return (
+        reg_constraint()
+        + ("|viacohort" if reg_via_cohort else "")
+        + (f"|{via_desc}" if via_template else "")
+    )
 
 
 def ants_reg_args(preset, fixed, moving, center_init, extra_fixed=(), extra_moving=()):
@@ -542,7 +561,45 @@ reg_identity_itk = (
 
 # --- subject warps from a cohort template build, when --template is that cohort ---
 
-cohort_warps = config["templates"][config["template"]].get("cohort_warps")
+# --via-template: subjects are registered to it instead of --template, and its
+# warps to --template (the xfms: of its templates: entry) are appended, giving
+# subject<->--template warps (desc-via<name>). Outputs stay in --template space.
+via_template = config.get("via_template")
+via_desc = f"via{via_template}" if via_template else None
+if via_template:
+    if via_template not in config["templates"]:
+        raise ValueError(
+            f"--via-template {via_template} is not a known template, choose from "
+            f"{sorted(config['templates'])} or add it with --configfile"
+        )
+    if via_template == config["template"]:
+        raise ValueError("--via-template must differ from --template")
+    _via_xfms = (config["templates"][via_template].get("xfms") or {}).get(
+        config["template"]
+    ) or {}
+    # checked here, as an error in a rule's input function can be hidden by
+    # Snakemake when another file the failed job would have made is already there
+    if not ("from" in _via_xfms and "to" in _via_xfms):
+        raise ValueError(
+            f"--via-template {via_template} has no warps to --template "
+            f"{config['template']}: its templates: entry needs "
+            f"xfms: {{{config['template']}: {{from: ..., to: ...}}}}, as written by "
+            "the cohort_template_export analysis level"
+        )
+    if config.get("reg_cohort_template"):
+        raise ValueError(
+            "--via-template and --reg-cohort-template cannot be used together"
+        )
+    if config.get("template_crop") is not None:
+        raise ValueError("--via-template does not support --template_crop")
+    if str(config.get("analysis_level", "")).startswith("cohort_template"):
+        raise ValueError(
+            "--via-template cannot be used with the cohort_template analysis levels"
+        )
+# the template subjects are registered to
+reg_template = via_template or config["template"]
+
+cohort_warps = config["templates"][reg_template].get("cohort_warps")
 
 # --reg-cohort-template: subject<->template warps via a cohort template built in
 # the same run (or the one in --reuse_derivatives), desc-viacohort, see
@@ -608,21 +665,34 @@ def ref_scan_input(pattern):
 
 def subject_template_method():
     """desc- of the subject<->template warps of reference scans (when not cohort)."""
+    if via_template:
+        return via_desc
     return "viacohort" if reg_via_cohort else config["registration_method"]
+
+
+def subject_direct_method(wildcards):
+    """desc- of a subject's warps to the template it is registered to.
+
+    Its warps from the cohort template build if it has them, else the method.
+    """
+    if cohort_warps:
+        if all(os.path.exists(f) for f in _cohort_warp_paths(wildcards).values()):
+            return "cohort"
+    return config["registration_method"]
 
 
 def subject_reg_method(wildcards):
     """Registration desc for a subject: its cohort build warps if any, else the method.
 
-    With --reg-cohort-template, every reference scan goes via the cohort template.
+    With --reg-cohort-template or --via-template, every reference scan gets to
+    --template via the cohort or via template.
 
     Additional scans (--aux_spim) get theirs through their reference scan (viaref).
     """
     if is_aux_scan(wildcards):
         return "viaref"
-    if reg_via_cohort and wildcards.template == config["template"]:
-        return "viacohort"
-    if wildcards.template == config["template"] and cohort_warps:
-        if all(os.path.exists(f) for f in _cohort_warp_paths(wildcards).values()):
-            return "cohort"
+    if wildcards.template == config["template"] and (via_template or reg_via_cohort):
+        return subject_template_method()
+    if wildcards.template == reg_template:
+        return subject_direct_method(wildcards)
     return config["registration_method"]
