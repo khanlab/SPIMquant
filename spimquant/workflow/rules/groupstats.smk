@@ -18,6 +18,29 @@ def get_bids_root_file(filename):
     return os.path.join(str(config["bids_dir"]), filename)
 
 
+def group_metric_columns(wildcards):
+    """Metric columns of the merged segstats for ``desc``.
+
+    desc-frangi holds the fibre ROI metrics (--fibres); every other desc the
+    segmentation metrics.
+    """
+    if wildcards.desc == "frangi":
+        return expand(
+            "{stain}+{metric}",
+            stain=stains_for_fibres,
+            metric=config["fibre_roi_metrics"],
+        )
+    return expand(
+        "{stain}+{metric}", stain=stains_for_seg, metric=config["seg_metrics"]
+    )
+
+
+def group_coloc_metric_columns(wildcards):
+    if wildcards.desc == "frangi":
+        return []
+    return expand("coloc+{metric}", metric=config["coloc_seg_metrics"])
+
+
 rule perform_group_stats:
     """Perform formula-based group statistical tests on segmentation statistics.
 
@@ -70,12 +93,8 @@ rule perform_group_stats:
         group_stats_where=config.get("group_stats_where", None),
         # only applies to tables with a coverage column (additional scans)
         min_coverage=config["aux_min_coverage"],
-        metric_columns=expand(
-            "{stain}+{metric}", stain=stains_for_seg, metric=config["seg_metrics"]
-        ),
-        coloc_metric_columns=expand(
-            "coloc+{metric}", metric=config["coloc_seg_metrics"]
-        ),
+        metric_columns=group_metric_columns,
+        coloc_metric_columns=group_coloc_metric_columns,
     script:
         "../scripts/perform_group_stats.py"
 
@@ -110,12 +129,8 @@ rule create_stats_heatmap:
         mem_mb=8000,
         runtime=15,
     params:
-        metric_columns=expand(
-            "{stain}+{metric}", stain=stains_for_seg, metric=config["seg_metrics"]
-        ),
-        coloc_metric_columns=expand(
-            "coloc+{metric}", metric=config["coloc_seg_metrics"]
-        ),
+        metric_columns=group_metric_columns,
+        coloc_metric_columns=group_coloc_metric_columns,
     script:
         "../scripts/create_stats_heatmap.py"
 

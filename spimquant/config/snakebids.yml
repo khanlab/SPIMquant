@@ -1203,6 +1203,19 @@ fibre_chunk_size: 128
 # chunk planes computed at a time: bounds the halo data dask holds (1 is the
 # lowest memory, for ~8% more run time than computing the whole image at once)
 fibre_slab_chunks: 1
+# metrics in the atlas-region tables (desc-frangi_mergedsegstats, as
+# {stain}+{metric}), which the group statistics use. Computed from moments
+# pooled over each region.
+fibre_roi_metrics:
+  - fibredensity
+  - frangi
+  - scale
+  - odi
+  - odipri
+  - odisec
+  - odianis
+  - fa
+  - gfa
 
 # DoG tuning report (analysis level tune_dog): sweeps s over dog_tune_s_um
 # and k over dog_tune_k at r = dog_tune_ratio, on dog_tune_blocks of the
