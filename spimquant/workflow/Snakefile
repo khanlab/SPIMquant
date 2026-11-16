@@ -442,6 +442,41 @@ else:
         do_vessels = False
 
 
+# fibre orientation analysis (--fibres) runs on every matching stain
+stains_for_fibres = (
+    [s for s in config["stains_for_fibres"] if s in stains] if config["fibres"] else []
+)
+do_fibres = len(stains_for_fibres) > 0
+# the fibre maps are written at fibre_output_level: each of its voxels is a
+# super-voxel of the image filtered at fibre_level (as fieldfrac's level)
+if config["fibre_output_level"] is None:
+    config["fibre_output_level"] = config["fibre_level"] + 3
+if config["fibre_output_level"] < config["fibre_level"]:
+    raise ValueError(
+        f"--fibre_output_level ({config['fibre_output_level']}) cannot be finer "
+        f"than --fibre_level ({config['fibre_level']})"
+    )
+# scalar maps written by rule fibre_metrics (see scripts/fibre_metrics.py)
+FIBRE_SCALAR_METRICS = [
+    "fibredensity",
+    "frangi",
+    "scale",
+    "odi",
+    "odipri",
+    "odisec",
+    "odianis",
+    "fa",
+    "gfa",
+]
+# template-space maps: all but gfa, which needs the SH moments (not warped)
+FIBRE_TEMPLATE_METRICS = [m for m in FIBRE_SCALAR_METRICS if m != "gfa"]
+if config["fibres"] and not do_fibres:
+    print(
+        f"Warning: --fibres: none of --stains_for_fibres {config['stains_for_fibres']} "
+        f"are in the stains {stains}; skipping fibre orientation analysis"
+    )
+
+
 # The LANTERN plaque ensemble is opt-in via --seg_method, but it is trained on
 # amyloid-beta only, so it is resolved to a single stain the same way vessels are
 # rather than being fanned out over every stain in stains_for_seg.
@@ -960,6 +995,66 @@ rule all_vessels:
         ),
 
 
+rule all_fibres:
+    input:
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="fibres",
+                stain="{stain}",
+                level="{level}",
+                desc="frangi",
+                suffix="{metric}.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["fibre_output_level"],
+            stain=stains_for_fibres,
+            metric=FIBRE_SCALAR_METRICS + ["dir", "dec", "odf"],
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="fibres",
+                stain="{stain}",
+                level="{level}",
+                desc="frangi",
+                suffix="thresholds.png",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["fibre_output_level"],
+            stain=stains_for_fibres,
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="fibres",
+                stain="{stain}",
+                level="{level}",
+                space="{template}",
+                desc="frangi",
+                suffix="{metric}.nii.gz",
+                **inputs["spim"].wildcards,
+            ),
+            level=config["fibre_output_level"],
+            stain=stains_for_fibres,
+            template=config["template"],
+            metric=FIBRE_TEMPLATE_METRICS,
+        ),
+        inputs["spim"].expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                seg="{seg}",
+                from_="{template}",
+                desc="frangi",
+                suffix="mergedsegstats.tsv",
+                **inputs["spim"].wildcards,
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+        ),
+
+
 rule all_plaques:
     input:
         inputs["spim"].expand(
@@ -1265,6 +1360,42 @@ rule all_group_stats:
             ),
             template=config["template"],
             level=range(4),
+        ),
+
+
+rule all_group_stats_fibres:
+    """Target rule for group-level statistics of the fibre ROI metrics."""
+    input:
+        expand(
+            bids(
+                root=group_stats_root,
+                seg="{seg}",
+                from_="{template}",
+                desc="frangi",
+                contrast="{pairwise_contrast}",
+                suffix="groupstats.{ext}",
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+            pairwise_contrast=pairwise_contrast_labels,
+            ext=["png", "tsv"],
+        ),
+        expand(
+            bids(
+                root=group_stats_root,
+                seg="{seg}",
+                space="{template}",
+                desc="frangi",
+                contrast="{pairwise_contrast}",
+                metric="{stain}+{metric}",
+                suffix="{stat}.nii.gz",
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+            stain=stains_for_fibres,
+            metric=config["fibre_roi_metrics"],
+            stat=config["stats_maps"],
+            pairwise_contrast=pairwise_contrast_labels,
         ),
 
 
@@ -1671,6 +1802,20 @@ rule all_group_merged_tsvs:
         )
         if do_seg
         else [],
+        # fibre ROI stats (--fibres)
+        expand(
+            bids(
+                root=group_stats_root,
+                seg="{seg}",
+                from_="{template}",
+                desc="frangi",
+                suffix="allsubjects.tsv",
+            ),
+            seg=atlas_segs,
+            template=config["template"],
+        )
+        if do_fibres
+        else [],
 
 
 rule all_group_merged_regionpropstats_tsvs:
@@ -1778,6 +1923,7 @@ rule all_participant:
         ),
         rules.all_register.input,
         rules.all_vessels.input if do_vessels else [],
+        rules.all_fibres.input if do_fibres else [],
         rules.all_plaques.input if do_plaques else [],
         rules.all_segment.input if do_seg else [],
         rules.all_mri_reg.input if config["register_to_mri"] else [],
@@ -1883,6 +2029,9 @@ rule all_group:
         rules.all_group_stats_coloc.input
         if do_coloc and pairwise_contrast_labels
         else [],
+        rules.all_group_stats_fibres.input
+        if do_fibres and pairwise_contrast_labels
+        else [],
         rules.all_group_stats_tabular_sidecars.input,
 
 
@@ -1892,6 +2041,7 @@ include: "rules/templatereg.smk"
 include: "rules/auxreg.smk"
 include: "rules/reuse.smk"
 include: "rules/vessels.smk"
+include: "rules/fibres.smk"
 include: "rules/plaques.smk"
 include: "rules/segmentation.smk"
 include: "rules/counts.smk"
