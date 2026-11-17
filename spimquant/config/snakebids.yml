@@ -104,6 +104,7 @@ parse_args:
      - turone
      - vachtchatyopro
      - NeuN10
+     - YoPro99
 
   --atlas_segs:
     help: "Atlas segmentations to use with the chosen template (default: predefined list or all)"
@@ -950,8 +951,52 @@ templates:
     xfms:
       ABAv3:
         from: https://zenodo.org/records/24202310/files/tpl-NeuN10_from-ABAv3_to-NeuN10_desc-antsMulti_xfm.nii.gz
-        to: https://zenodo.org/records/24202310/files/tpl-NeuN10_from-NeuN10_to-ABAv3_desc-antsMulti_xfm.nii.gz
+        to: https://zenodo.org/records/24202310/files/tpl-NeuN10_from-NeuN10_to-ABAv3_desc-antsMulti_xfm.nii.gzI
 
+  YoPro99:
+    anat: https://zenodo.org/records/24246603/files/tpl-YoPro99_anat.nii.gz
+    mask: https://zenodo.org/records/24246603/files/tpl-YoPro99_desc-brain_mask.nii.gz
+    spim_templates:
+      YoPro: https://zenodo.org/records/24246603/files/tpl-YoPro99_stain-YoPro_SPIM.nii.gz
+    default_segs:
+    - all
+    - coarse
+    - mid
+    - fine
+    atlases:
+      all:
+        dseg: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-all_dseg.nii.gz
+        tsv: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-all_dseg.tsv
+      allsym:
+        dseg: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-allsym_dseg.nii.gz
+        tsv: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-allsym_dseg.tsv
+      coarse:
+        dseg: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-coarse_dseg.nii.gz
+        tsv: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-coarse_dseg.tsv
+      mid:
+        dseg: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-mid_dseg.nii.gz
+        tsv: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-mid_dseg.tsv
+      fine:
+        dseg: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-fine_dseg.nii.gz
+        tsv: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-fine_dseg.tsv
+      roi22:
+        dseg: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-roi22_dseg.nii.gz
+        tsv: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-roi22_dseg.tsv
+      roi82:
+        dseg: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-roi82_dseg.nii.gz
+        tsv: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-roi82_dseg.tsv
+      roi198:
+        dseg: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-roi198_dseg.nii.gz
+        tsv: https://zenodo.org/records/24246603/files/tpl-YoPro99_seg-roi198_dseg.tsv
+    cohort_warps:
+      warps_dir: /nfs/trident3/lightsheet/khan/template_YoPro/derivatives/spimquant-cohort-template-YoPro/cohort_template/work-YoPro99/fireants/buildtemplate/warps
+      orig_template: ABAv3
+      orig_root: /nfs/trident3/lightsheet/khan/template_YoPro/derivatives/spimquant-cohort-template-YoPro
+      reg_stain: YoPro
+    xfms:
+      ABAv3:
+        from: https://zenodo.org/records/24246603/files/tpl-YoPro99_from-ABAv3_to-YoPro99_desc-antsMulti_xfm.nii.gz
+        to: https://zenodo.org/records/24246603/files/tpl-YoPro99_from-YoPro99_to-ABAv3_desc-antsMulti_xfm.nii.gz       
 models:
   vesselfm: https://huggingface.co/bwittmann/vesselFM/resolve/main/vesselFM_base.pt
   # URL template for one fold of a LANTERN ensemble. {name} and {revision}
