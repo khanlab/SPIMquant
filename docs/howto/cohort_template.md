@@ -56,6 +56,52 @@ registration to `--template` has a report in `cohort_template/tpl-cohort/`.
 `--template_crop` and cohort `--template`s are not supported with
 `--reg-cohort-template`.
 
+## Through a pre-built template: `--via-template`
+
+To get the same benefit from a cohort template that was built earlier (your own,
+exported as below, or a packaged one), pass it as `--via-template` and keep
+`--template` as the standard template:
+
+```
+spimquant /path/to/bids /path/to/output participant \
+    --template ABAv3 --via-template lecanemab \
+    --configfile tpl-lecanemab_spimquant.yml
+```
+
+Each subject is registered directly to the via template, with
+`--registration_method` (its multichannel variant when the subject has two or more
+of the template's stains), and that warp is combined with the via template's warp
+to `--template` into one subject<->template warp, `desc-via<name>` (e.g.
+`desc-vialecanemab`). As with `--reg-cohort-template`, outputs stay in `--template`
+space and use its atlases, but nothing is built, so it needs no GPU, works for a
+single subject, and subjects can be run one `--participant_label` per job.
+
+The via template's `templates:` entry must have its warps to and from `--template`:
+
+```yaml
+templates:
+  lecanemab:
+    xfms:
+      ABAv3:
+        from: tpl-lecanemab_from-ABAv3_to-lecanemab_desc-antsMulti_xfm.nii.gz
+        to: tpl-lecanemab_from-lecanemab_to-ABAv3_desc-antsMulti_xfm.nii.gz
+```
+
+`cohort_template_export` writes this (and uploads the two warps to Zenodo with the
+rest of the template). The config file it writes also sets `template:` to the
+cohort template, so pass `--template` explicitly, as above, to override that.
+
+The registration QC report of each subject is of its registration to the via
+template (`xfm/*_to-<name>_desc-<method>_regqc.html`). The via template's own
+registration to `--template` is shared by all subjects, so check its report (in
+the template's `cohort_template/tpl-<name>/` directory) once: atlas labels can be no
+more accurate than it is. The `tune_reg` level compares methods for the
+registration to the via template.
+
+The brain mask prior still comes from an affine registration to `--template`.
+`--template_crop`, `--reg-cohort-template` and the `cohort_template` levels are not
+supported with `--via-template`.
+
 ## Building the template
 
 ```
@@ -138,7 +184,9 @@ spimquant /path/to/bids /path/to/output cohort_template_export \
 Use the same `cohort_template` options as when building. This writes
 `tpl-lecanemab/template_description.json`, `tpl-lecanemab_buildinfo.tar.gz` (image
 list, FireANTs config and logs), and `tpl-lecanemab_spimquant.yml`, a SPIMquant
-config file that adds the template and selects it.
+config file that adds the template and selects it. The entry includes the
+template's warps to and from the original template (`xfms:`), for
+[`--via-template`](#through-a-pre-built-template-via-template).
 
 To upload to Zenodo, create a draft upload on Zenodo and pass its deposition ID,
 with a Zenodo access token in the environment:

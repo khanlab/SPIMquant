@@ -132,6 +132,10 @@ if reuse_root and "transforms" in reuse_outputs:
     # (and > the --reg-cohort-template compose rules, in cohort_template.smk)
     ruleorder: reuse_composite_warps > compose_subject_to_template_warp
 
+    if via_template:
+
+        ruleorder: reuse_composite_warps > compose_subject_warp_via_template
+
     _reuse_method = subject_template_method()
     _reuse_found = []
     _reuse_legacy = 0
@@ -174,11 +178,14 @@ def get_regqc_targets(wildcards):
 
     Only reference scans are registered to the template; additional scans
     (--aux_spim) get the reference scan resampled into them instead.
+    With --via-template, the reports are of the registrations to the via template.
     """
-    method = subject_template_method()
+    method = (
+        config["registration_method"] if via_template else subject_template_method()
+    )
     regqc = ref_spim.expand(
         rules.registration_qc_report.output.report_html,
-        template=config["template"],
+        template=reg_template,
         reg=method,
     )
     # same entity order as regqc, so the lists line up per subject
@@ -196,12 +203,12 @@ def get_regqc_targets(wildcards):
     if reuse_root and "transforms" in reuse_outputs and not cohort_warps:
         reused = ref_spim.expand(
             reuse_path(rules.compose_subject_to_template_warp.output.xfm_composite),
-            template=config["template"],
+            template=reg_template,
             reg=method,
         )
         legacy = ref_spim.expand(
             reuse_path(rules.select_subject_to_template_warp.output.xfm_composite),
-            template=config["template"],
+            template=reg_template,
         )
         regqc = [
             qc

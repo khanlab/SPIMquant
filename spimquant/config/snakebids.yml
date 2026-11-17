@@ -105,6 +105,8 @@ parse_args:
      - gubra
      - MBMv3
      - turone
+     - vachtchatyopro
+     - NeuN10
 
   --atlas_segs:
     help: "Atlas segmentations to use with the chosen template (default: predefined list or all)"
@@ -186,6 +188,64 @@ parse_args:
     help: "Skip segmentation and quantification of vessels (default: %(default)s)"
     action: store_true
     default: False
+
+  --fibres:
+    help: >
+      Run fibre orientation analysis (multiscale Frangi filter, orientation
+      distribution functions, dispersion and anisotropy maps) on the stains in
+      --stains_for_fibres (default: %(default)s).
+    action: store_true
+    default: False
+
+  --stains_for_fibres:
+    help: "List of stains to use for fibre orientation analysis with --fibres (will analyse any that match the data)\n (default: %(default)s)"
+    default:
+      - VAChT
+      - vAChT
+      - MOG
+      - Mog
+    action: store
+    nargs: '+'
+
+  --fibre_level:
+    help: "Pyramid level of the image the fibre filter runs on with --fibres (default: %(default)s)"
+    type: int
+    default: 1
+
+  --fibre_output_level:
+    help: >
+      Pyramid level of the fibre maps written by --fibres, which is the level
+      in their file names. Each voxel at this level is one super-voxel that
+      the local fibre metrics (density, dispersion, anisotropy, ODF) are
+      computed over, from the image filtered at --fibre_level. It should span
+      several of the largest Frangi scale (a warning is printed below 3x)
+      (default: --fibre_level + 3).
+    type: int
+    default: null
+
+  --fibre_scale_max_factor:
+    help: >
+      Largest Frangi scale (Gaussian sigma) for --fibres, as a multiple of the
+      finest voxel edge at --fibre_level. The scales run geometrically from
+      one voxel edge up to this, about two per doubling: 2 x 2 x 4 um voxels
+      and a factor of 3 give 2, 2.9, 4.2 and 6 um. The filter responds to
+      fibres and bundles of radius about 1.4 x the scale, so raise the factor
+      (or the level) for thick bundles and lower it for fine fibres. Ignored
+      if fibre_scales_um is set in the config (default: %(default)s).
+    type: float
+    default: 2.0
+
+  --fibre_threshold:
+    help: >
+      Fibre threshold for --fibres, as a fraction of the 99th percentile of
+      the Frangi response in tissue: voxels responding more strongly than
+      this fraction of the strongest fibres are fibre. Lower it to include
+      fainter fibres. The Frangi response rises with the square of the
+      contrast before it saturates, so 0.05 is about a quarter of the contrast
+      of the strongest fibres. Used when fibre_threshold_method is quantile
+      (default: %(default)s).
+    type: float
+    default: 0.05
 
   --correction_method:
     help: >
@@ -691,6 +751,10 @@ parse_args:
     action: store_true
     default: False
 
+  --via-template:
+    help: "Register subjects to this template instead of --template, and append its warps to --template, giving subject<->template warps (desc-via<name>) whose outputs stay in --template space with its atlases. For a pre-built cohort template in the subjects' own contrast (e.g. vachtchatyopro), which they register to more accurately than to --template. Its templates: entry needs xfms: for --template, as written by the cohort_template_export analysis level. Use --reg-cohort-template to build a cohort template from the subjects in the run instead. (default: %(default)s)"
+    default: null
+
   --cohort-template-name:
     help: "Name (tpl- label) for the cohort template built by the cohort_template analysis level. Must be alphanumeric and must not clash with an existing --template choice. (default: %(default)s)"
     default: cohort
@@ -834,12 +898,12 @@ templates:
         tsv: tpl-DSURQE/seg-all_tpl-DSURQE_dseg.tsv
 
   vachtchatyopro:
-    anat: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_anat.nii.gz
-    mask: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_desc-brain_mask.nii.gz
+    anat: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_anat.nii.gz
+    mask: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_desc-brain_mask.nii.gz
     spim_templates:
-      YoPro: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_stain-YoPro_SPIM.nii.gz
-      ChAT: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_stain-ChAT_SPIM.nii.gz
-      VAChT: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_stain-VAChT_SPIM.nii.gz
+      YoPro: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_stain-YoPro_SPIM.nii.gz
+      ChAT: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_stain-ChAT_SPIM.nii.gz
+      VAChT: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_stain-VAChT_SPIM.nii.gz
     default_segs:
     - all
     - coarse
@@ -847,30 +911,83 @@ templates:
     - fine
     atlases:
       all:
-        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-all_dseg.nii.gz
-        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-all_dseg.tsv
+        dseg: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-all_dseg.nii.gz
+        tsv: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-all_dseg.tsv
       allsym:
-        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-allsym_dseg.nii.gz
-        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-allsym_dseg.tsv
+        dseg: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-allsym_dseg.nii.gz
+        tsv: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-allsym_dseg.tsv
       coarse:
-        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-coarse_dseg.nii.gz
-        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-coarse_dseg.tsv
+        dseg: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-coarse_dseg.nii.gz
+        tsv: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-coarse_dseg.tsv
       mid:
-        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-mid_dseg.nii.gz
-        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-mid_dseg.tsv
+        dseg: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-mid_dseg.nii.gz
+        tsv: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-mid_dseg.tsv
       fine:
-        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-fine_dseg.nii.gz
-        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-fine_dseg.tsv
+        dseg: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-fine_dseg.nii.gz
+        tsv: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-fine_dseg.tsv
       roi22:
-        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-roi22_dseg.nii.gz
-        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-roi22_dseg.tsv
+        dseg: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-roi22_dseg.nii.gz
+        tsv: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-roi22_dseg.tsv
       roi82:
-        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-roi82_dseg.nii.gz
-        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-roi82_dseg.tsv
+        dseg: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-roi82_dseg.nii.gz
+        tsv: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-roi82_dseg.tsv
       roi198:
-        dseg: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-roi198_dseg.nii.gz
-        tsv: https://zenodo.org/records/24170640/files/tpl-vachtchatyopro_seg-roi198_dseg.tsv
+        dseg: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-roi198_dseg.nii.gz
+        tsv: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_seg-roi198_dseg.tsv
+    cohort_warps:
+      warps_dir: /nfs/trident3/lightsheet/prado/mouse_chat_vacht_apoe3_4_aggregated/derivatives/spimquant-templategen-affineinit/cohort_template/work-vachtchatyopro/fireants/buildtemplate/warps
+      orig_template: ABAv3
+      orig_root: /nfs/trident3/lightsheet/prado/mouse_chat_vacht_apoe3_4_aggregated/derivatives/spimquant-templategen-affineinit
+      reg_stain: YoPro
+    xfms:
+      ABAv3:
+        from: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_from-ABAv3_to-vachtchatyopro_desc-antsMulti_xfm.nii.gz
+        to: https://zenodo.org/records/24200821/files/tpl-vachtchatyopro_from-vachtchatyopro_to-ABAv3_desc-antsMulti_xfm.nii.gz
 
+  NeuN10:
+    anat: https://zenodo.org/records/24202310/files/tpl-NeuN10_anat.nii.gz
+    mask: https://zenodo.org/records/24202310/files/tpl-NeuN10_desc-brain_mask.nii.gz
+    spim_templates:
+      NeuN: https://zenodo.org/records/24202310/files/tpl-NeuN10_stain-NeuN_SPIM.nii.gz
+    default_segs:
+    - all
+    - coarse
+    - mid
+    - fine
+    atlases:
+      all:
+        dseg: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-all_dseg.nii.gz
+        tsv: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-all_dseg.tsv
+      allsym:
+        dseg: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-allsym_dseg.nii.gz
+        tsv: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-allsym_dseg.tsv
+      coarse:
+        dseg: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-coarse_dseg.nii.gz
+        tsv: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-coarse_dseg.tsv
+      mid:
+        dseg: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-mid_dseg.nii.gz
+        tsv: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-mid_dseg.tsv
+      fine:
+        dseg: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-fine_dseg.nii.gz
+        tsv: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-fine_dseg.tsv
+      roi22:
+        dseg: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-roi22_dseg.nii.gz
+        tsv: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-roi22_dseg.tsv
+      roi82:
+        dseg: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-roi82_dseg.nii.gz
+        tsv: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-roi82_dseg.tsv
+      roi198:
+        dseg: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-roi198_dseg.nii.gz
+        tsv: https://zenodo.org/records/24202310/files/tpl-NeuN10_seg-roi198_dseg.tsv
+    cohort_warps:
+      warps_dir: /nfs/trident3/lightsheet/khan/template_NeuN/derivatives/spimquant-cohort-template-NeuN/cohort_template/work-NeuN10/fireants/buildtemplate/warps
+      orig_template: ABAv3
+      orig_root: /nfs/trident3/lightsheet/khan/template_NeuN/derivatives/spimquant-cohort-template-NeuN
+      reg_stain: NeuN
+    xfms:
+      ABAv3:
+        from: https://zenodo.org/records/24202310/files/tpl-NeuN10_from-ABAv3_to-NeuN10_desc-antsMulti_xfm.nii.gz
+        to: https://zenodo.org/records/24202310/files/tpl-NeuN10_from-NeuN10_to-ABAv3_desc-antsMulti_xfm.nii.gz
 
 models:
   vesselfm: https://huggingface.co/bwittmann/vesselFM/resolve/main/vesselFM_base.pt
@@ -1120,6 +1237,90 @@ dog_stat_samples_per_block: 200000
 # ~5x the overlapped float32 chunk (~300 MB at 192); with the distributed
 # scheduler each worker (2 threads) gets job memory / (threads / 2)
 dog_chunk_size: 192
+
+# Fibre orientation analysis (--fibres), after Foa3D (Sorelli et al. 2023).
+# A multiscale Frangi filter gives the fibre axis at each voxel of the
+# bias-corrected image at --fibre_level; voxels whose response is above a
+# global threshold are fibre voxels. These are summarised over super-voxels
+# (the voxels of --fibre_output_level, e.g. 8 x 8 x 4 voxels of 3.25 x 3.25
+# x 5.5 um three levels up: the pyramid keeps a coarse axis until the others
+# catch up) as additive
+# moments (counts, orientation tensor and spherical harmonic sums up to order
+# fibre_lmax), from which the ODF, dispersion and anisotropy maps are derived.
+#
+# The scales (Gaussian sigmas) follow the voxel size: geometrically spaced
+# from fibre_scale_min_factor to --fibre_scale_max_factor times the finest
+# voxel edge at --fibre_level, about fibre_scales_per_octave per doubling
+# (3.25 um voxels and a maximum factor of 2 give 3.25, 4.6 and 6.5 um). A
+# Gaussian much narrower than a voxel is poorly sampled, so the smallest
+# usable scale is set by the voxel, not the anatomy. Set fibre_scales_um (a
+# list, in um) to give the scales explicitly instead. The scales used are
+# recorded in the desc-frangi params.json.
+fibre_scales_um: null
+fibre_scale_min_factor: 1.0
+fibre_scales_per_octave: 2
+fibre_lmax: 6
+# Frangi plate (alpha) and blob (beta) parameters (Foa3D defaults); gamma
+# (background) is fibre_gamma_factor x the fibre_gamma_quantile of the Hessian
+# norm per scale. The fibre threshold on the Frangi response is set by
+# fibre_threshold_method: quantile (--fibre_threshold x the
+# fibre_threshold_quantile of the positive responses, i.e. a fixed fraction of
+# the response of the strongest fibres, which follows the staining contrast
+# of the sample), yen, otsu or li (automatic), or a number (the threshold
+# itself). On striatal bundles in MOG and NFH stained mouse brains (4
+# animals, levels 1 and 2) a factor of 0.05 agreed best with an intensity
+# segmentation of the bundles at level 0 (mean Dice 0.68-0.78; with 0.25:
+# 0.45-0.60; with yen: 0.16-0.30). Gamma and the threshold are estimated from voxels sampled in
+# fibre_stat_blocks tissue-rich chunks (chosen on a level
+# fibre_stat_level_offset coarser).
+fibre_alpha: 0.001
+fibre_beta: 1.0
+fibre_gamma_quantile: 0.999
+fibre_gamma_factor: 0.5
+fibre_threshold_method: quantile
+fibre_threshold_quantile: 0.99
+fibre_stat_blocks: 32
+fibre_stat_samples_per_block: 20000
+fibre_stat_level_offset: 3
+# A voxel is analysed at a scale only if at least this fraction of its
+# Gaussian neighbourhood is in the brain mask (suppresses the mask edge).
+fibre_edge_min_weight: 0.5
+# Light-sheet PSFs are longer axially, so point-like structures (e.g. axon
+# varicosities) look like short axial tubes and bias orientations to the
+# axial axis. The PSF is equalised (extra Gaussian smoothing of the sharper
+# axes) before filtering: FWHM in um as [z, y, x], auto (estimated from bright
+# puncta in the sampled chunks), or null for no correction.
+fibre_psf_fwhm_um: auto
+# Soft fibre threshold: a voxel's fibre weight ramps from 0 at
+# fibre_soft_threshold x the threshold to 1 at the threshold (1 = hard
+# threshold). Fibre density is then the weighted fraction of tissue.
+fibre_soft_threshold: 0.25
+# Orientation metrics (ODI, FA, GFA, direction) of a super-voxel are only
+# reported (NaN otherwise) if it holds more (weighted) fibre voxels than this
+# fraction of the voxels in one super-voxel (0.12 of an 8 x 8 x 4 super-voxel
+# is 31 voxels): with one short fibre segment, FA is ~1 and ODI ~0 regardless
+# of the local architecture. The same count applies to the atlas regions.
+# Fibre density is always reported.
+fibre_min_fraction: 0.12
+# chunk edge in voxels; the super-voxel size has to divide it.
+# Peak memory per task is ~0.3 GB at 128.
+fibre_chunk_size: 128
+# chunk planes computed at a time: bounds the halo data dask holds (1 is the
+# lowest memory, for ~8% more run time than computing the whole image at once)
+fibre_slab_chunks: 1
+# metrics in the atlas-region tables (desc-frangi_mergedsegstats, as
+# {stain}+{metric}), which the group statistics use. Computed from moments
+# pooled over each region.
+fibre_roi_metrics:
+  - fibredensity
+  - frangi
+  - scale
+  - odi
+  - odipri
+  - odisec
+  - odianis
+  - fa
+  - gfa
 
 # DoG tuning report (analysis level tune_dog): sweeps s over dog_tune_s_um
 # and k over dog_tune_k at r = dog_tune_ratio, on dog_tune_blocks of the
