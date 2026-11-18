@@ -1,7 +1,7 @@
 """5-fold LANTERN ensemble Abeta plaque segmentation.
 
 Runs a published LANTERN ensemble (``apooladi/lantern-<name>``, chosen with
-``--lantern_config``; ``ki3-abeta@v2`` by default) over the Abeta channel and
+``--lantern_config``; ``abeta`` by default) over the Abeta channel and
 writes the per-fold agreement map -- the fraction of folds voting foreground,
 averaged over the overlapping tiles that saw each voxel (``{0, .2, .4, .6, .8,
 1}`` for five folds only under ``merge_mode="max"``) -- as an OME-Zarr.
@@ -14,7 +14,10 @@ fold's decoder.  The encoder is ~2/3 of the FLOPs of a full forward pass, so
 this roughly halves inference time against five independent passes, and it is
 exact: the encoder is deterministic in eval mode and the decoders only read the
 skips.  ``load_folds`` checks the encoders really are identical rather than
-trusting the model card.
+trusting the model card.  An ensemble with a bottleneck conditioner (below)
+keeps that saving: the conditioner is trained with the decoder, so it is
+per-fold and runs inside ``ResEncLUNet.decode``, after the one shared encoder
+pass.
 
 Deviations from ``vesselfm.py``, and why:
 
@@ -52,6 +55,17 @@ Inference contract (from the model cards, must match training exactly):
   argmax is class 2", which is that channel at >= 1 vote, and
   binarize_lantern_plaques applies it.
 
+  Ensembles carrying a bottleneck conditioner (``apooladi/lantern-abeta``, the
+  default) additionally require the mean and standard deviation of each RAW
+  tile, i.e. the two numbers the clip-and-z-score above destroys; they are fed
+  to the bottleneck as extra features (see lantern_model.BottleneckConditioner)
+  and the forward pass refuses to run without them.  ``raw_tile_stats``
+  measures them on the tile as read, before normalisation, which is how the
+  standardisation constants in the checkpoints were measured.  Whether an
+  ensemble wants them is read from the checkpoints, not configured, so the
+  older unconditioned ensembles (``ki3-abeta``, ``mapt_a/b/c-abeta``) keep
+  running unchanged.
+
 Overlapping tiles (up to 8 per voxel at stride = tile/2) are combined by
 ``merge_mode``, the one deliberate departure from the model cards:
 
@@ -59,10 +73,12 @@ Overlapping tiles (up to 8 per voxel at stride = tile/2) are combined by
   per-tile vote count.  It recovers a plaque clipped at one tile's edge, but a
   tile that saw the voxel at its own edge, with little context (e.g. at the
   brain surface), can vote 5/5 on its own and win -- the tiling artifacts.
-- ``average`` (default) takes the mean vote count over the tiles that ran, so
-  that tile is outvoted by the rest.
-- ``gaussian`` weights each tile by a Gaussian centred on it (sigma = tile/8,
-  as in nnU-Net) before averaging, so tile edges count least.
+- ``average`` takes the mean vote count over the tiles that ran, so that tile
+  is outvoted by the rest.
+- ``gaussian`` (default) weights each tile by a Gaussian centred on it
+  (sigma = tile/8, as in nnU-Net) before averaging, so tile edges count least
+  -- the same idea as ``average``, but it discounts a tile's edge rather than
+  trusting it as much as its centre.
 
 The averaged modes give fractional counts; binarize_lantern_plaques cuts them
 at the midpoint below the requested vote threshold (2.5 for "3 of 5").
@@ -104,6 +120,23 @@ def tile_origins(extent, tile, stride):
     if origins[-1] + tile < extent:
         origins.append(extent - tile)
     return origins
+
+
+def raw_tile_stats(x):
+    """Per-tile mean and std of the RAW intensities, as [B, 1] conditioner inputs.
+
+    Must be called on the batch BEFORE normalize_tiles: these are exactly the
+    two numbers that transform removes, which is why the conditioner exists.
+    `correction=0` is numpy's `.std()` convention, the one the checkpoints'
+    standardisation constants were measured with (over the raw 128^3 training
+    patches); at 2M voxels per tile the difference from the unbiased estimator
+    is ~1e-7 relative, but matching it costs nothing.
+    """
+    flat = x.reshape(x.shape[0], -1).float()
+    return (
+        flat.mean(dim=1, keepdim=True),
+        flat.std(dim=1, correction=0, keepdim=True),
+    )
 
 
 def normalize_tiles(x):
@@ -189,7 +222,7 @@ def predict_volume(
     batch_size,
     brain=None,
     counter=None,
-    merge_mode="average",
+    merge_mode="gaussian",
 ):
     """Tiled 5-fold vote maps for one 3D block, as counts in [0, len(nets)].
 
@@ -253,6 +286,8 @@ def predict_volume(
             [vol[z : z + tile, y : y + tile, x : x + tile] for z, y, x in batch]
         )
         tensor = torch.from_numpy(arr).to(device)
+        # Before normalize_tiles: the conditioner wants the raw tile's moments.
+        raw_mean, raw_std = raw_tile_stats(tensor)
         tensor = normalize_tiles(tensor)[:, None]
         batch_votes = torch.zeros(
             (n_out, len(batch), tile, tile, tile), dtype=torch.uint8, device=device
@@ -265,9 +300,12 @@ def predict_volume(
         ):
             # One encoder pass serves every fold: load_folds has verified the
             # encoders are identical and pointed all folds at the same module.
+            # Each fold's decode() then applies its OWN bottleneck conditioner,
+            # if it has one, to a copy of the deepest skip.
             skips = nets[0].encoder(tensor)
             for net in nets:
-                prob = torch.softmax(net.decoder(skips).float(), dim=1)
+                logits = net.decode(skips, raw_mean, raw_std)
+                prob = torch.softmax(logits.float(), dim=1)
                 batch_votes[0] += (prob[:, 1] >= 0.5).to(torch.uint8)
                 if n_out == 2:
                     batch_votes[1] += (prob.argmax(dim=1) == 2).to(torch.uint8)
@@ -284,9 +322,12 @@ def predict_volume(
 def share_encoder(nets, model_paths):
     """Point every fold at fold 0's encoder module, after checking they match.
 
-    LANTERN fine-tunes only the decoder, on an encoder frozen from
-    self-supervised pretraining, so every fold of an ensemble carries the same
-    encoder weights.  That is what lets ``predict_volume`` run the encoder once
+    LANTERN fine-tunes only the decoder (and, where present, the bottleneck
+    conditioner), on an encoder frozen from self-supervised pretraining, so
+    every fold of an ensemble carries the same encoder weights.  Only the
+    encoder is shared: the conditioner's weights and standardisation constants
+    are fitted per fold on that fold's own training split, so each fold keeps
+    its own.  That is what lets ``predict_volume`` run the encoder once
     per batch.  It is checked tensor-for-tensor rather than assumed: an ensemble
     trained with the encoder unfrozen would otherwise silently decode the wrong
     features.  Sharing the module also drops the redundant copies from device
@@ -330,7 +371,13 @@ def load_folds(model_paths, device):
                 "but this script only builds ResEncLUNet"
             )
         n_classes = checkpoint_num_classes(ckpt, path)
-        net = ResEncLUNet(num_classes=n_classes, num_input_channels=1)
+        cond_dim = checkpoint_cond_dim(ckpt, path)
+        net = ResEncLUNet(
+            num_classes=n_classes,
+            num_input_channels=1,
+            conditioner=cond_dim is not None,
+            cond_dim=cond_dim or 32,
+        )
         net.load_state_dict(ckpt["state_dict"])
         net.n_classes = n_classes
         nets.append(net.eval())
@@ -339,8 +386,51 @@ def load_folds(model_paths, device):
             f"folds disagree on the number of classes: "
             f"{[net.n_classes for net in nets]}"
         )
+    # A conditioned fold needs the raw statistics and an unconditioned one
+    # ignores them, so a mixed ensemble would silently weight two different
+    # models together rather than fail.
+    if len({net.cond is not None for net in nets}) != 1:
+        raise ValueError(
+            "folds disagree on whether they have a bottleneck conditioner: "
+            + ", ".join(
+                f"{path}={'yes' if net.cond is not None else 'no'}"
+                for net, path in zip(nets, model_paths)
+            )
+        )
     share_encoder(nets, list(model_paths))
     return [net.to(device) for net in nets]
+
+
+def checkpoint_cond_dim(ckpt, path):
+    """`cond_dim` of a checkpoint's bottleneck conditioner, or None if it has none.
+
+    Read from the state_dict rather than from the metadata, because the
+    state_dict is what has to load: `cond.proj` is Linear(n_cond, cond_dim), so
+    its weight gives both numbers.  The `bottleneck_cond` metadata block is
+    cross-checked against it so a checkpoint whose card and weights disagree is
+    an error rather than a silently unconditioned run.
+
+    n_cond must be 2 (log raw mean, log raw std of one stain).  Upstream also
+    trains 4-slot multi-stain conditioners, whose 12 or 16 inputs this
+    single-channel pipeline cannot supply.
+    """
+    weight = ckpt["state_dict"].get("cond.proj.weight")
+    declared = ckpt.get("bottleneck_cond") is not None
+    if (weight is not None) != declared:
+        raise ValueError(
+            f"{path}: bottleneck_cond metadata says "
+            f"{'conditioned' if declared else 'unconditioned'} but the "
+            f"state_dict {'has' if weight is not None else 'has no'} cond.proj"
+        )
+    if weight is None:
+        return None
+    cond_dim, n_cond = int(weight.shape[0]), int(weight.shape[1])
+    if n_cond != 2:
+        raise ValueError(
+            f"{path}: conditioner takes {n_cond} inputs; this pipeline feeds a "
+            "single stain and can only supply 2 (log raw mean, log raw std)"
+        )
+    return cond_dim
 
 
 def checkpoint_num_classes(ckpt, path):
@@ -628,10 +718,12 @@ def main():
         pool = DevicePool(devices, snakemake.input.models)
         n_folds = len(pool.nets[devices[0]])
         n_classes = pool.nets[devices[0]][0].n_classes
+        conditioned = pool.nets[devices[0]][0].cond is not None
         out_labels = ["plaque"] + (["falsepositive"] if n_classes >= 3 else [])
         res_um = {d: round(axis_scale_um(znimg, d), 2) for d in ("z", "y", "x")}
         print(
-            f"loaded {n_folds} folds ({n_classes} classes) on each of "
+            f"loaded {n_folds} folds ({n_classes} classes, "
+            f"{'with' if conditioned else 'no'} bottleneck conditioner) on each of "
             f"{[str(d) for d in devices]}; grid {data.shape} res {res_um} um "
             f"(from level {start_level}) chunk {chunk} halo {tile - stride} "
             f"tile {tile} stride {stride} batch {batch_size} merge {merge_mode}",
