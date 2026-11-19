@@ -111,6 +111,23 @@ def _sitk_transform(path, invert):
     return _SITK_CACHE[key]
 
 
+def field_coverage(path, points):
+    """True for each LPS point inside a displacement field's grid (header only).
+
+    Outside the grid ITK uses zero displacement, which would silently give a
+    wrong position, so callers flag those points."""
+    import SimpleITK as sitk
+
+    r = sitk.ImageFileReader()
+    r.SetFileName(path)
+    r.ReadImageInformation()
+    size = np.array(r.GetSize()[:3])
+    origin, spacing = np.array(r.GetOrigin()[:3]), np.array(r.GetSpacing()[:3])
+    direction = np.array(r.GetDirection()).reshape(len(r.GetSize()), -1)[:3, :3]
+    idx = (np.linalg.inv(direction @ np.diag(spacing)) @ (np.atleast_2d(points) - origin).T).T
+    return np.all((idx >= -0.5) & (idx <= size - 0.5), axis=1)
+
+
 def apply_transforms(points, transforms, backend="sitk"):
     """Warp an (N,3) LPS array with ANTs-style transform list.
 

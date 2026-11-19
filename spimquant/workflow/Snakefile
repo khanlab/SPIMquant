@@ -1932,24 +1932,30 @@ benchmark_spim_sizes_path = bids(
 rule all_participant:
     default_target: True
     input:
-        (
-            inputs["spim"].expand(benchmark_spim_sizes_path)
-            if config.get("benchmark", False)
-            else []
-        ),
-        rules.all_register.input,
-        rules.all_vessels.input if do_vessels else [],
-        rules.all_fibres.input if do_fibres else [],
-        rules.all_plaques.input if do_plaques else [],
-        rules.all_segment.input if do_seg else [],
-        rules.all_mri_reg.input if config["register_to_mri"] else [],
-        rules.all_segment_coloc.input if do_coloc else [],
-        rules.all_qc.input,
-        rules.all_tabular_sidecars.input,
-        rules.all_bbox_template_crops.input if do_bbox else [],
-        (rules.all_template_spim_zarr.input if config.get("template_spim_res") else []),
-        rules.all_spim_patches.input if config["save_patches"] else [],
-        rules.all_imaris_crops.input if config["save_patches"] else [],
+        # --landmark_analysis: only the landmark TRE outputs (rules/landmarks.smk,
+        # included at the end of this file, so referenced lazily)
+        (lambda wildcards: rules.all_landmarks.input)
+        if config.get("landmark_analysis")
+        else [
+            (
+                inputs["spim"].expand(benchmark_spim_sizes_path)
+                if config.get("benchmark", False)
+                else []
+            ),
+            rules.all_register.input,
+            rules.all_vessels.input if do_vessels else [],
+            rules.all_fibres.input if do_fibres else [],
+            rules.all_plaques.input if do_plaques else [],
+            rules.all_segment.input if do_seg else [],
+            rules.all_mri_reg.input if config["register_to_mri"] else [],
+            rules.all_segment_coloc.input if do_coloc else [],
+            rules.all_qc.input,
+            rules.all_tabular_sidecars.input,
+            rules.all_bbox_template_crops.input if do_bbox else [],
+            (rules.all_template_spim_zarr.input if config.get("template_spim_res") else []),
+            rules.all_spim_patches.input if config["save_patches"] else [],
+            rules.all_imaris_crops.input if config["save_patches"] else [],
+        ],
 
 
 rule all_group_aux:
@@ -2076,6 +2082,11 @@ include: "rules/cohort_template.smk"
 if config["register_to_mri"]:
 
     include: "rules/preproc_mri.smk"
+
+
+if config.get("landmark_analysis"):
+
+    include: "rules/landmarks.smk"
 
 
 # --benchmark: give every rule that has outputs a benchmark file, named after its

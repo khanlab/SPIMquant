@@ -424,6 +424,38 @@ parse_args:
     type: float
 
 
+  --landmark_analysis:
+    help: "Landmark evaluation of registration: register every subject with every registration method (--landmark_methods) using every stain (--landmark_stains) as the registration channel, and compute the target registration error (TRE) of manual landmarks for SPIM<->template, MRI<->SPIM (with --register_to_mri) and MRI->template via SPIM. Replaces the usual participant outputs with the TRE tables (landmarks/ in the output dir). Needs --landmarks_spim and --landmarks_template. (default: %(default)s)"
+    action: store_true
+    default: False
+
+  --landmarks_spim:
+    help: "BIDS derivative of manual SPIM landmarks (3D Slicer markups, LPS mm, on the level-5 SPIM grid): sub-<label>[/ses-<label>]/micr/*_landmarks.json"
+    default: null
+
+  --landmarks_mri:
+    help: "BIDS derivative of manual MRI landmarks on the MRI that SPIMquant registers: sub-<label>[/ses-<label>]/anat/*_from-<mri suffix>_landmarks.json. With several sessions, the one matching the MRI input is used."
+    default: null
+
+  --landmarks_template:
+    help: "Folder of template landmarks (markups files, LPS mm) in --template space"
+    default: null
+
+  --landmark_methods:
+    help: "Registration methods (registration.presets) to evaluate with --landmark_analysis (default: every single-channel method)"
+    default: null
+    nargs: '+'
+
+  --landmark_stains:
+    help: "Stains to use as the registration channel with --landmark_analysis (default: every stain of the scans, ignoring --stains_for_reg priority)"
+    default: null
+    nargs: '+'
+
+  --landmark_keep_warps:
+    help: "Keep the subject->template composite warps of every method and stain (about 1.5 GB each at the 25 um ABAv3 grid); by default they are deleted once the TRE is computed. (default: %(default)s)"
+    action: store_true
+    default: False
+
   --register_to_mri:
     help: "Register the lightsheet data directly to a corresponding MRI (from the BIDS dataset)"
     action: store_true

@@ -1,0 +1,78 @@
+# Landmark evaluation of registration (`--landmark_analysis`)
+
+Measures registration accuracy with manual landmarks: target registration error
+(TRE, µm) for **every registration method × every stain** SPIMquant can run, in one
+participant-level run.
+
+## What one run does
+
+For each SPIM scan that has a landmarks file:
+
+1. Builds the usual level-5 N4 + brain-masked image of **every stain** (one brain
+   mask, from the default registration stain, shared by all stains).
+2. Registers the scan to `--template` with **every method** in `--landmark_methods`
+   (default: every single-channel `registration.presets` entry — greedy,
+   greedyNoAffine, greedySharp, greedyNCC, ants, fireants, plus any preset added
+   to the config) using **every stain** as the registration channel
+   (`--landmark_stains`, default all stains; the `--stains_for_reg` priority is
+   ignored).
+3. With `--register_to_mri`: registers the MRI to SPIM once per stain (greedy,
+   `reg_mri` config).
+4. Computes TRE for every path:
+
+| `path` | points | transform applied to the points | `inversion` |
+|---|---|---|---|
+| `spim_to_template` | SPIM → template | `from-<tpl>_to-subject` (shipped inverse) | `shipped` |
+| `spim_to_template` | SPIM → template | fixed-point inverse of `from-subject_to-<tpl>` | `fixedpoint` |
+| `template_to_spim` | template → SPIM | `from-subject_to-<tpl>` | `none` |
+| `mri_to_spim` | MRI → SPIM | `from-SPIM_to-<mri>` | `none` |
+| `spim_to_mri` | SPIM → MRI | `from-<mri>_to-SPIM` | `none` |
+| `mri_to_template` | MRI → SPIM → template | both legs, same stain | `shipped` / `fixedpoint` |
+
+Points move opposite to images: the transform that resamples B-space images into A
+moves points from A to B. Landmarks are matched by name with any `Template_`,
+`SPIM_`/`MRI_` prefix and `-<n>` suffix stripped; files are never modified.
+
+## Usage
+
+```bash
+pixi run -e gpu spimquant <bids_dir> <output_dir> participant \
+  --participant-label <labels> \
+  --landmark_analysis \
+  --landmarks_spim <manual_landmarks derivative>     # sub-*/[ses-*/]micr/*from-SPIM_landmarks.json
+  --landmarks_template <folder of template points>   # markups in --template space
+  [--register_to_mri --landmarks_mri <derivative>    # sub-*/[ses-*/]anat/*from-<suffix>_landmarks.json
+   --filter-mri session=<the landmarked session> ... ]
+  [--landmark_methods greedy ants ...] [--landmark_stains YoPro Iba1 ...]
+  [--landmark_keep_warps]
+```
+
+- Use the `gpu` pixi environment and a GPU allocation if `fireants` is among the
+  methods (default). Without a GPU, pass `--landmark_methods` without `fireants`.
+- The MRI landmarks are on one MRI; filter the MRI input to that session (the run
+  stops with an error if a subject has MRI from several sessions).
+- Landmark files: 3D Slicer markups, `coordinateSystem` LPS (RAS is converted), mm.
+  SPIM landmarks are on the level-5 grid of the scan (any stain).
+- Subject→template composite warps are ~1.5 GB each at the 25 µm ABAv3 grid, so
+  they are deleted after the TRE step unless `--landmark_keep_warps`.
+
+## Outputs (`<output_dir>/landmarks/`)
+
+- `sub-*/…/tre/*_tre.tsv` — one row per landmark × path × method × stain × inversion:
+  `tre_um`, source/warped/target LPS coordinates, `inside_field` (False if a point
+  fell outside a transform's grid, where ITK would use zero displacement), and the
+  fixed-point residual.
+- `group/landmarks_tre_allscans.tsv` — all scans.
+- `group/landmarks_tre_summary.tsv` — n, median, IQR, mean, SD, max per
+  path × method × stain × inversion (points outside a field excluded).
+- `group/landmarks_tre_per_landmark.tsv` — the same per landmark.
+- `xfm/` — the per-stain, per-method composite warps (inverse kept; forward only
+  with `--landmark_keep_warps`) and MRI↔SPIM composites.
+
+## Code
+
+- `workflow/rules/landmarks.smk` — rules; the registration rules are the regular
+  ones reused with `use rule … with:` and a `{regstain}` wildcard.
+- `workflow/scripts/landmark_tre.py` — landmark I/O, point warping (SimpleITK,
+  matches `antsApplyTransformsToPoints` to <0.05 µm), fixed-point inversion.
+- `workflow/scripts/landmark_tre_subject.py`, `landmark_tre_summary.py`.
