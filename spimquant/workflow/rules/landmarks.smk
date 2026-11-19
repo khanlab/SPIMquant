@@ -432,7 +432,28 @@ rule landmark_tre_summary:
         "../scripts/landmark_tre_summary.py"
 
 
+rule landmark_report:
+    """Report: best method x stain, per-landmark spread, landmark-vs-registration
+    classification, cross-subject consistency, L/R symmetry, MRI vs SPIM, flags with
+    screenshots. Flags only; landmarks are never changed."""
+    input:
+        tsv=rules.landmark_tre_summary.output.all_tsv,
+        template_image=expand(rules.import_template_anat.output.anat, template=config["template"]),
+    output:
+        report=os.path.join(lmk_root, "group", "report", "report.md"),
+    params:
+        template_landmarks=config["landmarks_template"],
+        run_root=root if root else ".",
+    threads: 1
+    resources:
+        mem_mb=8000,
+        runtime=30,
+    script:
+        "../scripts/landmark_report.py"
+
+
 rule all_landmarks:
     input:
         lmk_tre_tsvs,
         rules.landmark_tre_summary.output,
+        rules.landmark_report.output,
