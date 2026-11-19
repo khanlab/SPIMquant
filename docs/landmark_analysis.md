@@ -66,6 +66,19 @@ pixi run -e gpu spimquant <bids_dir> <output_dir> participant \
 - `group/landmarks_tre_summary.tsv` — n, median, IQR, mean, SD, max per
   path × method × stain × inversion (points outside a field excluded).
 - `group/landmarks_tre_per_landmark.tsv` — the same per landmark.
+- `group/report/report.md` (+ `figures/`, `*.tsv`) — landmark report:
+  1. best method × stain per path (heatmaps);
+  2. TRE per landmark (boxplots);
+  3. landmark or registration? Per subject × landmark, the *consensus* (median
+     warped position over all method × stain registrations) vs the landmark. A large
+     consensus error with a small spread between registrations points at the landmark
+     (placement or ambiguous anatomy); a large spread at the registration;
+  4. consistency across subjects in template space (spread, bias of the mean from the
+     template point, subject outliers);
+  5. left/right symmetry of paired landmarks (template and subjects);
+  6. MRI vs lightsheet routes to the template;
+  7. flagged points with screenshots (landmark on the SPIM image and on the template,
+     with the consensus position). Flags only; landmarks are never edited.
 - `xfm/` — the per-stain, per-method composite warps (inverse kept; forward only
   with `--landmark_keep_warps`) and MRI↔SPIM composites.
 
