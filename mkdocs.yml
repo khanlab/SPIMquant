@@ -19,6 +19,7 @@ nav:
       - Running Workflows: usage/workflows.md
       - Group Analysis: usage/group_analysis.md
       - Cloud Processing: usage/cloud.md
+      - Datasets on MIND: howto/mind_data.md
   - How-To Guides:
       - Segmentation Methods: howto/segmentation.md
       - MRI Registration: howto/mri_registration.md

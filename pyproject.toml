@@ -156,6 +156,19 @@ jupyterlab = ">=4.4.7,<5"
 quality_check = "isort --profile black spimquant/*.py -c && black spimquant --check && snakefmt spimquant --check"
 quality_fix = "isort --profile black spimquant/*.py && black spimquant && snakefmt spimquant"
 
+# Datasets hosted on the MIND platform (mind:// URLs): see docs/howto/mind_data.md.
+# snakebids comes from a branch that accepts a URL as bids_dir (recipes/snakebids), and mind-client gives fsspec
+# and universal_pathlib the mind:// protocol. Both move into the run-dependencies once released.
+[tool.pixi.feature.mind.dependencies]
+snakebids = { path = "recipes/snakebids" }
+
+[tool.pixi.feature.mind.pypi-dependencies]
+mind-client = { git = "https://gitlab.com/akhanf/mind_server.git", branch = "mind-fsspec", subdirectory = "client" }
+
+[tool.pixi.feature.mind.pypi-options]
+# fastapi_cfmm_client, a dependency of mind-client, is on the CFMM group's GitLab registry
+extra-index-urls = ["https://gitlab.com/api/v4/groups/1527098/-/packages/pypi/simple"]
+
 [tool.pixi.feature.vis.dependencies]
 napari = ">=0.6.6,<0.7"
 napari-ome-zarr = ">=0.6.1,<0.7"
@@ -171,4 +184,5 @@ micro_sam = ">=1.6.2,<2"
 default = ["runtime", "cpu"]
 gpu = ["runtime", "gpu"]
 dev = ["runtime", "dev", "vis", "cpu"]
+mind = ["runtime", "mind", "cpu"]
 dev-only = { features = ["dev", "cpu"], no-default-feature = true }
