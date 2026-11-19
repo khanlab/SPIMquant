@@ -92,7 +92,7 @@ def _global_norms(imgs, channels):
         for extra in (5, 3, 1, 0):
             try:
                 coarse = ZarrNii.from_file(
-                    snakemake.input.spim,
+                    snakemake.params.spim,
                     level=(base_level + extra),
                     channel_labels=[ch],
                     **snakemake.params.zarrnii_kwargs,
@@ -352,7 +352,7 @@ def main():
     # ------------------------------------------------------------------
     # Load SPIM channels and compute global normalisations
     # ------------------------------------------------------------------
-    imgs = _load_channel_images(snakemake.input.spim, channels, level)
+    imgs = _load_channel_images(snakemake.params.spim, channels, level)
     norms = _global_norms(imgs, channels)
 
     # ------------------------------------------------------------------

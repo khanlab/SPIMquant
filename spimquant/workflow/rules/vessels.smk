@@ -10,7 +10,7 @@ rule import_vesselfm_model:
 
 rule run_vesselfm:
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         model_path="resources/models/vesselfm.pt",
     output:
@@ -31,6 +31,7 @@ rule run_vesselfm:
         mem_mb=scaled_mem_mb(12000, 20),
         runtime=scaled_runtime(30, 0.75),
     params:
+        spim=spim_input,
         zarrnii_kwargs=zarrnii_in_kwargs,
         vesselfm_kwargs=lambda wildcards, input: {
             "chunk_size": (1, 128, 128, 128),

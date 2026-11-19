@@ -93,18 +93,18 @@ def main():
     ):
         if params.corrected:
             # already single channel, with orientation applied when it was written
-            flo = ZarrNii.from_file(snakemake.input.spim)
+            flo = ZarrNii.from_file(snakemake.params.spim)
         else:
             load = dict(
                 level=int(wildcards.level),
                 channel_labels=[wildcards.stain],
                 **params.zarrnii_kwargs,
             )
-            flo = ZarrNii.from_file(snakemake.input.spim, **load)
+            flo = ZarrNii.from_file(snakemake.params.spim, **load)
             chunks = coarse_chunks(flo)
             if chunks != flo.data.chunksize:
                 print(f"reading input chunks {flo.data.chunksize} as {chunks}")
-                flo = ZarrNii.from_file(snakemake.input.spim, chunks=chunks, **load)
+                flo = ZarrNii.from_file(snakemake.params.spim, chunks=chunks, **load)
 
         grid = template_grid(snakemake.input.ref, res_mm, chunks=params.chunks)
         # subject -> template warp, defined on the template grid: maps template

@@ -77,7 +77,7 @@ if __name__ == "__main__":
     method = snakemake.wildcards.method
     if method not in ("none", "log"):
         raise ValueError(f"Unknown correction method {method!r}")
-    is_imaris = str(snakemake.input.spim).lower().endswith(".ims")
+    is_imaris = str(snakemake.params.spim).lower().endswith(".ims")
 
     with get_dask_client(
         snakemake.config["dask_scheduler"],
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         mask_level = int(snakemake.params.mask_level)
 
         znimg = ZarrNii.from_file(
-            snakemake.input.spim,
+            snakemake.params.spim,
             channel_labels=[snakemake.wildcards.stain],
             level=hires_level,
             downsample_near_isotropic=True,
@@ -131,6 +131,6 @@ if __name__ == "__main__":
         znimg_out.data = corrected[np.newaxis]
         znimg_out.to_ome_zarr(
             snakemake.output.corrected,
-            match_scale_factors_from=snakemake.input.spim,
+            match_scale_factors_from=snakemake.params.spim,
             **snakemake.config["zarrnii_out_kwargs"],
         )

@@ -6,7 +6,7 @@ from dask_setup import get_dask_client
 
 with get_dask_client("threads", snakemake.threads):
     znimg = ZarrNii.from_file(
-        snakemake.input.spim,
+        snakemake.params.spim,
         level=int(snakemake.wildcards.level),
         channel_labels=[snakemake.wildcards.stain],
         downsample_near_isotropic=True,
@@ -20,6 +20,6 @@ with get_dask_client("threads", snakemake.threads):
         znimg_mask.to_ome_zarr(
             snakemake.output.mask,
             max_layer=5,
-            match_scale_factors_from=snakemake.input.spim,
+            match_scale_factors_from=snakemake.params.spim,
             **snakemake.config["zarrnii_out_kwargs"],
         )

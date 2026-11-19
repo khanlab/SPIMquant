@@ -336,7 +336,7 @@ def main():
 
     probseg = ZarrNii.from_file(snakemake.input.probseg, level=0)
     ref = ZarrNii.from_file(
-        snakemake.input.spim,
+        snakemake.params.spim,
         level=int(snakemake.params.target_level),
         channel_labels=[snakemake.wildcards.stain],
         **snakemake.params.zarrnii_kwargs,
@@ -403,7 +403,7 @@ def main():
         znimg_mask.to_ome_zarr(
             snakemake.output.mask,
             max_layer=5,
-            match_scale_factors_from=snakemake.input.spim,
+            match_scale_factors_from=snakemake.params.spim,
             **snakemake.config["zarrnii_out_kwargs"],
         )
 

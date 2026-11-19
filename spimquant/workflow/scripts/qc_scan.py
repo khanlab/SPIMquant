@@ -91,7 +91,7 @@ def main():
     ceiling = (2 ** (8 * params.itemsize) - 1) if params.itemsize <= 2 else None
 
     low = ZarrNii.from_file(
-        inp.spim,
+        params.spim,
         level=params.level,
         channel_labels=stains,
         downsample_near_isotropic=True,
@@ -146,7 +146,7 @@ def main():
 
     # full-resolution crops: one plane of the image at each place
     high = ZarrNii.from_file(
-        inp.spim,
+        params.spim,
         level=params.crop_level,
         channel_labels=stains,
         **params.zarrnii_kwargs,

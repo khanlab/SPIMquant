@@ -26,7 +26,7 @@ Outputs include:
 rule gaussian_biasfield:
     """simple bias field correction with gaussian"""
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
     output:
         corrected=temp(
@@ -59,6 +59,7 @@ rule gaussian_biasfield:
         disk_mb=2097152,
         runtime=15,
     params:
+        spim=spim_input,
         proc_level=config["correction_level"],
         zarrnii_kwargs=zarrnii_in_kwargs,
     script:
@@ -207,7 +208,7 @@ rule n4_pre_quant_tune:
 rule n4_biasfield:
     """N4 bias field correction with antspyx"""
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         biasfield=bids(
             root=root,
@@ -250,6 +251,7 @@ rule n4_biasfield:
         mem_mb=scaled_mem_mb(96000, 0),
         runtime=scaled_runtime(60, 0.2),
     params:
+        spim=spim_input,
         proc_level=config["correction_level"],
         zarrnii_kwargs=zarrnii_in_kwargs,
         shrink_factor=16 if config["sloppy"] else 1,
@@ -267,7 +269,7 @@ rule mask_correction:
     for which the much heavier n4 correction is unnecessary.
     """
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         mask=bids(
             root=root,
@@ -300,6 +302,7 @@ rule mask_correction:
         mem_mb=scaled_mem_mb(128000, 0),
         runtime=scaled_runtime(30, 0.1),
     params:
+        spim=spim_input,
         dask_reserve_mb=8000,
         mask_level=config["correction_level"],
         zarrnii_kwargs=zarrnii_in_kwargs,

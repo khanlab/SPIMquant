@@ -22,7 +22,7 @@ from zarrnii import ZarrNii, ZarrNiiAtlas
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 # Get input from spim
-input_zarr = snakemake.input.spim
+input_zarr = snakemake.params.spim
 
 input_dseg = snakemake.input.dseg
 input_tsv = snakemake.input.label_tsv

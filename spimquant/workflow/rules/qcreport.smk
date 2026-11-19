@@ -164,7 +164,7 @@ rule qc_scan:
     """
     input:
         unpack(_qc_scan_reg_inputs),
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
     output:
         json=_qc_out("qcscan.json"),
@@ -175,6 +175,7 @@ rule qc_scan:
         mem_mb=scaled_mem_mb(8000, 16000, config["registration_level"]),
         runtime=30,
     params:
+        spim=spim_input,
         stains=qc_stains,
         reg_stain=qc_reg_stain,
         entities=lambda wildcards: dict(wildcards),
@@ -188,7 +189,7 @@ rule qc_scan:
         overview_slices=config["qc"]["overview_slices"],
         overview_size=config["qc"]["overview_size"],
         image_quality=config["qc"]["image_quality"],
-        itemsize=lambda wildcards, input: get_spim_info(input.spim, 0)["itemsize"],
+        itemsize=lambda wildcards: get_spim_info(spim_input(wildcards), 0)["itemsize"],
         zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/qc_scan.py"

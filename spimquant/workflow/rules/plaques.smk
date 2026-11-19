@@ -68,7 +68,7 @@ rule run_lantern_plaques:
     changed downstream without re-running inference.
     """
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         models=expand(
             lantern_fold_path,
@@ -128,6 +128,7 @@ rule run_lantern_plaques:
             * attempt
         ),
     params:
+        spim=spim_input,
         zarrnii_kwargs=zarrnii_in_kwargs,
         start_level=config["plaque_level"],
         iso_res=config["plaque_iso_res"],
@@ -163,7 +164,7 @@ rule binarize_lantern_plaques:
             suffix="probseg.{ext}",
             **inputs["spim"].wildcards,
         ),
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
     output:
         mask=bids_oz_out(
@@ -188,6 +189,7 @@ rule binarize_lantern_plaques:
         disk_mb=2097152,
         runtime=scaled_runtime(30, 0.1, config["segmentation_level"]),
     params:
+        spim=spim_input,
         zarrnii_kwargs=zarrnii_in_kwargs,
         n_folds=config["plaque_n_folds"],
         vote_threshold=config["plaque_vote_threshold"],

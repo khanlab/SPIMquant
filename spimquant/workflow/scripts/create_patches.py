@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 channel_args = {}
 # Determine which input we have (spim, mask, or corrected)
 if hasattr(snakemake.input, "spim"):
-    input_zarr = snakemake.input.spim
+    input_zarr = snakemake.params.spim
     channel_args = {"channel_labels": [snakemake.wildcards.stain]}
 elif hasattr(snakemake.input, "mask"):
     input_zarr = snakemake.input.mask

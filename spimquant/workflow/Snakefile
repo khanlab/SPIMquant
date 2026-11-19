@@ -309,17 +309,19 @@ zarrnii_cli_kwargs = {}
 
 
 def get_zarrnii_in_kwargs(wildcards, input):
-    spim_input = getattr(input, "spim", None)
-    if spim_input is None:
+    spim_path = getattr(input, "spim", None)
+    if spim_path is not None and not spim_path:
+        # a remote SPIM image is not a job input (see local_only)
+        spim_path = spim_input(wildcards)
+    elif spim_path is None:
         # Some rules may pass positional input lists; use the first entry as SPIM input.
         if len(input) == 0:
             raise ValueError(
                 f"Unable to resolve SPIM input path for zarrnii kwargs for wildcards: {wildcards}."
                 "Make sure the zarrnii input for the rule is named spim, or is the first positional input."
             )
-        spim_input = input[0]
-    spim_path = str(spim_input)
-    kwargs = dict(spim_json_overrides.get(spim_path, {}))
+        spim_path = input[0]
+    kwargs = dict(spim_json_overrides.get(str(spim_path), {}))
     # CLI options are highest precedence and intentionally override sidecar values.
     kwargs.update(zarrnii_cli_kwargs)
     return kwargs
@@ -2117,7 +2119,7 @@ if config.get("benchmark", False):
 
     rule benchmark_spim_sizes:
         input:
-            spim=spim_input,
+            spim=local_only(spim_input),
             spim_json=spim_json_input,
         output:
             tsv=benchmark_spim_sizes_path,
@@ -2126,6 +2128,7 @@ if config.get("benchmark", False):
             mem_mb=2000,
             runtime=15,
         params:
+            spim=spim_input,
             levels=range(
                 max(
                     config["registration_level"],
@@ -2138,7 +2141,7 @@ if config.get("benchmark", False):
         run:
             rows = []
             for level in params.levels:
-                info = get_spim_info(input.spim, level)
+                info = get_spim_info(params.spim, level)
                 rows.append(
                     {
                         **{w: wildcards[w] for w in _spim_key_wildcards},
@@ -2146,11 +2149,11 @@ if config.get("benchmark", False):
                         **{f"n{dim}": n for dim, n in info["shape"].items()},
                         **{f"chunk_{dim}": n for dim, n in info["chunks"].items()},
                         "bytes_per_voxel": info["itemsize"],
-                        "gb_per_channel": get_spim_size_gb(input.spim, level),
+                        "gb_per_channel": get_spim_size_gb(params.spim, level),
                         "chunk_mb_per_channel": get_spim_chunk_mb(
-                            input.spim, level
+                            params.spim, level
                         ),
-                        "path": input.spim,
+                        "path": params.spim,
                     }
                 )
             _pd.DataFrame(rows).to_csv(output.tsv, sep="\t", index=False)

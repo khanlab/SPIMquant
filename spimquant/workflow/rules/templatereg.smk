@@ -642,7 +642,7 @@ rule deform_spim_to_template_zarr:
     corrected image at the same level (--template_spim_corrected).
     """
     input:
-        spim=_template_zarr_input,
+        spim=local_only(_template_zarr_input),
         spim_json=lambda wildcards: (
             spim_json_input(wildcards) if wildcards.desc == "raw" else []
         ),
@@ -677,6 +677,7 @@ rule deform_spim_to_template_zarr:
         mem_mb=scaled_mem_mb(128000, 0),
         runtime=scaled_runtime(30, 1),
     params:
+        spim=_template_zarr_input,
         corrected=lambda wildcards: wildcards.desc != "raw",
         zarrnii_kwargs=lambda wildcards, input: (
             zarrnii_in_kwargs(wildcards, input) if wildcards.desc == "raw" else {}

@@ -65,7 +65,7 @@ def main():
     subject = snakemake.wildcards.subject
 
     spim_img = ZarrNii.from_file(
-        snakemake.input.spim,
+        snakemake.params.spim,
         level=snakemake.params.level,
         downsample_near_isotropic=True,
         channel_labels=[stain],

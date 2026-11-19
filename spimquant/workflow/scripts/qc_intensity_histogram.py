@@ -26,7 +26,7 @@ def main():
 
     with get_dask_client("threads", snakemake.threads):
         znimg = ZarrNii.from_file(
-            snakemake.input.spim,
+            snakemake.params.spim,
             level=level,
             channel_labels=[stain],
             **snakemake.params.zarrnii_kwargs,

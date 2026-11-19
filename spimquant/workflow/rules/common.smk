@@ -11,6 +11,7 @@ This module provides shared helper functions used across multiple workflow rules
 - scaled_mem_mb(), scaled_runtime(): Resources that grow with a job's SPIM input size
 - bids_oz_out(): bids() wrapper for OME-Zarr outputs (adds directory() when needed)
 - bids_oz_in(): bids() wrapper for OME-Zarr inputs
+- is_remote(), local_only(): SPIM inputs read straight from object storage (e.g. mind://)
 
 These functions abstract away path complexity and ensure consistent file
 organization following BIDS conventions.
@@ -22,6 +23,7 @@ import math
 from pathlib import Path
 
 import numpy as np
+from upath import UPath
 
 
 def resources_path(path):
@@ -41,6 +43,27 @@ def resources_path(path):
         return path
     else:
         return str(resources / path)
+
+
+def is_remote(path):
+    """Whether path is a URL (e.g. mind://, s3://, gs://) rather than a local path."""
+    return "://" in str(path)
+
+
+def local_only(input_function):
+    """Input function: input_function's path, or nothing for a remote one.
+
+    A job reads a remote SPIM image straight from object storage, through the
+    path in its params, so Snakemake neither downloads it nor needs to see it.
+    Images in MIND are written once and never changed, so there is nothing for
+    Snakemake to track. Local images remain inputs, to rerun jobs if they change.
+    """
+
+    def local_input(wildcards):
+        path = input_function(wildcards)
+        return [] if is_remote(path) else path
+
+    return local_input
 
 
 def bids_oz_out(**kwargs):
@@ -329,6 +352,9 @@ def spim_json_input(wildcards):
     SPIM input, so any rule with spim_input as an input should have this as well,
     to rerun if the sidecar changes."""
     json_path = get_spim_json_path(spim_input(wildcards))
+    if is_remote(json_path):
+        # read when the workflow starts (spim_json_overrides), and never changes
+        return []
     return json_path if Path(json_path).exists() else []
 
 
@@ -354,7 +380,7 @@ def _extract_channels_from_json(metadata):
 
 def get_spim_json_overrides(spim_path):
     json_path = get_spim_json_path(spim_path)
-    json_file = Path(json_path)
+    json_file = UPath(json_path)
     if not json_file.exists():
         return {}
 

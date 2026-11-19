@@ -9,7 +9,7 @@ stain = snakemake.wildcards.stain
 
 with get_dask_client("threads", snakemake.threads):
     img = ZarrNii.from_file(
-        snakemake.input.ref_spim,
+        snakemake.params.ref_spim,
         level=level,
         channel_labels=[stain],
         downsample_near_isotropic=True,

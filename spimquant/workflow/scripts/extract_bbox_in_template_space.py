@@ -55,7 +55,7 @@ zarrnii_kwargs = snakemake.params.zarrnii_kwargs
 
 # Load floating SPIM zarr (ZYX axes_order = zarrnii default)
 flo_znimg = ZarrNii.from_file(
-    snakemake.input.spim,
+    snakemake.params.spim,
     level=input_level,
     channel_labels=[stain],
     **zarrnii_kwargs,

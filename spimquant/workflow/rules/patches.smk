@@ -31,7 +31,7 @@ rule create_spim_patches:
     but level in the dseg input is the (downsampled) registration_level.
     """
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         dseg=bids(
             root=root,
@@ -62,6 +62,7 @@ rule create_spim_patches:
         mem_mb=32000,
         runtime=30,
     params:
+        spim=spim_input,
         patch_size=config.get("patch_size", [256, 256, 256]),
         n_patches=config.get("n_patches_per_label", 10),
         patch_labels=config.get("patch_labels", None),
@@ -193,7 +194,7 @@ rule create_imaris_crops:
     to_imaris() function. Level defaults to 0 for high-resolution output.
     """
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         dseg=bids(
             root=root,
@@ -223,6 +224,7 @@ rule create_imaris_crops:
         mem_mb=32000,
         runtime=60,
     params:
+        spim=spim_input,
         crop_labels=config.get("crop_labels", None),
         hires_level=0,  # input is the raw data
         zarrnii_kwargs=zarrnii_in_kwargs,
@@ -246,7 +248,7 @@ rule extract_bbox_crop:
     the bounding box extent, enabling whole-brain resampling at arbitrary resolution.
     """
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         xfm_composite=bids(
             root=root,
@@ -283,6 +285,7 @@ rule extract_bbox_crop:
         mem_mb=32000,
         runtime=60,
     params:
+        spim=spim_input,
         bbox_config=lambda wildcards: bbox_cfgs_by_name[wildcards.desc],
         zarrnii_kwargs=zarrnii_in_kwargs,
     script:

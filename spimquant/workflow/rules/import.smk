@@ -30,7 +30,7 @@ rule get_downsampled_nii:
     based on configuration.
     """
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
     output:
         nii=bids(
@@ -48,6 +48,7 @@ rule get_downsampled_nii:
         mem_mb=4000,
         runtime=10,
     params:
+        spim=spim_input,
         zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/ome_zarr_to_nii.py"

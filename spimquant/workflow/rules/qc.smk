@@ -51,7 +51,7 @@ rule qc_intensity_histogram:
     saturation/clip fraction (percentage of voxels at the maximum bin).
     """
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
     output:
         png=bids(
@@ -66,6 +66,7 @@ rule qc_intensity_histogram:
         mem_mb=2000,
         runtime=30,
     params:
+        spim=spim_input,
         level=config["registration_level"],
         hist_bins=500,
         hist_range=[0, 65535],
@@ -84,7 +85,7 @@ rule qc_segmentation_overview:
     Aspect ratio is corrected using voxel spacings from ``ZarrNii.get_zooms()``.
     """
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         mask=bids_oz_in(
             root=root,
@@ -109,6 +110,7 @@ rule qc_segmentation_overview:
         mem_mb=2000,
         runtime=30,
     params:
+        spim=spim_input,
         level=config["registration_level"],
         mask_level=config["registration_level"] - config["segmentation_level"],
         zarrnii_kwargs=zarrnii_in_kwargs,
@@ -124,7 +126,7 @@ rule qc_vessels_overview:
     for isotropic display and physically correct aspect ratio.
     """
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         mask=bids_oz_in(
             root=root,
@@ -149,6 +151,7 @@ rule qc_vessels_overview:
         mem_mb=2000,
         runtime=30,
     params:
+        spim=spim_input,
         level=config["registration_level"],
         mask_level=config["registration_level"] - config["segmentation_level"],
         zarrnii_kwargs=zarrnii_in_kwargs,
@@ -184,7 +187,7 @@ rule qc_segmentation_roi_zoom:
             if _use_n4_bg
             else {}
         ),
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         mask=bids_oz_in(
             root=root,
@@ -236,6 +239,7 @@ rule qc_segmentation_roi_zoom:
         mem_mb=scaled_mem_mb(4000, 4, config["segmentation_level"]),
         runtime=scaled_runtime(15, 0.05, config["segmentation_level"]),
     params:
+        spim=spim_input,
         max_rois=lambda wildcards: 25 if wildcards.seg == "coarse" else 100,
         n_cols=lambda wildcards: 5 if wildcards.seg == "coarse" else 10,
         patch_size=lambda wildcards: 2000 if wildcards.seg == "coarse" else 500,
@@ -272,7 +276,7 @@ rule qc_vessels_roi_zoom:
             if _use_n4_bg
             else {}
         ),
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         mask=bids_oz_in(
             root=root,
@@ -324,6 +328,7 @@ rule qc_vessels_roi_zoom:
         mem_mb=scaled_mem_mb(4000, 4, config["segmentation_level"]),
         runtime=scaled_runtime(15, 0.05, config["segmentation_level"]),
     params:
+        spim=spim_input,
         max_rois=lambda wildcards: 25 if wildcards.seg == "coarse" else 100,
         n_cols=lambda wildcards: 5 if wildcards.seg == "coarse" else 10,
         patch_size=lambda wildcards: 2000 if wildcards.seg == "coarse" else 500,
@@ -671,7 +676,7 @@ rule qc_stain_instance_gif:
     parcellation for atlas-label lookup.
     """
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         instance_parquet=bids(
             root=root,
@@ -722,6 +727,7 @@ rule qc_stain_instance_gif:
         mem_mb=16000,
         runtime=60,
     params:
+        spim=spim_input,
         instance_type="stain",
         channels=stains,
         level=config["segmentation_level"],
@@ -742,7 +748,7 @@ rule qc_coloc_instance_gif:
     marker drawn at the average radius of the pair.
     """
     input:
-        spim=spim_input,
+        spim=local_only(spim_input),
         spim_json=spim_json_input,
         instance_parquet=bids(
             root=root,
@@ -791,6 +797,7 @@ rule qc_coloc_instance_gif:
         mem_mb=16000,
         runtime=60,
     params:
+        spim=spim_input,
         instance_type="coloc",
         channels=stains,
         level=config["segmentation_level"],

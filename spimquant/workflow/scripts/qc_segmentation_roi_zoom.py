@@ -51,7 +51,7 @@ def main():
     n_cols = snakemake.params.n_cols
     use_n4_bg = snakemake.params.get("use_n4_bg", False)
 
-    spim_bg_path = snakemake.input.spim_n4 if use_n4_bg else snakemake.input.spim
+    spim_bg_path = snakemake.input.spim_n4 if use_n4_bg else snakemake.params.spim
     spim_img = ZarrNii.from_file(
         spim_bg_path,
         level=snakemake.params.level,

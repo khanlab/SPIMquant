@@ -27,7 +27,7 @@ Deviations from ``vesselfm.py``, and why:
   brain-mask-based block skipping.  ``da.map_overlap`` is driven directly here.
 
 - The model reads RAW intensities.  It was never trained on N4-corrected or
-  otherwise rescaled data, so this path takes ``input.spim`` directly rather than
+  otherwise rescaled data, so this path takes ``params.spim`` directly rather than
   the ``desc-corrected*`` store the GMM/Otsu rules consume.
 
 - Blocks are driven by an explicit loop (``run_blocks``) rather than
@@ -689,7 +689,7 @@ def main():
     devices = resolve_devices(n_gpus)
 
     spec = dict(
-        path=snakemake.input.spim,
+        path=snakemake.params.spim,
         level=int(snakemake.params.start_level),
         target_scale=float(snakemake.params.iso_res),
         channel_labels=[snakemake.wildcards.stain],

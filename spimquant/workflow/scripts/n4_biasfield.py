@@ -7,7 +7,7 @@ if __name__ == "__main__":
     from zarrnii_compat import drop_singleton_time
     import tempfile
 
-    is_imaris = str(snakemake.input.spim).lower().endswith(".ims")
+    is_imaris = str(snakemake.params.spim).lower().endswith(".ims")
 
     with ExitStack() as stack:
 
@@ -26,7 +26,7 @@ if __name__ == "__main__":
         adjusted_downsample_factor = unadjusted_downsample_factor / (2**hires_level)
 
         znimg_in = ZarrNii.from_file(
-            snakemake.input.spim,
+            snakemake.params.spim,
             channel_labels=[snakemake.wildcards.stain],
             level=hires_level,
             downsample_near_isotropic=True,
@@ -70,6 +70,6 @@ if __name__ == "__main__":
         # write to ome_zarr
         znimg_corrected.to_ome_zarr(
             snakemake.output.corrected,
-            match_scale_factors_from=snakemake.input.spim,
+            match_scale_factors_from=snakemake.params.spim,
             **snakemake.config["zarrnii_out_kwargs"],
         )
