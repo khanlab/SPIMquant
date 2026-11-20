@@ -1,10 +1,10 @@
 # snakebids built from a branch, for SPIMquant's `mind` environment (see pyproject.toml).
 #
-# The branch (khanlab/snakebids#remote-bids-dir) accepts a URL such as mind://... as bids_dir. It is built here
-# because the released conda package (bioconda snakebids 0.17.0) pins pybids <0.17, too old to index a remote
-# dataset. Remove this once a snakebids release with both fixes is on bioconda.
-#
-# The run-dependencies mirror the [project] dependencies of snakebids' pyproject.toml.
+# The branch (khanlab/snakebids#remote-bids-dir) accepts a URL such as mind://... as bids_dir. snakebids' own
+# [tool.pixi.package] would build it straight from git, but with the placeholder version 0.0.0.dev0 (the publish
+# workflow sets the real one from the release tag), which SPIMquant's `snakebids >=0.17` rejects. This manifest
+# names a version and otherwise matches snakebids' own: the run dependencies come from its pyproject.toml.
+# Remove it once the branch is released.
 [package]
 name = "snakebids"
 version = "0.17.1.dev0"
@@ -15,30 +15,12 @@ source = { git = "https://github.com/khanlab/snakebids.git", branch = "remote-bi
 
 [package.build.config]
 noarch = true
+ignore-pypi-mapping = false
 
 [package.host-dependencies]
-python = ">=3.10"
 hatchling = "*"
 hatch-vcs = "*"
-pip = "*"
 
 [package.run-dependencies]
-python = ">=3.10"
-pybids = ">=0.21,<0.22"
+# as in snakebids' pyproject.toml: deps with python_version markers are dropped by the conversion
 snakemake = ">=7.18.2"
-typing-extensions = ">=3.10.0"
-attrs = ">=23.2.0"
-boutiques = ">=0.5.25"
-more-itertools = ">=8"
-universal-pathlib = ">=0.2.2"
-pvandyken-deprecated = "==0.0.4"
-importlib-resources = ">=5.12.0"
-numpy = ">=1.23.2"
-pandas = ">=2.1.1"
-copier = ">=9.2.0"
-jinja2-time = ">=0.2.0"
-requests = ">=2.31.0"
-"ruamel.yaml" = ">=0.17.2"
-lazy-loader = ">=0.3"
-docutils = "!=0.21.post1"
-pluggy = ">=1.3"

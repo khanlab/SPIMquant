@@ -124,6 +124,11 @@ docutils = "<0.22"
 [tool.pixi.feature.runtime.dependencies]
 spimquant = { path = "." }
 
+# snakebids from the khanlab channel: bioconda's build pins pybids <0.17 (its recipe lags pyproject). A feature
+# of its own because the mind environment builds snakebids from a branch instead.
+[tool.pixi.feature.snakebids-release.dependencies]
+snakebids = { version = ">=0.17.0,<0.18", channel = "https://prefix.dev/akhanf/khanlab" }
+
 # the CUDA platform is only solved for the gpu environment
 [tool.pixi.feature.cpu]
 platforms = ["linux-64"]
@@ -157,8 +162,8 @@ quality_check = "isort --profile black spimquant/*.py -c && black spimquant --ch
 quality_fix = "isort --profile black spimquant/*.py && black spimquant && snakefmt spimquant"
 
 # Datasets hosted on the MIND platform (mind:// URLs): see docs/howto/mind_data.md.
-# snakebids comes from a branch that accepts a URL as bids_dir (recipes/snakebids), and mind-client gives fsspec
-# and universal_pathlib the mind:// protocol. Both move into the run-dependencies once released.
+# snakebids comes from a branch that accepts a URL as bids_dir (recipes/snakebids), and mind-client gives
+# fsspec and universal_pathlib the mind:// protocol. Both move into the run-dependencies once released.
 [tool.pixi.feature.mind.dependencies]
 snakebids = { path = "recipes/snakebids" }
 
@@ -181,8 +186,8 @@ micro_sam = ">=1.6.2,<2"
 # ----------------------------------------------------------------------
 
 [tool.pixi.environments]
-default = ["runtime", "cpu"]
-gpu = ["runtime", "gpu"]
-dev = ["runtime", "dev", "vis", "cpu"]
+default = ["runtime", "snakebids-release", "cpu"]
+gpu = ["runtime", "snakebids-release", "gpu"]
+dev = ["runtime", "snakebids-release", "dev", "vis", "cpu"]
 mind = ["runtime", "mind", "cpu"]
 dev-only = { features = ["dev", "cpu"], no-default-feature = true }
