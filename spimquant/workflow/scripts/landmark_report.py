@@ -31,6 +31,9 @@ import numpy as np
 import pandas as pd
 
 PRIMARY = ("spim_to_template", "fixedpoint")
+# a registration whose median TRE on a scan exceeds this did not converge (e.g. a
+# preset without an affine stage on unaligned input); reported, not used in the stats
+FAIL_UM = 2000.0
 
 
 def mad(x):
@@ -116,6 +119,11 @@ def main(tsv, tpl_dir, tpl_image, run_root, out):
     df = pd.read_csv(tsv, sep="\t")
     df["scan"] = scan_id(df)
     df = df[df["inside_field"].astype(bool)].copy()
+    reg_key = ["scan", "path", "inversion", "method", "stain"]
+    med = df.groupby(reg_key)["tre_um"].transform("median")
+    failed = (df[med > FAIL_UM].groupby(reg_key)["tre_um"].agg(["median", "count"])
+              .rename(columns={"median": "median_um", "count": "n"}).reset_index())
+    df = df[med <= FAIL_UM].copy()
     tpl = load_landmarks(tpl_dir)
     md = ["# Landmark registration report", ""]
     nsub = df["subject"].nunique()
@@ -128,6 +136,16 @@ def main(tsv, tpl_dir, tpl_image, run_root, out):
         "edited; flags are for a human to look at.**",
         "",
     ]
+
+    if not failed.empty:
+        failed.to_csv(os.path.join(out, "failed_registrations.tsv"), sep="\t", index=False)
+        fs = (failed.groupby(["method", "stain"])["median_um"].median().reset_index()
+              .rename(columns={"median_um": "median_TRE_um"}))
+        md += ["## 0. Failed registrations", "",
+               f"Median TRE above {FAIL_UM:.0f} µm on a scan: the registration did not converge. "
+               "These are left out of every section below (all rows are in "
+               "`failed_registrations.tsv` and the group TSVs).", "",
+               md_table(fs), ""]
 
     # 1. method x stain
     md += ["## 1. Which method and stain register best", ""]

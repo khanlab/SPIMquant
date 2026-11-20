@@ -67,6 +67,9 @@ pixi run -e gpu spimquant <bids_dir> <output_dir> participant \
   path × method × stain × inversion (points outside a field excluded).
 - `group/landmarks_tre_per_landmark.tsv` — the same per landmark.
 - `group/report/report.md` (+ `figures/`, `*.tsv`) — landmark report:
+  0. failed registrations (median TRE > 2 mm on a scan, e.g. `greedyNoAffine`, which has
+     no affine or centre initialisation and does not converge from the raw SPIM pose);
+     listed and left out of the sections below;
   1. best method × stain per path (heatmaps);
   2. TRE per landmark (boxplots);
   3. landmark or registration? Per subject × landmark, the *consensus* (median
