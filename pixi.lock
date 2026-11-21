@@ -435,6 +435,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-2026.8.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-core-2026.8.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-image-2026.5.0-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/dask-jobqueue-0.9.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/decorator-5.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/deprecated-3.0.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/distributed-2026.8.0-pyhc364b38_0.conda
@@ -640,7 +641,7 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/snakebids-0.17.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.2-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.3-pyh4616a5c_0.conda
-      - conda_source: spimquant[a7915ca0] @ .
+      - conda_source: spimquant[5411d150] @ .
   dev:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -1110,6 +1111,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-2026.8.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-core-2026.8.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-image-2026.5.0-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/dask-jobqueue-0.9.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/decorator-5.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/defusedxml-0.7.1-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/deprecated-3.0.0-pyhc364b38_0.conda
@@ -1425,7 +1427,7 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/snakebids-0.17.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.2-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.3-pyh4616a5c_0.conda
-      - conda_source: spimquant[a7915ca0] @ .
+      - conda_source: spimquant[5411d150] @ .
   dev-only:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -2035,6 +2037,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-2026.8.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-core-2026.8.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-image-2026.5.0-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/dask-jobqueue-0.9.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/decorator-5.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/deprecated-3.0.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/distributed-2026.8.0-pyhc364b38_0.conda
@@ -2242,7 +2245,7 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/snakebids-0.17.0-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.2-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.3-pyh4616a5c_0.conda
-      - conda_source: spimquant[a7915ca0] @ .
+      - conda_source: spimquant[5411d150] @ .
   mind:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -2667,6 +2670,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-2026.8.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-core-2026.8.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-image-2026.5.0-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/dask-jobqueue-0.9.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/decorator-5.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/deprecated-3.0.1-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/distributed-2026.8.0-pyhc364b38_0.conda
@@ -2871,7 +2875,7 @@ environments:
       - conda: https://prefix.dev/akhanf/khanlab/noarch/vesselfm-0.2.2-pyh4616a5c_0.conda
       - conda: https://prefix.dev/akhanf/khanlab/noarch/zarrnii-0.22.3-pyh4616a5c_0.conda
       - conda_source: snakebids[0b63cee3] @ recipes/snakebids
-      - conda_source: spimquant[372ca242] @ .
+      - conda_source: spimquant[a325333c] @ .
       - pypi: git+https://gitlab.com/akhanf/mind_server.git?subdirectory=client&branch=mind-fsspec#53f8344a30aa681b143e7b00b9334cd9d62843f5
       - pypi: https://files.pythonhosted.org/packages/5e/7e/7ffaae13415e8f51c8e8d5d1845f2de7a27ebf2717e97a38d7e7446d6030/joserfc-1.8.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/60/d1/38f3a3405989a89ac18390803e70c6ad7c7760da4f9b83cbeca0c44a0c72/python_dotenv-1.2.4-py3-none-any.whl
@@ -13206,6 +13210,21 @@ packages:
   run_exports: {}
   size: 56812
   timestamp: 1780677721002
+- conda: https://conda.anaconda.org/conda-forge/noarch/dask-jobqueue-0.9.0-pyhd8ed1ab_0.conda
+  sha256: 18a2b682c3d9b978e2ce37d1bfec87f72b54ed6415753833831c095ec61b2668
+  md5: a201de7d36907f2355426e019168d337
+  depends:
+  - dask-core >=2022.02.0
+  - distributed >=2022.02.0
+  - python >=3.10
+  - setuptools
+  license: BSD-3-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/dask-jobqueue?source=hash-mapping
+  run_exports: {}
+  size: 40446
+  timestamp: 1724342296802
 - conda: https://conda.anaconda.org/conda-forge/noarch/decorator-5.3.1-pyhd8ed1ab_0.conda
   sha256: 430bd9d731b265f0bedb3183ac3ecfaa1656390c092b6e864ff8cc1229843c8c
   md5: 61dcf784d59ef0bd62c57d982b154ace
@@ -18455,7 +18474,7 @@ packages:
   - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
   - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026e-h5d301ff_0.conda
   - conda: https://conda.anaconda.org/conda-forge/noarch/vcs_versioning-2.6.0-pyh5ded981_0.conda
-- conda_source: spimquant[372ca242] @ .
+- conda_source: spimquant[5411d150] @ .
   variants:
     target_platform: noarch
   depends:
@@ -18474,93 +18493,7 @@ packages:
   - zarrnii >=0.22.3,<0.23.0
   - zarr >=3.1.6,<4
   - dask >=2026.3.0
-  - h5py >=3.14.0
-  - simpleitk >=2.4.0
-  - nibabel >=5.3.2,<6
-  - scipy >=1.11.0,<2
-  - scikit-image >=0.26.0,<0.27
-  - scikit-learn >=1.8.0,<2
-  - skan >=0.13.1,<0.14
-  - greedyreg ==0.0.20250712
-  - antspyx ==0.6.1
-  - pyarrow >=18.0.0,<19
-  - matplotlib >=3.7.0,<4
-  - seaborn >=0.12.0,<1
-  - nilearn >=0.12.1,<0.13
-  - vesselfm >=0.2.2
-  - dynamic-network-architectures >=0.4
-  - monai >=1.5.2,<2
-  - hydra-core >=1.3.2,<2
-  - omegaconf >=2.3.0,<3
-  - lightning >=2.6.0,<3
-  - huggingface_hub >=1.3.7,<2
-  - tensorboard >=2.20.0,<3
-  - wandb >=0.24.1,<0.25
-  - gpustat >=1.1.1,<2
-  - tqdm >=4.67.2,<5
-  - python >=3.11,<3.14
-  - python *
-  constrains:
-  - markdown-it-py <4
-  - docutils <0.22
-  license: MIT
-  host_packages:
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-hda65f42_10.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/ld_impl_linux-64-2.46.1-default_hbd61a6d_103.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.9.0-hd2095e1_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/libffi-3.7.0-h81df57d_1.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/libgcc-16.2.0-ha9f2e26_7.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/libgomp-16.2.0-he0feb66_7.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/liblzma-5.8.3-hb03c661_1.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/libmpdec-4.0.0-hb03c661_2.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/libpython-3.13.18-hd51c5da_100_cp313.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/libsqlite-3.54.1-h0737f62_101.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/libstdcxx-16.2.0-h934c35e_7.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/libuuid-2.42.4-hcfc3c73_1.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/libzlib-1.3.2-h25fd6f3_3.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.6-hdb14827_1.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/openssl-3.6.5-h781a0a9_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/python-3.13.18-hf47f18c_100_cp313.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/readline-8.3-hd6e31c0_1.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_h1df4ec4_4.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/uv-0.13.9-h779873d_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_7.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.10.23-hbd8a1cb_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/editables-0.6-pyhcf101f3_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/hatch-vcs-0.5.0-pyhd8ed1ab_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/hatchling-1.33.0-pyh5ded981_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/pathspec-1.1.1-pyhd8ed1ab_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.7.0-pyh5ded981_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/python_abi-3.13-9_cp313.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-84.2.1-pyhe730653_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-scm-10.3.4-pyh5ded981_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.5.0-pyh5ded981_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/tomlkit-0.15.2-pyh5ded981_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/trove-classifiers-2026.9.21.13-pyh5ded981_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026e-h5d301ff_0.conda
-  - conda: https://conda.anaconda.org/conda-forge/noarch/vcs_versioning-2.6.0-pyh5ded981_0.conda
-- conda_source: spimquant[a7915ca0] @ .
-  variants:
-    target_platform: noarch
-  depends:
-  - snakemake >=9.5.1,<10
-  - snakebids >=0.17.0,<0.18
-  - snakemake-storage-plugin-s3 >=0.3.3,<0.4
-  - snakemake-storage-plugin-gcs >=1.1.4,<2
-  - snakemake-storage-plugin-fs >=1.1.2,<2
-  - snakemake-storage-plugin-cached-http >=0.3.0,<0.4.0
-  - snakemake-storage-plugin-zenodo >=0.1.5,<0.2
-  - snakemake-executor-plugin-slurm >=1.4.0,<2
-  - conda >=25.5.0,<26
-  - gcsfs >=2025.5.1,<2026
-  - s3fs >=2025.5.1,<2026
-  - universal-pathlib >=0.2.6,<0.3
-  - zarrnii >=0.22.3,<0.23.0
-  - zarr >=3.1.6,<4
-  - dask >=2026.3.0
+  - dask-jobqueue >=0.9.0
   - h5py >=3.14.0
   - simpleitk >=2.4.0
   - nibabel >=5.3.2,<6
@@ -18628,6 +18561,94 @@ packages:
   - conda: https://conda.anaconda.org/conda-forge/noarch/trove-classifiers-2026.9.21.13-pyh5ded981_0.conda
   - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
   - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/vcs_versioning-2.6.0-pyh5ded981_0.conda
+- conda_source: spimquant[a325333c] @ .
+  variants:
+    target_platform: noarch
+  depends:
+  - snakemake >=9.5.1,<10
+  - snakebids >=0.17.0,<0.18
+  - snakemake-storage-plugin-s3 >=0.3.3,<0.4
+  - snakemake-storage-plugin-gcs >=1.1.4,<2
+  - snakemake-storage-plugin-fs >=1.1.2,<2
+  - snakemake-storage-plugin-cached-http >=0.3.0,<0.4.0
+  - snakemake-storage-plugin-zenodo >=0.1.5,<0.2
+  - snakemake-executor-plugin-slurm >=1.4.0,<2
+  - conda >=25.5.0,<26
+  - gcsfs >=2025.5.1,<2026
+  - s3fs >=2025.5.1,<2026
+  - universal-pathlib >=0.2.6,<0.3
+  - zarrnii >=0.22.3,<0.23.0
+  - zarr >=3.1.6,<4
+  - dask >=2026.3.0
+  - dask-jobqueue >=0.9.0
+  - h5py >=3.14.0
+  - simpleitk >=2.4.0
+  - nibabel >=5.3.2,<6
+  - scipy >=1.11.0,<2
+  - scikit-image >=0.26.0,<0.27
+  - scikit-learn >=1.8.0,<2
+  - skan >=0.13.1,<0.14
+  - greedyreg ==0.0.20250712
+  - antspyx ==0.6.1
+  - pyarrow >=18.0.0,<19
+  - matplotlib >=3.7.0,<4
+  - seaborn >=0.12.0,<1
+  - nilearn >=0.12.1,<0.13
+  - vesselfm >=0.2.2
+  - dynamic-network-architectures >=0.4
+  - monai >=1.5.2,<2
+  - hydra-core >=1.3.2,<2
+  - omegaconf >=2.3.0,<3
+  - lightning >=2.6.0,<3
+  - huggingface_hub >=1.3.7,<2
+  - tensorboard >=2.20.0,<3
+  - wandb >=0.24.1,<0.25
+  - gpustat >=1.1.1,<2
+  - tqdm >=4.67.2,<5
+  - python >=3.11,<3.14
+  - python *
+  constrains:
+  - markdown-it-py <4
+  - docutils <0.22
+  license: MIT
+  host_packages:
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-hda65f42_10.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/ld_impl_linux-64-2.46.1-default_hbd61a6d_103.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.9.0-hd2095e1_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/libffi-3.7.0-h81df57d_1.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/libgcc-16.2.0-ha9f2e26_7.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/libgomp-16.2.0-he0feb66_7.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/liblzma-5.8.3-hb03c661_1.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/libmpdec-4.0.0-hb03c661_2.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/libpython-3.13.18-hd51c5da_100_cp313.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/libsqlite-3.54.1-h0737f62_101.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/libstdcxx-16.2.0-h934c35e_7.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/libuuid-2.42.4-hcfc3c73_1.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/libzlib-1.3.2-h25fd6f3_3.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.6-hdb14827_1.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/openssl-3.6.5-h781a0a9_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/python-3.13.18-hf47f18c_100_cp313.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/readline-8.3-hd6e31c0_1.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_h1df4ec4_4.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/uv-0.13.9-h779873d_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_7.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.10.23-hbd8a1cb_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/editables-0.6-pyhcf101f3_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/hatch-vcs-0.5.0-pyhd8ed1ab_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/hatchling-1.33.0-pyh5ded981_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/pathspec-1.1.1-pyhd8ed1ab_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.7.0-pyh5ded981_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/python_abi-3.13-9_cp313.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-84.2.1-pyhe730653_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-scm-10.3.4-pyh5ded981_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.5.0-pyh5ded981_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/tomlkit-0.15.2-pyh5ded981_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/trove-classifiers-2026.9.21.13-pyh5ded981_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
+  - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026e-h5d301ff_0.conda
   - conda: https://conda.anaconda.org/conda-forge/noarch/vcs_versioning-2.6.0-pyh5ded981_0.conda
 - pypi: git+https://gitlab.com/akhanf/mind_server.git?subdirectory=client&branch=mind-fsspec#53f8344a30aa681b143e7b00b9334cd9d62843f5
   name: mind-client

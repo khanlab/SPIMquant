@@ -12,8 +12,11 @@ def get_dask_client(
     Parameters
     ----------
     scheduler : str
-        Scheduler type: ``"threads"`` for the built-in threaded scheduler, or
-        ``"distributed"`` for a ``dask.distributed.LocalCluster``.
+        Scheduler type: ``"threads"`` for the built-in threaded scheduler,
+        ``"distributed"`` for a ``dask.distributed.LocalCluster``, or
+        ``"cluster"`` to connect to the run's shared cluster
+        (``--dask_cluster slurm``), in which case the other parameters do not
+        apply.
     threads : int
         Total number of threads/cores available (from ``snakemake.threads``).
     threads_per_worker : int, optional
@@ -33,10 +36,17 @@ def get_dask_client(
     Yields
     ------
     client : dask.distributed.Client or None
-        The distributed ``Client`` when *scheduler* is ``"distributed"``,
-        otherwise ``None``.
+        The distributed ``Client`` when *scheduler* is ``"distributed"`` or
+        ``"cluster"``, otherwise ``None``.
     """
-    if scheduler == "distributed":
+    if scheduler == "cluster":
+        # --dask_cluster slurm: connect to the run's shared cluster (started by
+        # the workflow, scripts/dask_cluster_service.py) rather than starting one.
+        # Workers are sized for the whole cluster, so threads_per_worker,
+        # mem_mb and reserve_mb do not apply.
+        with connect_to_cluster() as client, _performance_report():
+            yield client
+    elif scheduler == "distributed":
         import dask
         from dask.distributed import Client, LocalCluster
 
@@ -65,6 +75,8 @@ def get_dask_client(
             dashboard_address=":8788",
         )
         client = Client(cluster)
+        report = _performance_report()
+        report.__enter__()
         print(cluster.dashboard_link)
         limits = [
             w["memory_limit"] for w in client.scheduler_info()["workers"].values()
@@ -77,6 +89,7 @@ def get_dask_client(
         try:
             yield client
         finally:
+            report.__exit__(None, None, None)
             client.close()
             cluster.close()
     else:
@@ -84,3 +97,72 @@ def get_dask_client(
 
         dask.config.set(scheduler="threads", num_workers=threads)
         yield None
+
+
+# Set by the workflow with --dask_cluster slurm
+SCHEDULER_FILE_ENV = "SPIMQUANT_DASK_SCHEDULER_FILE"
+# How long a job waits for the cluster: its scheduler and first worker are Slurm
+# jobs that may still be queued when the job starts
+WAIT_ENV = "SPIMQUANT_DASK_CLUSTER_WAIT_S"
+
+
+@contextmanager
+def connect_to_cluster():
+    """Connect to the shared dask cluster of this run, waiting for it to start."""
+    import os
+    import time
+
+    from dask.distributed import Client
+
+    scheduler_file = os.environ.get(SCHEDULER_FILE_ENV)
+    if not scheduler_file:
+        raise RuntimeError(
+            f"dask scheduler 'cluster' needs {SCHEDULER_FILE_ENV} (set by "
+            "--dask_cluster slurm)"
+        )
+    wait_s = float(os.environ.get(WAIT_ENV, 4 * 3600))
+    start = time.monotonic()
+    while not os.path.exists(scheduler_file):
+        if time.monotonic() - start > wait_s:
+            raise TimeoutError(
+                f"no dask cluster after {wait_s:.0f} s: {scheduler_file} missing "
+                "(is the spimquant-dask Slurm job queued or failed?)"
+            )
+        time.sleep(10)
+    client = Client(scheduler_file=scheduler_file, timeout="120s")
+    remaining = max(60, wait_s - (time.monotonic() - start))
+    client.wait_for_workers(1, timeout=remaining)
+    nthreads = client.nthreads()
+    print(
+        f"dask: connected to cluster {client.scheduler.address} "
+        f"({client.dashboard_link}): {len(nthreads)} workers, "
+        f"{sum(nthreads.values())} threads",
+        flush=True,
+    )
+    try:
+        yield client
+    finally:
+        client.close()
+
+
+# Directory for dask performance reports (one HTML file per job), for benchmarking
+REPORT_DIR_ENV = "SPIMQUANT_DASK_REPORT_DIR"
+
+
+def _performance_report():
+    """dask's performance report for the job, if SPIMQUANT_DASK_REPORT_DIR is set."""
+    import contextlib
+    import os
+    import sys
+    import time
+
+    report_dir = os.environ.get(REPORT_DIR_ENV)
+    if not report_dir:
+        return contextlib.nullcontext()
+    from dask.distributed import performance_report
+
+    os.makedirs(report_dir, exist_ok=True)
+    # snakemake runs a copy of the script named tmp<random>.<script>.py
+    script = os.path.basename(sys.argv[0]).split(".")[-2] if sys.argv[0] else "dask"
+    name = f"{script}_{time.strftime('%Y%m%d-%H%M%S')}_{os.getpid()}.html"
+    return performance_report(filename=os.path.join(report_dir, name))

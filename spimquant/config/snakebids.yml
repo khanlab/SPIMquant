@@ -465,6 +465,46 @@ parse_args:
       - distributed
     default: distributed
 
+  --dask_cluster:
+    help: "Where the distributed scheduler's workers run (default: %(default)s). 'local': each job starts its own dask cluster on its own node. 'slurm': the workflow starts one dask cluster for the whole run, with workers in Slurm jobs (dask-jobqueue), possibly on several nodes, and jobs that use dask connect to it; those jobs then need only a couple of cores themselves. Needs --dask_scheduler distributed, sbatch on the machine running SPIMquant, and an output directory on a filesystem the cluster's nodes share."
+    choices:
+      - local
+      - slurm
+    default: local
+
+  --dask_cluster_jobs:
+    help: "With --dask_cluster slurm: number of Slurm jobs of dask workers, each sized by --dask_cluster_cores and --dask_cluster_mem_gb (by default a whole node) (default: %(default)s)"
+    type: int
+    default: 1
+
+  --dask_cluster_adaptive:
+    help: "With --dask_cluster slurm: start worker jobs as there is work for them, up to --dask_cluster_jobs, and release them after about 10 minutes without work, rather than keeping --dask_cluster_jobs for the whole run (default: %(default)s)"
+    action: store_true
+    default: False
+
+  --dask_cluster_account:
+    help: "With --dask_cluster slurm: Slurm account for the dask scheduler and worker jobs (default: $SLURM_ACCOUNT, else Slurm's default)"
+    default: null
+
+  --dask_cluster_walltime:
+    help: "With --dask_cluster slurm: time limit of the dask scheduler and worker jobs, as HH:MM:SS; set it to cover the whole run (default: %(default)s)"
+    default: "12:00:00"
+
+  --dask_cluster_cores:
+    help: "With --dask_cluster slurm: cores per worker job (default: %(default)s, a whole Nibi/Fir node)"
+    type: int
+    default: 192
+
+  --dask_cluster_mem_gb:
+    help: "With --dask_cluster slurm: memory (GB) per worker job, shared by its worker processes (default: %(default)s)"
+    type: int
+    default: 700
+
+  --dask_cluster_processes:
+    help: "With --dask_cluster slurm: dask worker processes per worker job; each gets cores/processes threads (default: %(default)s, i.e. 2 threads per worker, as with --dask_cluster local)"
+    type: int
+    default: 96
+
   --max_mem_mb:
     help: "Upper limit on the memory (MB) a job requests, e.g. the memory of a cluster node. Memory that scales with the input size or with the retry attempt (--retries) is capped here, so that a retried job is still schedulable (default: %(default)s)"
     type: int
@@ -1084,6 +1124,10 @@ masking:
 
 zarrnii_out_kwargs:
   storage_options: {}
+
+# --dask_cluster slurm: threads for a job that uses the shared dask cluster (it only
+# builds the task graph and collects results; the cluster's workers do the work)
+dask_cluster_client_threads: 2
 
 # Registration methods. The name of each is the desc- of its output transforms,
 # and a preset can start from another one with base:. Set by --registration_method

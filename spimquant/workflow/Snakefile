@@ -61,6 +61,11 @@ config.setdefault("zarrnii_out_kwargs", {}).setdefault("storage_options", {})[
 if zarr_store_ext != "ozx" and _zarr_shards is not None:
     config["zarrnii_out_kwargs"]["storage_options"]["shards"] = tuple(_zarr_shards)
 
+# Functions to run when the workflow starts and ends (not for dry runs), called by
+# the single onstart/onsuccess/onerror at the end of this file
+_onstart_hooks = []
+_onend_hooks = []
+
 
 # Get input wildcards
 inputs = generate_inputs(
@@ -2094,7 +2099,7 @@ if config.get("benchmark", False):
 
     # The levels most rules run at (rather than a {level} wildcard), and the
     # chunking of SPIMquant's own zarr outputs, which later rules read
-    onstart:
+    def _write_benchmark_run_config():
         os.makedirs("benchmarks", exist_ok=True)
         with open("benchmarks/run_config.json", "w") as _f:
             json.dump(
@@ -2111,11 +2116,18 @@ if config.get("benchmark", False):
                         "zarr_store_chunks",
                         "zarr_store_shards",
                         "dask_scheduler",
+                        "dask_cluster",
+                        "dask_cluster_jobs",
+                        "dask_cluster_cores",
+                        "dask_cluster_mem_gb",
+                        "dask_cluster_processes",
                     ]
                 },
                 _f,
                 indent=2,
             )
+
+    _onstart_hooks.append(_write_benchmark_run_config)
 
     rule benchmark_spim_sizes:
         input:
@@ -2165,3 +2177,23 @@ if config.get("benchmark", False):
         _name = "_".join(f"{w}-{{{w}}}" for w in _wildcards) or _rule.name
         _rule.benchmark_modifier = workflow.modifier.path_modifier
         _rule.benchmark = os.path.join("benchmarks", _rule.name, f"{_name}.jsonl")
+
+
+# --dask_cluster slurm: one dask cluster for the whole run (rules/dask_cluster.smk).
+# Included last, since it adjusts the rules that use dask.
+include: "rules/dask_cluster.smk"
+
+
+onstart:
+    for _hook in _onstart_hooks:
+        _hook()
+
+
+onsuccess:
+    for _hook in _onend_hooks:
+        _hook()
+
+
+onerror:
+    for _hook in _onend_hooks:
+        _hook()

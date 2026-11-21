@@ -20,6 +20,7 @@ nav:
       - Group Analysis: usage/group_analysis.md
       - Cloud Processing: usage/cloud.md
       - Datasets on MIND: howto/mind_data.md
+      - Multi-node Dask on Slurm: howto/dask_cluster.md
   - How-To Guides:
       - Segmentation Methods: howto/segmentation.md
       - MRI Registration: howto/mri_registration.md
