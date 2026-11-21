@@ -71,6 +71,32 @@ pixi run -e mind spimquant mind://... /scratch/$USER/out participant --executor 
 Slurm passes the shell's environment, including `MIND_TOKEN_FILE`, on to the jobs by default. Compute nodes need outbound HTTPS to the MIND server and to its
 object store.
 
+### Writing OME-Zarr outputs to MIND
+
+By default, OME-Zarr outputs (bias-corrected images, masks and other intermediate images) are written into the
+output directory as `.ozx` files. With `--zarr_store_root`, they are written to object storage instead:
+
+```bash
+pixi run -e mind spimquant mind://scratch/study/bids /path/to/output participant \
+    --zarr_store_root auto --cores all
+```
+
+`auto` puts them next to the dataset: for `mind://scratch/study/bids`, under
+`mind://scratch/study/derivatives/spimquant/`. Any other `mind://` URL can be given instead. Each OME-Zarr
+output in the output directory is then a small file ending in `.zarr.url`, holding the URL of its image, e.g.
+`mind://scratch/study/derivatives/spimquant/20261121T112000-1a2b3c/sub-01/.../sub-01_..._desc-correctedn4_SPIM.5e1f0a2b.ome.zarr`.
+NIfTI, TSV and QC outputs stay in the output directory.
+
+MIND never overwrites or deletes an object, so:
+
+- each output directory writes under a prefix of its own (the part after `derivatives/spimquant/`, kept in
+  `.zarr_store_run` in the output directory), and each image under a key of its own, so rerunning or retrying a
+  job writes a new image rather than over the old one;
+- images of temporary outputs, and of jobs that were rerun, stay in MIND, under the run's prefix, until removed
+  on the server.
+
+Object keys use `-` in place of `+` (e.g. `desc-gmm-n3k1`), which the MIND server does not accept in keys yet.
+
 ## How it works
 
 - [mind-client](https://gitlab.com/cfmm/mind/mind_server/-/tree/main/client) registers `mind://` with
@@ -83,7 +109,7 @@ object store.
 
 ## Limitations
 
-- **Read-only.** SPIMquant writes outputs locally; it does not upload them to MIND. Uploading derivatives back to
-  MIND will be a separate step.
+- **Outputs.** Only OME-Zarr outputs can be written to MIND (`--zarr_store_root`); the other outputs are written
+  locally.
 - **Throughput.** Each image chunk is a separate signed request, so whole-resolution steps (segmentation) are
   slower than on local storage. Run close to the data (e.g. on an Alliance cluster) for large datasets.
