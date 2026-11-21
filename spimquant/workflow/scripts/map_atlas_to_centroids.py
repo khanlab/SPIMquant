@@ -6,6 +6,8 @@ regions, generating two outputs:
 2. Count statistics showing the number of centroids per atlas region
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 from zarrnii import ZarrNii, ZarrNiiAtlas
 from zarrnii import ZarrNiiAtlas
 import numpy as np

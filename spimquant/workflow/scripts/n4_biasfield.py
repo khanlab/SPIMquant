@@ -1,3 +1,5 @@
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 if __name__ == "__main__":
 
     from dask_setup import get_dask_client

@@ -34,6 +34,8 @@ Output is valued 0/100 rather than 0/1, matching ``gmmthresh`` / ``multiotsu`` /
 yields a percentage directly.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import itertools
 import threading
 import time

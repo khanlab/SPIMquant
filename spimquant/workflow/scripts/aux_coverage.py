@@ -7,6 +7,8 @@ over each region. Only the index, name and coverage columns are written, so the
 table merges into mergedsegstats.tsv without clashing with its columns.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import os
 import subprocess
 import tempfile

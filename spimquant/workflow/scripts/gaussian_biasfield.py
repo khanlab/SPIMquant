@@ -1,3 +1,4 @@
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
 from dask.diagnostics import ProgressBar
 from dask_setup import get_dask_client
 from zarrnii import ZarrNii

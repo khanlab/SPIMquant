@@ -49,6 +49,36 @@ group_stats_root = os.path.join(root, "group", group_stats_label)
 # OME-Zarr store format: 'ome.zarr' (directory) or 'ozx' (zip file)
 zarr_store_ext = config.get("zarr_store_ext", "ozx")
 
+# --zarr_store_root: OME-Zarr outputs in object storage, each tracked by a local pointer
+# file (.zarr.url) holding its URL; scripts/remote_zarr.py reads and writes them
+if config.get("zarr_store_root"):
+    zarr_store_ext = "zarr.url"
+    _zarr_root = config["zarr_store_root"]
+    if _zarr_root == "auto":
+        _bids_url = str(config["bids_dir"]).rstrip("/")
+        if "://" not in _bids_url:
+            raise ValueError(
+                "--zarr_store_root auto needs a remote bids_dir (e.g. mind://...)"
+            )
+        _dataset = (
+            _bids_url[: -len("/bids")] if _bids_url.endswith("/bids") else _bids_url
+        )
+        _zarr_root = f"{_dataset}/derivatives/spimquant"
+    # a prefix of its own for each output directory, kept for later runs into it
+    _zarr_run_file = os.path.join(root, ".zarr_store_run")
+    if os.path.exists(_zarr_run_file):
+        _zarr_run = open(_zarr_run_file).read().strip()
+    else:
+        import time as _time
+        import uuid as _uuid
+
+        _zarr_run = f"{_time.strftime('%Y%m%dT%H%M%S')}-{_uuid.uuid4().hex[:6]}"
+        os.makedirs(os.path.dirname(os.path.abspath(_zarr_run_file)), exist_ok=True)
+        with open(_zarr_run_file, "w") as _f:
+            _f.write(_zarr_run + "\n")
+    os.environ["SPIMQUANT_ZARR_STORE_ROOT"] = f"{_zarr_root.rstrip('/')}/{_zarr_run}"
+    print(f"OME-Zarr outputs go to {os.environ['SPIMQUANT_ZARR_STORE_ROOT']}")
+
 # Configure chunking and sharding for zarrnii output storage options
 _zarr_chunks = config.get("zarr_store_chunks", [1, 128, 128, 128])
 _zarr_shards = config.get("zarr_store_shards", None)

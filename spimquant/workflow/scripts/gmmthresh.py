@@ -11,6 +11,8 @@ A QC figure showing the histogram, GMM component fits, and the threshold
 lines is saved alongside the mask.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import re
 
 import matplotlib

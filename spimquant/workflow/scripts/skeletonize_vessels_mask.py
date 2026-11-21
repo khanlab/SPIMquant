@@ -1,5 +1,7 @@
 """Skeletonize a vessel mask with dask map_overlap and scikit-image."""
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import dask.array as da
 import numpy as np
 from dask.diagnostics import ProgressBar

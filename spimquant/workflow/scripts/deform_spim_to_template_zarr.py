@@ -12,6 +12,8 @@ The input is either the raw SPIM channel (``desc-raw``) or its intensity
 corrected image at the same level (``desc-corrected<method>``).
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import math
 import shutil
 import tempfile

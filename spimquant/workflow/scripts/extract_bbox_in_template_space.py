@@ -41,6 +41,8 @@ Coordinate system notes
 
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import dask.array as da
 import nibabel as nib
 import numpy as np

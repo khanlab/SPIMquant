@@ -17,6 +17,8 @@ and thresholded at 0.5, as for n4, so the image is read and written once with
 no full-resolution intermediates.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import numpy as np
 
 

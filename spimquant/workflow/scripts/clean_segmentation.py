@@ -11,6 +11,8 @@ The script uses Dask for parallel processing and zarrnii's SegmentationCleaner p
 perform the extent-based filtering.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 from dask_setup import get_dask_client
 from zarrnii import ZarrNii
 from zarrnii.plugins import SegmentationCleaner

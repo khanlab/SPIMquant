@@ -14,6 +14,8 @@ Reads the per-super-voxel moments written by fibre_moments.py and writes:
   volumes) as a 4D NIfTI, for warping to the template.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import numpy as np
 
 SCALAR_METRICS = (

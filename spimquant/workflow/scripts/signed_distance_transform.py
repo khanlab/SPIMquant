@@ -17,6 +17,8 @@ filled with the maximum possible distance across the block (the physical diagona
 length of the block), since the true boundary lies beyond the block extent.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import dask.array as da
 import numpy as np
 from scipy.ndimage import distance_transform_edt

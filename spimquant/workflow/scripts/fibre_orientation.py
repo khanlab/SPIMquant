@@ -39,6 +39,8 @@ before the ODF is formed, so the SH coefficients are in the MRtrix3
 convention and can be viewed directly in ``mrview``.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import math
 
 import numpy as np

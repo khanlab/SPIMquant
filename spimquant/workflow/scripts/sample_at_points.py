@@ -17,6 +17,8 @@ Output (via snakemake.output):
         the additional new column with sampled scalar
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import pandas as pd
 from zarrnii import ZarrNii
 

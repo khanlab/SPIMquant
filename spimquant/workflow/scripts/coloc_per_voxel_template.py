@@ -1,3 +1,4 @@
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
 import numpy as np
 from zarrnii import ZarrNii, density_from_points
 from dask.diagnostics import ProgressBar

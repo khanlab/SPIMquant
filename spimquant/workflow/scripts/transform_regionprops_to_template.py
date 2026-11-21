@@ -6,6 +6,8 @@ and applies the composite inverse warp to convert the spatial coordinates
 (template_x, template_y, template_z) while retaining all other regionprops columns.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import pandas as pd
 import numpy as np
 from zarrnii import DisplacementTransform

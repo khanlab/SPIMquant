@@ -9,6 +9,8 @@ The output is a directory containing NIfTI files named:
     seg-{atlas_seg}_label-{labelabbrev}_patch-{patchnum}.nii
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import logging
 import re
 from pathlib import Path

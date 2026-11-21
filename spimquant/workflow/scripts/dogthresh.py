@@ -33,6 +33,8 @@ Outputs a 0/100 mask (as the other methods do, so field fraction can be
 computed by local averaging), a QC figure and the low-resolution pool mask.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import re
 
 import numpy as np

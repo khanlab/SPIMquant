@@ -25,6 +25,8 @@ same chunking, same blocks and samples, so the k values in this report give
 the same threshold in a ``dogthresh`` run of the same image.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import base64
 import io
 import json

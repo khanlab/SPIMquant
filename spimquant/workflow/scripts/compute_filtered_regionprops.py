@@ -4,6 +4,8 @@ connected components on chunks with overlap, applies filters based on
 region properties, and outputs region properties on these filtered objects
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import tempfile
 import zipfile
 from contextlib import contextmanager

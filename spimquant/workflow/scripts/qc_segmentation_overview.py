@@ -16,6 +16,8 @@ available, which is automatically provided when executed as part of a
 Snakemake workflow.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import matplotlib
 
 matplotlib.use("agg")

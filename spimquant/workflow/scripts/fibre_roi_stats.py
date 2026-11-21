@@ -10,6 +10,8 @@ Writes one row per label in the label TSV: ``index``, ``name``, the metrics
 in ``params.metrics``, and the pooled ``fibrevoxels`` / ``tissuevoxels``.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import numpy as np
 import pandas as pd
 

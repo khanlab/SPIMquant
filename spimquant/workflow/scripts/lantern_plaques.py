@@ -84,6 +84,8 @@ The averaged modes give fractional counts; binarize_lantern_plaques cuts them
 at the midpoint below the requested vote threshold (2.5 for "3 of 5").
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import contextlib
 import itertools
 import multiprocessing

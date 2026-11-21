@@ -528,6 +528,10 @@ parse_args:
     default: ozx
     dest: zarr_store_ext
 
+  --zarr_store_root:
+    help: "Keep OME-Zarr outputs in object storage under this URL (e.g. mind://scratch/study/derivatives/spimquant) rather than as local .ozx files. Each output is then a small local file ending in .zarr.url that holds its image's URL. Each run writes under a prefix of its own below the root, and every image under a key of its own, since MIND refuses to overwrite or delete objects. 'auto': next to a remote BIDS dataset, i.e. <dataset>/derivatives/spimquant for <dataset>/bids (default: %(default)s)"
+    default: null
+
   --zarr-store-chunks:
     help: "Chunk size (c, x, y, z) for intermediate OME-Zarr stores (default: %(default)s)"
     default:

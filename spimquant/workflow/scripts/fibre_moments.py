@@ -13,6 +13,8 @@ dogthresh), and saved with the other parameters to a JSON file, alongside a
 QC histogram.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import json
 
 import numpy as np

@@ -14,6 +14,8 @@ downstream works unchanged, plus:
 and a JSON file with the parameters used, including how ``h`` was set.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import json
 from contextlib import ExitStack
 

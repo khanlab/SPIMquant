@@ -1,3 +1,4 @@
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
 from zarrnii import ZarrNii, ZarrNiiAtlas
 
 atlas = ZarrNiiAtlas.from_files(snakemake.input.dseg, snakemake.input.label_tsv)

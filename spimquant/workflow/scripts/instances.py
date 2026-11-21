@@ -25,6 +25,8 @@ None of this depends on how the mask was made, so it applies to any
 segmentation method's mask.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import numpy as np
 from scipy import ndimage as ndi
 from skimage.morphology import h_maxima

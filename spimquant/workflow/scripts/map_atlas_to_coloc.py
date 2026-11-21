@@ -25,6 +25,8 @@ Parameters (via snakemake.params):
 - coord_column_names: List of column names specifying the coordinate columns in the colocalization data.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 from zarrnii import ZarrNiiAtlas
 import pandas as pd
 

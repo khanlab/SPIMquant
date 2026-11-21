@@ -9,6 +9,8 @@ The output is a directory containing Imaris datasets named:
     seg-{atlas_seg}_label-{labelabbrev}.ims
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import logging
 import re
 from pathlib import Path

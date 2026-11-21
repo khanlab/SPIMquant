@@ -29,6 +29,8 @@ This is a Snakemake script that expects the ``snakemake`` object to be
 available.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import io
 import logging
 

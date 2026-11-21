@@ -7,6 +7,8 @@ stain: in atlas regions if the scan was registered (rule qc_register), or else
 spread through the tissue.
 """
 
+import remote_zarr  # noqa: F401  OME-Zarr outputs as pointer files (--zarr_store_root)
+
 import json
 
 import nibabel as nib
