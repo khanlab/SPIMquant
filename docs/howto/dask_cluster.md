@@ -66,10 +66,24 @@ the dashboard address (port 8787 on the scheduler's node); reach it with an SSH 
 node, e.g. `ssh -L 8787:<node>:8787 nibi.alliancecan.ca`.
 
 To get a Dask performance report (task stream, worker profiles) for every Dask job, set
-`SPIMQUANT_DASK_REPORT_DIR=/path/to/reports` before running.
+`SPIMQUANT_DASK_REPORT_DIR=/path/to/reports` before running. With a shared cluster, each report covers
+everything the scheduler ran during that job, including other jobs' work.
+
+### Shared filesystems
+
+On a shared filesystem such as Nibi's NFS-mounted `/scratch`, files written by workers on one node may not
+yet be visible on another node right after the computation that wrote them has finished. Since jobs often read
+back what they just wrote (e.g. each pyramid level is built from the previous one), jobs connected to the
+shared cluster write every zarr chunk, including empty ones, and every Dask store waits until all of its chunk
+files can be opened on every node before returning.
 
 ## When it helps
 
 A multi-node cluster helps when a single job's full-resolution processing is limited by one node's cores,
 or when several full-resolution jobs (several stains or subjects) run at the same time. Low-resolution
 steps (registration, QC) are unaffected.
+
+It does not help steps whose speed is set by reading the input. On Nibi, with a dataset read from MIND,
+bias-field correction, GMM thresholding and region properties of three stains at full resolution took
+about as long on 1, 2 or 3 nodes as with the default local clusters, with the workers mostly idle; the runs
+took longer overall (the worker jobs must first start) and used 1.3–3.5× the core-hours.
