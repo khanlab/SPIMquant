@@ -153,9 +153,117 @@ def connect_to_cluster():
         flush=True,
     )
     try:
-        yield client
+        with _visible_stores(client):
+            yield client
     finally:
         client.close()
+
+
+@contextmanager
+def _visible_stores(client):
+    """Make zarr stores written by the cluster visible everywhere before they are read.
+
+    On a shared filesystem such as Nibi's NFS-mounted /scratch, a chunk file that a
+    worker on one node has written may for a short time not be visible on another
+    node, even after the computation that wrote it has finished. Reading it there
+    then finds no chunk, which zarr reads as the fill value (zeros): e.g. zarrnii,
+    which builds each pyramid level from the level it stored before, made levels of
+    zeros. Within one node (a LocalCluster) this does not happen.
+
+    So, while the job is connected to the cluster:
+
+    - zarr writes every chunk, including chunks of only the fill value, so that the
+      chunk files a store must have are known from its shape;
+    - every dask store into a local zarr array (``dask.array.store``, which
+      ``to_zarr`` and zarrnii use) waits until all its chunk files can be opened on
+      every node of the cluster and here, before returning.
+    """
+    import dask.array as da
+    import dask.array.core as dac
+    import zarr
+
+    orig_store = dac.store
+
+    def store(sources, targets, *args, **kwargs):
+        result = orig_store(sources, targets, *args, **kwargs)
+        if kwargs.get("compute", True):
+            for target in targets if isinstance(targets, (list, tuple)) else [targets]:
+                _wait_until_visible(client, target)
+        return result
+
+    with zarr.config.set({"array.write_empty_chunks": True}):
+        dac.store = da.store = store
+        try:
+            yield
+        finally:
+            dac.store = da.store = orig_store
+
+
+def _chunk_files(array):
+    """The chunk (or shard) files of a zarr array in a local directory store, else None."""
+    import itertools
+    import os
+
+    root = getattr(getattr(array, "store", None), "root", None)
+    metadata = getattr(array, "metadata", None)
+    if root is None or not hasattr(metadata, "encode_chunk_key"):
+        return None
+    prefix = os.path.join(str(root), array.path)
+    return [
+        os.path.join(prefix, metadata.encode_chunk_key(idx))
+        for idx in itertools.product(*(range(n) for n in array.cdata_shape))
+    ]
+
+
+def _count_missing(paths):
+    """How many of paths cannot be opened here, after refreshing their directories."""
+    import os
+
+    for d in {os.path.dirname(p) for p in paths}:
+        try:
+            os.listdir(d)  # revalidates the client's cached directory
+        except OSError:
+            pass
+    missing = 0
+    for p in paths:
+        try:
+            with open(p, "rb"):
+                pass
+        except OSError:
+            missing += 1
+    return missing
+
+
+def _wait_until_visible(client, array, timeout=600):
+    """Wait until every chunk file of array can be opened on each node and here."""
+    import socket
+    import time
+
+    paths = _chunk_files(array)
+    if not paths:
+        return
+    # one worker per node
+    by_host = {}
+    for addr, host in client.run(socket.gethostname).items():
+        by_host.setdefault(host, addr)
+    start = time.monotonic()
+    while True:
+        missing = client.run(_count_missing, paths, workers=list(by_host.values()))
+        missing[socket.gethostname()] = _count_missing(paths)
+        lagging = {h: n for h, n in missing.items() if n}
+        if not lagging:
+            waited = time.monotonic() - start
+            if waited > 1:
+                print(
+                    f"dask: waited {waited:.0f} s for {len(paths)} chunk files to be visible"
+                )
+            return
+        if time.monotonic() - start > timeout:
+            raise TimeoutError(
+                f"chunk files of {paths[0].rsplit('/c/', 1)[0]} still not visible after "
+                f"{timeout} s: missing {lagging}"
+            )
+        time.sleep(1)
 
 
 # Directory for dask performance reports (one HTML file per job), for benchmarking
