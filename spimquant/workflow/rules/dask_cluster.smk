@@ -9,8 +9,8 @@ ends. Jobs that use the distributed scheduler then connect to it (dask_setup.get
 with scheduler 'cluster'), so they can use several nodes, and several jobs share the workers.
 
 What changes for those jobs:
-- they run with --dask_cluster_client_threads threads, since the work is done by the
-  cluster's workers, not the job itself;
+- they run with dask_cluster_client_threads threads and dask_cluster_client_mem_mb memory
+  (config), since the work is done by the cluster's workers, not the job itself;
 - their tmpdir is on the output directory's filesystem, since workers on other nodes write
   the temporary zarr stores the jobs create there (and zarrnii writes .ozx outputs through a
   temporary directory, which the job's TMPDIR sets).
@@ -41,6 +41,9 @@ if config.get("dask_cluster", "local") == "slurm":
     # read by dask_setup in the jobs' scripts (each job parses this file again,
     # also when it runs in a Slurm job of its own)
     os.environ["SPIMQUANT_DASK_SCHEDULER_FILE"] = _dask_scheduler_file
+    # ... and used for the jobs' temporary files, whatever TMPDIR the job gets
+    # (Slurm sets a node-local one, which workers on other nodes cannot reach)
+    os.environ["SPIMQUANT_DASK_TMPDIR"] = _dask_tmpdir
 
     def _uses_dask_scheduler(rule):
         """Whether rule's script passes the --dask_scheduler setting to dask_setup."""
@@ -57,6 +60,10 @@ if config.get("dask_cluster", "local") == "slurm":
     for _rule in _dask_cluster_rules:
         _rule.resources["_cores"] = int(config.get("dask_cluster_client_threads", 2))
         _rule.resources["tmpdir"] = _dask_tmpdir
+        # the rule's memory is sized for its own dask workers, which now run
+        # elsewhere; a job asking for more memory per core than a regular node
+        # has is sent to (and queued for) the large-memory nodes
+        _rule.resources["mem_mb"] = int(config.get("dask_cluster_client_mem_mb", 32000))
 
     def _slurm_free_env():
         """The environment, without the variables of a Slurm job SPIMquant runs in.

@@ -66,9 +66,10 @@ def main():
     # Workers read SPIM images through fsspec (e.g. mind://), and the workflow's
     # scripts send them functions from modules next to the scripts: workers need
     # the same environment (inherited from this job, as sbatch exports it) plus
-    # the scripts directory on their path.
+    # the scripts directory on their path. Any other PYTHONPATH (e.g. from an
+    # environment module) is dropped, as it could shadow the environment's packages.
     prologue = [
-        f"export PYTHONPATH={args.pythonpath}${{PYTHONPATH:+:$PYTHONPATH}}",
+        f"export PYTHONPATH={args.pythonpath}",
         # Return freed memory to the OS at once, as dask_setup does for local
         # clusters, so that unmanaged memory does not pause workers.
         "export MALLOC_TRIM_THRESHOLD_=0",

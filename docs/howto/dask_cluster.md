@@ -40,10 +40,16 @@ cluster stops within about 15 minutes.
 The output directory must be on a filesystem shared by all nodes (e.g. `/scratch`), since the workers
 write there.
 
+!!! tip "Time limits and queue waits"
+    The cluster's jobs, including the scheduler's, run for at most `--dask_cluster_walltime`, so set it to
+    cover the run. On Alliance clusters, whole-node jobs of 3 hours or less go to a partition that starts
+    much sooner: on Nibi, a whole node for 3 hours was estimated to start within 30 minutes, while one for
+    4 hours was estimated to start 22 hours later.
+
 ### What changes for jobs that use Dask
 
 - They request only 2 cores (`dask_cluster_client_threads` in the config): they build the task graph and
-  collect results, while the cluster's workers do the work. Their memory request is unchanged.
+  collect results, while the cluster's workers do the work. They request 32 GB (`dask_cluster_client_mem_mb`).
 - Their temporary files go to `.dask-cluster/tmp` in the output directory rather than the node's local
   disk, because workers on other nodes write to them.
 - Per-rule Dask settings (threads per worker, worker memory) do not apply; the cluster's workers are sized

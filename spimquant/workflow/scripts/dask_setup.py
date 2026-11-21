@@ -101,6 +101,8 @@ def get_dask_client(
 
 # Set by the workflow with --dask_cluster slurm
 SCHEDULER_FILE_ENV = "SPIMQUANT_DASK_SCHEDULER_FILE"
+# Shared directory for temporary files, set by the workflow with --dask_cluster slurm
+TMPDIR_ENV = "SPIMQUANT_DASK_TMPDIR"
 # How long a job waits for the cluster: its scheduler and first worker are Slurm
 # jobs that may still be queued when the job starts
 WAIT_ENV = "SPIMQUANT_DASK_CLUSTER_WAIT_S"
@@ -113,6 +115,17 @@ def connect_to_cluster():
     import time
 
     from dask.distributed import Client
+
+    # Temporary files the workers write (zarr stores, including the one zarrnii
+    # writes an .ozx through) must be on a filesystem they share with this job
+    shared_tmp = os.environ.get(TMPDIR_ENV)
+    if shared_tmp:
+        import tempfile
+
+        os.makedirs(shared_tmp, exist_ok=True)
+        print(f"dask: temporary files in {shared_tmp} (was {tempfile.gettempdir()})")
+        os.environ["TMPDIR"] = shared_tmp
+        tempfile.tempdir = shared_tmp
 
     scheduler_file = os.environ.get(SCHEDULER_FILE_ENV)
     if not scheduler_file:

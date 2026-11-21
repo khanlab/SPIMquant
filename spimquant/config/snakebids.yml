@@ -1128,6 +1128,9 @@ zarrnii_out_kwargs:
 # --dask_cluster slurm: threads for a job that uses the shared dask cluster (it only
 # builds the task graph and collects results; the cluster's workers do the work)
 dask_cluster_client_threads: 2
+# ... and its memory (MB): the graph and the results it collects. Above about 32 GB for
+# 2 cores, Slurm on Alliance clusters sends the job to the large-memory nodes.
+dask_cluster_client_mem_mb: 32000
 
 # Registration methods. The name of each is the desc- of its output transforms,
 # and a preset can start from another one with base:. Set by --registration_method
