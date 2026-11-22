@@ -9,6 +9,8 @@ Parameters (via snakemake.params):
     coord_column_names: List of three column names for the x, y, z centroid
         coordinates in the regionprops table (e.g. ['pos_x', 'pos_y', 'pos_z']).
     col_name: Name of the new column
+    column_only: If true, write only the new column (row-aligned with the
+        input) instead of the whole table
     zarrnii_kwargs: Additional keyword arguments passed to ZarrNii.from_file
         (e.g. {'orientation': 'RPI'}).
 
@@ -26,6 +28,7 @@ df = pd.read_parquet(snakemake.input.parquet)
 coord_cols = snakemake.params.coord_column_names
 col_name = snakemake.params.col_name
 zarrnii_kwargs = snakemake.params.zarrnii_kwargs
+column_only = bool(snakemake.params.get("column_only", False))
 
 # Validate coordinate columns
 for col in coord_cols:
@@ -43,7 +46,9 @@ if len(coord_cols) != 3:
 # Handle empty regionprops
 if len(df) == 0:
     df[col_name] = pd.Series(dtype=float)
-    df.to_parquet(snakemake.output.parquet, index=False)
+    (df[[col_name]] if column_only else df).to_parquet(
+        snakemake.output.parquet, index=False
+    )
     print(f"Empty regionprops – wrote 0-row parquet with column '{col_name}'.")
 else:
     znimg = ZarrNii.from_file(snakemake.input.scalar, **zarrnii_kwargs)
@@ -59,4 +64,6 @@ else:
 
     df[col_name] = values
 
-    df.to_parquet(snakemake.output.parquet, index=False)
+    (df[[col_name]] if column_only else df).to_parquet(
+        snakemake.output.parquet, index=False
+    )

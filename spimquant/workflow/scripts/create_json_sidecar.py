@@ -7,6 +7,7 @@ BIDS-compliant JSON sidecar next to the tabular file.
 
 Column name resolution (applied in order):
 1. Exact match in ``column_descriptions``.
+1b. Distance column ``{stain}_dist``, ``{stain}_edgedist`` or ``{stain}_sdt``.
 2. Stain-prefixed compound column: ``{stain}+{metric}`` — the metric description is
    looked up and the LongName / Description are annotated to mention the stain.
 3. Stat-suffixed column: ``{base}_{stat}`` where *stat* is one of the known
@@ -58,6 +59,16 @@ def resolve_column(col, column_descriptions, stat_suffixes):
     # 1. Exact match
     if col in column_descriptions:
         return dict(column_descriptions[col])
+
+    # 1b. Distance to another stain's objects or mask: "{stain}_dist",
+    #     "{stain}_edgedist", "{stain}_sdt"
+    m = re.match(r"^([A-Za-z0-9]+)_(dist|edgedist|sdt)$", col)
+    if m and m.group(2) in column_descriptions:
+        stain, kind = m.group(1), m.group(2)
+        entry = dict(column_descriptions[kind])
+        entry["LongName"] = f"{entry.get('LongName', kind)} ({stain})"
+        entry["Description"] = f"{entry.get('Description', '')} Stain: {stain}.".strip()
+        return entry
 
     # 2. Stain-prefixed compound: "{stain}+{metric}"
     if "+" in col:

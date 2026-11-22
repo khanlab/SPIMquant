@@ -40,7 +40,6 @@ def scripts():
             moments=_load("fibre_moments"),
             metrics=_load("fibre_metrics"),
             roi=_load("fibre_roi_stats"),
-            merge=_load("merge_fibre_roi_stats"),
             template=_load("fibre_metrics_template"),
             lib=_load("fibre_orientation"),
         )
@@ -226,13 +225,6 @@ def test_moments_and_metrics(scripts, tmp_path):
     assert roi.loc["lower", "odi"] < 0.1 and roi.loc["upper", "odi"] < 0.1
     assert roi.loc["absent", "fibrevoxels"] == 0
     assert np.isnan(roi.loc["absent", "odi"])
-
-    # ---- merged across stains, segstats-style column names
-    merged = scripts.merge.merge_tables(
-        [pd.read_csv(roi_tsv, sep="\t")] * 2, ["VAChT", "MOG"]
-    )
-    assert "VAChT+odi" in merged.columns and "MOG+fibredensity" in merged.columns
-    assert len(merged) == 4
 
     # ---- template-space metrics from the moments NIfTI (identity warp)
     tpl_metrics = [m for m in metrics_mod.SCALAR_METRICS if m != "gfa"]

@@ -107,8 +107,8 @@ the scans of a sample apart, e.g. `acq-`), named with it, so that no participant
 counts twice in the same statistics:
 
 ```
-group/<label>/seg-roi22_from-ABAv3_desc-otsu+k3i2_allsubjects.tsv
-group/<label>/acq-12x_seg-roi22_from-ABAv3_desc-otsu+k3i2_allsubjects.tsv
+group/<label>/seg-roi22_from-ABAv3_allsubjects.tsv
+group/<label>/acq-12x_seg-roi22_from-ABAv3_allsubjects.tsv
 group/<label>/acq-12x_seg-roi22_from-ABAv3_..._contrast-<contrast>_..._groupstats.tsv
 ```
 

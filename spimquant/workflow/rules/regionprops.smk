@@ -1,5 +1,5 @@
 rule compute_filtered_regionprops:
-    """Calculate region props from filtered objects of segmentation."""
+    """Objects as connected components of the mask (--object_method components)."""
     input:
         mask=bids_oz_in(
             root=root,
@@ -17,6 +17,7 @@ rule compute_filtered_regionprops:
                 datatype="tabular",
                 stain="{stain}",
                 desc="{desc}",
+                obj="components",
                 suffix="regionprops.parquet",
                 **inputs["spim"].wildcards,
             )
@@ -37,7 +38,7 @@ rule compute_filtered_regionprops:
 
 
 rule compute_instance_regionprops:
-    """Instance-level region props (--object_method inst).
+    """Objects by seeded watershed of the mask (--object_method watershed).
 
     Splits the mask into instances with a seeded watershed: seeds are
     prominent local maxima of the smoothed corrected image, and every mask
@@ -72,7 +73,8 @@ rule compute_instance_regionprops:
                 root=root,
                 datatype="tabular",
                 stain="{stain}",
-                desc="{desc}+inst",
+                desc="{desc}",
+                obj="watershed",
                 suffix="regionprops.parquet",
                 **inputs["spim"].wildcards,
             )
@@ -81,7 +83,8 @@ rule compute_instance_regionprops:
             root=root,
             datatype="tabular",
             stain="{stain}",
-            desc="{desc}+inst",
+            desc="{desc}",
+            obj="watershed",
             suffix="instances.json",
             **inputs["spim"].wildcards,
         ),
@@ -125,19 +128,20 @@ rule compute_instance_regionprops:
         "../scripts/compute_instance_regionprops.py"
 
 
-# A desc ending in +inst could also be read as a connected-components desc;
-# instances own it.
-ruleorder: compute_instance_regionprops > compute_filtered_regionprops
-
-
 rule transform_regionprops_to_template:
-    """Transform regionprops coordinates from subject to template space."""
+    """Add template-space coordinates to a stain's objects.
+
+    Also labels each row with its stain and methods (``stain``,
+    ``seg_method``, ``object_method``), so per-stain and aggregated tables
+    have the same columns.
+    """
     input:
         regionprops_parquet=bids(
             root=root,
             datatype="tabular",
             stain="{stain}",
             desc="{desc}",
+            obj="{obj}",
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
         ),
@@ -156,6 +160,7 @@ rule transform_regionprops_to_template:
                 datatype="tabular",
                 stain="{stain}",
                 desc="{desc}",
+                obj="{obj}",
                 space="{template}",
                 suffix="regionprops.parquet",
                 **inputs["spim"].wildcards,
@@ -169,44 +174,44 @@ rule transform_regionprops_to_template:
         runtime=10,
     params:
         coord_column_names=config["coord_column_names"],
+        labels=lambda wildcards: {
+            "stain": wildcards.stain,
+            "seg_method": wildcards.desc,
+            "object_method": wildcards.obj,
+        },
     script:
         "../scripts/transform_regionprops_to_template.py"
 
 
-def get_regionprops_parquets_to_aggregate(wildcards):
-    """Per-stain regionprops for the stains this method actually segmented.
-
-    Cannot be resolved at parse time: a single-stain method such as the plaque
-    ensemble aggregates over only its own stain, not all of stains_for_seg.
-    """
-    paths = expand(
-        bids(
-            root=root,
-            datatype="tabular",
-            stain="{stain}",
-            desc="{desc}",
-            space="{template}",
-            suffix="regionprops.parquet",
-            **inputs["spim"].wildcards,
-        ),
-        stain=stains_for_desc(wildcards.desc),
-        allow_missing=True,
+def primary_regionprops(stain, template_space=True):
+    """Path pattern of a stain's objects from its primary methods."""
+    kwargs = {"space": "{template}"} if template_space else {}
+    return bids(
+        root=root,
+        datatype="tabular",
+        stain=stain,
+        desc=seg_plan[stain].seg_method,
+        obj=seg_plan[stain].object_method,
+        suffix="regionprops.parquet",
+        **kwargs,
+        **inputs["spim"].wildcards,
     )
-    return [path.format(**wildcards) for path in paths]
 
 
 rule aggregate_regionprops_across_stains:
-    """Aggregate transformed regionprops across stains."""
+    """Objects of every stain with objects, from each stain's primary methods."""
     input:
-        regionprops_parquets=get_regionprops_parquets_to_aggregate,
+        regionprops_parquets=[primary_regionprops(s) for s in stains_with_objects],
     output:
-        regionprops_aggregated_parquet=bids(
-            root=root,
-            datatype="tabular",
-            desc="{desc}",
-            space="{template}",
-            suffix="regionprops.parquet",
-            **inputs["spim"].wildcards,
+        regionprops_aggregated_parquet=temp(
+            bids(
+                root=root,
+                datatype="tabular",
+                space="{template}",
+                desc="merged",
+                suffix="regionprops.parquet",
+                **inputs["spim"].wildcards,
+            )
         ),
     group:
         "subj_quant"
@@ -214,34 +219,134 @@ rule aggregate_regionprops_across_stains:
     resources:
         mem_mb=1500,
         runtime=10,
-    params:
-        # must stay aligned with regionprops_parquets, which is per-method
-        stains=lambda wildcards: stains_for_desc(wildcards.desc),
     script:
         "../scripts/aggregate_regionprops_across_stains.py"
 
 
+# stains whose mask's signed distance transform is sampled at every object
+# (<stain>_sdt): the vessel stain, and any of the sdt_stains config key that
+# are segmented (from their primary mask)
+sdt_stains = ([stain_for_vessels] if do_vessels else []) + [
+    s
+    for s in (config.get("sdt_stains") or [])
+    if s in seg_plan and s != stain_for_vessels
+]
+
+
+def sdt_input(wildcards):
+    """Signed distance transform of ``wildcards.sdt_stain``'s mask."""
+    stain = wildcards.sdt_stain
+    if do_vessels and stain == stain_for_vessels:
+        datatype, desc = "vessels", config["vessel_seg_method"]
+    else:
+        datatype, desc = "seg", seg_plan[stain].seg_method
+    return bids_oz_in(
+        root=root,
+        datatype=datatype,
+        stain=stain,
+        level=config["segmentation_level"],
+        desc=desc,
+        suffix="dist.{ext}",
+        **inputs["spim"].wildcards,
+    ).format(**wildcards)
+
+
+rule sample_sdt_at_objects:
+    """Signed distance to a stain's mask at every object centroid (mm).
+
+    Negative inside the mask, positive outside. Writes only the new column
+    (<stain>_sdt), in the row order of the aggregated objects.
+    """
+    input:
+        parquet=rules.aggregate_regionprops_across_stains.output.regionprops_aggregated_parquet,
+        scalar=sdt_input,
+    output:
+        parquet=temp(
+            bids(
+                root=root,
+                datatype="tabular",
+                space="{template}",
+                desc="{sdt_stain}sdt",
+                suffix="regionprops.parquet",
+                **inputs["spim"].wildcards,
+            )
+        ),
+    wildcard_constraints:
+        sdt_stain="|".join(sdt_stains) or "^$",
+    group:
+        "subj_quant"
+    threads: 8
+    resources:
+        mem_mb=4000,
+        runtime=scaled_runtime(15, 0.05, config["segmentation_level"]),
+    params:
+        coord_column_names=config["coord_column_names"],
+        col_name=lambda wildcards: f"{wildcards.sdt_stain}_sdt",
+        column_only=True,
+        # the SDT is written by SPIMquant; the raw-input overrides (orientation,
+        # --sample_staining channel labels) do not apply to it
+        zarrnii_kwargs={},
+    script:
+        "../scripts/sample_at_points.py"
+
+
+rule annotate_object_distances:
+    """The objects of all stains, with distances between them (all in mm).
+
+    For every stain S with objects, each object gets S_dist, the distance from
+    its centroid to the nearest centroid of S (the nearest other object for
+    its own stain), and S_edgedist, that minus the nearest object's
+    equivalent-sphere radius (from its volume), clipped at 0: an approximate
+    distance to its surface. The sampled signed distances (<stain>_sdt) are
+    added too.
+    """
+    input:
+        regionprops_parquet=rules.aggregate_regionprops_across_stains.output.regionprops_aggregated_parquet,
+        sdt_parquets=expand(
+            bids(
+                root=root,
+                datatype="tabular",
+                space="{template}",
+                desc="{sdt_stain}sdt",
+                suffix="regionprops.parquet",
+                **inputs["spim"].wildcards,
+            ),
+            sdt_stain=sdt_stains,
+            allow_missing=True,
+        ),
+    output:
+        regionprops_parquet=bids(
+            root=root,
+            datatype="tabular",
+            space="{template}",
+            suffix="regionprops.parquet",
+            **inputs["spim"].wildcards,
+        ),
+    group:
+        "subj_quant"
+    threads: 4
+    resources:
+        mem_mb=scaled_mem_mb(4000, 30, config["segmentation_level"]),
+        runtime=15,
+    params:
+        coord_column_names=config["coord_column_names"],
+    script:
+        "../scripts/object_distances.py"
+
+
 rule colocalize_regionprops:
-    """Perform colocalization analysis across channel pairs.
+    """Colocalization across every pair of stains with objects.
 
     Optional parameters (with defaults in script):
         - search_radius_multiplier: 1.0 (controls search distance)
         - overlap_threshold: 0.0 (minimum overlap to record)
     """
     input:
-        regionprops_parquet=bids(
-            root=root,
-            datatype="tabular",
-            desc="{desc}",
-            space="{template}",
-            suffix="regionprops.parquet",
-            **inputs["spim"].wildcards,
-        ),
+        regionprops_parquet=rules.aggregate_regionprops_across_stains.output.regionprops_aggregated_parquet,
     output:
         coloc_parquet=bids(
             root=root,
             datatype="tabular",
-            desc="{desc}",
             space="{template}",
             suffix="coloc.parquet",
             **inputs["spim"].wildcards,
@@ -259,51 +364,3 @@ rule colocalize_regionprops:
         overlap_threshold=0.0,
     script:
         "../scripts/compute_colocalization.py"
-
-
-rule sample_at_vessel_sdt:
-    """Sample sdt at points
-    - < 0 : instance is inside the mask
-    - > 0 : instance is outside the mask
-
-    """
-    input:
-        parquet=bids(
-            root=root,
-            datatype="tabular",
-            desc="{desc}",
-            space="{template}",
-            suffix="regionprops.parquet",
-            **inputs["spim"].wildcards,
-        ),
-        scalar=bids_oz_in(
-            root=root,
-            datatype="vessels",
-            stain="{stain}",
-            level=config["segmentation_level"],
-            desc=config["vessel_seg_method"],
-            suffix="dist.{ext}",
-            **inputs["spim"].wildcards,
-        ),
-    output:
-        parquet=bids(
-            root=root,
-            datatype="tabular",
-            desc="{desc}+vessels",
-            space="{template}",
-            vessels="{stain}",
-            suffix="regionprops.parquet",
-            **inputs["spim"].wildcards,
-        ),
-    group:
-        "subj_quant"
-    threads: 8
-    resources:
-        mem_mb=4000,
-        runtime=scaled_runtime(15, 0.05, config["segmentation_level"]),
-    params:
-        coord_column_names=config["coord_column_names"],
-        col_name="vesseldist",
-        zarrnii_kwargs=zarrnii_in_kwargs,
-    script:
-        "../scripts/sample_at_points.py"

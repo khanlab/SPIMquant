@@ -41,7 +41,7 @@ rule run_vesselfm:
 
 
 rule signed_distance_transform:
-    """Compute signed distance transform from a binary mask.
+    """Compute signed distance transform from a binary mask (vessels or seg).
 
     Applies the chamfer distance transform (distance_transform_cdt from scipy)
     to a binary mask using dask map_overlap for chunked, parallel processing.
@@ -52,17 +52,17 @@ rule signed_distance_transform:
     input:
         mask=bids_oz_in(
             root=root,
-            datatype="vessels",
+            datatype="{datatype}",
             stain="{stain}",
             level="{level}",
-            desc="vesselfm",
+            desc="{desc}",
             suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
     output:
         dist=bids_oz_out(
             root=root,
-            datatype="vessels",
+            datatype="{datatype,seg|vessels}",
             stain="{stain}",
             level="{level}",
             desc="{desc}",

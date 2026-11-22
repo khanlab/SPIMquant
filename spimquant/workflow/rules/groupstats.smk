@@ -19,24 +19,16 @@ def get_bids_root_file(filename):
 
 
 def group_metric_columns(wildcards):
-    """Metric columns of the merged segstats for ``desc``.
-
-    desc-frangi holds the fibre ROI metrics (--fibres); every other desc the
-    segmentation metrics.
-    """
-    if wildcards.desc == "frangi":
-        return expand(
-            "{stain}+{metric}",
-            stain=stains_for_fibres,
-            metric=config["fibre_roi_metrics"],
-        )
-    return expand(
-        "{stain}+{metric}", stain=stains_for_seg, metric=config["seg_metrics"]
+    """Metric columns of the merged segstats: segmentation and fibre metrics."""
+    cols = seg_metric_columns()
+    cols += expand(
+        "{stain}+{metric}", stain=stains_for_fibres, metric=config["fibre_roi_metrics"]
     )
+    return cols
 
 
 def group_coloc_metric_columns(wildcards):
-    if wildcards.desc == "frangi":
+    if not do_coloc:
         return []
     return expand("coloc+{metric}", metric=config["coloc_seg_metrics"])
 
@@ -55,7 +47,6 @@ rule perform_group_stats:
                 datatype="tabular",
                 seg=wildcards.seg,
                 from_=wildcards.template,
-                desc=wildcards.desc,
                 suffix="mergedsegstats.tsv",
                 **inputs["spim"].wildcards,
             )
@@ -66,7 +57,6 @@ rule perform_group_stats:
             root=group_stats_root,
             seg="{seg}",
             from_="{template}",
-            desc="{desc}",
             contrast="{pairwise_contrast}",
             suffix="groupstats.tsv",
         ),
@@ -76,7 +66,6 @@ rule perform_group_stats:
             datatype="group_stats",
             seg="{seg}",
             from_="{template}",
-            desc="{desc}",
             contrast="{pairwise_contrast}",
             suffix="groupstats.log",
         ),
@@ -110,7 +99,6 @@ rule create_stats_heatmap:
             root=group_stats_root,
             seg="{seg}",
             from_="{template}",
-            desc="{desc}",
             contrast="{pairwise_contrast}",
             suffix="groupstats.tsv",
         ),
@@ -120,7 +108,6 @@ rule create_stats_heatmap:
             root=group_stats_root,
             seg="{seg}",
             from_="{template}",
-            desc="{desc}",
             contrast="{pairwise_contrast}",
             suffix="groupstats.png",
         ),
@@ -146,7 +133,6 @@ rule map_groupstats_to_template_nii:
             root=group_stats_root,
             seg="{seg}",
             from_="{template}",
-            desc="{desc}",
             contrast="{pairwise_contrast}",
             suffix="groupstats.tsv",
         ),
@@ -157,7 +143,6 @@ rule map_groupstats_to_template_nii:
             root=group_stats_root,
             seg="{seg}",
             space="{template}",
-            desc="{desc}",
             contrast="{pairwise_contrast}",
             metric="{metric}",
             suffix="{stat}.nii.gz",
@@ -187,7 +172,6 @@ rule concat_subj_parquet:
                 root=root,
                 datatype="tabular",
                 space="{template}",
-                desc="{desc}",
                 suffix="{suffix}.parquet",
                 **inputs["spim"].wildcards,
             ),
@@ -198,7 +182,6 @@ rule concat_subj_parquet:
         parquet=bids(
             root=group_stats_root,
             space="{template}",
-            desc="{desc}",
             suffix="{suffix,regionprops|coloc}.parquet",
         ),
     threads: 1
@@ -217,7 +200,6 @@ rule group_counts_per_voxel:
         regionprops_parquet=bids(
             root=group_stats_root,
             space="{template}",
-            desc="{desc}",
             suffix="regionprops.parquet",
         ),
     output:
@@ -225,7 +207,6 @@ rule group_counts_per_voxel:
             root=group_stats_root,
             space="{template}",
             level="{level}",
-            desc="{desc}",
             suffix="{stain}+count.nii.gz",
         ),
     threads: 16
@@ -246,7 +227,6 @@ rule group_coloc_counts_per_voxel:
         coloc_parquet=bids(
             root=group_stats_root,
             space="{template}",
-            desc="{desc}",
             suffix="coloc.parquet",
         ),
     output:
@@ -254,7 +234,6 @@ rule group_coloc_counts_per_voxel:
             root=group_stats_root,
             space="{template}",
             level="{level}",
-            desc="{desc}",
             suffix="coloccount.nii.gz",
         ),
     threads: 16
@@ -283,7 +262,6 @@ rule concat_subj_segstats:
                 datatype="tabular",
                 seg=wildcards.seg,
                 from_=wildcards.template,
-                desc=wildcards.desc,
                 suffix="mergedsegstats.tsv",
                 **inputs["spim"].wildcards,
             )
@@ -294,7 +272,6 @@ rule concat_subj_segstats:
             root=group_stats_root,
             seg="{seg}",
             from_="{template}",
-            desc="{desc}",
             suffix="allsubjects.tsv",
         ),
     threads: 1
@@ -323,6 +300,7 @@ rule concat_subj_regionpropstats:
                 stain=wildcards.stain,
                 level=wildcards.level,
                 desc=wildcards.desc,
+                obj=wildcards.obj,
                 suffix="regionpropstats.tsv",
                 **inputs["spim"].wildcards,
             )
@@ -336,6 +314,7 @@ rule concat_subj_regionpropstats:
             stain="{stain}",
             level="{level}",
             desc="{desc}",
+            obj="{obj}",
             suffix="allsubjects_regionpropstats.tsv",
         ),
     threads: 1
@@ -359,7 +338,6 @@ if aux_groups:
                 datatype="tabular",
                 seg="{seg}",
                 from_="{template}",
-                desc="{desc}",
                 suffix="mergedsegstats.tsv",
                 **inputs["spim"].wildcards,
             ),
@@ -374,7 +352,6 @@ if aux_groups:
                 root=group_stats_root,
                 seg="{seg}",
                 from_="{template}",
-                desc="{desc}",
                 contrast="{pairwise_contrast}",
                 suffix="groupstats.tsv",
                 **aux_group_entities,
@@ -385,7 +362,6 @@ if aux_groups:
                 datatype="group_stats",
                 seg="{seg}",
                 from_="{template}",
-                desc="{desc}",
                 contrast="{pairwise_contrast}",
                 suffix="groupstats.log",
                 **aux_group_entities,
@@ -402,7 +378,6 @@ if aux_groups:
                 root=group_stats_root,
                 seg="{seg}",
                 from_="{template}",
-                desc="{desc}",
                 contrast="{pairwise_contrast}",
                 suffix="groupstats.png",
                 **aux_group_entities,
@@ -422,7 +397,6 @@ if aux_groups:
                 root=group_stats_root,
                 seg="{seg}",
                 space="{template}",
-                desc="{desc}",
                 contrast="{pairwise_contrast}",
                 metric="{metric}",
                 suffix="{stat}.nii.gz",
@@ -438,7 +412,6 @@ if aux_groups:
                 root=group_stats_root,
                 seg="{seg}",
                 from_="{template}",
-                desc="{desc}",
                 suffix="allsubjects.tsv",
                 **aux_group_entities,
             ),

@@ -21,6 +21,21 @@ from functools import reduce
 # read each TSV into a list of dataframes
 dfs = [pd.read_csv(f, sep="\t") for f in snakemake.input]
 
+# Objects carry their own physical volume, which would clash with the region
+# volume (from the field fraction table): per region it is the mean object
+# volume, objvolume.
+object_table = getattr(snakemake.input, "regionprops_tsv", None)
+dfs = [
+    df.rename(columns={"volume": "objvolume"}) if f == object_table else df
+    for f, df in zip(snakemake.input, dfs)
+]
+
+# per-object labels (which stain and methods), not per-region statistics
+dfs = [
+    df.drop(columns=["stain", "seg_method", "object_method"], errors="ignore")
+    for df in dfs
+]
+
 # merge all on index + name
 merged = reduce(
     lambda left, right: pd.merge(left, right, on=("index", "name"), how="outer"), dfs

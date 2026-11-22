@@ -100,7 +100,7 @@ rule run_lantern_plaques:
         # globally -- a module-level constraint in an included smk applies to the
         # whole workflow) means a target asking for a lantern mask on any other
         # stain fails at DAG build instead of quietly burning a GPU on it.
-        stain=stain_for_plaques or "^$",
+        stain="|".join(lantern_stains) or "^$",
     threads: 8 * config["plaque_n_gpus"]
     resources:
         gpu=config["plaque_n_gpus"],
@@ -176,7 +176,7 @@ rule binarize_lantern_plaques:
             **inputs["spim"].wildcards,
         ),
     wildcard_constraints:
-        stain=stain_for_plaques or "^$",
+        stain="|".join(lantern_stains) or "^$",
     threads: 32
     resources:
         # Component filtering reads the near-iso probseg once in 512^3 blocks

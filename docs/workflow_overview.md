@@ -112,12 +112,15 @@ After registration the composite transform (affine + warp) is composed into a si
 
 **What it does:**  Detects pathology signals (e.g. amyloid plaques, alpha-synuclein aggregates, microglia) in the full-resolution OME-Zarr data.
 
-Two segmentation methods are supported, configured per stain via `seg_method`:
+Each stain is segmented with its own mask method (`--seg_method`, e.g. `Abeta=lantern Iba1=gmm+n3k1`) and split into objects with its own object method (`--object_method`: `watershed`, `components` or `none`); see [Segmentation Methods](howto/segmentation.md#choosing-methods-per-stain).  Cross-stain results (colocalization, object distances, the merged per-region table) use each stain's primary methods.
 
 | Method | Rule | How it works |
 |--------|------|-------------|
-| `threshold` | `threshold` | Applies a fixed intensity threshold; fast and interpretable |
-| `otsu+k3i2` | `multiotsu` | Uses multi-Otsu thresholding followed by 3-class k-means clustering to separate background, low-signal, and high-signal voxels |
+| `th<value>` | `threshold` | Applies a fixed intensity threshold; fast and interpretable |
+| `otsu+k<k>i<i>` | `multiotsu` | Multi-Otsu thresholding of the global histogram |
+| `gmm+n<n>k<k>` | `gmmthresh` | Tail threshold of a Gaussian mixture fit to the log histogram (built-in default) |
+| `dog+s<s>r<r>k<k>` | `dogthresh` | Difference-of-Gaussians blob detection for small puncta |
+| `lantern` | `run_lantern_plaques` | Deep-learning ensemble for amyloid-beta plaques (built-in default for Abeta; GPU) |
 
 Segmentation is performed at a high-resolution pyramid level (`segmentation_level`).  The resulting binary mask is scaled to 0/100 (not 0/1) so that downstream downsampling yields *percentage* values directly (field fraction 0–100 %).
 
@@ -210,7 +213,7 @@ The entire pipeline is driven by `spimquant/config/snakebids.yml`.  Key settings
 
 - `template` — which reference atlas to use (ABAv3, gubra, MBMv3, turone, MouseIn)
 - `registration_level` / `segmentation_level` — pyramid level for registration and segmentation
-- `seg_method` — segmentation algorithm per stain (`threshold` or `otsu+k3i2`)
+- `seg_method` / `object_method` — mask and object method per stain (`STAIN=METHOD`), with built-in defaults in `seg_method_defaults` / `object_method_defaults`
 - `correction_method` — intensity correction method (`gaussian` or `n4`)
 - `contrast_column` / `contrast_values` — group comparison definition
 
