@@ -46,7 +46,7 @@ The design case is **Abeta + Iba1 + CD31**:
 | Stain | What SPIMquant does | Where it lands in the release |
 | --- | --- | --- |
 | Abeta | Plaques: `lantern` masks, split into objects by `components` (built-in default) | Regional table rows; instance table rows (one per plaque); `Abeta_dist` and `Abeta_edgedist` on every object |
-| Iba1 | Microglia: `gmm+n3k1` masks by default, split by `watershed` so touching cells count separately | Regional table rows; instance table rows (one per cell); `Iba1_dist` and `Iba1_edgedist` on every object |
+| Iba1 | Microglia: `gmm+n3k1` masks by default; `--object_method Iba1=watershed` so touching cells count separately | Regional table rows; instance table rows (one per cell); `Iba1_dist` and `Iba1_edgedist` on every object |
 | CD31 | Vessels: `vesselfm` mask and its signed distance transform (SDT) | `CD31_sdt` on every Abeta and Iba1 object, and its regional mean; template-space vessel field-fraction map. The vessel graph (with calibre per edge) becomes the CD31 instance table later. |
 
 Abeta and Iba1 objects are colocalized with each other even though they use different
@@ -66,12 +66,15 @@ the primaries. Stains can use different methods and still be compared.
     STAIN=METHOD[,METHOD...]   per stain; the first is primary, the rest are comparisons
     METHOD                      every stain not named
     METHOD: th<v> | otsu+k<k>i<i> | gmm+n<n>k<k> | dog+s<s>r<r>k<k> | lantern
-    built-in defaults: Abeta=lantern (also abeta, BetaAmyloid); every other stain gmm+n3k1
+    built-in defaults: Abeta=lantern (also abeta, BetaAmyloid) when a GPU is available,
+                       else gmm+n3k1; every other stain gmm+n3k1
 
 --object_method SPEC [SPEC ...]
     STAIN=OBJ[,OBJ...] | OBJ   same rules as --seg_method
     OBJ: watershed | components | none
-    built-in defaults: Abeta=components; every other stain watershed
+    built-in default: components for every stain
+
+--gpu auto|yes|no                 auto: torch built with CUDA (the gpu pixi env)
 
 --stains_for_seg STAIN [...]   which stains are segmented; stains named above are added
 ```
@@ -84,6 +87,9 @@ the primaries. Stains can use different methods and still be compared.
   bias-corrected image (today's `+inst`); `none` skips every object-level output for
   that stain (counts, density, instance rows, colocalization, distances), leaving field
   fraction and volume.
+- **GPU methods** (`lantern`, future models) have a CPU fallback in the config
+  (`gpu_seg_method_fallbacks`). Without a GPU a default GPU method falls back,
+  with a note; one given on the command line is an error.
 - **`+inst` is rejected** with an error pointing to `--object_method watershed`.
 - **Comparison methods** (a second method for a stain) produce per-stain outputs and
   extra rows in the regional table. They are not in the instance table,
@@ -197,6 +203,7 @@ label table.
 | `<stain>_sdt` | mm | Mean signed distance from object centroids to the vessel wall (negative = inside), vessel stain only | instance table (mean) |
 | `<stain>_dist` | mm | Mean centroid distance to the nearest object of `<stain>` | instance table (mean) |
 | `<stain>_edgedist` | mm | Mean approximate distance to the surface of the nearest object of `<stain>` | instance table (mean) |
+| `objvolume` | mm³ | Mean object volume | instance table (mean) |
 | `mean_intensity`, `max_intensity`, `peak_intensity`, `elongation` | a.u. / ratio | Mean over the region's objects (`watershed` only) | instance table (mean) |
 | `coverage` | fraction | Fraction of the region inside the field of view (additional scans only) | `coveragestats` |
 | `overlapratio`, `distance` | ratio / mm | Colocalization metrics (`channel = coloc`) | `colocsegstats` |
@@ -529,8 +536,9 @@ What PR1 has to add or fix for current outputs to meet this spec:
 
 ## Open questions
 
-1. **Default object method.** `watershed` as the default for every stain except Abeta
-   is pending a runtime comparison with `components` on one subject at level 0.
+1. **Watershed cost.** `components` is the default; whether `watershed` should be
+   the default for cell stains such as Iba1 waits on a runtime comparison on one
+   subject at level 0.
 2. **Group maps.** Are per-region group means the only maps needed, or also voxel-wise
    group averages of the template-space field-fraction and count maps?
 3. **Template-space view copy resolution.** Which `--template_spim_res` the explorer
