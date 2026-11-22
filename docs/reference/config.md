@@ -37,7 +37,9 @@ See [Segmentation Methods](../howto/segmentation.md#choosing-methods-per-stain).
 | `--seg_method` | `seg_method` | none (built-in defaults) | Mask method(s) per stain: `STAIN=METHOD[,METHOD...]` or a bare `METHOD` for every stain not named; first is primary |
 | `--object_method` | `object_method` | none (built-in defaults) | Object method(s) per stain, same syntax: `watershed`, `components` or `none` |
 | | `seg_method_defaults` | `default: gmm+n3k1`; `abeta`/`Abeta`/`BetaAmyloid`: `lantern` | Built-in per-stain mask methods |
-| | `object_method_defaults` | `default: watershed`; `abeta`/`Abeta`/`BetaAmyloid`: `components` | Built-in per-stain object methods |
+| | `object_method_defaults` | `default: components` | Built-in per-stain object methods |
+| `--gpu` | `gpu` | `auto` | Whether GPU methods can be used: `auto` (torch built with CUDA, i.e. the gpu pixi env), `yes`, `no` |
+| | `gpu_seg_method_fallbacks` | `lantern: gmm+n3k1` | CPU method used instead of a default GPU method when there is no GPU |
 | | `sdt_stains` | `[]` | Stains (besides the vessel stain) whose primary mask's signed distance is sampled at every object (`<stain>_sdt`) |
 
 ### LANTERN plaque segmentation

@@ -413,7 +413,24 @@ else:
 import sys as _sys
 
 _sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
-from seg_plan import SegPlan, SegPlanError, resolve_seg_plan
+from seg_plan import (
+    SegPlan,
+    SegPlanError,
+    apply_gpu_fallback,
+    resolve_seg_plan,
+    torch_has_cuda,
+)
+
+# GPU methods are only used where torch has CUDA (the gpu pixi environment),
+# unless --gpu says otherwise
+# (yes/no come back from the stored config as YAML booleans)
+_gpu_opt = config.get("gpu", "auto")
+if _gpu_opt in (True, "yes"):
+    gpu_available = True
+elif _gpu_opt in (False, "no"):
+    gpu_available = False
+else:
+    gpu_available = torch_has_cuda()
 
 if config["no_segmentation"]:
     seg_plan = SegPlan()
@@ -426,6 +443,9 @@ else:
             config.get("object_method"),
             config["seg_method_defaults"],
             config["object_method_defaults"],
+        )
+        _seg_plan_notes += apply_gpu_fallback(
+            seg_plan, gpu_available, config["gpu_seg_method_fallbacks"] or {}
         )
     except SegPlanError as _e:
         raise ValueError(str(_e)) from None

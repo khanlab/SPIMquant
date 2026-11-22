@@ -159,3 +159,47 @@ def test_object_distances_edge_clipped():
     )
     out = add_object_distances(df, ["pos_x", "pos_y", "pos_z"])
     assert out.loc[1, "Abeta_edgedist"] == 0.0
+
+
+# --- GPU fallback ----------------------------------------------------------
+
+from seg_plan import apply_gpu_fallback, version_py_has_cuda  # noqa: E402
+
+FALLBACKS = {"lantern": "gmm+n3k1"}
+
+
+def test_version_py_has_cuda():
+    assert version_py_has_cuda("cuda: Optional[str] = '12.6'\n")
+    assert version_py_has_cuda("cuda = '11.8'\n")
+    assert not version_py_has_cuda("cuda: Optional[str] = None\n")
+    assert not version_py_has_cuda("hip: Optional[str] = '6.0'\n")
+
+
+def test_gpu_fallback_replaces_defaults():
+    plan = resolve()
+    notes = apply_gpu_fallback(plan, False, FALLBACKS)
+    assert plan["Abeta"].seg_methods == ["gmm+n3k1"]
+    assert plan["Abeta"].seg_source == "default, no-GPU fallback"
+    assert len(notes) == 1
+
+
+def test_gpu_fallback_noop_with_gpu():
+    plan = resolve()
+    assert apply_gpu_fallback(plan, True, FALLBACKS) == []
+    assert plan["Abeta"].seg_methods == ["lantern"]
+
+
+def test_gpu_fallback_dedups_comparisons():
+    plan, _ = resolve_seg_plan(
+        STAINS, FOR_SEG, None, None,
+        {"default": "gmm+n3k1", "stains": {"Abeta": ["lantern", "gmm+n3k1"]}},
+        OBJ_DEFAULTS,
+    )
+    apply_gpu_fallback(plan, False, FALLBACKS)
+    assert plan["Abeta"].seg_methods == ["gmm+n3k1"]
+
+
+def test_gpu_explicit_request_errors():
+    plan = resolve(seg=["Abeta=lantern"])
+    with pytest.raises(SegPlanError, match="needs a GPU"):
+        apply_gpu_fallback(plan, False, FALLBACKS)

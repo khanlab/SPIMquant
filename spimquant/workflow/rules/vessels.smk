@@ -25,8 +25,10 @@ rule run_vesselfm:
         ),
     threads: 8
     resources:
-        gpu=1,
-        cpus_per_gpu=8,
+        # vesselfm runs on the CPU when torch has no CUDA; request a GPU only
+        # where it can be used (see --gpu)
+        gpu=1 if gpu_available else 0,
+        cpus_per_gpu=8 if gpu_available else 0,
         # Slurm measured 8.6 GB where psutil measured 2.5 GB (F1A1Te4, level 1).
         mem_mb=scaled_mem_mb(12000, 20),
         runtime=scaled_runtime(30, 0.75),

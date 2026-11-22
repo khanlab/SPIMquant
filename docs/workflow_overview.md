@@ -120,7 +120,7 @@ Each stain is segmented with its own mask method (`--seg_method`, e.g. `Abeta=la
 | `otsu+k<k>i<i>` | `multiotsu` | Multi-Otsu thresholding of the global histogram |
 | `gmm+n<n>k<k>` | `gmmthresh` | Tail threshold of a Gaussian mixture fit to the log histogram (built-in default) |
 | `dog+s<s>r<r>k<k>` | `dogthresh` | Difference-of-Gaussians blob detection for small puncta |
-| `lantern` | `run_lantern_plaques` | Deep-learning ensemble for amyloid-beta plaques (built-in default for Abeta; GPU) |
+| `lantern` | `run_lantern_plaques` | Deep-learning ensemble for amyloid-beta plaques (built-in default for Abeta when a GPU is available) |
 
 Segmentation is performed at a high-resolution pyramid level (`segmentation_level`).  The resulting binary mask is scaled to 0/100 (not 0/1) so that downstream downsampling yields *percentage* values directly (field fraction 0–100 %).
 

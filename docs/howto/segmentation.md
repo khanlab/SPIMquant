@@ -25,8 +25,9 @@ After segmentation the binary mask is used to compute [field fraction](../refere
 `--seg_method` and `--object_method` each take a list of specs.  A spec is either `STAIN=VALUE` for one stain, or a bare `VALUE` for every stain not named:
 
 ```bash
-# defaults: Abeta by LANTERN (components), every other stain by gmm+n3k1 (watershed)
-pixi run spimquant /bids /output participant
+# defaults: Abeta by LANTERN (in the gpu env), every other stain by gmm+n3k1;
+# objects as connected components
+pixi run -e gpu spimquant /bids /output participant
 
 # Iba1 by multi-Otsu; Abeta keeps its default
 pixi run spimquant /bids /output participant --seg_method Iba1=otsu+k3i2
@@ -34,18 +35,28 @@ pixi run spimquant /bids /output participant --seg_method Iba1=otsu+k3i2
 # one method for every stain, Abeta included
 pixi run spimquant /bids /output participant --seg_method gmm+n2k2p5
 
+# watershed objects for Iba1, so touching microglia count separately
+pixi run spimquant /bids /output participant --object_method Iba1=watershed
+
 # no objects for NeuN: field fraction only
 pixi run spimquant /bids /output participant --object_method NeuN=none
 ```
 
-Precedence, highest first: `STAIN=` on the command line, a bare value on the command line, the built-in per-stain defaults, the built-in default.  The built-in defaults are the `seg_method_defaults` and `object_method_defaults` config keys: Abeta (`abeta`, `Abeta`, `BetaAmyloid`) uses `lantern` with `components`; every other stain uses `gmm+n3k1` with `watershed`.  The methods each stain resolves to are printed when the workflow starts.
+Precedence, highest first: `STAIN=` on the command line, a bare value on the command line, the built-in per-stain defaults, the built-in default.  The built-in defaults are the `seg_method_defaults` and `object_method_defaults` config keys: Abeta (`abeta`, `Abeta`, `BetaAmyloid`) uses `lantern`, every other stain `gmm+n3k1`, and every stain `components`.  The methods each stain resolves to are printed when the workflow starts.
+
+**GPU methods.**  Methods that need a GPU (`lantern`, and future models) are listed in the `gpu_seg_method_fallbacks` config key with a CPU method to use instead.  `--gpu auto` (default) checks whether the environment's torch is built with CUDA, i.e. whether SPIMquant runs in the `gpu` pixi environment (`pixi run -e gpu ...`).  This checks the environment, not the machine, so it holds on a GPU-less submit node whose jobs run on GPU nodes.  Without a GPU:
+
+- a GPU method from the built-in defaults is replaced by its fallback, with a note (Abeta → `gmm+n3k1`);
+- a GPU method given in `--seg_method` is an error, rather than a silent change of method or hours of CPU inference.
+
+`--gpu yes` / `--gpu no` override the check.  GPU resources are only requested from the scheduler when a GPU is available.
 
 Stains named in either option are segmented even if they are not in `--stains_for_seg`.
 
 **Primary and comparison methods.**  A comma-separated list gives a stain several methods; the first is its **primary** method:
 
 ```bash
-pixi run spimquant /bids /output participant --seg_method Abeta=lantern,otsu+k3i2 --object_method Iba1=watershed,components
+pixi run -e gpu spimquant /bids /output participant --seg_method Abeta=lantern,otsu+k3i2 --object_method Iba1=watershed,components
 ```
 
 Every cross-stain result uses the primary methods: the aggregated objects, colocalization, object distances, the merged per-region table (`mergedsegstats`), featuremaps and group statistics.  Comparison methods get their own per-stain outputs (mask, field fraction, counts, objects, per-region `segstats.tsv`), so they can be compared with the primary on the same channel.
@@ -163,7 +174,7 @@ A 5-fold deep-learning ensemble for amyloid-beta plaques, downloaded from Huggin
 
 - reads **raw** intensities, not the bias-field-corrected image;
 - runs on the grid nearest `plaque_iso_res` (~4 µm isotropic, the scale it was trained at); the mask at `segmentation_level` is that prediction upsampled;
-- is the **built-in default for amyloid-beta** (`abeta`, `Abeta`, `BetaAmyloid`); it can be given for another stain (`--seg_method STAIN=lantern`), with a warning, as the ensembles are trained on amyloid-beta;
+- is the **built-in default for amyloid-beta** (`abeta`, `Abeta`, `BetaAmyloid`) when a GPU is available (see [GPU methods](#choosing-methods-per-stain)), and `gmm+n3k1` otherwise; it can be given for another stain (`--seg_method STAIN=lantern`), with a warning, as the ensembles are trained on amyloid-beta;
 - requires a GPU.
 
 Inference slides 128³ tiles over the volume at a stride of 64 (`plaque_tile`, `plaque_stride`), so each voxel is seen by up to 8 overlapping tiles.  Each of the 5 folds votes plaque / not plaque in every tile, and `--merge_mode` (config key `plaque_merge_mode`) decides how the tiles' vote counts are combined:
@@ -187,10 +198,10 @@ Two optional filters run on the inference grid before upsampling:
 
 ```bash
 # LANTERN is the Abeta default; add gmm+n3k1 as a comparison on the same channel
-pixi run spimquant /bids /output participant --seg_method Abeta=lantern,gmm+n3k1
+pixi run -e gpu spimquant /bids /output participant --seg_method Abeta=lantern,gmm+n3k1
 ```
 
-**When to use:** Amyloid-beta plaque segmentation where intensity-based thresholds struggle, e.g. with variable staining or bright non-plaque structure.  Without a GPU, give Abeta another method (`--seg_method Abeta=gmm+n3k1`, or a bare method for every stain).
+**When to use:** Amyloid-beta plaque segmentation where intensity-based thresholds struggle, e.g. with variable staining or bright non-plaque structure.
 
 **Limitations:** Amyloid-beta only, needs a GPU, and results are only as good as the match between your data and the ensemble's training data.  `plaque_vote_threshold` was calibrated for `max` merging; the averaging modes (`gaussian`, the default, and `average`) take the midpoint cut described above rather than a separately recalibrated threshold.  Keep `segmentation_level` at or finer than `plaque_level`.
 
@@ -212,13 +223,13 @@ After the initial binary mask is produced, a cleaning step removes two classes o
 
 Counts, density, the per-object tables, colocalization and object distances need the mask split into objects.  Field fraction comes from the mask itself and does not depend on this choice.  The object method is chosen per stain, with the same syntax as `--seg_method`.
 
-- `watershed` (built-in default, except for amyloid-beta) — a seeded watershed assigns every mask voxel to a seed, so touching cells or puncta are counted separately:
+- `components` (built-in default) — connected components.  Simple, but touching objects merge: in dense tissue a single "object" can be a network of hundreds of puncta, so counts are too low and sizes too large.  Compact plaques with several dense cores are kept whole.
+- `watershed` — a seeded watershed assigns every mask voxel to a seed, so touching cells or puncta are counted separately:
     1. The corrected image is smoothed with a Gaussian of `instance_sigma_um` (3 µm).
     2. Seeds are local maxima of the smoothed image inside the mask, at least `instance_min_dist_um` (4 µm) apart, that rise at least **h** above the dip separating them from a brighter neighbour.  Every connected component gets at least one seed.
     3. The watershed floods the negated smoothed image within the mask.
 
-  Objects have the same columns as `components` plus `seed_x/y/z`, `mean_intensity`, `max_intensity`, `peak_intensity` and `elongation` (1 for a sphere; neurite-like segments are elongated).  Objects smaller than `instance_min_volume_um3` (1000 µm³) are dropped.  An `obj-watershed_..._instances.json` file next to the parquet records the parameters used, including h.
-- `components` (built-in default for amyloid-beta) — connected components.  Simple, but touching objects merge: in dense tissue a single "object" can be a network of hundreds of puncta, so counts are too low and sizes too large.  Compact plaques with several dense cores are better kept whole this way.
+  Objects have the same columns as `components` plus `seed_x/y/z`, `mean_intensity`, `max_intensity`, `peak_intensity` and `elongation` (1 for a sphere; neurite-like segments are elongated).  Objects smaller than `instance_min_volume_um3` (1000 µm³) are dropped.  An `obj-watershed_..._instances.json` file next to the parquet records the parameters used, including h.  It reserves about twice the memory of `components`.
 - `none` — no objects: the stain gets field fraction and volume only.
 
 The old `cc` / `inst` names and the `+inst` suffix on `--seg_method` are rejected with a message naming the replacement.

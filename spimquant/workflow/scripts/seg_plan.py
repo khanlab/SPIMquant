@@ -199,6 +199,72 @@ def _resolve_one(stain, cli_bare, cli_by_stain, default_by_stain, default):
     return (list(default) if isinstance(default, list) else [default]), "default"
 
 
+def torch_has_cuda():
+    """Whether the installed torch is built with CUDA (the gpu pixi env).
+
+    Reads torch/version.py rather than importing torch, which takes over a
+    second and would slow every parse of the Snakefile. This reflects the
+    environment, not the machine, so it is the same on a GPU-less submit node
+    as on the GPU nodes its jobs run on.
+    """
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.find_spec("torch")
+    if spec is None or not spec.origin:
+        return False
+    try:
+        text = Path(spec.origin).with_name("version.py").read_text()
+    except OSError:
+        return False
+    return version_py_has_cuda(text)
+
+
+def version_py_has_cuda(text):
+    """Whether torch's version.py text names a CUDA version (``cuda = '12.6'``)."""
+    pattern = r"^cuda\s*(?::[^=]*)?=\s*['\"][^'\"]+['\"]"
+    return re.search(pattern, text, re.M) is not None
+
+
+def apply_gpu_fallback(plan, gpu_available, gpu_fallbacks):
+    """Replace GPU methods by their CPU fallbacks when there is no GPU.
+
+    ``gpu_fallbacks`` maps each GPU seg method to its fallback. Methods that
+    came from the built-in defaults are replaced (and reported); a GPU method
+    asked for on the command line is an error, rather than a silent switch to
+    another method or hours of CPU inference.
+
+    Returns a list of notes describing the replacements.
+    """
+    notes = []
+    if gpu_available:
+        return notes
+    for p in plan:
+        gpu_here = [m for m in p.seg_methods if m in gpu_fallbacks]
+        if not gpu_here:
+            continue
+        if p.seg_source == "cli":
+            raise SegPlanError(
+                f"--seg_method {p.stain}={','.join(p.seg_methods)}: "
+                f"{', '.join(gpu_here)} needs a GPU, and this environment has no "
+                "CUDA-enabled torch. Run in the gpu pixi environment (pixi run -e "
+                "gpu ...), pass --gpu yes if the jobs run where a GPU is available, "
+                f"or choose another method (e.g. {gpu_fallbacks[gpu_here[0]]})."
+            )
+        new = []
+        for m in p.seg_methods:
+            m = gpu_fallbacks.get(m, m)
+            if m not in new:
+                new.append(m)
+        notes.append(
+            f"{p.stain}: no GPU, so using {','.join(new)} instead of the default "
+            f"{','.join(p.seg_methods)} (--gpu, gpu_seg_method_fallbacks)"
+        )
+        p.seg_methods = new
+        p.seg_source = "default, no-GPU fallback"
+    return notes
+
+
 def resolve_seg_plan(
     stains,
     stains_for_seg,

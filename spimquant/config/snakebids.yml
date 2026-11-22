@@ -349,21 +349,36 @@ parse_args:
       syntax and precedence as ``--seg_method`` (``STAIN=OBJ[,OBJ...]`` or a
       bare ``OBJ``; the first is primary).
 
+      ``components`` – connected components (built-in default,
+      ``object_method_defaults`` in the config).  Touching objects merge, so
+      in dense tissue one object can be a network of many.
+
       ``watershed`` – seeded watershed of the mask, seeded at peaks of the
       smoothed bias-corrected image, so touching cells or puncta are counted
-      separately.  Adds seed position, intensity and elongation columns.  See
-      the ``instance_*`` config keys.  Built-in default for every stain
-      except amyloid-beta.
-
-      ``components`` – connected components.  Touching objects merge, so in
-      dense tissue one object can be a network of many.  Built-in default for
-      amyloid-beta (``object_method_defaults`` in the config), as compact
-      multi-cored plaques would be split by a watershed.
+      separately (e.g. ``Iba1=watershed``).  Adds seed position, intensity
+      and elongation columns.  Needs about twice the memory of
+      ``components``.  See the ``instance_*`` config keys.
 
       ``none`` – no objects: only field fraction and volume for that stain.
     metavar: SPEC
     default: null
     nargs: '+'
+
+  --gpu:
+    help: >
+      Whether GPU methods (e.g. ``lantern``) can be used.  ``auto`` (default)
+      checks whether this environment's torch is built with CUDA, i.e. the
+      ``gpu`` pixi environment; this reflects the environment rather than the
+      machine, so it also holds on a GPU-less submit node.  Without a GPU, a
+      GPU method that is a built-in default is replaced by its CPU fallback
+      (``gpu_seg_method_fallbacks`` in the config), and one given in
+      ``--seg_method`` is an error.  ``yes`` / ``no`` override the check.
+      (default: %(default)s)
+    choices:
+      - auto
+      - "yes"
+      - "no"
+    default: auto
 
   --lantern_config:
     help: >
@@ -1478,11 +1493,14 @@ seg_method_defaults:
     Abeta: lantern
     BetaAmyloid: lantern
 object_method_defaults:
-  default: watershed
-  stains:
-    abeta: components
-    Abeta: components
-    BetaAmyloid: components
+  default: components
+  stains: {}
+
+# GPU seg methods and the CPU method used instead when there is no GPU (see
+# --gpu). A GPU method from the built-in defaults falls back; one given on the
+# command line is an error. Add new GPU models here.
+gpu_seg_method_fallbacks:
+  lantern: gmm+n3k1
 
 # Signed distance transforms of these stains' primary masks are sampled at every
 # object (column <stain>_sdt, mm). The vessel stain is always included when
