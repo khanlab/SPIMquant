@@ -30,6 +30,7 @@ nav:
   - Reference:
       - CLI Reference: reference/cli_reference.md
       - Output Files: reference/outputs.md
+      - Release Contract: release_spec.md
       - Workflow Visualization: workflow_visualization.md
   - Examples:
       - Sample Datasets: examples/datasets.md
