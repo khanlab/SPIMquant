@@ -102,10 +102,14 @@ the primaries. Stains can use different methods and still be compared.
   - when vessels are run, each object gets `<vessel stain>_sdt` (signed distance to the
     vessel mask, mm, negative inside), sampled from the SDT the vessel graph already
     needs. SDTs of other stains are off; a config key (`sdt_stains`) can enable them.
-- **File names:** per-stain files carry the method (`desc-<seg_method>` on masks and
-  mask-derived maps; `desc-<seg_method>_obj-<object_method>` on per-stain object
-  tables). Cross-stain results and release files carry neither; the methods are in
-  table columns and sidecars.
+- **File names** (snakebids orders the entities `stain`, `space`, `seg`, `from`,
+  `level`, `obj`, `desc`): per-stain files carry the methods, `desc-<seg_method>` on
+  masks and mask-derived maps (`<ent>_stain-Abeta_level-0_desc-lantern_mask.ozx`) and
+  `obj-<object_method>` before it on per-stain object outputs
+  (`<ent>_stain-Iba1_seg-all_from-ABAv3_level-5_obj-watershed_desc-gmm+n3k1_segstats.tsv`).
+  Cross-stain results and release files carry neither
+  (`<ent>_seg-all_from-ABAv3_mergedsegstats.tsv`, `<ent>_space-ABAv3_regionprops.parquet`);
+  the methods are in table columns and sidecars.
 - Vessels keep their own options (`--stains_for_vessels`, `--no_vessels`) and outputs
   (mask, SDT, graph); they have no object method.
 
@@ -144,7 +148,7 @@ release/
     ├── parc/
     │   └── <ent>_seg-<seg>_level-<N>_from-ABAv3_dseg.nii.gz   # subject-space labels (download)
     ├── featuremap/
-    │   └── <ent>_stain-<stain>_level-<N>_space-ABAv3_fieldfrac.nii.gz
+    │   └── <ent>_stain-<stain>_space-ABAv3_level-<N>_fieldfrac.nii.gz
     └── qc/
         ├── <ent>_stain-<stain>_level-<N>_space-ABAv3_regqc.html
         └── <ent>_qc.json                               # scan QC metrics (from qc_scan)
@@ -158,6 +162,20 @@ Notes:
 - `featuremap/` holds the template-space field-fraction maps, including the CD31 vessel
   field fraction. They are for download and for group maps; the
   explorer colours regions from the tables, not from these maps.
+
+**Where each release file comes from** (SPIMquant output names, paths relative to
+`<output_dir>`; `<p>` = the stain's primary seg method, `<o>` = its primary object
+method):
+
+| Release file | SPIMquant output |
+| --- | --- |
+| `tabular/<ent>_space-ABAv3_roistats.parquet` | Melted from `tabular/<ent>_seg-<seg>_from-ABAv3_mergedsegstats.tsv` (primary methods); comparison methods from `tabular/<ent>_stain-<stain>_seg-<seg>_from-ABAv3_level-<N>_obj-<obj>_desc-<seg_method>_segstats.tsv` |
+| `tabular/<ent>_seg-<seg>_from-ABAv3_mergedsegstats.tsv` | Same name |
+| `tabular/<ent>_space-ABAv3_instances.parquet` | `tabular/<ent>_space-ABAv3_regionprops.parquet`, plus `label`, `instance_id` and the subject columns; `stain` renamed `channel` |
+| `tabular/<ent>_space-ABAv3_coloc.parquet` | Same name |
+| `featuremap/<ent>_stain-<stain>_space-ABAv3_level-<N>_fieldfrac.nii.gz` | `seg/<ent>_stain-<stain>_space-ABAv3_level-<N>_desc-<p>_fieldfrac.nii.gz` (CD31: `vessels/..._desc-vesselfm_fieldfrac.nii.gz`) |
+| `view/<ent>_stain-<stain>_mask.precomputed/` | `seg/<ent>_stain-<stain>_level-<segmentation_level>_desc-<p>_mask.ozx` |
+| `parc/<ent>_seg-<seg>_level-<N>_from-ABAv3_dseg.nii.gz` | Same name |
 - View copies are Neuroglancer precomputed, sharded. Intensity images are JPEG-encoded
   uint8 with square-root intensity scaling; masks and labels use
   `compressed_segmentation`. The label view carries segment properties built from the
@@ -203,7 +221,7 @@ label table.
 | `<stain>_sdt` | mm | Mean signed distance from object centroids to the vessel wall (negative = inside), vessel stain only | instance table (mean) |
 | `<stain>_dist` | mm | Mean centroid distance to the nearest object of `<stain>` | instance table (mean) |
 | `<stain>_edgedist` | mm | Mean approximate distance to the surface of the nearest object of `<stain>` | instance table (mean) |
-| `objvolume` | mm³ | Mean object volume | instance table (mean) |
+| `objvolume` | mm³ | Mean object volume (the objects' `volume`, renamed per region) | instance table (mean) |
 | `mean_intensity`, `max_intensity`, `peak_intensity`, `elongation` | a.u. / ratio | Mean over the region's objects (`watershed` only) | instance table (mean) |
 | `coverage` | fraction | Fraction of the region inside the field of view (additional scans only) | `coveragestats` |
 | `overlapratio`, `distance` | ratio / mm | Colocalization metrics (`channel = coloc`) | `colocsegstats` |
@@ -214,14 +232,17 @@ schema bump.
 ### Instance table (`instances.parquet`)
 
 One row per detected object (plaque, microglial cell, ...) for every stain with
-objects, using its primary methods. It is built from the aggregated template-space
-`regionprops.parquet`, with distances and an ABAv3 `seg-all` label added downstream.
+objects, using its primary methods. SPIMquant writes most of it as
+`tabular/<ent>_space-ABAv3_regionprops.parquet`: the primary objects of every stain,
+with `stain`, `seg_method`, `object_method`, `volume` and the distance columns. The
+release adds the ABAv3 `seg-all` `label`, `instance_id` and the subject columns, and
+renames `stain` to `channel`.
 
 | Column | Type | Description |
 | --- | --- | --- |
 | `participant_id` | string | `sub-<label>` |
 | `session_id` | string, nullable | `ses-<label>` |
-| `channel` | string | Stain (today's `stain` column) |
+| `channel` | string | Stain (SPIMquant's `stain` column) |
 | `seg_method` | string | Mask method |
 | `object_method` | string | `components` or `watershed` |
 | `instance_id` | int64 | Unique within (`participant_id`, `session_id`, `channel`); stable within a release |
@@ -516,21 +537,30 @@ checks on upload, for SPIM and MRI derivatives alike.
 
 ## Changes needed in SPIMquant
 
-What PR1 has to add or fix for current outputs to meet this spec:
+**Done in #248** (per-stain methods):
 
-| Item | Today | Needed |
+- Per-stain `--seg_method` / `--object_method` with primaries; `desc-`/`obj-` only on
+  per-stain files; `cc`, `inst` and `+inst` rejected; GPU methods fall back without a
+  GPU (`--gpu`, `gpu_seg_method_fallbacks`).
+- Colocalization and the merged tables combine stains whatever their methods; fibre
+  ROI metrics are in `mergedsegstats.tsv`.
+- `<stain>_dist`, `<stain>_edgedist` for every stain with objects; `<vessel>_sdt`
+  replaces `vesseldist` (mm).
+- Objects carry `stain`, `seg_method`, `object_method` and `volume` (mm³); per region,
+  `objvolume`.
+- Column descriptions give `pos_*`, distances and colocalization radii in mm;
+  `outputs.md` describes `regionpropstats.tsv` as one row per object.
+
+**Still needed for the `release` target (PR1):**
+
+| Item | Today (after #248) | Needed |
 | --- | --- | --- |
-| Methods per stain | `desc-<method>` keys every result; colocalization and merged tables only combine stains segmented by the same method; LANTERN special-cased to one stain | Per-stain `--seg_method` / `--object_method` with primaries; `desc-`/`obj-` only on per-stain files; `+inst` rejected (separate PR, before the `release` target) |
-| Distances | `vesseldist` only (SDT of the vessel mask) | `<stain>_dist`, `<stain>_edgedist` for every stain with objects; `<vessel>_sdt` replaces `vesseldist` |
-| Long regional table | Wide `mergedsegstats.tsv` per `seg` and method | Write `roistats.parquet` (all segs and methods in one file) |
-| Instance label | Aggregated `regionprops.parquet` has no atlas label; per-object labels exist only in the per-stain `regionpropstats.tsv` | Add `seg-all` `label` to the instance table, using the same subject-space lookup |
-| Instance identity | No id in `regionprops.parquet` (coloc builds `object_id` from row order) | Add `instance_id`, `participant_id`, `session_id`, `seg_method`, `object_method`, `volume` |
-| `pos_*` units | Column descriptions say voxels; values are physical (they are warped with the physical-space transform) | Fix the descriptions to mm |
-| `vesseldist` units | Described as voxels; the SDT is computed in physical units | Describe as mm (as `<vessel>_sdt`) |
-| Provenance sidecar | Run provenance in `code/snakebids/runs/` | Write `<ent>_provenance.json` per participant |
+| Long regional table | Wide `mergedsegstats.tsv` per `seg`; comparison methods in per-stain `segstats.tsv` | Write `roistats.parquet` (all segs and methods, with `primary`) |
+| Instance label | `space-ABAv3_regionprops.parquet` has no atlas label; per-object labels only in the per-stain `regionpropstats.tsv` | Add `seg-all` `label`, using the same subject-space lookup |
+| Instance identity | No id (coloc builds `object_id` from row order) | Add `instance_id`, `participant_id`, `session_id`; rename `stain` to `channel` |
+| Provenance sidecar | Run provenance in `code/snakebids/runs/`; method plan printed at start-up | Write `<ent>_provenance.json` per participant, including the method plan |
 | View copies | None | Neuroglancer precomputed copies (see layout) |
 | Release tree and manifest | None | `release/` layout, label tables, `release_manifest.json` |
-| Output docs | `outputs.md` calls `regionpropstats.tsv` one row per region | Fix to one row per object |
 
 ---
 
