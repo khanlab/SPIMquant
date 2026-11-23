@@ -190,6 +190,11 @@ parse_args:
     action: store_true
     default: False
 
+  --vessel_graph:
+    help: "Also build the vessel skeleton graph (skeleton, graph/nodes/edges parquet tables); experimental, not yet validated (default: %(default)s)"
+    action: store_true
+    default: False
+
   --fibres:
     help: >
       Run fibre orientation analysis (multiscale Frangi filter, orientation
@@ -284,8 +289,20 @@ parse_args:
 
   --seg_method:
     help: >
-      Method(s) to use for microscopy segmentation (e.g. plaques, protein
-      deposits, cells) applied to 'stains_for_seg' channels.
+      Mask method(s) for microscopy segmentation (e.g. plaques, protein
+      deposits, cells), per stain.  Each SPEC is either ``STAIN=METHOD``
+      for one stain or a bare ``METHOD`` for every stain not named; give
+      several methods as a comma-separated list, e.g.
+      ``Abeta=lantern,otsu+k3i2``.  The first method of a stain is its
+      primary method, used for every cross-stain result (merged tables,
+      colocalization, distances, featuremaps, group statistics); the others
+      are comparisons, with per-stain outputs only.  Stains named here are
+      segmented even if not in ``--stains_for_seg``.
+
+      Precedence: ``STAIN=`` here, then a bare method here, then the built-in
+      per-stain defaults (``seg_method_defaults`` in the config: Abeta uses
+      ``lantern``), then the built-in default (``gmm+n3k1``).  The resolved
+      methods are printed at start-up.
 
       Supported methods:
 
@@ -323,37 +340,50 @@ parse_args:
       mask at ``segmentation_level`` is that prediction upsampled.  Requires
       a GPU.
 
-      Also unlike them, it is stain-specific: it runs only on the first stain
-      from ``stains_for_plaques``.  The remaining stains in ``stains_for_seg``
-      use the other methods given here, or -- if ``lantern`` was the only one --
-      this option's own default, so they behave exactly as if it had not been
-      passed.
-    default:
-      - gmm+n3k1
+      The object method is set separately (``--object_method``); the old
+      ``+inst`` suffix is rejected.
+    metavar: SPEC
+    default: null
     nargs: '+'
 
   --object_method:
     help: >
-      How the segmentation mask is split into objects for counts, density and
-      the per-object tables (regionprops, colocalization).  Field fraction
-      comes from the mask and is the same for both.
+      How each stain's mask is split into objects for counts, density, the
+      per-object tables, colocalization and object distances.  Field
+      fraction comes from the mask and does not depend on it.  Same SPEC
+      syntax and precedence as ``--seg_method`` (``STAIN=OBJ[,OBJ...]`` or a
+      bare ``OBJ``; the first is primary).
 
-      ``cc`` – connected components (default).  Touching objects merge, so in
-      dense tissue one object can be a network of many.
+      ``components`` – connected components (built-in default,
+      ``object_method_defaults`` in the config).  Touching objects merge, so
+      in dense tissue one object can be a network of many.
 
-      ``inst`` – instances: a seeded watershed of the mask, seeded at peaks of
-      the smoothed corrected image, so touching puncta are counted
-      separately.  Outputs use ``desc-<seg_method>+inst``.  See the
-      ``instance_*`` config keys.
+      ``watershed`` – seeded watershed of the mask, seeded at peaks of the
+      smoothed bias-corrected image, so touching cells or puncta are counted
+      separately (e.g. ``Iba1=watershed``).  Adds seed position, intensity
+      and elongation columns.  Needs about twice the memory of
+      ``components``.  See the ``instance_*`` config keys.
 
-      Pass both (``--object_method cc inst``) to compare them.
-      (default: %(default)s)
-    default:
-      - cc
-    choices:
-      - cc
-      - inst
+      ``none`` – no objects: only field fraction and volume for that stain.
+    metavar: SPEC
+    default: null
     nargs: '+'
+
+  --gpu:
+    help: >
+      Whether GPU methods (e.g. ``lantern``) can be used.  ``auto`` (default)
+      checks whether this environment's torch is built with CUDA, i.e. the
+      ``gpu`` pixi environment; this reflects the environment rather than the
+      machine, so it also holds on a GPU-less submit node.  Without a GPU, a
+      GPU method that is a built-in default is replaced by its CPU fallback
+      (``gpu_seg_method_fallbacks`` in the config), and one given in
+      ``--seg_method`` is an error.  ``yes`` / ``no`` override the check.
+      (default: %(default)s)
+    choices:
+      - auto
+      - "yes"
+      - "no"
+    default: auto
 
   --lantern_config:
     help: >
@@ -1457,14 +1487,31 @@ vessel_metrics:
 # and were trained at ~plaque_iso_res um isotropic; the mask at
 # segmentation_level is that prediction upsampled, not native inference.
 plaque_seg_method: lantern
-# The LANTERN ensemble is trained on amyloid-beta only, so unlike the
-# intensity-based methods it is not applied to every stain in stains_for_seg.
-# The first of these found is the one it runs on; the remaining stains are
-# segmented exactly as they would be if --seg_method had never been passed.
-stains_for_plaques:
-  - abeta
-  - Abeta
-  - BetaAmyloid
+
+# Built-in per-stain methods (see --seg_method, --object_method). A stain not
+# listed under ``stains`` gets ``default``. Set a stain's default here as models
+# are validated for it.
+seg_method_defaults:
+  default: gmm+n3k1
+  stains:
+    abeta: lantern
+    Abeta: lantern
+    BetaAmyloid: lantern
+object_method_defaults:
+  default: components
+  stains: {}
+
+# GPU seg methods and the CPU method used instead when there is no GPU (see
+# --gpu). A GPU method from the built-in defaults falls back; one given on the
+# command line is an error. Add new GPU models here.
+gpu_seg_method_fallbacks:
+  lantern: gmm+n3k1
+
+# Signed distance transforms of these stains' primary masks are sampled at every
+# object (column <stain>_sdt, mm). The vessel stain is always included when
+# vessels are run; any other stain is opt-in, as the SDT is costly at
+# segmentation_level and saturates ~overlap_depth voxels from the mask.
+sdt_stains: []
 plaque_level: 1
 # Target inference resolution in micrometres (converted to the store's own
 # units, which zarrnii reports in mm for OME-Zarr and Imaris alike).
@@ -1538,9 +1585,31 @@ column_descriptions:
     Description: Number of segmented objects (e.g. plaques, cells) detected within the region.
     Units: objects
   volume:
-    LongName: Region volume
-    Description: Physical volume of the atlas region derived from the parcellation image.
+    LongName: Volume
+    Description: Physical volume of the atlas region (per-region tables) or of the object (object tables, nvoxels x voxel volume).
     Units: mm^3
+  objvolume:
+    LongName: Mean object volume
+    Description: Mean physical volume of the objects in the region.
+    Units: mm^3
+  seg_method:
+    LongName: Segmentation method
+    Description: Mask method (--seg_method) the object was segmented with.
+  object_method:
+    LongName: Object method
+    Description: How the mask was split into objects (--object_method), watershed or components.
+  dist:
+    LongName: Distance to nearest object
+    Description: Distance from the object centroid to the nearest centroid of an object of this stain (the nearest other object for objects of the same stain).
+    Units: mm
+  edgedist:
+    LongName: Approximate distance to nearest object surface
+    Description: Distance to the nearest object of this stain minus that object's equivalent-sphere radius (from its volume), clipped at 0.
+    Units: mm
+  sdt:
+    LongName: Signed distance to mask
+    Description: Signed distance from the object centroid to the boundary of this stain's mask (e.g. vessel walls); negative inside the mask, positive outside.
+    Units: mm
   density:
     LongName: Object density
     Description: Number of segmented objects per unit volume (count / volume).
@@ -1560,16 +1629,16 @@ column_descriptions:
       part only.
   pos_x:
     LongName: Centroid x-coordinate (subject space)
-    Description: X-axis coordinate of the object centroid in subject (image) space.
-    Units: voxels
+    Description: X-axis coordinate of the object centroid in subject physical space.
+    Units: mm
   pos_y:
     LongName: Centroid y-coordinate (subject space)
-    Description: Y-axis coordinate of the object centroid in subject (image) space.
-    Units: voxels
+    Description: Y-axis coordinate of the object centroid in subject physical space.
+    Units: mm
   pos_z:
     LongName: Centroid z-coordinate (subject space)
-    Description: Z-axis coordinate of the object centroid in subject (image) space.
-    Units: voxels
+    Description: Z-axis coordinate of the object centroid in subject physical space.
+    Units: mm
   seed_x:
     LongName: Seed x-coordinate (subject space)
     Description: X-axis coordinate of the instance's seed (the intensity peak it was grown from), --object_method inst only.
@@ -1630,12 +1699,12 @@ column_descriptions:
     Description: Stain/channel name of the second object in a colocalization pair.
   radius_a:
     LongName: Estimated radius (channel A)
-    Description: Estimated spherical radius of the first object, derived from its voxel count.
-    Units: voxels
+    Description: Equivalent-sphere radius of the first object, from its volume.
+    Units: mm
   radius_b:
     LongName: Estimated radius (channel B)
-    Description: Estimated spherical radius of the second object, derived from its voxel count.
-    Units: voxels
+    Description: Equivalent-sphere radius of the second object, from its volume.
+    Units: mm
   nvoxels_a:
     LongName: Number of voxels (channel A)
     Description: Number of voxels of the first object in a colocalization pair.
@@ -1647,7 +1716,7 @@ column_descriptions:
   distance:
     LongName: Inter-object distance
     Description: Euclidean distance between the centroids of two colocalized objects.
-    Units: voxels
+    Units: mm
   overlapratio:
     LongName: Overlap ratio
     Description: >
@@ -1656,15 +1725,15 @@ column_descriptions:
   pos_coloc_x:
     LongName: Colocalization x-coordinate (subject space)
     Description: X-axis coordinate of the midpoint between two colocalized objects in subject space.
-    Units: voxels
+    Units: mm
   pos_coloc_y:
     LongName: Colocalization y-coordinate (subject space)
     Description: Y-axis coordinate of the midpoint between two colocalized objects in subject space.
-    Units: voxels
+    Units: mm
   pos_coloc_z:
     LongName: Colocalization z-coordinate (subject space)
     Description: Z-axis coordinate of the midpoint between two colocalized objects in subject space.
-    Units: voxels
+    Units: mm
   template_coloc_x:
     LongName: Colocalization x-coordinate (template space)
     Description: X-axis coordinate of the colocalization midpoint in template space.
@@ -1692,10 +1761,3 @@ column_descriptions:
   cohensd:
     LongName: Cohen's d
     Description: Effect size (Cohen's d) expressing the standardised mean difference between the two contrast groups.
-  vesseldist:
-    LongName: Distance to vessel boundary
-    Description: >
-      Signed distance from the object centroid to the nearest vessel boundary.
-      Negative values indicate the centroid is inside a vessel; positive values indicate
-      it is outside. Vessels are defined by the CD31 immunofluorescence channel.
-    Units: voxels

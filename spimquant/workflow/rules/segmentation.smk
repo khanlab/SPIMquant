@@ -551,7 +551,7 @@ rule dog_tune_report:
         stat_blocks=config["dog_stat_blocks"],
         stat_samples_per_block=config["dog_stat_samples_per_block"],
         chunk_size=config["dog_chunk_size"],
-        seg_methods=config["seg_method"],
+        seg_methods=seg_plan.all_seg_methods(),
         s_um=config["dog_tune_s_um"],
         ratio=config["dog_tune_ratio"],
         k=config["dog_tune_k"],

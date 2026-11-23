@@ -1,7 +1,32 @@
+"""Per-region statistics of the segmentations.
+
+Per-stain tables carry the stain's methods in their names (desc-<seg method>,
+obj-<object method>) and exist for every method of the stain, primary and
+comparison. The merged table (mergedsegstats) has no method in its name: it
+holds every segmented stain from its primary methods, the colocalization and
+fibre ROI metrics, with ``<stain>+<metric>`` columns.
+"""
+
+
+def regionprops_for_roi_stats(wildcards):
+    """The objects whose per-region statistics are wanted.
+
+    Primary methods: the aggregated objects, which carry the distance columns
+    (<stain>_dist, <stain>_edgedist, <stain>_sdt), so their regional means come
+    through. Comparison methods: the stain's own objects.
+    """
+    if is_primary(wildcards.stain, wildcards.desc, wildcards.obj):
+        return rules.annotate_object_distances.output.regionprops_parquet.format(
+            **wildcards
+        )
+    return rules.transform_regionprops_to_template.output.regionprops_transformed_parquet.format(
+        **wildcards
+    )
+
 
 rule map_regionprops_to_atlas_rois:
     input:
-        regionprops_parquet=get_regionprops_parquet,
+        regionprops_parquet=regionprops_for_roi_stats,
         dseg=bids(
             root=root,
             datatype="parc",
@@ -21,6 +46,7 @@ rule map_regionprops_to_atlas_rois:
             stain="{stain}",
             level="{level}",
             desc="{desc}",
+            obj="{obj}",
             suffix="regionpropstats.tsv",
             **inputs["spim"].wildcards,
         ),
@@ -33,6 +59,7 @@ rule map_regionprops_to_atlas_rois:
                 stain="{stain}",
                 level="{level}",
                 desc="{desc}",
+                obj="{obj}",
                 suffix="countstats.tsv",
                 **inputs["spim"].wildcards,
             )
@@ -51,14 +78,7 @@ rule map_regionprops_to_atlas_rois:
 
 rule map_coloc_to_atlas_rois:
     input:
-        coloc_parquet=bids(
-            root=root,
-            datatype="tabular",
-            space="{template}",
-            desc="{desc}",
-            suffix="coloc.parquet",
-            **inputs["spim"].wildcards,
-        ),
+        coloc_parquet=rules.colocalize_regionprops.output.coloc_parquet,
         dseg=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.nii.gz"),
         label_tsv=bids(root=root, template="{template}", seg="{seg}", suffix="dseg.tsv"),
     output:
@@ -68,7 +88,6 @@ rule map_coloc_to_atlas_rois:
                 datatype="tabular",
                 seg="{seg}",
                 from_="{template}",
-                desc="{desc}",
                 suffix="colocstats.tsv",
                 **inputs["spim"].wildcards,
             )
@@ -79,7 +98,6 @@ rule map_coloc_to_atlas_rois:
                 datatype="tabular",
                 seg="{seg}",
                 from_="{template}",
-                desc="{desc}",
                 suffix="coloccountstats.tsv",
                 **inputs["spim"].wildcards,
             )
@@ -96,30 +114,26 @@ rule map_coloc_to_atlas_rois:
         "../scripts/map_atlas_to_coloc.py"
 
 
+def fieldfracstats_path(stain, desc, **kwargs):
+    """Per-region field fraction table of ``stain``'s ``desc`` mask."""
+    return bids(
+        root=root,
+        datatype="tabular",
+        seg="{seg}",
+        from_="{template}",
+        stain=stain,
+        level=config["registration_level"],
+        desc=desc,
+        suffix="fieldfracstats.tsv",
+        **inputs["spim"].wildcards,
+    )
+
+
 rule merge_into_segstats_tsv:
+    """Per-region statistics of one stain and one (seg method, object method)."""
     input:
-        regionprops_tsv=bids(
-            root=root,
-            datatype="tabular",
-            seg="{seg}",
-            from_="{template}",
-            stain="{stain}",
-            level="{level}",
-            desc="{desc}",
-            suffix="regionpropstats.tsv",
-            **inputs["spim"].wildcards,
-        ),
-        counts_tsv=bids(
-            root=root,
-            datatype="tabular",
-            seg="{seg}",
-            from_="{template}",
-            stain="{stain}",
-            level="{level}",
-            desc="{desc}",
-            suffix="countstats.tsv",
-            **inputs["spim"].wildcards,
-        ),
+        regionprops_tsv=rules.map_regionprops_to_atlas_rois.output.regionprops_tsv,
+        counts_tsv=rules.map_regionprops_to_atlas_rois.output.counts_tsv,
         fieldfrac_tsv=bids(
             root=root,
             datatype="tabular",
@@ -132,18 +146,17 @@ rule merge_into_segstats_tsv:
             **inputs["spim"].wildcards,
         ),
     output:
-        tsv=temp(
-            bids(
-                root=root,
-                datatype="tabular",
-                seg="{seg}",
-                from_="{template}",
-                stain="{stain}",
-                level="{level}",
-                desc="{desc}",
-                suffix="segstats.tsv",
-                **inputs["spim"].wildcards,
-            )
+        tsv=bids(
+            root=root,
+            datatype="tabular",
+            seg="{seg}",
+            from_="{template}",
+            stain="{stain}",
+            level="{level}",
+            desc="{desc}",
+            obj="{obj}",
+            suffix="segstats.tsv",
+            **inputs["spim"].wildcards,
         ),
     group:
         "subj_quant"
@@ -158,51 +171,18 @@ rule merge_into_segstats_tsv:
 def get_coloc_reference_fieldfrac(wildcards):
     """Fieldfrac table used only to recover ROI volume, so count becomes density.
 
-    Colocalization is cross-stain, so every stain this method segmented carries the
-    same ROI volume column and the first one is an arbitrary but stable choice.
-    Which stains a method segments depends on the method -- the plaque method covers
-    only its own stain -- so this cannot be resolved at parse time.
+    Every stain's field fraction table carries the same ROI volume column, so
+    the first stain with objects is an arbitrary but stable choice.
     """
-    stains = stains_for_desc(wildcards.desc)
-    if not stains:
-        raise ValueError(
-            f"--seg_method {wildcards.desc} segments no stains, so colocalization "
-            f"statistics cannot be computed for it"
-        )
-    return bids(
-        root=root,
-        datatype="tabular",
-        seg="{seg}",
-        from_="{template}",
-        stain=stains[0],
-        level=config["registration_level"],
-        desc="{desc}",
-        suffix="fieldfracstats.tsv",
-        **inputs["spim"].wildcards,
-    ).format(**wildcards)
+    stain = stains_with_objects[0]
+    return fieldfracstats_path(stain, seg_plan[stain].seg_method).format(**wildcards)
 
 
 rule merge_into_colocsegstats_tsv:
     """also includes fieldfracstats.tsv to obtain the volume to turn count into density"""
     input:
-        coloc_tsv=bids(
-            root=root,
-            datatype="tabular",
-            seg="{seg}",
-            from_="{template}",
-            desc="{desc}",
-            suffix="colocstats.tsv",
-            **inputs["spim"].wildcards,
-        ),
-        counts_tsv=bids(
-            root=root,
-            datatype="tabular",
-            seg="{seg}",
-            from_="{template}",
-            desc="{desc}",
-            suffix="coloccountstats.tsv",
-            **inputs["spim"].wildcards,
-        ),
+        coloc_tsv=rules.map_coloc_to_atlas_rois.output.coloc_tsv,
+        counts_tsv=rules.map_coloc_to_atlas_rois.output.counts_tsv,
         fieldfrac_tsv=get_coloc_reference_fieldfrac,
     output:
         tsv=temp(
@@ -211,7 +191,6 @@ rule merge_into_colocsegstats_tsv:
                 datatype="tabular",
                 seg="{seg}",
                 from_="{template}",
-                desc="{desc}",
                 suffix="colocsegstats.tsv",
                 **inputs["spim"].wildcards,
             )
@@ -228,45 +207,52 @@ rule merge_into_colocsegstats_tsv:
         "../scripts/merge_into_segstats_tsv.py"
 
 
-def get_coloc_tsv_input(wildcards):
-    """Colocalization table, only for methods that segment two or more stains.
+def merged_table_sources(wildcards):
+    """(prefix, table) pairs merged into mergedsegstats, in column order.
 
-    Single-stain methods (the plaque ensemble) have nothing to colocalize, so this
-    resolves to an empty list and the merge falls back to the per-stain tables.
+    Every segmented stain from its primary methods (its per-region statistics,
+    or for --object_method none just its field fraction), then the fibre ROI
+    statistics of each fibre stain (--fibres).
     """
-    if wildcards.desc not in coloc_seg_methods:
+    out = []
+    for stain in stains_for_seg:
+        p = seg_plan[stain]
+        if p.has_objects:
+            path = rules.merge_into_segstats_tsv.output.tsv.format(
+                stain=stain,
+                level=config["registration_level"],
+                desc=p.seg_method,
+                obj=p.object_method,
+                **wildcards,
+            )
+        else:
+            path = fieldfracstats_path(stain, p.seg_method).format(**wildcards)
+        out.append((stain, path))
+    for stain in stains_for_fibres:
+        out.append(
+            (
+                stain,
+                bids(
+                    root=root,
+                    datatype="tabular",
+                    seg="{seg}",
+                    from_="{template}",
+                    stain=stain,
+                    level=config["fibre_output_level"],
+                    desc="frangi",
+                    suffix="fibrestats.tsv",
+                    **inputs["spim"].wildcards,
+                ).format(**wildcards),
+            )
+        )
+    return out
+
+
+def get_coloc_tsv_input(wildcards):
+    """Colocalization table, when two or more stains have objects."""
+    if not do_coloc:
         return []
-    return bids(
-        root=root,
-        datatype="tabular",
-        seg="{seg}",
-        from_="{template}",
-        desc="{desc}",
-        suffix="colocsegstats.tsv",
-        **inputs["spim"].wildcards,
-    ).format(**wildcards)
-
-
-def get_indiv_segstats_tsvs(wildcards):
-    """Per-stain segstats tables for the stains this method actually segmented."""
-    paths = expand(
-        bids(
-            root=root,
-            datatype="tabular",
-            seg="{seg}",
-            from_="{template}",
-            stain="{stain}",
-            level=config["registration_level"],
-            desc="{desc}",
-            suffix="segstats.tsv",
-            **inputs["spim"].wildcards,
-        ),
-        stain=stains_for_desc(wildcards.desc),
-        allow_missing=True,
-    )
-    # Input functions are handed to snakemake verbatim, so the remaining wildcards
-    # have to be substituted here rather than left for the usual resolution pass.
-    return [path.format(**wildcards) for path in paths]
+    return rules.merge_into_colocsegstats_tsv.output.tsv.format(**wildcards)
 
 
 def get_coverage_tsv_input(wildcards):
@@ -277,9 +263,10 @@ def get_coverage_tsv_input(wildcards):
 
 
 rule merge_indiv_and_coloc_segstats_tsv:
+    """One per-region table of every stain, from its primary methods."""
     input:
         coloc_tsv=get_coloc_tsv_input,
-        indiv_tsvs=get_indiv_segstats_tsvs,
+        indiv_tsvs=lambda wildcards: [p for _, p in merged_table_sources(wildcards)],
         coverage_tsv=get_coverage_tsv_input,
     output:
         merged_tsv=bids(
@@ -287,8 +274,6 @@ rule merge_indiv_and_coloc_segstats_tsv:
             datatype="tabular",
             seg="{seg}",
             from_="{template}",
-            # desc-frangi (fibre ROI stats) is made by merge_fibre_roi_stats
-            desc="{desc,(?!frangi_)[^_/]+}",
             suffix="mergedsegstats.tsv",
             **inputs["spim"].wildcards,
         ),
@@ -299,7 +284,7 @@ rule merge_indiv_and_coloc_segstats_tsv:
         mem_mb=1500,
         runtime=10,
     params:
-        # must stay aligned with indiv_tsvs, which is per-method
-        stains=lambda wildcards: stains_for_desc(wildcards.desc),
+        # aligned with indiv_tsvs
+        stains=lambda wildcards: [s for s, _ in merged_table_sources(wildcards)],
     script:
         "../scripts/merge_indiv_and_coloc_segstats_tsv.py"

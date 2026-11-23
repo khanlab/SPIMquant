@@ -381,7 +381,7 @@ rule qc_zprofile:
 rule qc_objectstats:
     """Object-level statistics QC.
 
-    Loads the aggregated region-properties parquet (all stains combined) and
+    Loads the stain's objects (template-space region-properties parquet) and
     plots volume distribution, log-volume distribution, equivalent spherical
     radius distribution, and a summary-statistics panel for the stain
     specified by the ``{stain}`` wildcard.
@@ -390,7 +390,9 @@ rule qc_objectstats:
         regionprops=bids(
             root=root,
             datatype="tabular",
+            stain="{stain}",
             desc="{desc}",
+            obj="{obj}",
             space=config["template"],
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
@@ -401,6 +403,7 @@ rule qc_objectstats:
             datatype="qc",
             stain="{stain}",
             desc="{desc}",
+            obj="{obj}",
             suffix="objectstats.png",
             **inputs["spim"].wildcards,
         ),
@@ -626,7 +629,6 @@ rule qc_roi_summary:
             datatype="tabular",
             seg="{seg}",
             from_="{template}",
-            desc="{desc}",
             suffix="mergedsegstats.tsv",
             **inputs["spim"].wildcards,
         ),
@@ -642,7 +644,6 @@ rule qc_roi_summary:
             datatype="qc",
             seg="{seg}",
             from_="{template}",
-            desc="{desc}",
             suffix="roisummary.png",
             **inputs["spim"].wildcards,
         ),
@@ -666,7 +667,7 @@ rule qc_stain_instance_gif:
     one with a randomised frame order and one sorted by ascending equivalent
     radius.
 
-    Inputs are the aggregated (all-stain) regionprops parquet in template space
+    Inputs are the stain's regionprops parquet in template space
     (which retains subject-space ``pos_x/y/z`` columns) together with the atlas
     parcellation for atlas-label lookup.
     """
@@ -676,7 +677,9 @@ rule qc_stain_instance_gif:
         instance_parquet=bids(
             root=root,
             datatype="tabular",
+            stain="{stain}",
             desc="{desc}",
+            obj="{obj}",
             space="{template}",
             suffix="regionprops.parquet",
             **inputs["spim"].wildcards,
@@ -704,6 +707,7 @@ rule qc_stain_instance_gif:
             from_="{template}",
             stain="{stain}",
             desc="{desc}",
+            obj="{obj}",
             suffix="instancerandom.gif",
             **inputs["spim"].wildcards,
         ),
@@ -714,6 +718,7 @@ rule qc_stain_instance_gif:
             from_="{template}",
             stain="{stain}",
             desc="{desc}",
+            obj="{obj}",
             suffix="instancesorted.gif",
             **inputs["spim"].wildcards,
         ),
@@ -744,14 +749,7 @@ rule qc_coloc_instance_gif:
     input:
         spim=spim_input,
         spim_json=spim_json_input,
-        instance_parquet=bids(
-            root=root,
-            datatype="tabular",
-            desc="{desc}",
-            space="{template}",
-            suffix="coloc.parquet",
-            **inputs["spim"].wildcards,
-        ),
+        instance_parquet=rules.colocalize_regionprops.output.coloc_parquet,
         dseg_nii=bids(
             root=root,
             datatype="parc",
@@ -773,7 +771,6 @@ rule qc_coloc_instance_gif:
             datatype="qc",
             seg="{seg}",
             from_="{template}",
-            desc="{desc}",
             suffix="colocinstancerandom.gif",
             **inputs["spim"].wildcards,
         ),
@@ -782,7 +779,6 @@ rule qc_coloc_instance_gif:
             datatype="qc",
             seg="{seg}",
             from_="{template}",
-            desc="{desc}",
             suffix="colocinstancesorted.gif",
             **inputs["spim"].wildcards,
         ),

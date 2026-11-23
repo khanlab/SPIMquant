@@ -293,7 +293,7 @@ def main():
     seed = int(snakemake.params.get("seed", 42))
 
     stain_wc = getattr(snakemake.wildcards, "stain", instance_type)
-    desc_wc = snakemake.wildcards.desc
+    desc_wc = getattr(snakemake.wildcards, "desc", "primary")
     subject_wc = snakemake.wildcards.subject
 
     # ------------------------------------------------------------------

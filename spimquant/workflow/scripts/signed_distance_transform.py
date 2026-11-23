@@ -26,7 +26,11 @@ from dask.diagnostics import ProgressBar
 from dask_setup import get_dask_client
 
 if __name__ == "__main__":
-    with get_dask_client(snakemake.config["dask_scheduler"], snakemake.threads):
+    with get_dask_client(
+        snakemake.config["dask_scheduler"],
+        snakemake.threads,
+        mem_mb=snakemake.resources.mem_mb,
+    ):
 
         overlap_depth = snakemake.params.overlap_depth
 

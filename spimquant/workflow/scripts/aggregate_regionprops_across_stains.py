@@ -1,22 +1,12 @@
-"""Aggregate transformed regionprops across stains.
+"""Aggregate the template-space objects of several stains into one table.
 
-This script combines transformed regionprops from multiple stains into a single
-table, adding a 'stain' column to identify the source of each row.
+Each input already carries ``stain``, ``seg_method`` and ``object_method``
+columns (added by transform_regionprops_to_template.py), so this only
+concatenates them.
 """
 
 import pandas as pd
 
-# Load all the transformed regionprops parquet files
-dfs = []
-for stain, parquet_file in zip(
-    snakemake.params.stains, snakemake.input.regionprops_parquets
-):
-    df = pd.read_parquet(parquet_file)
-    df["stain"] = stain
-    dfs.append(df)
-
-# Concatenate all dataframes
-df_combined = pd.concat(dfs, ignore_index=True)
-
-# Save the aggregated output
+dfs = [pd.read_parquet(f) for f in snakemake.input.regionprops_parquets]
+df_combined = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 df_combined.to_parquet(snakemake.output.regionprops_aggregated_parquet, index=False)

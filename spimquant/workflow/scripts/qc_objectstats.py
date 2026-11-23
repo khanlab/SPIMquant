@@ -20,7 +20,7 @@ import pandas as pd
 
 def main():
     stain = snakemake.wildcards.stain
-    desc = snakemake.wildcards.desc
+    desc = f"{snakemake.wildcards.desc}, {snakemake.wildcards.obj}"
     subject = snakemake.wildcards.subject
 
     df = pd.read_parquet(snakemake.input.regionprops)

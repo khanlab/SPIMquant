@@ -89,5 +89,7 @@ jobs:
       - name: Dry-run Test with job groups (slurm executor), two seg stains + coloc
         run: |
           ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out participant -np --executor slurm -j 1 --sample_staining AutoF abeta Iba1
-          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out participant -np --executor slurm -j 1 --sample_staining AutoF abeta Iba1 CD31 --object_method cc inst --qc_instance_seg
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out participant -np --executor slurm -j 1 --sample_staining AutoF abeta Iba1 CD31 --object_method watershed,components --qc_instance_seg
+          # LANTERN for Abeta (built-in default) needs --gpu yes outside the gpu env
+          ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds test_out participant -np --executor slurm -j 1 --sample_staining AutoF abeta Iba1 CD31 --gpu yes --seg_method abeta=lantern,gmm+n3k1 --object_method Iba1=watershed
           ./spimquant/run.py $GITHUB_WORKSPACE/tests/bids_ds_withmri test_out participant -np --executor slurm -j 1 --register-to-mri

@@ -394,10 +394,15 @@ def main():
             n_workers=snakemake.threads,
         )
 
+    # Scale to 0/100 as uint8 BEFORE upsampling: `bool * 100` promotes to
+    # int64, which made every upsampled block 8x larger (8 GB per 1024^3 block,
+    # one per thread) and OOM-killed plaque-dense samples. Halving the blocks
+    # first keeps each upsampled block at the source's 512^3 (128 MB).
+    plaque = plaque.rechunk(256).astype(np.uint8) * np.uint8(100)
     upsampled = upsample_nearest(plaque[np.newaxis], ref.data.shape)
 
     znimg_mask = ref.copy()
-    znimg_mask.data = (upsampled * 100).astype(np.uint8)
+    znimg_mask.data = upsampled
 
     with ProgressBar():
         znimg_mask.to_ome_zarr(

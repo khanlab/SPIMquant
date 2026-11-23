@@ -41,7 +41,7 @@ def _bar_plot(ax, names, values, title, xlabel, color="steelblue"):
 
 
 def main():
-    desc = snakemake.wildcards.desc
+    desc = getattr(snakemake.wildcards, "desc", "primary methods")
     seg = snakemake.wildcards.seg
     template = snakemake.wildcards.template
     subject = snakemake.wildcards.subject

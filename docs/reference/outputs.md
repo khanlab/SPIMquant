@@ -6,6 +6,8 @@ This page describes every output type produced by SPIMquant, what it contains, a
 
 All outputs follow [BIDS Derivatives](https://bids-specification.readthedocs.io/en/stable/05-derivatives/01-introduction.html) naming conventions and are written into the `output/spimquant/` root by default.
 
+Per-stain files carry the stain's methods: `desc-<seg_method>` (the mask method, e.g. `lantern`, `gmm+n3k1`) and, for object outputs, `obj-<object_method>` (`watershed` or `components`).  Results that combine stains (merged tables, the all-object table, colocalization, featuremaps, group outputs) use each stain's primary methods and carry neither; see [Segmentation Methods](../howto/segmentation.md#choosing-methods-per-stain).
+
 ```
 output/spimquant/
 ├── sub-<label>/
@@ -19,17 +21,19 @@ output/spimquant/
 │   │   └── *_stain-<stain>_seg-<seg>_from-<template>_level-<N>_patches/
 │   ├── parc/                              # Atlas parcellations in subject space
 │   │   └── *_seg-<seg>_level-<N>_from-<template>_dseg.nii.gz
-│   ├── seg/                               # Segmentation results
-│   │   ├── *_stain-<stain>_level-<N>_desc-<desc>_mask.ozx
-│   │   ├── *_stain-<stain>_level-<N>_desc-<desc>_fieldfrac.nii.gz
-│   │   └── *_stain-<stain>_level-<N>_desc-<desc>_counts.nii.gz
-│   ├── tabular/                           # Per-region statistics
-│   │   ├── *_seg-<seg>_from-<template>_stain-<stain>_level-<N>_desc-<desc>_regionpropstats.tsv
-│   │   ├── *_seg-<seg>_from-<template>_stain-<stain>_level-<N>_desc-<desc>_countstats.tsv
-│   │   ├── *_seg-<seg>_from-<template>_desc-<desc>_mergedsegstats.tsv
-│   │   └── *_stain-<stain>_desc-<desc>_regionprops.parquet
+│   ├── seg/                               # Segmentation results (per stain and method)
+│   │   ├── *_stain-<stain>_level-<N>_desc-<seg_method>_mask.ozx
+│   │   ├── *_stain-<stain>_level-<N>_desc-<seg_method>_fieldfrac.nii.gz
+│   │   ├── *_stain-<stain>_level-<N>_obj-<object_method>_desc-<seg_method>_counts.nii.gz
+│   │   └── *_space-<template>_coloccounts.nii.gz
+│   ├── tabular/
+│   │   ├── *_stain-<stain>_seg-<seg>_from-<template>_level-<N>_obj-<object_method>_desc-<seg_method>_regionpropstats.tsv
+│   │   ├── *_stain-<stain>_seg-<seg>_from-<template>_level-<N>_obj-<object_method>_desc-<seg_method>_segstats.tsv
+│   │   ├── *_seg-<seg>_from-<template>_mergedsegstats.tsv      # all stains, primary methods
+│   │   ├── *_space-<template>_regionprops.parquet              # all objects, with distances
+│   │   └── *_space-<template>_coloc.parquet
 │   ├── featuremap/                        # Per-region feature maps in template space
-│   │   └── *_seg-<seg>_space-<template>_desc-<desc>_<suffix>.nii.gz
+│   │   └── *_seg-<seg>_space-<template>_<stain>+<metric>.nii.gz
 │   └── xfm/                              # Registration transforms
 │       ├── *_from-subject_to-<template>_xfm.txt
 │       ├── *_from-subject_to-<template>_xfm.nii.gz    # link to the selected desc-<method> warp
@@ -38,10 +42,10 @@ output/spimquant/
 │       ├── *_from-<template>_to-subject_desc-<method>_xfm.nii.gz
 │       └── *_stain-<stain>_from-SPIM_to-<template>_desc-<method>_regqc.html
 └── group/                                 # Group-level outputs (no subject subdirectory)
-    ├── *_seg-<seg>_from-<template>_desc-<desc>_allsubjects.tsv
-    ├── *_seg-<seg>_from-<template>_stain-<stain>_level-<N>_desc-<desc>_allsubjects_regionpropstats.tsv
-    ├── *_seg-<seg>_from-<template>_desc-<desc>_groupstats.tsv
-    └── *_seg-<seg>_from-<template>_desc-<desc>_groupstats.png
+    ├── *_seg-<seg>_from-<template>_allsubjects.tsv
+    ├── *_stain-<stain>_seg-<seg>_from-<template>_level-<N>_obj-<object_method>_desc-<seg_method>_allsubjects_regionpropstats.tsv
+    ├── *_seg-<seg>_from-<template>_contrast-<contrast>_groupstats.tsv
+    └── *_seg-<seg>_from-<template>_contrast-<contrast>_groupstats.png
 ```
 
 ---
@@ -115,20 +119,20 @@ This image is used downstream to attribute detected objects and field-fraction v
 
 ### Segmentation Mask (`seg/`)
 
-**Filename pattern:** `*_stain-<stain>_level-<N>_desc-<desc>_mask.ozx`
+**Filename pattern:** `*_stain-<stain>_level-<N>_desc-<seg_method>_mask.ozx`
 
 Full-resolution binary segmentation mask stored in compressed OME-Zarr format (`.ozx` extension).  Voxels with value `100` are classified as positive (pathology present); `0` means negative.
 
 !!! note "Scale convention"
     Masks are stored on a 0–100 scale (not 0–1) so that any spatial downsampling of the mask directly yields a *percentage* occupancy (field fraction 0–100 %).
 
-The `<desc>` entity encodes which correction method and segmentation algorithm were used (e.g. `desc-thresholdN4`).
+The `desc` entity is the mask method (e.g. `desc-gmm+n3k1`, `desc-lantern`).
 
 ---
 
 ### Field-Fraction Map (`seg/`)
 
-**Filename pattern:** `*_stain-<stain>_level-<N>_desc-<desc>_fieldfrac.nii.gz`
+**Filename pattern:** `*_stain-<stain>_level-<N>_desc-<seg_method>_fieldfrac.nii.gz`
 
 A downsampled NIfTI image where each voxel value (0–100) represents the **percentage of high-resolution voxels within that coarser voxel that are positive** according to the segmentation mask.  This converts the binary high-resolution mask into a smooth density map that can be registered to template space.
 
@@ -138,51 +142,53 @@ Field fraction is the primary continuous measure reported per atlas region in th
 
 ### Object Count Map (`seg/`)
 
-**Filename pattern:** `*_stain-<stain>_level-<N>_desc-<desc>_counts.nii.gz`
+**Filename pattern:** `*_stain-<stain>_level-<N>_obj-<object_method>_desc-<seg_method>_counts.nii.gz`
 
 A downsampled NIfTI image where each voxel value is the **number of detected objects** whose centroid falls within that voxel.  Provides a spatial density map of individual pathological objects.
 
 ---
 
-### Region-Properties Statistics Table (`tabular/`)
+### Per-Object Region Table (`tabular/`)
 
-**Filename pattern:** `*_seg-<seg>_from-<template>_stain-<stain>_level-<N>_desc-<desc>_regionpropstats.tsv`
+**Filename pattern:** `*_stain-<stain>_seg-<seg>_from-<template>_level-<N>_obj-<object_method>_desc-<seg_method>_regionpropstats.tsv`
 
-A TSV file with one row per atlas region containing per-object summary statistics:
-- Mean, median, and standard deviation of object volume
-- Mean, median, and standard deviation of object intensity
-- Total object count per region
-- Region label index and name (joined from the atlas label TSV)
+One row **per object** of the stain, with its properties and the atlas region it falls in (`index`, `name`), looked up in subject space.  Written for every method of the stain, primary and comparison.
 
 ---
 
-### Count Statistics Table (`tabular/`)
+### Per-Stain Region Statistics (`tabular/`)
 
-**Filename pattern:** `*_seg-<seg>_from-<template>_stain-<stain>_level-<N>_desc-<desc>_countstats.tsv`
+**Filename pattern:** `*_stain-<stain>_seg-<seg>_from-<template>_level-<N>_obj-<object_method>_desc-<seg_method>_segstats.tsv`
 
-Simpler table with one row per atlas region reporting the raw count of detected objects mapped to that region.
+One row per atlas region for one stain and one (seg method, object method): field fraction, count, volume, density, summed voxels, and the region means of the object properties and distances.  Written for every method of the stain, so comparison methods can be compared with the primary.
 
 ---
 
 ### Merged Segmentation Statistics Table (`tabular/`)
 
-**Filename pattern:** `*_seg-<seg>_from-<template>_desc-<desc>_mergedsegstats.tsv`
+**Filename pattern:** `*_seg-<seg>_from-<template>_mergedsegstats.tsv`
 
-The primary per-subject per-region statistics file, aggregating metrics across all configured stains.  Column names follow the pattern `<stain>+<metric>` (e.g. `abeta+fieldfrac_mean`, `Iba1+count`).  This is the file consumed by the group-level statistical analysis.
+The primary per-subject per-region statistics file: every segmented stain from its primary methods, plus colocalization (`coloc+`) and fibre ROI metrics (`--fibres`).  Column names follow the pattern `<stain>+<metric>` (e.g. `Abeta+fieldfrac`, `Iba1+density`, `Iba1+Abeta_edgedist`).  This is the file consumed by the group-level statistical analysis.
 
 ---
 
-### Region-Properties Parquet (`tabular/`)
+### All-Object Table (`tabular/`)
 
-**Filename pattern:** `*_stain-<stain>_desc-<desc>_regionprops.parquet`
+**Filename pattern:** `*_space-<template>_regionprops.parquet`
 
-Per-object (not per-region) table in Apache Parquet format containing every detected object and its individual properties (volume, centroid, mean intensity, etc.).  Parquet is used for efficiency — these tables can contain millions of rows for datasets with large numbers of small objects.
+One row per object of every stain with objects, from each stain's primary methods.  Columns: `stain`, `seg_method`, `object_method`, subject-space centroid `pos_x/y/z` (mm), template-space centroid `template_x/y/z` (mm), `nvoxels`, `volume` (mm³), the `watershed` columns where applicable, and distances in mm (see [Distances between objects](../howto/segmentation.md#distances-between-objects)): `<stain>_dist` and `<stain>_edgedist` for every stain with objects, and `<vessel stain>_sdt` when vessels are run.
+
+### Colocalization Table (`tabular/`)
+
+**Filename pattern:** `*_space-<template>_coloc.parquet`
+
+Pairs of overlapping objects of two different stains, for every pair of stains with objects, whatever their methods.
 
 ---
 
 ### Feature Map in Template Space (`featuremap/`)
 
-**Filename pattern:** `*_seg-<seg>_space-<template>_desc-<desc>_<suffix>.nii.gz`
+**Filename pattern:** `*_seg-<seg>_space-<template>_<stain>+<metric>.nii.gz`
 
 A volumetric NIfTI where each brain region is painted with a scalar value derived from the tabular statistics (e.g. mean field fraction, object count density).  The `<suffix>` encodes the metric name.  These maps are in template space, so any atlas overlay or group comparison is straightforward in a neuroimaging viewer (FSLeyes, ITK-SNAP, etc.).
 
@@ -220,19 +226,19 @@ Group-level outputs are produced when running `analysis_level group` and are sto
 
 ### Merged Subject Table (`group/`)
 
-**Filename pattern:** `*_seg-<seg>_from-<template>_desc-<desc>_allsubjects.tsv`
+**Filename pattern:** `*_seg-<seg>_from-<template>_allsubjects.tsv`
 
 One row per subject × brain region containing the merged per-region metrics used for downstream group analysis, with participant metadata from `participants.tsv` joined onto every row.
 
 ### Merged Region-Properties Subject Table (`group/`)
 
-**Filename pattern:** `*_seg-<seg>_from-<template>_stain-<stain>_level-<N>_desc-<desc>_allsubjects_regionpropstats.tsv`
+**Filename pattern:** `*_stain-<stain>_seg-<seg>_from-<template>_level-<N>_obj-<object_method>_desc-<seg_method>_allsubjects_regionpropstats.tsv`
 
 One row per subject × brain region containing the per-stain region-property summary statistics carried forward from the participant-level `regionpropstats.tsv` files. These merged tables retain atlas `index` / `name` labels and add participant metadata columns, making them useful for downstream QC and custom analysis.
 
 ### Group Statistics Table (`group/`)
 
-**Filename pattern:** `*_seg-<seg>_from-<template>_desc-<desc>_groupstats.tsv`
+**Filename pattern:** `*_seg-<seg>_from-<template>_contrast-<contrast>_groupstats.tsv`
 
 One row per brain region containing the outcome of statistical tests comparing the two groups defined by `contrast_column` and `contrast_values` in the config.  Columns include:
 - `region` — region label name
@@ -243,7 +249,7 @@ One row per brain region containing the outcome of statistical tests comparing t
 
 ### Group Statistics Heatmap (`group/`)
 
-**Filename pattern:** `*_seg-<seg>_from-<template>_desc-<desc>_groupstats.png`
+**Filename pattern:** `*_seg-<seg>_from-<template>_contrast-<contrast>_groupstats.png`
 
 Annotated heatmap visualising the per-region statistical results.  Rows are brain regions, columns are stain-metric combinations.  Colour encodes effect size; significance markers (stars) indicate FDR-corrected p < 0.05.
 
