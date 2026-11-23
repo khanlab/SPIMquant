@@ -73,7 +73,7 @@ rule signed_distance_transform:
         ),
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:
-        mem_mb=scaled_mem_mb(96000, 75),
+        mem_mb=scaled_mem_mb(200000, 75),
         disk_mb=2097152,
         runtime=scaled_runtime(30, 0.5),
     params:

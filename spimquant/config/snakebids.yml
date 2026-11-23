@@ -190,6 +190,11 @@ parse_args:
     action: store_true
     default: False
 
+  --vessel_graph:
+    help: "Also build the vessel skeleton graph (skeleton, graph/nodes/edges parquet tables); experimental, not yet validated (default: %(default)s)"
+    action: store_true
+    default: False
+
   --fibres:
     help: >
       Run fibre orientation analysis (multiscale Frangi filter, orientation
