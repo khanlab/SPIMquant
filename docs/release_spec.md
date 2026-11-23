@@ -22,6 +22,37 @@ listed in [Changes needed in SPIMquant](#changes-needed-in-spimquant).
 
 ---
 
+## Release levels
+
+| Level | Made by | When | Contents |
+| --- | --- | --- | --- |
+| **Participant release** | `release` target at the participant level, one subject (and session) per run | On ingestion into MIND, or by any participant-level run | Everything about one subject: tables, view copies, sidecars, provenance. Nothing that needs other subjects. |
+| **Group release** | `release` target at the group level, from an aggregation manifest | Later, over participant releases selected across datasets or projects | Aggregated tables, group maps, covariates, the release manifest (explorer entry point, DOI). |
+
+**Participant releases are the unit.** MIND runs SPIMquant on each subject as it is
+ingested, so most participant releases are made one subject at a time and never have
+group-level outputs or metadata of their own. Group releases (and group analysis) are
+built afterwards by aggregating participant releases with an
+[aggregation manifest](#aggregation-manifest-group-manifest), usually the ingestion
+releases stored in MIND. So:
+
+- A participant release is complete on its own: it depends on no other subject, no
+  dataset-level table (e.g. `participants.tsv`) and no group-level output.
+- **Covariates are not part of a participant release.** They come from the dataset's
+  `participants.tsv` (or the MIND catalog) when an aggregation manifest is built.
+- **QC status is not part of a participant release** either: it is recorded in the
+  MIND catalog after review, and read when a group release is built.
+- Participant releases from separate runs land in the same derivative dataset in MIND.
+  Their top-level files must therefore be identical between runs with the same pipeline
+  version and template: `dataset_description.json` holds no run-specific values (those
+  go in each participant's provenance sidecar), and the label tables are the template's
+  files, checked by their sha256. A run whose top-level files differ from the dataset's
+  goes into a new derivative dataset.
+- Whether a participant release was made alone or in a multi-subject run makes no
+  difference to its files.
+
+---
+
 ## Conventions
 
 | Item | Rule |
@@ -221,13 +252,15 @@ the primaries. Stains can use different methods and still be compared.
 ### Layout
 
 The release is a BIDS-derivative dataset of its own, written under `<output_dir>/release/`.
+A run of one subject writes one subject directory; a run of many writes one each, with
+the same files.
 Paths below are relative to that root; `<ent>` is a scan's entity prefix
 (`sub-01_ses-01_sample-brain_acq-1x`, without `stain-`). Each scan of the subject
 (reference and additional) has the per-scan files below.
 
 ```
 release/
-├── dataset_description.json              # DatasetType: derivative, GeneratedBy: spimquant
+├── dataset_description.json              # DatasetType: derivative, GeneratedBy: spimquant (no run-specific values)
 ├── tpl-ABAv3/
 │   ├── tpl-ABAv3_seg-<seg>_dseg.tsv      # label tables used by this release
 │   └── tpl-ABAv3_seg-<seg>_dseg.json
@@ -432,7 +465,16 @@ derivative.
     "Source": "https://zenodo.org/records/18906782",
     "LabelTables": {"all": "sha256:<hex>", "coarse": "sha256:<hex>"}
   },
-  "Registration": {"Method": "<desc of the selected warp>", "Level": 5, "Stain": "PI"},
+  "Registration": {"Method": "<desc of the selected warp>", "Level": 5, "Stain": "PI",
+                   "Orientation": "<--orientation>", "TemplateCrop": null},
+  "Reused": [
+    {"Outputs": ["brainmask", "transforms"],
+     "From": "mind://<dataset>/derivatives/spimquant_reg",
+     "Pipeline": {"Name": "spimquant", "Version": "0.10.2", "Commit": "<sha>",
+                  "SnakebidsRunId": "<run id of the prior dataset>"},
+     "ConfigHash": "sha256:<hex>",
+     "RegQC": "qc/<ent>_stain-<stain>_level-<N>_space-ABAv3_regqc.html"}
+  ],
   "Segmentation": [
     {"Stain": "Abeta", "SegMethod": "lantern", "ObjectMethod": "components", "Primary": true,
      "Source": "default", "Model": "<lantern_config>", "Level": 0},
@@ -470,7 +512,29 @@ derivative.
 | `Scans` | One entry per scan in the release: its role, entities, stains and input. An additional scan names its reference scan's `acq` and its registration to it (`--aux_reg_method`, `--aux_reg_init`, `--aux_reg_stains`) with the QC report. |
 | `Scans[].URI` | The input path or `mind://` URI as given to SPIMquant. |
 | `Scans[].ContentFingerprint` | Left null by SPIMquant. The fingerprint of the level-0 data is computed by `mind_client` (from the OME-Zarr or the `.ims`) and filled in on upload. |
+| `Registration` | How the subject was registered to the template, including the settings that change the result without changing file names (`--orientation`, `--template_crop`, `--sloppy`). |
+| `Reused` | Empty unless outputs came from a prior dataset (`--reuse_derivatives`). One entry per prior dataset: which outputs, where from, and the prior run's pipeline version, commit, run id and config hash, read from that dataset's `code/snakebids/runs/`. `Pipeline` and `ConfigHash` above describe the run that made the release. |
 | `Files` | Every file in the participant release except this sidecar, with size and sha256, so the upload can be verified. |
+
+### Reused outputs (`--reuse_derivatives`)
+
+Reusing outputs (e.g. brain masks and registrations) from a prior SPIMquant dataset is a
+way to split work between runs; it does not change what a release is. The run that
+makes the release:
+
+- copies reused files into the release as real files, never symlinks (even with
+  `--reuse_symlink`), so the release stays the complete upload set;
+- includes the prior dataset's registration QC report, since SPIMquant does not make
+  one for reused transforms, so every participant release has one;
+- records the prior run in `Reused`, so the provenance names every run whose outputs
+  are in the release;
+- checks the settings SPIMquant does not check when reusing (`--orientation`,
+  `--template_crop`, `--sloppy`) against the prior run's config, and refuses to write a
+  release if they differ.
+
+Release consumers treat a release with reused outputs like any other; the compatibility
+check of the aggregation manifest compares the registration settings in `Registration`,
+which are the same whether the registration was reused or not.
 
 ---
 
@@ -478,7 +542,9 @@ derivative.
 
 Written by the group level under `release/group/`. It aggregates participant releases
 (local or `mind://`) listed in the aggregation manifest, or found under `root` when no
-manifest is given.
+manifest is given. Its inputs are usually the ingestion-time participant releases in
+MIND, possibly from several datasets; it adds the covariates and QC status that
+participant releases leave out.
 
 ```
 release/
@@ -674,7 +740,8 @@ sub-03		../runB/release/sub-03	APP	30	F
   - **fail** if `Template.Name`, any label-table sha256, the primary
     (stain, seg method, object method) entries, or the major `SchemaVersion` differ
     between rows;
-  - **warn** if `Pipeline.Version` or `ConfigHash` differ.
+  - **warn** if `Pipeline.Version` or `ConfigHash` differ, or if `Registration`
+    differs (method, level or orientation), including through `Reused`.
 - A participant release missing a table that the requested group outputs need is an
   error naming the row.
 
@@ -720,6 +787,8 @@ checks on upload, for SPIM and MRI derivatives alike.
 | Provenance sidecar | Run provenance in `code/snakebids/runs/`; method plan printed at start-up | Write `<ent>_provenance.json` per participant, including the method plan |
 | View copies | Template-space OME-Zarr at `--template_spim_res`, not encoded for viewing; no subject-space copies | OME-Zarr view copies (subject and template space, masks, labels) with the view encoding and the frames of [Coordinate systems](#coordinate-systems) |
 | Scans | `--aux_spim` outputs named with `acq-`; group outputs per acquisition | `acq` and `scan_role` columns; `Scans` in the provenance sidecar; the additional scan's transform as a 4×4 affine JSON |
+| Single-subject releases | Each run writes its own `dataset_description.json` with run-specific values (snakebids records the run in it) | `dataset_description.json` without run-specific values, identical between runs of one pipeline version and template |
+| Reused outputs | `--reuse_symlink` links files; no registration QC report for reused transforms; prior run not recorded | Real files in the release, the prior dataset's QC report copied, `Reused` in provenance, unchecked settings compared |
 | Sample and acquisition metadata | In the input BIDS sidecars, not carried to outputs | Copy each scan's `SPIM.json`; validate the per-channel lists. SPIMpack adds the extension fields (`SampleFluorophore`, `ExcitationWavelength`, `EmissionWavelength`, `LaserPower`, `ExposureTime`) |
 | Release tree and manifest | None | `release/` layout, label tables, `release_manifest.json` |
 
