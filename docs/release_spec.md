@@ -32,7 +32,10 @@ listed in [Changes needed in SPIMquant](#changes-needed-in-spimquant).
 | Released parcellations | Regional tables cover the template's `default_segs` (`all`, `coarse`, `mid`, `fine` for ABAv3). |
 | Units | Coordinates and distances in **mm**; volumes in **mm³**; densities in **objects/mm³**; field fraction in **percent (0–100)**; intensities in arbitrary units. Units are written in the table (`units` column) or in the JSON sidecar, never assumed. |
 | Subject key | `participant_id` (`sub-<label>`) and `session_id` (`ses-<label>`, or null when the dataset has no sessions). Every table carries both, so tables from many subjects concatenate without joins. |
-| Other BIDS entities | `sample`, `acq` and similar appear in filenames and in the provenance sidecar. One release holds one acquisition per subject and session. |
+| Scans | A participant release holds every scan of a subject and session: one **reference** scan and any **additional** scans (`--aux_spim`, e.g. a zoomed-in field of view), told apart by `acq-`. Every table carries `acq` and `scan_role` (`reference` or `additional`); file names carry `acq-` as usual. See [Scans](#scans). |
+| Other BIDS entities | `sample` and similar appear in file names and in the provenance sidecar. |
+| Coordinates | Every image and coordinate column states its coordinate system; view copies, NIfTI files and table coordinates of the same space agree. See [Coordinate systems](#coordinate-systems). |
+| Sample and acquisition metadata | Antibodies, fluorophores, channel optics, microscope and sample preparation, per scan. See [Sample and acquisition metadata](#sample-and-acquisition-metadata). |
 | Stain / channel | The stain name as in the BIDS `stain-` entity (e.g. `Abeta`, `Iba1`, `CD31`). Tables use the generic column name `channel` so SPIM and MRI rows share a schema; for SPIM rows `channel` is the stain. |
 | Segmentation method | Two columns in every table: `seg_method` (mask method, e.g. `lantern`, `otsu+k3i2`) and `object_method` (`components`, `watershed`). Per-stain files such as masks carry them in the file name (`desc-`, `obj-`); results and release files carry neither. See [Segmentation methods per stain](#segmentation-methods-per-stain). |
 | Tables | Parquet (zstd compression) for everything the explorer reads. TSV is kept only where SPIMquant already writes it for users. Every table has a JSON sidecar describing its columns (see `create_json_sidecar.py`). |
@@ -51,6 +54,88 @@ The design case is **Abeta + Iba1 + CD31**:
 
 Abeta and Iba1 objects are colocalized with each other even though they use different
 methods.
+
+---
+
+## Scans
+
+A sample can be imaged more than once, e.g. a whole brain at 1x and a 12x field of view
+of a region. SPIMquant registers the **reference** scan to the template, and each
+**additional** scan (`--aux_spim`) to the reference scan; the additional scan gets atlas
+labels and template coordinates through it.
+
+- Both kinds of scan are in the same participant release, with their own tables, view
+  copies and sidecars, named with their `acq-` entity.
+- Tables carry `acq` (null when the dataset has no `acq-` entity) and `scan_role`.
+- The regional table of an additional scan has the `coverage` metric: the fraction of
+  each region (as labelled in the reference scan) inside its field of view. Volumes,
+  counts and densities of an additional scan are over the covered part only.
+- A subject's scans are **never pooled**: group tables, group statistics and the
+  explorer keep each acquisition separate, as SPIMquant's group level does today, so a
+  subject never counts twice. Group statistics of additional scans drop regions they
+  cover less than `--aux_min_coverage` of.
+- An additional scan's view copy comes with its transform to the reference scan, so a
+  viewer can place the zoomed field of view inside the reference volume (see
+  [Coordinate systems](#coordinate-systems)).
+
+---
+
+## Coordinate systems
+
+Overlays only line up if every image and every coordinate column of a space use the
+same frame. OME-Zarr 0.5 transforms hold only a per-axis scale and translation (no
+rotation or flip; general transforms are still an open OME-Zarr proposal), while NIfTI
+affines can hold any affine. So the release fixes these rules:
+
+| Space | Frame | Images | Coordinate columns |
+| --- | --- | --- | --- |
+| Template (`space-ABAv3`) | ABAv3 world coordinates in mm, as defined by the template's NIfTI affine | NIfTI as SPIMquant writes them; OME-Zarr view copies on the same grid, axes `z`, `y`, `x`, with `scale` and `translation` reproducing the NIfTI affine | `template_x`, `template_y`, `template_z` |
+| Subject (each scan) | The scan's physical frame in mm, as zarrnii reads it (with the input's orientation applied) | OME-Zarr view copies with the same `scale` and `translation`; anatomical orientation in the `xyz_orientation` attribute | `pos_x`, `pos_y`, `pos_z` |
+
+- **Axis-aligned only.** A frame that needs a flip or rotation to match is written with
+  the flip applied to the voxel order, so `scale` stays positive and the transform stays
+  scale-and-translation. If the ABAv3 NIfTI affine is not diagonal, template-space view
+  copies are resampled to a diagonal grid of the same world space.
+- **Axis order and units.** OME-Zarr axes are `z`, `y`, `x` (with `c` for channels when
+  present), unit `millimeter`. Table coordinate columns are named for the world axes
+  (`x`, `y`, `z`), whatever the array order.
+- **Additional scans.** The transform from an additional scan to its reference scan
+  (from `--aux_spim`) is released as `xfm/<ent>_acq-<acq>_from-<acq>_to-<ref acq>_xfm.json`:
+  a 4×4 affine in mm, world-to-world, in the axis order `x`, `y`, `z`, which a viewer
+  applies as a layer transform. The ITK/greedy text file SPIMquant writes is released
+  alongside it.
+- **Validation.** For a sample of objects, the voxel their table coordinates fall in, in
+  every view copy of that space, must hold the expected label or mask value (see
+  [Validation](#validation)).
+
+---
+
+## Sample and acquisition metadata
+
+What was stained with what, and how it was imaged, travels with each scan. SPIMquant
+does not create this metadata; it copies it from the input BIDS dataset, where SPIMpack
+writes it at import.
+
+- **Per scan, `micr/<ent>_SPIM.json`**: the input's BIDS microscopy sidecar, copied
+  unchanged. It holds the scan-level fields SPIMpack already writes: `Manufacturer`,
+  `ManufacturersModelName`, `DeviceSerialNumber`, `StationName`, `SoftwareVersions`,
+  `InstitutionName`, `BodyPart`, `BodyPartDetails`, `SampleEnvironment`, `PixelSize`,
+  `PixelSizeUnits`, and per channel `SampleStaining`, `SamplePrimaryAntibody`,
+  `SampleSecondaryAntibody` (lists aligned by channel). Other BIDS microscopy fields
+  (`Magnification`, `NumericalAperture`, `Immersion`, `SampleFixation`,
+  `SampleEmbedding`, `TissueDeformationScaling`, `ImageAcquisitionProtocol`) are copied
+  when present.
+- **Per scan, `micr/<ent>_channels.tsv`**: one row per channel, for what BIDS has no
+  per-channel field for. Columns: `channel_index`, `stain` (as in `stain-`), `target`
+  (e.g. `amyloid plaques`), `primary_antibody`, `secondary_antibody` (RRID, or name,
+  vendor and catalog number), `fluorophore`, `excitation_nm`, `emission_nm`,
+  `laser_power`, `exposure_ms`, `notes`. Columns with nothing recorded are left out.
+  Antibody columns repeat the sidecar's lists, so the table stands on its own.
+- **Release manifest**: each stain's `Target`, antibodies and fluorophore, and each
+  scan's microscope and magnification, summarised from these files (see
+  [Release manifest](#release-manifest-release_manifestjson)).
+- SPIMpack needs to write `channels.tsv` (or its fields) at import; until it does, the
+  release carries what the sidecar has.
 
 ---
 
@@ -120,8 +205,9 @@ the primaries. Stains can use different methods and still be compared.
 ### Layout
 
 The release is a BIDS-derivative dataset of its own, written under `<output_dir>/release/`.
-Paths below are relative to that root; `<ent>` is the subject's entity prefix
-(`sub-01_ses-01_sample-brain`, without `stain-`).
+Paths below are relative to that root; `<ent>` is a scan's entity prefix
+(`sub-01_ses-01_sample-brain_acq-1x`, without `stain-`). Each scan of the subject
+(reference and additional) has the per-scan files below.
 
 ```
 release/
@@ -130,7 +216,13 @@ release/
 │   ├── tpl-ABAv3_seg-<seg>_dseg.tsv      # label tables used by this release
 │   └── tpl-ABAv3_seg-<seg>_dseg.json
 └── sub-<label>/[ses-<label>/]
-    ├── <ent>_provenance.json             # provenance sidecar (below)
+    ├── sub-<label>[_ses-<label>]_provenance.json   # provenance sidecar, all scans (below)
+    ├── micr/
+    │   ├── <ent>_SPIM.json                             # input BIDS microscopy sidecar, copied
+    │   └── <ent>_channels.tsv                          # per-channel antibodies and optics
+    ├── xfm/                                            # additional scans only
+    │   ├── <ent>_from-<acq>_to-<ref acq>_xfm.json      # 4x4 affine to the reference scan
+    │   └── <ent>_from-<acq>_to-<ref acq>_xfm.txt       # same, as written by SPIMquant
     ├── tabular/
     │   ├── <ent>_space-ABAv3_roistats.parquet          # regional table, long (all segs, stains, descs)
     │   ├── <ent>_space-ABAv3_roistats.json
@@ -140,11 +232,11 @@ release/
     │   ├── <ent>_space-ABAv3_instances.json
     │   ├── <ent>_space-ABAv3_coloc.parquet             # colocalization pairs (2+ stains with objects)
     │   └── <ent>_space-ABAv3_coloc.json
-    ├── view/                                           # Neuroglancer view copies
-    │   ├── <ent>_stain-<stain>_SPIM.precomputed/        # subject space, full resolution pyramid
-    │   ├── <ent>_stain-<stain>_space-ABAv3_SPIM.precomputed/
-    │   ├── <ent>_stain-<stain>_mask.precomputed/        # subject-space primary masks
-    │   └── <ent>_seg-all_from-ABAv3_dseg.precomputed/   # subject-space atlas labels
+    ├── view/                                           # OME-Zarr view copies
+    │   ├── <ent>_stain-<stain>_SPIM.ome.zarr            # subject space, full resolution pyramid
+    │   ├── <ent>_stain-<stain>_space-ABAv3_SPIM.ome.zarr
+    │   ├── <ent>_stain-<stain>_mask.ome.zarr            # subject-space primary masks
+    │   └── <ent>_seg-all_from-ABAv3_dseg.ome.zarr       # subject-space atlas labels
     ├── parc/
     │   └── <ent>_seg-<seg>_level-<N>_from-ABAv3_dseg.nii.gz   # subject-space labels (download)
     ├── featuremap/
@@ -162,6 +254,21 @@ Notes:
 - `featuremap/` holds the template-space field-fraction maps, including the CD31 vessel
   field fraction. They are for download and for group maps; the
   explorer colours regions from the tables, not from these maps.
+- **View copies** are OME-Zarr 0.5 (Zarr v3) stores, so the same files open in
+  Neuroglancer, napari and zarrnii, in the coordinate frames of
+  [Coordinate systems](#coordinate-systems). Their encoding is for viewing, not analysis:
+  - intensities as uint8 on a square-root scale between the 0.5th and 99.99th
+    percentiles (the percentiles are recorded in the store's attributes);
+  - chunks thin in z for xy viewing (256×256×16, x×y×z), in shards of about 512 MB;
+  - a multiscale pyramid down to a few hundred voxels across;
+  - lossless `zstd` chunk compression, which stock Neuroglancer reads;
+  - masks and labels as unsigned integers at full resolution with a nearest-neighbour
+    pyramid; region names come from the release's label table.
+
+  The chunk codec is a parameter of the view encoding: a lossy codec (JPEG or JPEG XL,
+  which would need a matching Zarr codec in our Neuroglancer build) or a Neuroglancer
+  precomputed copy can be added later if measurements show the explorer needs fewer
+  bytes per screen.
 
 **Where each release file comes from** (SPIMquant output names, paths relative to
 `<output_dir>`; `<p>` = the stain's primary seg method, `<o>` = its primary object
@@ -173,14 +280,15 @@ method):
 | `tabular/<ent>_seg-<seg>_from-ABAv3_mergedsegstats.tsv` | Same name |
 | `tabular/<ent>_space-ABAv3_instances.parquet` | `tabular/<ent>_space-ABAv3_regionprops.parquet`, plus `label`, `instance_id` and the subject columns; `stain` renamed `channel` |
 | `tabular/<ent>_space-ABAv3_coloc.parquet` | Same name |
+| `micr/<ent>_SPIM.json` | The input BIDS sidecar of the scan |
+| `micr/<ent>_channels.tsv` | The input dataset's per-channel table (SPIMpack) |
+| `view/<ent>_stain-<stain>_SPIM.ome.zarr` | Encoded from the input image |
+| `view/<ent>_stain-<stain>_space-ABAv3_SPIM.ome.zarr` | `micr/<ent>_stain-<stain>_space-ABAv3_res-<r>um_level-<N>_desc-<desc>_SPIM.ozx` (`--template_spim_res`), re-encoded |
+| `xfm/<ent>_from-<acq>_to-<ref acq>_xfm.txt` | `xfm/<ent>_from-ref_to-subject_desc-<method>_type-ras_xfm.txt` (`--aux_spim`) |
 | `featuremap/<ent>_stain-<stain>_space-ABAv3_level-<N>_fieldfrac.nii.gz` | `seg/<ent>_stain-<stain>_space-ABAv3_level-<N>_desc-<p>_fieldfrac.nii.gz` (CD31: `vessels/..._desc-vesselfm_fieldfrac.nii.gz`) |
-| `view/<ent>_stain-<stain>_mask.precomputed/` | `seg/<ent>_stain-<stain>_level-<segmentation_level>_desc-<p>_mask.ozx` |
+| `view/<ent>_stain-<stain>_mask.ome.zarr` | `seg/<ent>_stain-<stain>_level-<segmentation_level>_desc-<p>_mask.ozx`, re-encoded |
+| `view/<ent>_seg-all_from-ABAv3_dseg.ome.zarr` | The template's `seg-all` labels warped to the scan at `segmentation_level` (today SPIMquant warps them to `registration_level` only) |
 | `parc/<ent>_seg-<seg>_level-<N>_from-ABAv3_dseg.nii.gz` | Same name |
-- View copies are Neuroglancer precomputed, sharded. Intensity images are JPEG-encoded
-  uint8 with square-root intensity scaling; masks and labels use
-  `compressed_segmentation`. The label view carries segment properties built from the
-  label table, so names show in the viewer. Encoding details follow `mind-ng viewcopy`
-  (mind-neuroglancer, see its FINDINGS.md) and are fixed in PR1.
 
 ### Regional table (`roistats.parquet`)
 
@@ -192,6 +300,8 @@ channel × method × metric. It holds the primary methods and any comparison met
 | --- | --- | --- |
 | `participant_id` | string | `sub-<label>` |
 | `session_id` | string, nullable | `ses-<label>` |
+| `acq` | string, nullable | The scan's `acq-` entity |
+| `scan_role` | string | `reference` or `additional` (see [Scans](#scans)) |
 | `modality` | string | `micr` for SPIM rows (MRI rows use `anat`, `dwi`, `func`) |
 | `channel` | string | Stain name, or `coloc` for colocalization metrics |
 | `seg_method` | string | Mask method (e.g. `lantern`); null for coloc rows |
@@ -223,7 +333,7 @@ label table.
 | `<stain>_edgedist` | mm | Mean approximate distance to the surface of the nearest object of `<stain>` | instance table (mean) |
 | `objvolume` | mm³ | Mean object volume (the objects' `volume`, renamed per region) | instance table (mean) |
 | `mean_intensity`, `max_intensity`, `peak_intensity`, `elongation` | a.u. / ratio | Mean over the region's objects (`watershed` only) | instance table (mean) |
-| `coverage` | fraction | Fraction of the region inside the field of view (additional scans only) | `coveragestats` |
+| `coverage` | fraction | Fraction of the region (as labelled in the reference scan) inside the field of view; additional scans only | `coveragestats` |
 | `overlapratio`, `distance` | ratio / mm | Colocalization metrics (`channel = coloc`) | `colocsegstats` |
 
 A metric not in this list is allowed only with a description in the sidecar and a minor
@@ -242,10 +352,12 @@ renames `stain` to `channel`.
 | --- | --- | --- |
 | `participant_id` | string | `sub-<label>` |
 | `session_id` | string, nullable | `ses-<label>` |
+| `acq` | string, nullable | The scan's `acq-` entity |
+| `scan_role` | string | `reference` or `additional` (see [Scans](#scans)) |
 | `channel` | string | Stain (SPIMquant's `stain` column) |
 | `seg_method` | string | Mask method |
 | `object_method` | string | `components` or `watershed` |
-| `instance_id` | int64 | Unique within (`participant_id`, `session_id`, `channel`); stable within a release |
+| `instance_id` | int64 | Unique within (`participant_id`, `session_id`, `acq`, `channel`); stable within a release |
 | `label` | int32 | ABAv3 `seg-all` index of the region containing the centroid (0 = outside the brain) |
 | `template_x`, `template_y`, `template_z` | float64, mm | Centroid in ABAv3 space |
 | `pos_x`, `pos_y`, `pos_z` | float64, mm | Centroid in subject physical space |
@@ -283,8 +395,9 @@ the graph stays out of the release.
 
 ### Provenance sidecar (`<ent>_provenance.json`)
 
-One per participant release. It is what PR2's compatibility check reads, and what MIND
-records for the derivative.
+One per participant release (`sub-<label>[_ses-<label>]_provenance.json`), covering all
+its scans. It is what PR2's compatibility check reads, and what MIND records for the
+derivative.
 
 ```json
 {
@@ -313,12 +426,20 @@ records for the derivative.
      "Source": "default", "Level": 0}
   ],
   "Vessels": {"Stain": "CD31", "Method": "vesselfm", "Level": 0},
-  "Input": {
-    "Entities": {"subject": "01", "session": "01", "sample": "brain"},
-    "Stains": ["Abeta", "Iba1", "CD31", "PI"],
-    "URI": "mind://<dataset>/sub-01/ses-01/micr/...ome.zarr",
-    "ContentFingerprint": null
-  },
+  "Scans": [
+    {"Role": "reference",
+     "Entities": {"subject": "01", "session": "01", "sample": "brain", "acquisition": "1x"},
+     "Stains": ["Abeta", "Iba1", "CD31", "PI"],
+     "URI": "mind://<dataset>/sub-01/ses-01/micr/...acq-1x_SPIM.ome.zarr",
+     "ContentFingerprint": null},
+    {"Role": "additional", "Reference": "1x",
+     "Entities": {"subject": "01", "session": "01", "sample": "brain", "acquisition": "12x"},
+     "Stains": ["Abeta", "Iba1", "CD31", "PI"],
+     "URI": "mind://<dataset>/sub-01/ses-01/micr/...acq-12x_SPIM.ome.zarr",
+     "ContentFingerprint": null,
+     "RegistrationToReference": {"Method": "affine", "Init": "match", "Stains": ["PI"],
+                                 "QC": "qc/<ent>_from-ref_to-subject_regqc.html"}}
+  ],
   "Files": [
     {"path": "tabular/sub-01_ses-01_space-ABAv3_roistats.parquet", "bytes": 123456, "sha256": "<hex>"}
   ]
@@ -332,8 +453,9 @@ records for the derivative.
 | `ConfigHash` | sha256 of the resolved config as canonical JSON (sorted keys), after removing keys that do not change results: input and output paths, `work`, dask/cluster and resource settings, `--until`/targets. The excluded keys are listed in the sidecar's JSON schema, not per file. |
 | `Template` | Name, source record, and sha256 of each released label table. |
 | `Segmentation` | One entry per (stain, seg method, object method) in the tables, with whether it is primary and whether it came from the CLI or a default. |
-| `Input.URI` | The input path or `mind://` URI as given to SPIMquant. |
-| `Input.ContentFingerprint` | Left null by SPIMquant. The fingerprint of the level-0 data is computed by `mind_client` (from the OME-Zarr or the `.ims`) and filled in on upload. |
+| `Scans` | One entry per scan in the release: its role, entities, stains and input. An additional scan names its reference scan's `acq` and its registration to it (`--aux_reg_method`, `--aux_reg_init`, `--aux_reg_stains`) with the QC report. |
+| `Scans[].URI` | The input path or `mind://` URI as given to SPIMquant. |
+| `Scans[].ContentFingerprint` | Left null by SPIMquant. The fingerprint of the level-0 data is computed by `mind_client` (from the OME-Zarr or the `.ims`) and filled in on upload. |
 | `Files` | Every file in the participant release except this sidecar, with size and sha256, so the upload can be verified. |
 
 ---
@@ -360,7 +482,10 @@ release/
         └── seg-<seg>_space-ABAv3_contrast-<c>_metric-<stain>+<metric>_<stat>.nii.gz
 ```
 
-- Group tables are plain unions of participant tables; they carry no covariates.
+- Group tables are plain unions of participant tables, all scans included; they carry
+  no covariates. Consumers filter on `acq` / `scan_role` and never pool a subject's
+  scans; group statistics and maps are made per acquisition, as SPIMquant does today
+  (reference scans unprefixed, additional scans named with their `acq-`).
   Covariates live once in `participants.tsv` and are joined by `participant_id` and
   `session_id`.
 - `instances.parquet` is sorted by `channel`, `label`, `participant_id`, with the
@@ -386,12 +511,20 @@ explorer reads it first and then reads tables by range.
   "Template": {"Name": "ABAv3", "Source": "https://zenodo.org/records/18906782"},
   "LabelTables": {"all": "tpl-ABAv3/tpl-ABAv3_seg-all_dseg.tsv", "coarse": "..."},
   "Subjects": [
-    {"participant_id": "sub-01", "session_id": "ses-01",
-     "Stains": ["Abeta", "Iba1", "CD31"], "MRI": ["T2w", "dwi"],
-     "QC": "pass", "Release": "sub-01/ses-01/"}
+    {"participant_id": "sub-01", "session_id": "ses-01", "MRI": ["T2w", "dwi"],
+     "Release": "sub-01/ses-01/",
+     "Scans": [
+       {"acq": "1x", "Role": "reference", "Stains": ["Abeta", "Iba1", "CD31"], "QC": "pass",
+        "Microscope": "UltraMicroscope Blaze II", "Magnification": 1.1},
+       {"acq": "12x", "Role": "additional", "Reference": "1x", "Coverage": 0.08,
+        "Stains": ["Abeta", "Iba1", "CD31"], "QC": "pass",
+        "Microscope": "UltraMicroscope Blaze II", "Magnification": 12}
+     ]}
   ],
   "Stains": [
-    {"Name": "Abeta", "SegMethod": "lantern", "ObjectMethod": "components", "Target": "amyloid plaques"},
+    {"Name": "Abeta", "SegMethod": "lantern", "ObjectMethod": "components", "Target": "amyloid plaques",
+     "PrimaryAntibody": "<RRID or vendor, catalog no.>", "SecondaryAntibody": "<...>",
+     "Fluorophore": "<...>"},
     {"Name": "Iba1", "SegMethod": "gmm+n3k1", "ObjectMethod": "watershed", "Target": "microglia"},
     {"Name": "CD31", "SegMethod": "vesselfm", "ObjectMethod": null, "Target": "vessels"}
   ],
@@ -414,9 +547,14 @@ explorer reads it first and then reads tables by range.
 ```
 
 - `DOI` is null until one is minted; minting does not change any other file.
-- `Subjects[].QC` comes from the MIND catalog (QC status per acquisition and run). An
-  explorer release includes `pass` subjects only.
-- `Stains[].Target` is free text supplied by whoever builds the release.
+- `Subjects[].Scans[].QC` comes from the MIND catalog (QC status per acquisition and
+  run). An explorer release includes `pass` scans only.
+- `Scans[].Coverage` is the fraction of the brain inside an additional scan's field of
+  view.
+- `Stains[]` antibody, fluorophore and `Target` values, and `Scans[]` microscope and
+  magnification, are summarised from the scans' `SPIM.json` and `channels.tsv` (see
+  [Sample and acquisition metadata](#sample-and-acquisition-metadata)). A stain whose
+  scans disagree lists every value.
 
 ---
 
@@ -513,7 +651,9 @@ sub-03		../runB/release/sub-03	APP	30	F
 
 - An optional `<manifest>.json` describes covariate columns (BIDS `participants.json`
   style: `Description`, `Levels`, `Units`).
-- `(participant_id, session_id)` must be unique.
+- `(participant_id, session_id)` must be unique. Every scan in the referenced
+  participant release is used; group outputs are made per acquisition (see
+  [Scans](#scans)).
 - `mind://` rows are staged by fetching the release tables and provenance sidecar only
   (a few MB per subject), not images.
 - The first group rule checks compatibility from the provenance sidecars of all rows:
@@ -527,6 +667,11 @@ sub-03		../runB/release/sub-03	APP	30	F
 ---
 
 ## Validation
+
+Besides the schema checks below, the CI check samples objects from each instance table
+and checks that their coordinates land on the expected label and mask values in every
+view copy of the same space (template and subject), so a coordinate-frame mismatch
+between OME-Zarr, NIfTI and the tables fails the build.
 
 PR1 adds a JSON Schema for the provenance sidecar and the release manifest, and a
 column-schema check for each table (names, types, units, allowed `metric` values). CI
@@ -559,7 +704,9 @@ checks on upload, for SPIM and MRI derivatives alike.
 | Instance label | `space-ABAv3_regionprops.parquet` has no atlas label; per-object labels only in the per-stain `regionpropstats.tsv` | Add `seg-all` `label`, using the same subject-space lookup |
 | Instance identity | No id (coloc builds `object_id` from row order) | Add `instance_id`, `participant_id`, `session_id`; rename `stain` to `channel` |
 | Provenance sidecar | Run provenance in `code/snakebids/runs/`; method plan printed at start-up | Write `<ent>_provenance.json` per participant, including the method plan |
-| View copies | None | Neuroglancer precomputed copies (see layout) |
+| View copies | Template-space OME-Zarr at `--template_spim_res`, not encoded for viewing; no subject-space copies | OME-Zarr view copies (subject and template space, masks, labels) with the view encoding and the frames of [Coordinate systems](#coordinate-systems) |
+| Scans | `--aux_spim` outputs named with `acq-`; group outputs per acquisition | `acq` and `scan_role` columns; `Scans` in the provenance sidecar; the additional scan's transform as a 4×4 affine JSON |
+| Sample and acquisition metadata | In the input BIDS sidecars, not carried to outputs | Copy `SPIM.json` and `channels.tsv` per scan; SPIMpack writes `channels.tsv` |
 | Release tree and manifest | None | `release/` layout, label tables, `release_manifest.json` |
 
 ---
@@ -575,3 +722,9 @@ checks on upload, for SPIM and MRI derivatives alike.
    uses (one resolution, or a pyramid).
 4. **MRI regional metrics and connectivity types that go in first** (also open in the
    portal plan).
+5. **Lossy view encoding.** Whether lossless uint8 `zstd` is small enough for the
+   explorer over the network, or a JPEG / JPEG XL Zarr codec in our Neuroglancer build
+   (or a precomputed copy) is needed. Measure bytes and load time per screen against the
+   existing precomputed copy of `test_mind_4x`.
+6. **OME-Zarr transforms.** When the OME-Zarr coordinate-transformations proposal lands,
+   the additional scan's affine can move from a sidecar JSON into the store.
