@@ -35,7 +35,7 @@ listed in [Changes needed in SPIMquant](#changes-needed-in-spimquant).
 | Scans | A participant release holds every scan of a subject and session: one **reference** scan and any **additional** scans (`--aux_spim`, e.g. a zoomed-in field of view), told apart by `acq-`. Every table carries `acq` and `scan_role` (`reference` or `additional`); file names carry `acq-` as usual. See [Scans](#scans). |
 | Other BIDS entities | `sample` and similar appear in file names and in the provenance sidecar. |
 | Coordinates | Every image and coordinate column states its coordinate system; view copies, NIfTI files and table coordinates of the same space agree. See [Coordinate systems](#coordinate-systems). |
-| Sample and acquisition metadata | Antibodies, fluorophores, channel optics, microscope and sample preparation, per scan. See [Sample and acquisition metadata](#sample-and-acquisition-metadata). |
+| Sample and acquisition metadata | Antibodies, fluorophores, channel optics, microscope and sample preparation, in each scan's BIDS sidecar. See [Sample and acquisition metadata](#sample-and-acquisition-metadata). |
 | Stain / channel | The stain name as in the BIDS `stain-` entity (e.g. `Abeta`, `Iba1`, `CD31`). Tables use the generic column name `channel` so SPIM and MRI rows share a schema; for SPIM rows `channel` is the stain. |
 | Segmentation method | Two columns in every table: `seg_method` (mask method, e.g. `lantern`, `otsu+k3i2`) and `object_method` (`components`, `watershed`). Per-stain files such as masks carry them in the file name (`desc-`, `obj-`); results and release files carry neither. See [Segmentation methods per stain](#segmentation-methods-per-stain). |
 | Tables | Parquet (zstd compression) for everything the explorer reads. TSV is kept only where SPIMquant already writes it for users. Every table has a JSON sidecar describing its columns (see `create_json_sidecar.py`). |
@@ -112,30 +112,46 @@ affines can hold any affine. So the release fixes these rules:
 
 ## Sample and acquisition metadata
 
-What was stained with what, and how it was imaged, travels with each scan. SPIMquant
-does not create this metadata; it copies it from the input BIDS dataset, where SPIMpack
-writes it at import.
+What was stained with what, and how it was imaged, lives in each scan's BIDS
+microscopy sidecar, `micr/<ent>_SPIM.json`. SPIMquant does not create this metadata:
+the release copies the input sidecar unchanged, as SPIMpack wrote it at import.
 
-- **Per scan, `micr/<ent>_SPIM.json`**: the input's BIDS microscopy sidecar, copied
-  unchanged. It holds the scan-level fields SPIMpack already writes: `Manufacturer`,
-  `ManufacturersModelName`, `DeviceSerialNumber`, `StationName`, `SoftwareVersions`,
-  `InstitutionName`, `BodyPart`, `BodyPartDetails`, `SampleEnvironment`, `PixelSize`,
-  `PixelSizeUnits`, and per channel `SampleStaining`, `SamplePrimaryAntibody`,
-  `SampleSecondaryAntibody` (lists aligned by channel). Other BIDS microscopy fields
-  (`Magnification`, `NumericalAperture`, `Immersion`, `SampleFixation`,
-  `SampleEmbedding`, `TissueDeformationScaling`, `ImageAcquisitionProtocol`) are copied
-  when present.
-- **Per scan, `micr/<ent>_channels.tsv`**: one row per channel, for what BIDS has no
-  per-channel field for. Columns: `channel_index`, `stain` (as in `stain-`), `target`
-  (e.g. `amyloid plaques`), `primary_antibody`, `secondary_antibody` (RRID, or name,
-  vendor and catalog number), `fluorophore`, `excitation_nm`, `emission_nm`,
-  `laser_power`, `exposure_ms`, `notes`. Columns with nothing recorded are left out.
-  Antibody columns repeat the sidecar's lists, so the table stands on its own.
-- **Release manifest**: each stain's `Target`, antibodies and fluorophore, and each
-  scan's microscope and magnification, summarised from these files (see
-  [Release manifest](#release-manifest-release_manifestjson)).
-- SPIMpack needs to write `channels.tsv` (or its fields) at import; until it does, the
-  release carries what the sidecar has.
+**BIDS microscopy fields** (used as defined by BIDS):
+
+| Group | Fields |
+| --- | --- |
+| Microscope | `Manufacturer`, `ManufacturersModelName`, `DeviceSerialNumber`, `StationName`, `SoftwareVersions` |
+| Institution | `InstitutionName`, `InstitutionAddress`, `InstitutionalDepartmentName` |
+| Acquisition | `PixelSize`, `PixelSizeUnits` (required), `Immersion`, `NumericalAperture`, `Magnification`, `ImageAcquisitionProtocol`, `OtherAcquisitionParameters` |
+| Sample | `BodyPart`, `BodyPartDetails`, `SampleEnvironment`, `SampleFixation`, `SampleEmbedding`, `SliceThickness`, `TissueDeformationScaling`, `SampleExtractionProtocol` |
+| Per channel | `SampleStaining`, `SamplePrimaryAntibody`, `SampleSecondaryAntibody` (antibodies as an RRID, or name, supplier and catalog number) |
+
+**Extension fields** for per-channel optics, which BIDS has no fields for
+(`OtherAcquisitionParameters` is a single free-text string). They follow the BIDS
+convention for per-channel values:
+
+| Field | Units | Meaning |
+| --- | --- | --- |
+| `SampleFluorophore` | | Fluorophore or dye of each channel |
+| `ExcitationWavelength` | nm | Excitation wavelength of each channel |
+| `EmissionWavelength` | nm | Centre of the emission filter of each channel |
+| `LaserPower` | percent | Laser power setting of each channel |
+| `ExposureTime` | ms | Camera exposure of each channel |
+
+**Per-channel rule.** A per-channel field is either a single value (the same for every
+channel) or a list with one value per channel, in the order of `SampleStaining`, which
+is the order of the image's channels. Release validation fails if a list has a
+different length from `SampleStaining`, or if `SampleStaining` does not match the
+scan's stains.
+
+The release manifest summarises these per stain (antibodies, fluorophore) and per scan
+(microscope, magnification); see
+[Release manifest](#release-manifest-release_manifestjson). What a stain marks
+(`Target`, e.g. `amyloid plaques`) is given when the release is built.
+
+SPIMpack writes the BIDS fields at import; the extension fields need adding to its
+sidecar field list. The `.ims` metadata holds most of the channel optics, so SPIMpack can
+fill them in without asking the user.
 
 ---
 
@@ -218,8 +234,7 @@ release/
 └── sub-<label>/[ses-<label>/]
     ├── sub-<label>[_ses-<label>]_provenance.json   # provenance sidecar, all scans (below)
     ├── micr/
-    │   ├── <ent>_SPIM.json                             # input BIDS microscopy sidecar, copied
-    │   └── <ent>_channels.tsv                          # per-channel antibodies and optics
+    │   └── <ent>_SPIM.json                             # input BIDS microscopy sidecar, copied
     ├── xfm/                                            # additional scans only
     │   ├── <ent>_from-<acq>_to-<ref acq>_xfm.json      # 4x4 affine to the reference scan
     │   └── <ent>_from-<acq>_to-<ref acq>_xfm.txt       # same, as written by SPIMquant
@@ -281,7 +296,6 @@ method):
 | `tabular/<ent>_space-ABAv3_instances.parquet` | `tabular/<ent>_space-ABAv3_regionprops.parquet`, plus `label`, `instance_id` and the subject columns; `stain` renamed `channel` |
 | `tabular/<ent>_space-ABAv3_coloc.parquet` | Same name |
 | `micr/<ent>_SPIM.json` | The input BIDS sidecar of the scan |
-| `micr/<ent>_channels.tsv` | The input dataset's per-channel table (SPIMpack) |
 | `view/<ent>_stain-<stain>_SPIM.ome.zarr` | Encoded from the input image |
 | `view/<ent>_stain-<stain>_space-ABAv3_SPIM.ome.zarr` | `micr/<ent>_stain-<stain>_space-ABAv3_res-<r>um_level-<N>_desc-<desc>_SPIM.ozx` (`--template_spim_res`), re-encoded |
 | `xfm/<ent>_from-<acq>_to-<ref acq>_xfm.txt` | `xfm/<ent>_from-ref_to-subject_desc-<method>_type-ras_xfm.txt` (`--aux_spim`) |
@@ -552,7 +566,7 @@ explorer reads it first and then reads tables by range.
 - `Scans[].Coverage` is the fraction of the brain inside an additional scan's field of
   view.
 - `Stains[]` antibody, fluorophore and `Target` values, and `Scans[]` microscope and
-  magnification, are summarised from the scans' `SPIM.json` and `channels.tsv` (see
+  magnification, are summarised from the scans' `SPIM.json` sidecars (see
   [Sample and acquisition metadata](#sample-and-acquisition-metadata)). A stain whose
   scans disagree lists every value.
 
@@ -706,7 +720,7 @@ checks on upload, for SPIM and MRI derivatives alike.
 | Provenance sidecar | Run provenance in `code/snakebids/runs/`; method plan printed at start-up | Write `<ent>_provenance.json` per participant, including the method plan |
 | View copies | Template-space OME-Zarr at `--template_spim_res`, not encoded for viewing; no subject-space copies | OME-Zarr view copies (subject and template space, masks, labels) with the view encoding and the frames of [Coordinate systems](#coordinate-systems) |
 | Scans | `--aux_spim` outputs named with `acq-`; group outputs per acquisition | `acq` and `scan_role` columns; `Scans` in the provenance sidecar; the additional scan's transform as a 4×4 affine JSON |
-| Sample and acquisition metadata | In the input BIDS sidecars, not carried to outputs | Copy `SPIM.json` and `channels.tsv` per scan; SPIMpack writes `channels.tsv` |
+| Sample and acquisition metadata | In the input BIDS sidecars, not carried to outputs | Copy each scan's `SPIM.json`; validate the per-channel lists. SPIMpack adds the extension fields (`SampleFluorophore`, `ExcitationWavelength`, `EmissionWavelength`, `LaserPower`, `ExposureTime`) |
 | Release tree and manifest | None | `release/` layout, label tables, `release_manifest.json` |
 
 ---
