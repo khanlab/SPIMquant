@@ -251,6 +251,9 @@ def main():
             ),
             slab_chunks=int(params.slab_chunks),
             soft_lo=float(params.soft_lo),
+            local_norm_um=(
+                None if params.local_norm_um is None else float(params.local_norm_um)
+            ),
         )
         try:
             moments, est = zarrnii_fibre_moments(znimg, psf_fwhm_um=psf, **kwargs)
@@ -327,6 +330,7 @@ def main():
                     ),
                     "psf_n_puncta": est.get("psf_n_puncta"),
                     "soft_threshold": float(params.soft_lo),
+                    "local_norm_um": est.get("local_norm_um"),
                     "stat_blocks": [list(map(int, b)) for b in block_ids],
                     "sampled_voxels": int(est["frangi_samples"].size),
                 },

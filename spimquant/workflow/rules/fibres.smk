@@ -99,6 +99,7 @@ rule fibre_moments:
         slab_chunks=config["fibre_slab_chunks"],
         psf_fwhm_um=config["fibre_psf_fwhm_um"],
         soft_lo=config["fibre_soft_threshold"],
+        local_norm_um=config["fibre_local_norm_um"],
     script:
         "../scripts/fibre_moments.py"
 
