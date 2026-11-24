@@ -401,6 +401,35 @@ def test_dask_matches_numpy(fo):
     np.testing.assert_allclose(out, ref, rtol=1e-4, atol=1e-3)
 
 
+def test_aligned_chunks_merges_small_remainder(fo):
+    assert fo.aligned_chunks((100,), (32,), (4,)) == ((32, 32, 32, 4),)
+    assert fo.aligned_chunks((100,), (32,), (4,), min_chunk=(10,)) == ((32, 32, 36),)
+    assert fo.aligned_chunks((100,), (32,), (4,), min_chunk=(4,)) == ((32, 32, 32, 4),)
+    assert fo.aligned_chunks((20,), (32,), (4,), min_chunk=(30,)) == ((20,),)
+
+
+def test_dask_small_remainder_chunk(fo):
+    """A last chunk thinner than the overlap is merged, not rejected."""
+    da = pytest.importorskip("dask.array")
+    img, spacing = _crossing_phantom()
+    kw = dict(
+        spacing_um=spacing,
+        scales_um=SCALES,
+        gammas=GAMMA,
+        threshold=0.2,
+        factor=(4, 4, 4),
+        lmax=4,
+    )
+    depth = fo.overlap_depth(SCALES, spacing)
+    ref = fo.fibre_moments_block(np.pad(img, [(d, d) for d in depth]), trim=depth, **kw)
+    # chunk so every axis leaves a 4-voxel remainder (< overlap)
+    chunk = tuple(n - 4 for n in img.shape)
+    darr = da.from_array(img, chunks=chunk)
+    with __import__("dask").config.set(scheduler="synchronous"):
+        out = fo.fibre_moments(darr, chunk_size=chunk, **kw).compute()
+    np.testing.assert_allclose(out, ref, rtol=1e-4, atol=1e-3)
+
+
 def test_crossing_fibres_odf(fo):
     """Two populations: dispersion is planar and the ODF has two peaks."""
     img, spacing = _crossing_phantom()
