@@ -250,7 +250,9 @@ the primaries. Stains can use different methods and still be compared.
 
 ### Layout
 
-The release is a BIDS-derivative dataset of its own, written under `<output_dir>/release/`.
+The release is a BIDS-derivative dataset of its own, written under the release root
+(`<output_dir>/release/` by default, or a `mind://` URI; see
+[Release root and storage format](#release-root-and-storage-format)).
 A run of one subject writes one subject directory; a run of many writes one each, with
 the same files.
 Paths below are relative to that root; `<ent>` is a scan's entity prefix
@@ -316,6 +318,38 @@ Notes:
   which would need a matching Zarr codec in our Neuroglancer build) or a Neuroglancer
   precomputed copy can be added later if measurements show the explorer needs fewer
   bytes per screen.
+
+### Release root and storage format
+
+```
+--release_root PATH | mind://...    default: <output_dir>/release
+--release_zarr ome.zarr | ozx       default: ome.zarr
+```
+
+- **Release root.** The release can be written to a local path or straight to MIND. MIND's
+  service jobs on ingested data write to a `mind://` root (the run's own derivative
+  dataset), so there is no separate upload step. Only the release is written there: the
+  run's other outputs (full-resolution masks, template-space images, work files) stay
+  in `<output_dir>` and the release step reads them from there.
+- **Zarr format.** View copies are sharded OME-Zarr directory stores by default, with the
+  chunking and sharding of [Layout](#layout). `ozx` (zipped OME-Zarr, unsharded) is
+  allowed for local releases only, e.g. on shared filesystems with inode limits; it is an
+  error with a `mind://` root. A release bound for MIND is always sharded `ome.zarr`,
+  because Neuroglancer reads directory stores by HTTP range requests. A local `ozx`
+  release is converted to `ome.zarr` when it is uploaded (or refused by the upload).
+  The format is recorded in the provenance sidecar (`ZarrFormat`).
+- **Completion.** The provenance sidecar is written last; its `Files` list (sizes and
+  sha256, computed while writing) is what marks the release complete. MIND registers the
+  derivative dataset only when the sidecar exists and the files match it, so an
+  interrupted job leaves an unregistered prefix to clean up, never a partial release.
+- **Writing to `mind://`:**
+  - each view-copy shard is written by exactly one task (dask chunks aligned to shards),
+    and shards stay under the MIND proxy's maximum single upload (it has no multipart
+    upload);
+  - rules that write to `mind://` declare a small local receipt file (URI, sha256) as
+    their Snakemake output, so completion is tracked without a storage plugin;
+  - jobs refresh their MIND token while they run, since encoding a large subject can
+    outlast one token.
 
 **Where each release file comes from** (SPIMquant output names, paths relative to
 `<output_dir>`; `<p>` = the stain's primary seg method, `<o>` = its primary object
@@ -459,6 +493,7 @@ derivative.
     "SnakebidsRunId": "20261106T134023-25f2"
   },
   "ConfigHash": "sha256:<hex>",
+  "ZarrFormat": "ome.zarr",
   "Template": {
     "Name": "ABAv3",
     "Source": "https://zenodo.org/records/18906782",
@@ -513,7 +548,8 @@ derivative.
 | `Scans[].ContentFingerprint` | Left null by SPIMquant. The fingerprint of the level-0 data is computed by `mind_client` (from the OME-Zarr or the `.ims`) and filled in on upload. |
 | `Registration` | How the subject was registered to the template, including the settings that change the result without changing file names (`--orientation`, `--template_crop`, `--sloppy`). |
 | `Reused` | Empty unless outputs came from a prior dataset (`--reuse_derivatives`). One entry per prior dataset: which outputs, where from, and the prior run's pipeline version, commit, run id and config hash, read from that dataset's `code/snakebids/runs/`. `Pipeline` and `ConfigHash` above describe the run that made the release. |
-| `Files` | Every file in the participant release except this sidecar, with size and sha256, so the upload can be verified. |
+| `Files` | Every file in the participant release except this sidecar, with size and sha256, so the upload can be verified. The sidecar is written last and marks the release complete (see [Release root and storage format](#release-root-and-storage-format)). |
+| `ZarrFormat` | `ome.zarr` or `ozx`: how the view copies are stored (`--release_zarr`). |
 
 ### Reused outputs (`--reuse_derivatives`)
 
@@ -791,6 +827,7 @@ checks on upload, for SPIM and MRI derivatives alike.
 | Reused outputs | `--reuse_symlink` links files; no registration QC report for reused transforms; prior run not recorded | Real files in the release, the prior dataset's QC report copied, `Reused` in provenance, unchecked settings compared |
 | Sample and acquisition metadata | In the input BIDS sidecars, not carried to outputs | Copy each scan's `SPIM.json`; validate the per-channel lists. SPIMpack adds the extension fields (`SampleFluorophore`, `ExcitationWavelength`, `EmissionWavelength`, `LaserPower`, `ExposureTime`) |
 | Release tree and manifest | None | `release/` layout, label tables, `release_manifest.json` |
+| Release root and format | Outputs under `<output_dir>` only; zarr outputs `ozx` by default (`zarr_store_ext`), sharding off for `ozx` | `--release_root` (local or `mind://`) and `--release_zarr` (`ome.zarr` default, `ozx` local only); receipt files for `mind://` outputs; provenance sidecar written last |
 
 ---
 
@@ -809,5 +846,8 @@ checks on upload, for SPIM and MRI derivatives alike.
    explorer over the network, or a JPEG / JPEG XL Zarr codec in our Neuroglancer build
    (or a precomputed copy) is needed. Measure bytes and load time per screen against the
    existing precomputed copy of `test_mind_4x`.
-6. **OME-Zarr transforms.** When the OME-Zarr coordinate-transformations proposal lands,
+6. **Shard size and the MIND proxy.** The ~512 MB view-copy shards must fit the proxy's
+   (and the backing object store's) maximum single upload; check the limit before
+   fixing the shard size.
+7. **OME-Zarr transforms.** When the OME-Zarr coordinate-transformations proposal lands,
    the additional scan's affine can move from a sidecar JSON into the store.
