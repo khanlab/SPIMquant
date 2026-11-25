@@ -21,11 +21,20 @@ for the same subject.
 """
 
 
+# extra MRI entity filters per subject, e.g. {"AS1": {"session": "11m"}}; set by
+# --landmark_analysis to the scans the MRI landmarks were placed on
+mri_subject_filters = {}
+
+
+def get_subject_mri(subject):
+    """The MRI input of a subject (with its mri_subject_filters)."""
+    return inputs["mri"].filter(subject=subject, **mri_subject_filters.get(subject, {}))
+
+
 def get_all_mri(wildcards):
     """Get all MRI files for a subject (for multi-MRI averaging)."""
     return sorted(
-        inputs["mri"]
-        .filter(subject=wildcards.subject)
+        get_subject_mri(wildcards.subject)
         .expand(bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards))
     )
 
@@ -33,8 +42,7 @@ def get_all_mri(wildcards):
 def get_ref_mri(wildcards):
     """gets a N4resampled reference"""
     return sorted(
-        inputs["mri"]
-        .filter(subject=wildcards.subject)
+        get_subject_mri(wildcards.subject)
         .expand(
             bids(
                 root=root,

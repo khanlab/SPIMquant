@@ -51,18 +51,21 @@ pixi run -e gpu spimquant <bids_dir> <output_dir> participant \
   --landmarks_spim <manual_landmarks derivative>     # sub-*/[ses-*/]micr/*from-SPIM_landmarks.json
   --landmarks_template <folder of template points>   # markups in --template space
   [--register_to_mri --landmarks_mri <derivative>    # sub-*/[ses-*/]anat/*from-<suffix>_landmarks.json
-   --filter-mri session=<the landmarked session> ... ]
+   [--filter-mri ...] ]                               # session: from the landmark file
   [--landmark_methods greedy ants ...] [--landmark_stains YoPro Iba1 ...]
   [--landmark_keep_warps] [--landmark_regions regions.tsv]
 ```
 
 - Use the `gpu` pixi environment and a GPU allocation if `fireants` is among the
   methods (default). Without a GPU, pass `--landmark_methods` without `fireants`.
-- The MRI landmarks are on one MRI; filter the MRI input to that session (the run
-  stops with an error if a subject has MRI from several sessions). Several scans of
-  that session matching the filter (e.g. repeated runs) are averaged on the grid of
-  the first (sorted by name), so the MRI landmarks must be in that scan's space; the
-  run prints which scan that is.
+- The MRI is chosen from the MRI landmark file: only the MRI scans matching the
+  session (and any `acq-`/`run-`/`rec-`) in each subject's landmark file name are used,
+  so other sessions (timepoints) are ignored without filtering them; the run prints
+  the choice. If a subject has landmark files for several sessions, choose one with
+  `--filter-mri session=<label>`. Several scans that still match (e.g. repeated runs
+  of the session) are averaged on the grid of the first (sorted by name), so the MRI
+  landmarks must be in that scan's space; put `run-<n>` in the landmark file name to
+  use only that scan.
 - Landmark files: 3D Slicer markups, `coordinateSystem` LPS (RAS is converted), mm.
   SPIM landmarks are on the level-5 grid of the scan (any stain).
 - Subject→template composite warps are ~1.5 GB each at the 25 µm ABAv3 grid, so

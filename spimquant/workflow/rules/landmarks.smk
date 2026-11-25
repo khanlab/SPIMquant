@@ -110,11 +110,26 @@ def _lmk_find(base, wildcards, datatype, require=None):
     return hits[0] if hits else None
 
 
+# BIDS entities in a landmark file name -> MRI input wildcards
+_LMK_MRI_ENTITIES = {"ses": "session", "acq": "acquisition", "run": "run", "rec": "reconstruction"}
+
+
 def _mri_sessions(subject):
     try:
         return sorted(set(inputs["mri"].filter(subject=subject).entities.get("session", [])))
     except Exception:
         return []
+
+
+def _lmk_mri_entities(path):
+    """{MRI wildcard: value} named in a landmark file name, for wildcards the MRI input has."""
+    have = set(inputs["mri"].wildcards)
+    out = {}
+    for part in os.path.basename(path).split("_"):
+        k, _, v = part.partition("-")
+        if k in _LMK_MRI_ENTITIES and v and _LMK_MRI_ENTITIES[k] in have:
+            out[_LMK_MRI_ENTITIES[k]] = v
+    return out
 
 
 def lmk_spim_file(wildcards):
@@ -134,13 +149,11 @@ def lmk_mri_file(wildcards):
     sessions = _mri_sessions(wildcards.subject)
     if len(hits) > 1 and sessions:
         hits = [h for h in hits if any(f"_ses-{s}_" in os.path.basename(h) for s in sessions)]
-    if len(sessions) > 1:
-        raise ValueError(
-            f"sub-{wildcards.subject}: MRI input has several sessions {sessions}; the "
-            "landmarks are on one MRI, so use --filter-mri session=<label>"
-        )
     if len(hits) > 1:
-        raise ValueError(f"several MRI landmark files for sub-{wildcards.subject}: {hits}")
+        raise ValueError(
+            f"several MRI landmark files for sub-{wildcards.subject}: {hits}; "
+            "use --filter-mri session=<label> to choose one"
+        )
     return hits[0] if hits else None
 
 
@@ -479,11 +492,32 @@ else:
     print("Landmark analysis: every landmark name matches across SPIM, template" + (" and MRI" if lmk_do_mri else ""))
 
 if lmk_do_mri:
+    # use only the MRI scans the landmarks were placed on: the session (and any
+    # acq/run/rec) named in each subject's MRI landmark file
+    for _subj in sorted({w["subject"] for w in lmk_scans}):
+        _f = lmk_mri_file(SimpleNamespace(subject=_subj))
+        if not _f:
+            continue
+        _ents = _lmk_mri_entities(_f)
+        if not _ents:
+            continue
+        try:
+            _n = len(inputs["mri"].filter(subject=_subj, **_ents).expand())
+        except Exception:
+            _n = 0
+        if _n == 0:
+            raise ValueError(
+                f"sub-{_subj}: no MRI input matches {_ents} from its landmark file "
+                f"{os.path.basename(_f)}; check --filter-mri / --path-mri"
+            )
+        mri_subject_filters[_subj] = _ents
+        print(f"Landmark analysis: sub-{_subj}: MRI from the landmark file: {_ents} ({_n} scan(s))")
+
     # several MRI scans of a subject are averaged on the grid of the first one
     # (preproc_mri.smk), so the MRI landmarks have to be in that scan's space
     for _subj in sorted({w["subject"] for w in lmk_scans}):
         try:
-            _mris = sorted(inputs["mri"].filter(subject=_subj).expand())
+            _mris = sorted(get_subject_mri(_subj).expand())
         except Exception:
             _mris = []
         if len(_mris) > 1:
