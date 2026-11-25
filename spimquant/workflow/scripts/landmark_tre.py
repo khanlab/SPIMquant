@@ -226,12 +226,15 @@ def compute(src_file, dst_file, transforms=None, fixedpoint_of=None, init=None, 
     return rows, missing
 
 
-def write_tsv(rows, path):
+def write_tsv(rows, path, fieldnames=None):
+    """Rows as a TSV. With no rows, writes the header of fieldnames (or an empty
+    file without them), so readers see an empty table rather than no columns."""
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path, "w", newline="") as f:
-        if not rows:
+        fields = list(rows[0]) if rows else list(fieldnames or [])
+        if not fields:
             return
-        w = csv.DictWriter(f, fieldnames=list(rows[0]), delimiter="\t")
+        w = csv.DictWriter(f, fieldnames=fields, delimiter="\t")
         w.writeheader()
         w.writerows(rows)
 

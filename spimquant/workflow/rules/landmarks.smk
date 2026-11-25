@@ -31,7 +31,12 @@ markups file (landmark_markups), so where the points land can be looked at.
 """
 
 import glob as _glob
+import shutil as _shutil
+import sys as _sys
 from types import SimpleNamespace
+
+_sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
+import landmark_files as LF
 
 
 lmk_root = os.path.join(root, "landmarks")
@@ -76,6 +81,15 @@ for _k in ("landmarks_spim", "landmarks_template"):
     if not config.get(_k):
         raise ValueError(f"--landmark_analysis needs --{_k}")
 
+_lmk_gpu_methods = [m for m in lmk_methods if reg_presets[m].get("backend") == "fireants"]
+if _lmk_gpu_methods and not (_shutil.which("nvidia-smi") or os.environ.get("CUDA_VISIBLE_DEVICES")):
+    print(
+        f"Landmark analysis: NOTE {', '.join(_lmk_gpu_methods)} need(s) a GPU (the gpu pixi environment and a "
+        "GPU for the job, e.g. --resources gpu=1). No GPU is visible here; if the jobs will not get one, "
+        "leave it out with: --landmark_methods "
+        + " ".join(m for m in lmk_methods if m not in _lmk_gpu_methods)
+    )
+
 print(
     f"Landmark analysis: methods {lmk_methods}, registration stains {lmk_stains}"
     + (", with MRI" if lmk_do_mri else "")
@@ -99,19 +113,8 @@ def _lmk_find(base, wildcards, datatype, require=None):
     )
     if require:
         hits = [h for h in hits if require in os.path.basename(h)]
-    ses = getattr(wildcards, "session", None)
-    if len(hits) > 1 and ses:
-        hits = [h for h in hits if f"_ses-{ses}_" in os.path.basename(h)] or hits
-    acq = getattr(wildcards, "acq", None)
-    if len(hits) > 1 and acq:
-        hits = [h for h in hits if f"_acq-{acq}_" in os.path.basename(h)] or hits
-    if len(hits) > 1:
-        raise ValueError(f"several landmark files for {dict(wildcards)}: {hits}")
-    return hits[0] if hits else None
-
-
-# BIDS entities in a landmark file name -> MRI input wildcards
-_LMK_MRI_ENTITIES = {"ses": "session", "acq": "acquisition", "run": "run", "rec": "reconstruction"}
+    # a file naming another session/sample/acquisition belongs to another scan
+    return LF.pick_landmark_file(hits, LF.scan_entities(wildcards))
 
 
 def _mri_sessions(subject):
@@ -123,13 +126,7 @@ def _mri_sessions(subject):
 
 def _lmk_mri_entities(path):
     """{MRI wildcard: value} named in a landmark file name, for wildcards the MRI input has."""
-    have = set(inputs["mri"].wildcards)
-    out = {}
-    for part in os.path.basename(path).split("_"):
-        k, _, v = part.partition("-")
-        if k in _LMK_MRI_ENTITIES and v and _LMK_MRI_ENTITIES[k] in have:
-            out[_LMK_MRI_ENTITIES[k]] = v
-    return out
+    return LF.mri_entities(path, inputs["mri"].wildcards)
 
 
 def lmk_spim_file(wildcards):
@@ -448,6 +445,15 @@ def _lmk_scans():
 lmk_scans = _lmk_scans()
 if not lmk_scans:
     raise ValueError(f"--landmark_analysis: no SPIM scan has a landmarks file in {config['landmarks_spim']}")
+_lmk_shared = LF.shared_files(
+    [(str(w), _lmk_find(config["landmarks_spim"], SimpleNamespace(**w), "micr", require="from-SPIM")) for w in lmk_scans]
+)
+if _lmk_shared:
+    raise ValueError(
+        "--landmark_analysis: a SPIM landmarks file matches several scans; its points are on one "
+        "scan's grid, so name the scan in the file (ses-/sample-/acq-): "
+        + "; ".join(f"{os.path.basename(f)} -> {s}" for f, s in _lmk_shared.items())
+    )
 print(f"Landmark analysis: {len(lmk_scans)} scans with SPIM landmarks")
 
 def lmk_name_check():

@@ -19,8 +19,12 @@ fixed-point inverse, as the report does. Coordinates are LPS mm, as the inputs.
 import argparse
 import json
 import os
+import sys
 
 import pandas as pd
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import landmark_files as LF  # noqa: E402
 
 SCHEMA = (
     "https://raw.githubusercontent.com/slicer/slicer/master/Modules/Loadable/"
@@ -91,7 +95,8 @@ def write(obj, fn):
 
 def main(tsv, index, template, mri):
     df = pd.read_csv(tsv, sep="\t")
-    df = df[df["inversion"].isin(["fixedpoint", "none"])]
+    df = df[df["inversion"].isin(["fixedpoint", "none"])].copy()
+    df["converged"] = LF.inv_converged(df)
     outdir = os.path.dirname(index) or "."
     os.makedirs(outdir, exist_ok=True)
     prefix = os.path.basename(index)[: -len("_markups.tsv")]
@@ -101,7 +106,9 @@ def main(tsv, index, template, mri):
         pts = [
             (
                 r.landmark,
-                f"TRE {r.tre_um:.0f} um" + ("" if r.inside_field else " (outside the transform grid)"),
+                f"TRE {r.tre_um:.0f} um"
+                + ("" if r.inside_field else " (outside the transform grid)")
+                + ("" if r.converged else " (inverse did not converge)"),
                 (r.warped_x, r.warped_y, r.warped_z),
             )
             for r in g.itertuples()

@@ -22,9 +22,15 @@ mri = LT.load_landmarks(inp.mri_landmarks) if "mri_landmarks" in inp.keys() else
 scan = {k: v for k, v in sm.wildcards.items()}
 
 rows = []
+COLUMNS = list(scan) + [
+    "path", "method", "stain", "inversion", "landmark", "tre_um", "inside_field", "inv_residual_um",
+    "src_x", "src_y", "src_z", "warped_x", "warped_y", "warped_z", "dst_x", "dst_y", "dst_z",
+]
 
 
 def add(path, method, stain, inversion, src, dst, warped, inside, resid=None):
+    if not len(warped["names"]):
+        return
     for i, name in enumerate(warped["names"]):
         if name not in dst:
             continue
@@ -48,11 +54,21 @@ def add(path, method, stain, inversion, src, dst, warped, inside, resid=None):
 
 
 def pts_of(d, names):
-    return np.array([d[n] for n in names])
+    return np.array([d[n] for n in names]).reshape(-1, 3)
+
+
+def coverage(f, X):
+    return LT.field_coverage(f, X) if len(X) else np.zeros(0, bool)
+
+
+def warp(X, fs):
+    return LT.apply_transforms(X, fs) if len(X) else X.copy()
 
 
 def fixedpoint(X, fwd, inv):
     """Fixed-point inverse of fwd from the shipped inverse; per-point residual (mm)."""
+    if not len(X):
+        return X.copy(), np.zeros(0)
     Y = LT.apply_transforms(X, [inv])
     for _ in range(50):
         R = LT.apply_transforms(Y, [fwd]) - X
@@ -66,6 +82,9 @@ def fixedpoint(X, fwd, inv):
 s_names = [n for n in spim if n in tpl]
 t_names = [n for n in tpl if n in spim]
 m_names = [n for n in mri if n in spim] if mri else []
+if not s_names:
+    print(f"WARNING {scan}: no landmark name is shared by the SPIM and template landmarks; "
+          "see landmarks/group/landmark_name_check.tsv", file=sys.stderr)
 
 for stain in P.stains:
     mri_in_spim = None
@@ -73,43 +92,43 @@ for stain in P.stains:
         # MRI points -> SPIM (from-SPIM_to-MRI, defined on the MRI grid)
         f = inp[f"mri2spim__{stain}"]
         X = pts_of(mri, m_names)
-        Y = LT.apply_transforms(X, [f])
+        Y = warp(X, [f])
         add("mri_to_spim", "greedy", stain, "none", mri, spim,
-            dict(names=m_names, pts=Y), LT.field_coverage(f, X))
-        mri_in_spim = (Y, LT.field_coverage(f, X))
+            dict(names=m_names, pts=Y), coverage(f, X))
+        mri_in_spim = (Y, coverage(f, X))
         # SPIM points -> MRI (from-MRI_to-SPIM, defined on the SPIM grid)
         f = inp[f"spim2mri__{stain}"]
         sm_names = [n for n in spim if n in mri]
         X = pts_of(spim, sm_names)
         add("spim_to_mri", "greedy", stain, "none", spim, mri,
-            dict(names=sm_names, pts=LT.apply_transforms(X, [f])), LT.field_coverage(f, X))
+            dict(names=sm_names, pts=warp(X, [f])), coverage(f, X))
 
     for method in P.methods:
         fwd, inv = inp[f"fwd__{stain}__{method}"], inp[f"inv__{stain}__{method}"]
         # SPIM -> template: shipped inverse, and fixed-point inverse of fwd
         X = pts_of(spim, s_names)
-        inside = LT.field_coverage(inv, X)
-        Yship = LT.apply_transforms(X, [inv])
+        inside = coverage(inv, X)
+        Yship = warp(X, [inv])
         add("spim_to_template", method, stain, "shipped", spim, tpl, dict(names=s_names, pts=Yship), inside)
         Yfp, res = fixedpoint(X, fwd, inv)
         add("spim_to_template", method, stain, "fixedpoint", spim, tpl, dict(names=s_names, pts=Yfp),
-            inside & LT.field_coverage(fwd, Yfp), res)
+            inside & coverage(fwd, Yfp), res)
         # template -> SPIM: forward composite (template grid) on template points
         T = pts_of(tpl, t_names)
         add("template_to_spim", method, stain, "none", tpl, spim,
-            dict(names=t_names, pts=LT.apply_transforms(T, [fwd])), LT.field_coverage(fwd, T))
+            dict(names=t_names, pts=warp(T, [fwd])), coverage(fwd, T))
         # MRI -> template via SPIM (same stain for both legs)
         if mri_in_spim is not None:
             Ym, inside_m = mri_in_spim
             mt = [i for i, n in enumerate(m_names) if n in tpl]
             names = [m_names[i] for i in mt]
             Ys = Ym[mt]
-            inside2 = inside_m[mt] & LT.field_coverage(inv, Ys)
+            inside2 = inside_m[mt] & coverage(inv, Ys)
             add("mri_to_template", method, stain, "shipped", mri, tpl,
-                dict(names=names, pts=LT.apply_transforms(Ys, [inv])), inside2)
+                dict(names=names, pts=warp(Ys, [inv])), inside2)
             Yfp2, res2 = fixedpoint(Ys, fwd, inv)
             add("mri_to_template", method, stain, "fixedpoint", mri, tpl,
-                dict(names=names, pts=Yfp2), inside2 & LT.field_coverage(fwd, Yfp2), res2)
+                dict(names=names, pts=Yfp2), inside2 & coverage(fwd, Yfp2), res2)
         LT._SITK_CACHE.pop((fwd, False), None)  # template-grid fields are large
 
-LT.write_tsv(rows, sm.output.tsv)
+LT.write_tsv(rows, sm.output.tsv, fieldnames=COLUMNS)

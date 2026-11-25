@@ -188,6 +188,13 @@ def main(tsv, tpl_dir, tpl_image, run_root, out, regions_file=None, template="te
     df = pd.read_csv(tsv, sep="\t")
     df["scan"] = scan_id(df)
     df = df[df["inside_field"].astype(bool)].copy()
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import landmark_files as LF
+
+    conv = LF.inv_converged(df)
+    n_nonconv = int((~conv).sum())
+    nonconv_by = df[~conv].groupby("method").size().sort_values(ascending=False)
+    df = df[conv].copy()
     reg_key = ["scan", "path", "inversion", "method", "stain"]
     med = df.groupby(reg_key)["tre_um"].transform("median")
     failed = (df[med > FAIL_UM].groupby(reg_key)["tre_um"].agg(["median", "count"])
@@ -201,7 +208,14 @@ def main(tsv, tpl_dir, tpl_image, run_root, out, regions_file=None, template="te
         f"Stains: {', '.join(sorted(df['stain'].unique()))}. Landmarks: {df['landmark'].nunique()}.",
         "",
         "TRE in µm. Primary measure: SPIM→template with the fixed-point inverse. Rows with a point "
-        "outside a transform's grid are excluded. **Landmarks are ground truth here and are never "
+        "outside a transform's grid are excluded"
+        + (
+            f", and so are {n_nonconv} fixed-point rows whose inverse did not converge (residual above "
+            f"{LF.INV_TOL_UM:g} µm: " + ", ".join(f"{m} {n}" for m, n in nonconv_by.items()) + ")"
+            if n_nonconv
+            else ""
+        )
+        + ". **Landmarks are ground truth here and are never "
         "edited; flags are for a human to look at.**",
         "",
     ]

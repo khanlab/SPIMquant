@@ -57,7 +57,13 @@ pixi run -e gpu spimquant <bids_dir> <output_dir> participant \
 ```
 
 - Use the `gpu` pixi environment and a GPU allocation if `fireants` is among the
-  methods (default). Without a GPU, pass `--landmark_methods` without `fireants`.
+  methods (default). If no GPU is visible when the workflow starts, it prints a note
+  with the `--landmark_methods` list without `fireants` to use if the jobs will not get one.
+- Each scan's SPIM landmark file is picked by its name: a file naming another `ses-`,
+  `sample-` or `acq-` than the scan's belongs to another scan and is not used; a file
+  without one of them applies to any scan. If one file would serve several scans of a
+  subject (e.g. two sessions and a single file without `ses-`), the run stops and asks
+  for the scan's entities in the file name, since the points are on one scan's grid.
 - The MRI is chosen from the MRI landmark file: only the MRI scans matching the
   session (and any `acq-`/`run-`/`rec-`) in each subject's landmark file name are used,
   so other sessions (timepoints) are ignored without filtering them; the run prints
@@ -76,10 +82,12 @@ pixi run -e gpu spimquant <bids_dir> <output_dir> participant \
 - `sub-*/…/tre/*_tre.tsv` — one row per landmark × path × method × stain × inversion:
   `tre_um`, source/warped/target LPS coordinates, `inside_field` (False if a point
   fell outside a transform's grid, where ITK would use zero displacement), and the
-  fixed-point residual.
+  fixed-point residual (`inv_residual_um`).
 - `group/landmarks_tre_allscans.tsv` — all scans.
 - `group/landmarks_tre_summary.tsv` — n, median, IQR, mean, SD, max per
-  path × method × stain × inversion (points outside a field excluded).
+  path × method × stain × inversion. Points outside a field, and fixed-point rows
+  whose inverse did not converge (residual above 1 µm), are left out of it, the
+  per-landmark table and the report; `n_outside_field` and `n_not_converged` count them.
 - `group/landmarks_tre_per_landmark.tsv` — the same per landmark.
 - `sub-*/…/markups/` — where the landmarks land, as 3D Slicer markups (LPS mm),
   listed in `*_markups.tsv`:
