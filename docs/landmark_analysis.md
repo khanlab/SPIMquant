@@ -57,8 +57,9 @@ pixi run -e gpu spimquant <bids_dir> <output_dir> participant \
 ```
 
 - Use the `gpu` pixi environment and a GPU allocation if `fireants` is among the
-  methods (default). If no GPU is visible when the workflow starts, it prints a note
-  with the `--landmark_methods` list without `fireants` to use if the jobs will not get one.
+  methods (default). Outside the gpu environment (or with `--gpu no`) the workflow
+  prints a note at startup with the `--landmark_methods` list without `fireants`, to
+  use if the jobs will not get a GPU.
 - Each scan's SPIM landmark file is picked by its name: a file naming another `ses-`,
   `sample-` or `acq-` than the scan's belongs to another scan and is not used; a file
   without one of them applies to any scan. If one file would serve several scans of a

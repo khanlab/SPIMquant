@@ -31,13 +31,11 @@ markups file (landmark_markups), so where the points land can be looked at.
 """
 
 import glob as _glob
-import shutil as _shutil
 import sys as _sys
 from types import SimpleNamespace
 
 _sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
 import landmark_files as LF
-
 
 lmk_root = os.path.join(root, "landmarks")
 
@@ -46,9 +44,13 @@ lmk_methods = config.get("landmark_methods") or [
 ]
 for _m in lmk_methods:
     if _m not in reg_presets:
-        raise ValueError(f"--landmark_methods: unknown method {_m}, choose from {sorted(reg_presets)}")
+        raise ValueError(
+            f"--landmark_methods: unknown method {_m}, choose from {sorted(reg_presets)}"
+        )
     if reg_presets[_m].get("multichannel"):
-        raise ValueError(f"--landmark_methods: {_m} is multichannel, not supported here")
+        raise ValueError(
+            f"--landmark_methods: {_m} is multichannel, not supported here"
+        )
 
 lmk_stains = config.get("landmark_stains") or list(stains)
 for _s in lmk_stains:
@@ -69,7 +71,9 @@ def lmk_stains_of(wildcards):
             have = lmk_scan_stains.get(spim_raw.path.format(**row), lmk_stains)
             out = [s for s in lmk_stains if s in have]
             if not out:
-                raise ValueError(f"--landmark_analysis: scan {w} has none of the stains {lmk_stains}")
+                raise ValueError(
+                    f"--landmark_analysis: scan {w} has none of the stains {lmk_stains}"
+                )
             return out
     return lmk_stains
 
@@ -81,12 +85,15 @@ for _k in ("landmarks_spim", "landmarks_template"):
     if not config.get(_k):
         raise ValueError(f"--landmark_analysis needs --{_k}")
 
-_lmk_gpu_methods = [m for m in lmk_methods if reg_presets[m].get("backend") == "fireants"]
-if _lmk_gpu_methods and not (_shutil.which("nvidia-smi") or os.environ.get("CUDA_VISIBLE_DEVICES")):
+_lmk_gpu_methods = [
+    m for m in lmk_methods if reg_presets[m].get("backend") == "fireants"
+]
+if _lmk_gpu_methods and not gpu_available:
+    # gpu_available (Snakefile): --gpu, or by default whether torch has CUDA
     print(
-        f"Landmark analysis: NOTE {', '.join(_lmk_gpu_methods)} need(s) a GPU (the gpu pixi environment and a "
-        "GPU for the job, e.g. --resources gpu=1). No GPU is visible here; if the jobs will not get one, "
-        "leave it out with: --landmark_methods "
+        f"Landmark analysis: NOTE {', '.join(_lmk_gpu_methods)} need(s) a GPU (the gpu pixi "
+        "environment and a GPU for the jobs), and this environment has none (--gpu). If the "
+        "jobs will not get one, leave it out with: --landmark_methods "
         + " ".join(m for m in lmk_methods if m not in _lmk_gpu_methods)
     )
 
@@ -95,7 +102,9 @@ print(
     + (", with MRI" if lmk_do_mri else "")
 )
 if len({tuple(v) for v in lmk_scan_stains.values()}) > 1:
-    print(f"Landmark analysis: scans have different stains, each uses its own: {lmk_scan_stains}")
+    print(
+        f"Landmark analysis: scans have different stains, each uses its own: {lmk_scan_stains}"
+    )
 
 
 wildcard_constraints:
@@ -109,7 +118,10 @@ def _lmk_find(base, wildcards, datatype, require=None):
     """The landmarks file of a scan in a manual_landmarks derivative, or None."""
     subj = f"sub-{wildcards.subject}"
     hits = sorted(
-        _glob.glob(os.path.join(base, subj, "**", datatype, f"{subj}_*landmarks.json"), recursive=True)
+        _glob.glob(
+            os.path.join(base, subj, "**", datatype, f"{subj}_*landmarks.json"),
+            recursive=True,
+        )
     )
     if require:
         hits = [h for h in hits if require in os.path.basename(h)]
@@ -119,7 +131,9 @@ def _lmk_find(base, wildcards, datatype, require=None):
 
 def _mri_sessions(subject):
     try:
-        return sorted(set(inputs["mri"].filter(subject=subject).entities.get("session", [])))
+        return sorted(
+            set(inputs["mri"].filter(subject=subject).entities.get("session", []))
+        )
     except Exception:
         return []
 
@@ -139,13 +153,19 @@ def lmk_mri_file(wildcards):
     base, subj = config["landmarks_mri"], f"sub-{wildcards.subject}"
     hits = sorted(
         _glob.glob(
-            os.path.join(base, subj, "**", "anat", f"{subj}_*from-{mri_suffix}_landmarks.json"),
+            os.path.join(
+                base, subj, "**", "anat", f"{subj}_*from-{mri_suffix}_landmarks.json"
+            ),
             recursive=True,
         )
     )
     sessions = _mri_sessions(wildcards.subject)
     if len(hits) > 1 and sessions:
-        hits = [h for h in hits if any(f"_ses-{s}_" in os.path.basename(h) for s in sessions)]
+        hits = [
+            h
+            for h in hits
+            if any(f"_ses-{s}_" in os.path.basename(h) for s in sessions)
+        ]
     if len(hits) > 1:
         raise ValueError(
             f"several MRI landmark files for sub-{wildcards.subject}: {hits}; "
@@ -213,8 +233,6 @@ lmk_xfm_inv = _lmk_xfm("xfm.nii.gz", from_="{template}", to="subject")
 
 
 use rule affine_reg as lmk_affine_reg with:
-    group:
-        "lmk_reg"
     input:
         fixed=get_template_for_reg,
         moving=_lmk_moving(),
@@ -225,6 +243,8 @@ use rule affine_reg as lmk_affine_reg with:
         warped=temp(_lmk_warped("{reg}affinewarped")),
     log:
         _lmk_log("lmk_affine_reg", space="{template}", desc="{reg}"),
+    group:
+        "lmk_reg"
     params:
         affine=lambda wildcards: reg_presets[wildcards.reg]["affine"],
         init="-ia-image-centers",
@@ -235,17 +255,15 @@ use rule affine_reg as lmk_affine_reg with:
 
 
 use rule convert_ras_to_itk as lmk_convert_ras_to_itk with:
-    group:
-        "lmk_reg"
     input:
         xfm_ras=rules.lmk_affine_reg.output.xfm_ras,
     output:
         xfm_itk=temp(_lmk_xfm("xfm.txt", desc="{reg}affine", type_="itk")),
+    group:
+        "lmk_reg"
 
 
 use rule deform_reg as lmk_deform_reg with:
-    group:
-        "lmk_reg"
     input:
         fixed=get_template_for_reg,
         moving=_lmk_moving(),
@@ -258,6 +276,8 @@ use rule deform_reg as lmk_deform_reg with:
         warped=temp(_lmk_warped("{reg}deformwarped")),
     log:
         _lmk_log("lmk_deform_reg", space="{template}", desc="{reg}"),
+    group:
+        "lmk_reg"
     params:
         iters=lambda wildcards: reg_iters(reg_presets[wildcards.reg], "deform_iters"),
         metric=lambda wildcards: reg_presets[wildcards.reg]["metric"],
@@ -311,8 +331,6 @@ use rule reg_fireants as lmk_reg_fireants with:
 
 
 use rule compose_subject_to_template_warp as lmk_compose_subject_to_template_warp with:
-    group:
-        "lmk_reg"
     input:
         ref=rules.import_template_anat.output.anat,
         subject=_lmk_moving(),
@@ -322,6 +340,8 @@ use rule compose_subject_to_template_warp as lmk_compose_subject_to_template_war
     output:
         xfm_composite=lmk_xfm_fwd,
         xfm_composite_inv=lmk_xfm_inv,
+    group:
+        "lmk_reg"
 
 
 # ---------------------------------------------------------------- MRI <-> SPIM
@@ -348,15 +368,48 @@ if lmk_do_mri:
             spim=_lmk_moving(),
         output:
             xfm_ras=temp(
-                _lmk_xfm("xfm.txt", from_=mri_suffix, to="SPIM", desc="rigid", type_="ras", **_mri_reg_wc)
+                _lmk_xfm(
+                    "xfm.txt",
+                    from_=mri_suffix,
+                    to="SPIM",
+                    desc="rigid",
+                    type_="ras",
+                    **_mri_reg_wc,
+                )
             ),
-            warp=temp(_lmk_xfm("warp.nii.gz", from_=mri_suffix, to="SPIM", desc=None, **_mri_reg_wc)),
-            invwarp=temp(_lmk_xfm("warp.nii.gz", from_="SPIM", to=mri_suffix, desc=None, **_mri_reg_wc)),
+            warp=temp(
+                _lmk_xfm(
+                    "warp.nii.gz",
+                    from_=mri_suffix,
+                    to="SPIM",
+                    desc=None,
+                    **_mri_reg_wc,
+                )
+            ),
+            invwarp=temp(
+                _lmk_xfm(
+                    "warp.nii.gz",
+                    from_="SPIM",
+                    to=mri_suffix,
+                    desc=None,
+                    **_mri_reg_wc,
+                )
+            ),
             linwarped=temp(
-                _lmk_warped("linearwarped", space="SPIM", suffix=f"{mri_suffix}.nii.gz", **_mri_reg_wc)
+                _lmk_warped(
+                    "linearwarped",
+                    space="SPIM",
+                    suffix=f"{mri_suffix}.nii.gz",
+                    **_mri_reg_wc,
+                )
             ),
             warped=temp(
-                _lmk_warped("deformwarped", space="SPIM", suffix=f"{mri_suffix}.nii.gz", **_mri_reg_wc)
+                _lmk_warped(
+                    "deformwarped",
+                    space="SPIM",
+                    suffix=f"{mri_suffix}.nii.gz",
+                    **_mri_reg_wc,
+                )
             ),
         params:
             iters="{iters}",
@@ -376,12 +429,25 @@ if lmk_do_mri:
                 suffix=f"{mri_suffix}.nii.gz",
                 **inputs.subj_wildcards,
             ),
-            xfm_ras=_lmk_xfm("xfm.txt", from_=mri_suffix, to="SPIM", desc="rigid", type_="ras", **_mri_reg_cfg),
-            warp=_lmk_xfm("warp.nii.gz", from_=mri_suffix, to="SPIM", desc=None, **_mri_reg_cfg),
-            invwarp=_lmk_xfm("warp.nii.gz", from_="SPIM", to=mri_suffix, desc=None, **_mri_reg_cfg),
+            xfm_ras=_lmk_xfm(
+                "xfm.txt",
+                from_=mri_suffix,
+                to="SPIM",
+                desc="rigid",
+                type_="ras",
+                **_mri_reg_cfg,
+            ),
+            warp=_lmk_xfm(
+                "warp.nii.gz", from_=mri_suffix, to="SPIM", desc=None, **_mri_reg_cfg
+            ),
+            invwarp=_lmk_xfm(
+                "warp.nii.gz", from_="SPIM", to=mri_suffix, desc=None, **_mri_reg_cfg
+            ),
         output:
             xfm_composite=_lmk_xfm("xfm.nii.gz", from_=mri_suffix, to="SPIM", desc=None),
-            xfm_composite_inv=_lmk_xfm("xfm.nii.gz", from_="SPIM", to=mri_suffix, desc=None),
+            xfm_composite_inv=_lmk_xfm(
+                "xfm.nii.gz", from_="SPIM", to=mri_suffix, desc=None
+            ),
 
 
 # ---------------------------------------------------------------- TRE
@@ -403,8 +469,12 @@ def _lmk_tre_inputs(wildcards):
             d[f"inv__{s}__{m}"] = lmk_xfm_inv.format(**f)
         if mri:
             f = dict(wc, regstain=s)
-            d[f"mri2spim__{s}"] = _lmk_xfm("xfm.nii.gz", from_="SPIM", to=mri_suffix, desc=None).format(**f)
-            d[f"spim2mri__{s}"] = _lmk_xfm("xfm.nii.gz", from_=mri_suffix, to="SPIM", desc=None).format(**f)
+            d[f"mri2spim__{s}"] = _lmk_xfm(
+                "xfm.nii.gz", from_="SPIM", to=mri_suffix, desc=None
+            ).format(**f)
+            d[f"spim2mri__{s}"] = _lmk_xfm(
+                "xfm.nii.gz", from_=mri_suffix, to="SPIM", desc=None
+            ).format(**f)
     return d
 
 
@@ -413,17 +483,19 @@ rule landmark_tre:
     input:
         unpack(_lmk_tre_inputs),
     output:
-        tsv=bids(root=lmk_root, datatype="tre", suffix="tre.tsv", **inputs["spim"].wildcards),
+        tsv=bids(
+            root=lmk_root, datatype="tre", suffix="tre.tsv", **inputs["spim"].wildcards
+        ),
+    threads: 1
+    resources:
+        mem_mb=24000,
+        runtime=120,
     params:
         scriptdir=os.path.join(workflow.basedir, "scripts"),
         stains=lmk_stains_of,
         methods=lmk_methods,
         mri_suffix=mri_suffix,
         template=config["template"],
-    threads: 1
-    resources:
-        mem_mb=24000,
-        runtime=120,
     script:
         "../scripts/landmark_tre_subject.py"
 
@@ -437,16 +509,31 @@ def _lmk_scans():
     out = []
     for vals in zip(*[zl[k] for k in keys]):
         w = dict(zip(keys, vals))
-        if _lmk_find(config["landmarks_spim"], SimpleNamespace(**w), "micr", require="from-SPIM"):
+        if _lmk_find(
+            config["landmarks_spim"], SimpleNamespace(**w), "micr", require="from-SPIM"
+        ):
             out.append(w)
     return out
 
 
 lmk_scans = _lmk_scans()
 if not lmk_scans:
-    raise ValueError(f"--landmark_analysis: no SPIM scan has a landmarks file in {config['landmarks_spim']}")
+    raise ValueError(
+        f"--landmark_analysis: no SPIM scan has a landmarks file in {config['landmarks_spim']}"
+    )
 _lmk_shared = LF.shared_files(
-    [(str(w), _lmk_find(config["landmarks_spim"], SimpleNamespace(**w), "micr", require="from-SPIM")) for w in lmk_scans]
+    [
+        (
+            str(w),
+            _lmk_find(
+                config["landmarks_spim"],
+                SimpleNamespace(**w),
+                "micr",
+                require="from-SPIM",
+            ),
+        )
+        for w in lmk_scans
+    ]
 )
 if _lmk_shared:
     raise ValueError(
@@ -455,6 +542,7 @@ if _lmk_shared:
         + "; ".join(f"{os.path.basename(f)} -> {s}" for f, s in _lmk_shared.items())
     )
 print(f"Landmark analysis: {len(lmk_scans)} scans with SPIM landmarks")
+
 
 def lmk_name_check():
     """Landmarks found on only one side of a comparison, per scan. Landmarks are
@@ -470,17 +558,32 @@ def lmk_name_check():
     rows = []
     for w in lmk_scans:
         ns = SimpleNamespace(**w)
-        scan = "_".join(str(w[k]) for k in ("subject", "session", "sample", "acq") if k in w)
+        scan = "_".join(
+            str(w[k]) for k in ("subject", "session", "sample", "acq") if k in w
+        )
         spim = set(_LT.load_landmarks(lmk_spim_file(ns)))
         sets = [("SPIM", spim, "template", tpl)]
         mri_f = lmk_mri_file(ns) if lmk_do_mri else None
         if mri_f:
             sets.append(("MRI", set(_LT.load_landmarks(mri_f)), "SPIM", spim))
         elif lmk_do_mri:
-            rows.append(dict(scan=scan, landmark="(all)", found_in="", missing_from="MRI (no MRI landmarks file)"))
+            rows.append(
+                dict(
+                    scan=scan,
+                    landmark="(all)",
+                    found_in="",
+                    missing_from="MRI (no MRI landmarks file)",
+                )
+            )
         for a, A, b, B in sets:
-            rows += [dict(scan=scan, landmark=n, found_in=a, missing_from=b) for n in sorted(A - B)]
-            rows += [dict(scan=scan, landmark=n, found_in=b, missing_from=a) for n in sorted(B - A)]
+            rows += [
+                dict(scan=scan, landmark=n, found_in=a, missing_from=b)
+                for n in sorted(A - B)
+            ]
+            rows += [
+                dict(scan=scan, landmark=n, found_in=b, missing_from=a)
+                for n in sorted(B - A)
+            ]
     return rows
 
 
@@ -491,11 +594,16 @@ if lmk_unmatched:
         "of the TRE (names must match); listed in landmarks/group/landmark_name_check.tsv and the report:"
     )
     for _r in lmk_unmatched[:20]:
-        print(f"  {_r['scan']}: {_r['landmark']} in {_r['found_in'] or '-'}, not in {_r['missing_from']}")
+        print(
+            f"  {_r['scan']}: {_r['landmark']} in {_r['found_in'] or '-'}, not in {_r['missing_from']}"
+        )
     if len(lmk_unmatched) > 20:
         print(f"  ... and {len(lmk_unmatched) - 20} more")
 else:
-    print("Landmark analysis: every landmark name matches across SPIM, template" + (" and MRI" if lmk_do_mri else ""))
+    print(
+        "Landmark analysis: every landmark name matches across SPIM, template"
+        + (" and MRI" if lmk_do_mri else "")
+    )
 
 if lmk_do_mri:
     # use only the MRI scans the landmarks were placed on: the session (and any
@@ -517,7 +625,9 @@ if lmk_do_mri:
                 f"{os.path.basename(_f)}; check --filter-mri / --path-mri"
             )
         mri_subject_filters[_subj] = _ents
-        print(f"Landmark analysis: sub-{_subj}: MRI from the landmark file: {_ents} ({_n} scan(s))")
+        print(
+            f"Landmark analysis: sub-{_subj}: MRI from the landmark file: {_ents} ({_n} scan(s))"
+        )
 
     # several MRI scans of a subject are averaged on the grid of the first one
     # (preproc_mri.smk), so the MRI landmarks have to be in that scan's space
@@ -533,7 +643,9 @@ if lmk_do_mri:
             )
 
 lmk_tre_tsvs = [
-    bids(root=lmk_root, datatype="tre", suffix="tre.tsv", **inputs["spim"].wildcards).format(**w)
+    bids(
+        root=lmk_root, datatype="tre", suffix="tre.tsv", **inputs["spim"].wildcards
+    ).format(**w)
     for w in lmk_scans
 ]
 
@@ -542,22 +654,34 @@ rule landmark_markups:
     """Every warped landmark set of a scan as a 3D Slicer markups file (one per path x
     method x stain, the TRE of each point in its description), plus the target sets."""
     input:
-        tsv=bids(root=lmk_root, datatype="tre", suffix="tre.tsv", **inputs["spim"].wildcards),
+        tsv=bids(
+            root=lmk_root, datatype="tre", suffix="tre.tsv", **inputs["spim"].wildcards
+        ),
     output:
-        index=bids(root=lmk_root, datatype="markups", suffix="markups.tsv", **inputs["spim"].wildcards),
-    params:
-        template=config["template"],
-        mri_suffix=mri_suffix,
+        index=bids(
+            root=lmk_root,
+            datatype="markups",
+            suffix="markups.tsv",
+            **inputs["spim"].wildcards,
+        ),
     threads: 1
     resources:
         mem_mb=2000,
         runtime=10,
+    params:
+        template=config["template"],
+        mri_suffix=mri_suffix,
     script:
         "../scripts/landmark_markups.py"
 
 
 lmk_markups = [
-    bids(root=lmk_root, datatype="markups", suffix="markups.tsv", **inputs["spim"].wildcards).format(**w)
+    bids(
+        root=lmk_root,
+        datatype="markups",
+        suffix="markups.tsv",
+        **inputs["spim"].wildcards,
+    ).format(**w)
     for w in lmk_scans
 ]
 
@@ -569,17 +693,19 @@ rule landmark_name_check:
         mri=[f for f in (lmk_mri_file(SimpleNamespace(**w)) for w in lmk_scans) if f],
     output:
         tsv=os.path.join(lmk_root, "group", "landmark_name_check.tsv"),
-    params:
-        template_landmarks=config["landmarks_template"],
     threads: 1
     resources:
         mem_mb=1000,
         runtime=5,
+    params:
+        template_landmarks=config["landmarks_template"],
     run:
         import pandas as pd
 
         cols = ["scan", "landmark", "found_in", "missing_from"]
-        pd.DataFrame(lmk_name_check(), columns=cols).to_csv(output.tsv, sep="\t", index=False)
+        pd.DataFrame(lmk_name_check(), columns=cols).to_csv(
+            output.tsv, sep="\t", index=False
+        )
 
 
 rule landmark_tre_summary:
@@ -605,18 +731,20 @@ rule landmark_report:
     input:
         tsv=rules.landmark_tre_summary.output.all_tsv,
         name_check=rules.landmark_name_check.output.tsv,
-        template_image=expand(rules.import_template_anat.output.anat, template=config["template"]),
+        template_image=expand(
+            rules.import_template_anat.output.anat, template=config["template"]
+        ),
     output:
         report=os.path.join(lmk_root, "group", "report", "report.md"),
+    threads: 1
+    resources:
+        mem_mb=8000,
+        runtime=30,
     params:
         template_landmarks=config["landmarks_template"],
         run_root=root if root else ".",
         regions=config.get("landmark_regions"),
         template=config["template"],
-    threads: 1
-    resources:
-        mem_mb=8000,
-        runtime=30,
     script:
         "../scripts/landmark_report.py"
 

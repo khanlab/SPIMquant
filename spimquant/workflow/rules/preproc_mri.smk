@@ -20,7 +20,6 @@ This workflow is optional and used when both MRI and SPIM data are available
 for the same subject.
 """
 
-
 # extra MRI entity filters per subject, e.g. {"AS1": {"session": "11m"}}; set by
 # --landmark_analysis to the scans the MRI landmarks were placed on
 mri_subject_filters = {}
@@ -34,16 +33,16 @@ def get_subject_mri(subject):
 def get_all_mri(wildcards):
     """Get all MRI files for a subject (for multi-MRI averaging)."""
     return sorted(
-        get_subject_mri(wildcards.subject)
-        .expand(bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards))
+        get_subject_mri(wildcards.subject).expand(
+            bids(root=root, datatype="anat", desc="N4", **inputs["mri"].wildcards)
+        )
     )
 
 
 def get_ref_mri(wildcards):
     """gets a N4resampled reference"""
     return sorted(
-        get_subject_mri(wildcards.subject)
-        .expand(
+        get_subject_mri(wildcards.subject).expand(
             bids(
                 root=root,
                 datatype="anat",

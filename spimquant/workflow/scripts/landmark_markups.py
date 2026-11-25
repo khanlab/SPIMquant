@@ -16,6 +16,7 @@ fixed-point inverse, as the report does. Coordinates are LPS mm, as the inputs.
   python landmark_markups.py --tsv <scan>_tre.tsv --index <out>_markups.tsv \
       --template ABAv3 --mri-suffix T2w
 """
+
 import argparse
 import json
 import os
@@ -63,7 +64,17 @@ def markups(points, name, rgb):
                         "label": label,
                         "description": desc,
                         "position": [float(v) for v in xyz],
-                        "orientation": [-1.0, -0.0, -0.0, -0.0, -1.0, -0.0, 0.0, 0.0, 1.0],
+                        "orientation": [
+                            -1.0,
+                            -0.0,
+                            -0.0,
+                            -0.0,
+                            -1.0,
+                            -0.0,
+                            0.0,
+                            0.0,
+                            1.0,
+                        ],
                         "selected": True,
                         "locked": True,
                         "visibility": True,
@@ -114,17 +125,46 @@ def main(tsv, index, template, mri):
             for r in g.itertuples()
         ]
         fn = f"{prefix}_from-{a}_to-{b}_stain-{stain}_desc-{method}_landmarks.mrk.json"
-        write(markups(pts, f"{a}->{b} {method} {stain}", WARPED_RGB), os.path.join(outdir, fn))
-        rows.append(dict(file=fn, path=path, from_space=a, to_space=b, method=method, stain=stain,
-                         n=len(pts), median_tre_um=round(g["tre_um"].median(), 1)))
+        write(
+            markups(pts, f"{a}->{b} {method} {stain}", WARPED_RGB),
+            os.path.join(outdir, fn),
+        )
+        rows.append(
+            dict(
+                file=fn,
+                path=path,
+                from_space=a,
+                to_space=b,
+                method=method,
+                stain=stain,
+                n=len(pts),
+                median_tre_um=round(g["tre_um"].median(), 1),
+            )
+        )
         for r in g.itertuples():
             targets.setdefault(b, {})[r.landmark] = (r.dst_x, r.dst_y, r.dst_z)
     for b, pts in sorted(targets.items()):
         fn = f"{prefix}_space-{b}_desc-target_landmarks.mrk.json"
-        write(markups([(n, "target", xyz) for n, xyz in sorted(pts.items())], f"{b} target", TARGET_RGB),
-              os.path.join(outdir, fn))
-        rows.append(dict(file=fn, path="target", from_space="", to_space=b, method="", stain="",
-                         n=len(pts), median_tre_um=""))
+        write(
+            markups(
+                [(n, "target", xyz) for n, xyz in sorted(pts.items())],
+                f"{b} target",
+                TARGET_RGB,
+            ),
+            os.path.join(outdir, fn),
+        )
+        rows.append(
+            dict(
+                file=fn,
+                path="target",
+                from_space="",
+                to_space=b,
+                method="",
+                stain="",
+                n=len(pts),
+                median_tre_um="",
+            )
+        )
     pd.DataFrame(rows).to_csv(index, sep="\t", index=False)
 
 

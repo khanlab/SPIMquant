@@ -33,9 +33,17 @@ def name_entities(path):
 def scan_entities(wildcards):
     """{tag: value} of the session, sample and acquisition of a SPIM scan, from
     rule wildcards or a zip_lists row (either the short or the long names)."""
-    get = wildcards.get if isinstance(wildcards, dict) else lambda k: getattr(wildcards, k, None)
+    get = (
+        wildcards.get
+        if isinstance(wildcards, dict)
+        else lambda k: getattr(wildcards, k, None)
+    )
     out = {}
-    for tag, names in (("ses", ("session", "ses")), ("sample", ("sample",)), ("acq", ("acq", "acquisition"))):
+    for tag, names in (
+        ("ses", ("session", "ses")),
+        ("sample", ("sample",)),
+        ("acq", ("acq", "acquisition")),
+    ):
         for n in names:
             v = get(n)
             if v not in (None, ""):
@@ -52,7 +60,11 @@ def pick_landmark_file(paths, scan):
     scan and is dropped. A file that does not name a tag applies to every scan;
     if several files remain, the ones naming the scan's value are preferred.
     Raises when it stays ambiguous."""
-    hits = [p for p in sorted(paths) if all(name_entities(p).get(t, v) == v for t, v in scan.items())]
+    hits = [
+        p
+        for p in sorted(paths)
+        if all(name_entities(p).get(t, v) == v for t, v in scan.items())
+    ]
     for t, v in scan.items():
         if len(hits) > 1:
             hits = [p for p in hits if name_entities(p).get(t) == v] or hits

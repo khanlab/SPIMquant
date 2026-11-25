@@ -124,7 +124,9 @@ def field_coverage(path, points):
     size = np.array(r.GetSize()[:3])
     origin, spacing = np.array(r.GetOrigin()[:3]), np.array(r.GetSpacing()[:3])
     direction = np.array(r.GetDirection()).reshape(len(r.GetSize()), -1)[:3, :3]
-    idx = (np.linalg.inv(direction @ np.diag(spacing)) @ (np.atleast_2d(points) - origin).T).T
+    idx = (
+        np.linalg.inv(direction @ np.diag(spacing)) @ (np.atleast_2d(points) - origin).T
+    ).T
     return np.all((idx >= -0.5) & (idx <= size - 0.5), axis=1)
 
 
@@ -167,7 +169,9 @@ def _apply_transforms_ants(points, transforms):
         return np.loadtxt(fout, delimiter=",", skiprows=1, ndmin=2)[:, :3]
 
 
-def fixedpoint_inverse(points, fwd_transforms, init_transforms=None, iters=50, tol_mm=1e-4):
+def fixedpoint_inverse(
+    points, fwd_transforms, init_transforms=None, iters=50, tol_mm=1e-4
+):
     """Points through the inverse of fwd_transforms by fixed-point iteration.
 
     fwd maps target-space points y to source-space points x (it is the transform
@@ -199,15 +203,23 @@ def tre_rows(src, dst, warped, meta):
                 **meta,
                 landmark=name,
                 tre_um=round(float(np.linalg.norm(w - d)) * 1000.0, 2),
-                src_x=src[name][0], src_y=src[name][1], src_z=src[name][2],
-                warped_x=w[0], warped_y=w[1], warped_z=w[2],
-                dst_x=d[0], dst_y=d[1], dst_z=d[2],
+                src_x=src[name][0],
+                src_y=src[name][1],
+                src_z=src[name][2],
+                warped_x=w[0],
+                warped_y=w[1],
+                warped_z=w[2],
+                dst_x=d[0],
+                dst_y=d[1],
+                dst_z=d[2],
             )
         )
     return rows
 
 
-def compute(src_file, dst_file, transforms=None, fixedpoint_of=None, init=None, meta=None):
+def compute(
+    src_file, dst_file, transforms=None, fixedpoint_of=None, init=None, meta=None
+):
     src, dst = load_landmarks(src_file), load_landmarks(dst_file)
     names = [n for n in src if n in dst]
     if not names:
@@ -216,7 +228,9 @@ def compute(src_file, dst_file, transforms=None, fixedpoint_of=None, init=None, 
     meta = dict(meta or {})
     if fixedpoint_of:
         Y, res, nit = fixedpoint_inverse(X, fixedpoint_of, init_transforms=init)
-        meta.update(inversion="fixedpoint", inv_residual_um=round(res * 1000, 3), inv_iters=nit)
+        meta.update(
+            inversion="fixedpoint", inv_residual_um=round(res * 1000, 3), inv_iters=nit
+        )
     else:
         Y = apply_transforms(X, transforms)
         meta.update(inversion="none", inv_residual_um="", inv_iters="")
@@ -240,13 +254,25 @@ def write_tsv(rows, path, fieldnames=None):
 
 
 def _cli():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--src", required=True, help="landmarks in the moving/source space")
     ap.add_argument("--dst", required=True, help="landmarks in the target space")
     g = ap.add_mutually_exclusive_group(required=True)
-    g.add_argument("--xfm", action="append", help="ANTs transform for points (repeat; ',1' = invert)")
-    g.add_argument("--fixedpoint-of", action="append", help="forward transform(s) to invert by fixed-point")
-    ap.add_argument("--init", action="append", help="initial transform(s) for fixed-point inversion")
+    g.add_argument(
+        "--xfm",
+        action="append",
+        help="ANTs transform for points (repeat; ',1' = invert)",
+    )
+    g.add_argument(
+        "--fixedpoint-of",
+        action="append",
+        help="forward transform(s) to invert by fixed-point",
+    )
+    ap.add_argument(
+        "--init", action="append", help="initial transform(s) for fixed-point inversion"
+    )
     ap.add_argument("--out", required=True)
     ap.add_argument("--meta", nargs="*", default=[], help="key=value columns to add")
     a = ap.parse_args()
@@ -254,16 +280,19 @@ def _cli():
     rows, missing = compute(a.src, a.dst, a.xfm, a.fixedpoint_of, a.init, meta)
     write_tsv(rows, a.out)
     tre = np.array([r["tre_um"] for r in rows])
-    print(f"{a.out}: n={len(tre)} median={np.median(tre):.1f} um "
-          f"IQR={np.percentile(tre,25):.1f}-{np.percentile(tre,75):.1f}"
-          + (f"  (unmatched: {', '.join(missing)})" if missing else ""))
+    print(
+        f"{a.out}: n={len(tre)} median={np.median(tre):.1f} um "
+        f"IQR={np.percentile(tre,25):.1f}-{np.percentile(tre,75):.1f}"
+        + (f"  (unmatched: {', '.join(missing)})" if missing else "")
+    )
 
 
 if __name__ == "__main__":
     if "snakemake" in globals():
         sm = globals()["snakemake"]
         rows, _ = compute(
-            sm.input.src, sm.input.dst,
+            sm.input.src,
+            sm.input.dst,
             transforms=sm.params.get("xfm"),
             fixedpoint_of=sm.params.get("fixedpoint_of"),
             init=sm.params.get("init"),

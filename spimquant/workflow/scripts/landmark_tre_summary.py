@@ -3,6 +3,7 @@
 rows whose inverse did not converge (residual above landmark_files.INV_TOL_UM), are
 kept in the combined table but left out of the summaries (their TRE is not
 meaningful); the summary counts both."""
+
 import os
 import sys
 
@@ -48,7 +49,9 @@ def count(mask):
 
 summ["n_outside_field"] = count(~inside)
 summ["n_not_converged"] = count(inside & ~conv)
-summ.sort_values(["path", "inversion", "median_um"]).round(2).to_csv(sm.output.summary, sep="\t", index=False)
+summ.sort_values(["path", "inversion", "median_um"]).round(2).to_csv(
+    sm.output.summary, sep="\t", index=False
+)
 
 per = ok.groupby(keys + ["landmark"]).apply(stats, include_groups=False).reset_index()
 per.round(2).to_csv(sm.output.per_landmark, sep="\t", index=False)
