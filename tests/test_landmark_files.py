@@ -196,3 +196,57 @@ def test_nothing_failed():
     )
     keep, failed = LF.failed_registrations(df, 2000)
     assert keep.all() and failed.empty
+
+
+def test_report_when_every_registration_failed(tmp_path):
+    """The report still writes (failed registrations + a note) instead of crashing."""
+    pytest.importorskip("matplotlib")
+    import json
+
+    import landmark_report as LR
+
+    names = ["CC_genu", "LH_rostral_tip", "RH_rostral_tip"]
+    tpl = tmp_path / "tpl.mrk.json"
+    pts = [dict(label=n, position=[i, 0, 0]) for i, n in enumerate(names)]
+    tpl.write_text(
+        json.dumps({"markups": [{"coordinateSystem": "LPS", "controlPoints": pts}]})
+    )
+    rows = []
+    for path, inv in [
+        ("spim_to_template", "fixedpoint"),
+        ("spim_to_template", "shipped"),
+        ("template_to_spim", "none"),
+    ]:
+        for n in names:
+            rows.append(
+                dict(
+                    subject="01",
+                    path=path,
+                    method="fireants",
+                    stain="PI",
+                    inversion=inv,
+                    landmark=n,
+                    tre_um=9000.0,
+                    inside_field=True,
+                    inv_residual_um=0.001 if inv == "fixedpoint" else "",
+                    src_x=0,
+                    src_y=0,
+                    src_z=0,
+                    warped_x=0,
+                    warped_y=0,
+                    warped_z=0,
+                    dst_x=0,
+                    dst_y=0,
+                    dst_z=0,
+                )
+            )
+    tsv = tmp_path / "all.tsv"
+    pd.DataFrame(rows).to_csv(tsv, sep="\t", index=False)
+    out = tmp_path / "report"
+    LR.main(str(tsv), str(tpl), None, str(tmp_path), str(out))
+    md = (out / "report.md").read_text()
+    assert "## 0. Failed registrations" in md and "## No usable registrations" in md
+    failed = pd.read_csv(out / "failed_registrations.tsv", sep="\t")
+    assert failed[["registration", "method", "stain"]].values.tolist() == [
+        ["template", "fireants", "PI"]
+    ]

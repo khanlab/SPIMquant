@@ -309,7 +309,7 @@ def main(
             os.path.join(out, "failed_registrations.tsv"), sep="\t", index=False
         )
         fs = (
-            failed.groupby(["method", "stain"])["median_um"]
+            failed.groupby(["registration", "method", "stain"])["median_um"]
             .median()
             .reset_index()
             .rename(columns={"median_um": "median_TRE_um"})
@@ -326,6 +326,21 @@ def main(
             md_table(fs),
             "",
         ]
+
+    # without the primary measure (every registration failed, or every
+    # fixed-point inverse diverged) there is nothing to rank: report why and stop
+    if df[(df.path == PRIMARY[0]) & (df.inversion == PRIMARY[1])].empty:
+        md += [
+            "## No usable registrations",
+            "",
+            f"No {PRIMARY[0]} rows with the {PRIMARY[1]} inverse are left: every "
+            "registration failed (section 0) or its inverse did not converge. The "
+            "other sections need them and are left out; see the group TSVs for all rows.",
+            "",
+        ]
+        with open(os.path.join(out, "report.md"), "w") as fh:
+            fh.write("\n".join(md))
+        return
 
     # 1. method x stain
     md += ["## 1. Which method and stain register best", ""]
