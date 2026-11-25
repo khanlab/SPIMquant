@@ -252,16 +252,9 @@ def main(
     n_nonconv = int((~conv).sum())
     nonconv_by = df[~conv].groupby("method").size().sort_values(ascending=False)
     df = df[conv].copy()
-    reg_key = ["scan", "path", "inversion", "method", "stain"]
-    med = df.groupby(reg_key)["tre_um"].transform("median")
-    failed = (
-        df[med > FAIL_UM]
-        .groupby(reg_key)["tre_um"]
-        .agg(["median", "count"])
-        .rename(columns={"median": "median_um", "count": "n"})
-        .reset_index()
-    )
-    df = df[med <= FAIL_UM].copy()
+    # a registration that failed is left out of every path that uses it
+    keep, failed = LF.failed_registrations(df, FAIL_UM)
+    df = df[keep].copy()
     tpl = load_landmarks(tpl_dir)
     md = ["# Landmark registration report", ""]
     nsub = df["subject"].nunique()
@@ -325,7 +318,9 @@ def main(
             "## 0. Failed registrations",
             "",
             f"Median TRE above {FAIL_UM:.0f} µm on a scan: the registration did not converge. "
-            "These are left out of every section below (all rows are in "
+            "Each is left out of every path that uses it (a template registration also "
+            "from MRI→template, an MRI registration from MRI↔SPIM and MRI→template) in "
+            "every section below (all rows are in "
             "`failed_registrations.tsv` and the group TSVs).",
             "",
             md_table(fs),
@@ -1011,7 +1006,7 @@ def main(
     ax.set_title("A. LS → template by method", loc="left")
     ax.grid(axis="y", visible=False)
     if not failed.empty:
-        fm = sorted(failed["method"].unique())
+        fm = sorted(failed.loc[failed["registration"] == "template", "method"].unique())
         some, never = [m for m in fm if m in ms.index], [
             m for m in fm if m not in ms.index
         ]

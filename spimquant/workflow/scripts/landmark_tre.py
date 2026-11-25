@@ -7,7 +7,7 @@ or the fixed-point inverse of the A->B one.
 
 Landmark files are 3D Slicer markups (.mrk.json / *_landmarks.json), LPS, mm.
 A file may hold one or many control points; labels are matched across files by
-name with a leading "Template_" and a trailing "-<n>" stripped (files are never
+name with a leading "Template_" and the trailing "-1" that 3D Slicer adds stripped (files are never
 modified).
 
 Run from Snakemake (snakemake object present) or from the command line:
@@ -30,12 +30,15 @@ import tempfile
 
 import numpy as np
 
-_LABEL_RE = re.compile(r"^(?:Template_)?(?:SPIM_|MRI_)?(?P<name>.+?)(?:-\d+)?$")
+# only "-1" (Slicer's counter of a point) is stripped, so names that end in a
+# number of their own (layer-5, layer-6) stay distinct
+_LABEL_RE = re.compile(r"^(?:Template_)?(?:SPIM_|MRI_)?(?P<name>.+?)(?:-1)?$")
 
 
 def landmark_name(label):
     """Template_CC_genu-1 -> CC_genu; Template_CC_genu -> CC_genu;
-    Template_SPIM_striatum_L_dorsomedial -> striatum_L_dorsomedial (modality prefix)."""
+    Template_SPIM_striatum_L_dorsomedial -> striatum_L_dorsomedial (modality prefix);
+    layer-5 -> layer-5 (only -1 is stripped)."""
     return _LABEL_RE.match(label.strip()).group("name")
 
 

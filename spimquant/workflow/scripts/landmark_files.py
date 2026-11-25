@@ -107,3 +107,89 @@ def inv_converged(df, tol_um=INV_TOL_UM):
         return pd.Series(True, index=df.index)
     res = pd.to_numeric(df["inv_residual_um"], errors="coerce")
     return ~((df["inversion"] == "fixedpoint") & (res > tol_um))
+
+
+# paths that use each registration: a template registration (scan x method x
+# stain) is checked on its own paths and carried into mri_to_template, and so is
+# an MRI registration (scan x stain)
+TEMPLATE_PATHS = ("spim_to_template", "template_to_spim")
+MRI_PATHS = ("mri_to_spim", "spim_to_mri")
+CHAINED_PATH = "mri_to_template"
+
+
+def failed_registrations(df, fail_um):
+    """Registrations whose median TRE on one of their own paths is above fail_um.
+
+    df: TRE rows with scan, path, inversion, method, stain, tre_um. A failed
+    registration is left out of every path that uses it, not only the path where
+    it failed, so a broken registration cannot stay in another path's numbers.
+    Returns (keep: boolean Series over df, failed: one row per failed
+    registration with registration, scan, method, stain, median_um, n)."""
+    import pandas as pd
+
+    key = ["scan", "path", "inversion", "method", "stain"]
+    med = df.groupby(key)["tre_um"].median().reset_index()
+    bad = med[med["tre_um"] > fail_um]
+
+    def worst(rows, by, kind):
+        if rows.empty:
+            return pd.DataFrame(
+                columns=["registration", "scan", "method", "stain", "median_um"]
+            )
+        g = (
+            rows.groupby(by)["tre_um"]
+            .max()
+            .reset_index()
+            .rename(columns={"tre_um": "median_um"})
+        )
+        g.insert(0, "registration", kind)
+        return g
+
+    tb = worst(
+        bad[bad["path"].isin(TEMPLATE_PATHS)], ["scan", "method", "stain"], "template"
+    )
+    mb = worst(bad[bad["path"].isin(MRI_PATHS)], ["scan", "stain"], "MRI")
+    if not mb.empty:
+        mri_method = df.loc[df["path"].isin(MRI_PATHS), "method"]
+        mb.insert(2, "method", mri_method.iloc[0] if len(mri_method) else "")
+
+    t_set = set(map(tuple, tb[["scan", "method", "stain"]].values))
+    m_set = set(map(tuple, mb[["scan", "stain"]].values))
+    t_hit = pd.Series(
+        [
+            (s, m, st) in t_set
+            for s, m, st in zip(df["scan"], df["method"], df["stain"])
+        ],
+        index=df.index,
+    ) & df["path"].isin(TEMPLATE_PATHS + (CHAINED_PATH,))
+    m_hit = pd.Series(
+        [(s, st) in m_set for s, st in zip(df["scan"], df["stain"])], index=df.index
+    ) & df["path"].isin(MRI_PATHS + (CHAINED_PATH,))
+    # any other path (none at present) keeps the per-path check
+    other = ~df["path"].isin(TEMPLATE_PATHS + MRI_PATHS + (CHAINED_PATH,))
+    o_hit = other & (df.groupby(key)["tre_um"].transform("median") > fail_um)
+
+    drop = t_hit | m_hit | o_hit
+    parts = [t for t in (tb, mb) if not t.empty]
+    failed = (
+        pd.concat(parts, ignore_index=True)
+        if parts
+        else pd.DataFrame(
+            columns=["registration", "scan", "method", "stain", "median_um"]
+        )
+    )
+    if not failed.empty:
+        n = []
+        for r in failed.itertuples():
+            sel = (df["scan"] == r.scan) & (df["stain"] == r.stain)
+            if r.registration == "template":
+                sel &= (df["method"] == r.method) & df["path"].isin(
+                    TEMPLATE_PATHS + (CHAINED_PATH,)
+                )
+            else:
+                sel &= df["path"].isin(MRI_PATHS + (CHAINED_PATH,))
+            n.append(int(sel.sum()))
+        failed["n"] = n
+    else:
+        failed["n"] = []
+    return ~drop, failed

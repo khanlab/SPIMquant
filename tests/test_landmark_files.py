@@ -121,3 +121,78 @@ def test_empty_tre_table_has_a_header(tmp_path):
         "tre_um",
         "inside_field",
     ]
+
+
+@pytest.mark.parametrize(
+    "label,name",
+    [
+        ("Template_CC_genu-1", "CC_genu"),
+        ("SPIM_LV_anteromedial-1", "LV_anteromedial"),
+        ("Template_SPIM_striatum_L_dorsomedial", "striatum_L_dorsomedial"),
+        ("RH_rostral_tip-1", "RH_rostral_tip"),
+        ("layer-5", "layer-5"),
+        ("Template_layer-5-1", "layer-5"),
+        ("lobule-10", "lobule-10"),
+    ],
+)
+def test_landmark_name_keeps_own_numbers(label, name):
+    assert LT.landmark_name(label) == name
+
+
+def _rows(scan, path, method, stain, tre, n=3, inversion="none"):
+    return [
+        dict(
+            scan=scan,
+            path=path,
+            inversion=inversion,
+            method=method,
+            stain=stain,
+            tre_um=tre,
+        )
+        for _ in range(n)
+    ]
+
+
+def test_failed_template_registration_dropped_from_every_path():
+    df = pd.DataFrame(
+        _rows("s1", "spim_to_template", "ants", "PI", 5000, inversion="fixedpoint")
+        + _rows(
+            "s1", "template_to_spim", "ants", "PI", 1500
+        )  # under the cut on its own
+        + _rows("s1", "mri_to_template", "ants", "PI", 900, inversion="fixedpoint")
+        + _rows("s1", "spim_to_template", "greedy", "PI", 150, inversion="fixedpoint")
+        + _rows("s1", "mri_to_spim", "greedy", "PI", 200)
+    )
+    keep, failed = LF.failed_registrations(df, 2000)
+    kept = df[keep]
+    assert not ((kept.method == "ants") & (kept.stain == "PI")).any()
+    assert set(kept.path) == {"spim_to_template", "mri_to_spim"}
+    assert failed[["registration", "scan", "method", "stain"]].values.tolist() == [
+        ["template", "s1", "ants", "PI"]
+    ]
+    assert failed["n"].tolist() == [9]
+
+
+def test_failed_mri_registration_dropped_from_mri_paths():
+    df = pd.DataFrame(
+        _rows("s1", "mri_to_spim", "greedy", "PI", 4000)
+        + _rows("s1", "spim_to_mri", "greedy", "PI", 300)
+        + _rows("s1", "mri_to_template", "ants", "PI", 600, inversion="fixedpoint")
+        + _rows("s1", "mri_to_template", "ants", "AutoF", 600, inversion="fixedpoint")
+        + _rows("s1", "spim_to_template", "ants", "PI", 150, inversion="fixedpoint")
+    )
+    keep, failed = LF.failed_registrations(df, 2000)
+    kept = df[keep]
+    assert set(map(tuple, kept[["path", "stain"]].drop_duplicates().values)) == {
+        ("mri_to_template", "AutoF"),
+        ("spim_to_template", "PI"),
+    }
+    assert failed["registration"].tolist() == ["MRI"]
+
+
+def test_nothing_failed():
+    df = pd.DataFrame(
+        _rows("s1", "spim_to_template", "ants", "PI", 150, inversion="fixedpoint")
+    )
+    keep, failed = LF.failed_registrations(df, 2000)
+    assert keep.all() and failed.empty
