@@ -122,6 +122,7 @@ def test_moments_and_metrics(scripts, tmp_path):
             slab_chunks=1,
             psf_fwhm_um="auto",
             soft_lo=0.25,
+            local_norm_um=40.0,
             dask_threads_per_worker=1,
             dask_reserve_mb=0,
         ),

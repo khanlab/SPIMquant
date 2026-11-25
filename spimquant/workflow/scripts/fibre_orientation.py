@@ -1252,6 +1252,118 @@ def estimate_psf_fwhm(darr, spacing_um, block_ids, max_peaks=2000):
     return np.median(rows, axis=0), len(rows)
 
 
+def _tissue_block_sums(block, step):
+    """(2, ...) sums of the tissue intensity and tissue voxel count over
+    ``step``-sized cells of a block (the last cell may be partial)."""
+    img = np.asarray(block, dtype=np.float32)
+    pad = [(0, -n % s) for n, s in zip(img.shape, step)]
+    img = np.pad(img, pad)
+    tissue = (img > 0).astype(np.float32)
+    shp = []
+    for n, s in zip(img.shape, step):
+        shp += [n // s, s]
+    axes = (1, 3, 5)
+    return np.stack(
+        [img.reshape(shp).sum(axis=axes), tissue.reshape(shp).sum(axis=axes)]
+    )
+
+
+def _blur_ratio(sums, sigma, min_count):
+    """Tissue-weighted mean ``G(sum) / G(count)`` of ``_tissue_block_sums``."""
+    num = ndi.gaussian_filter(sums[0], sigma, truncate=TRUNCATE, mode="constant")
+    den = ndi.gaussian_filter(sums[1], sigma, truncate=TRUNCATE, mode="constant")
+    out = np.zeros_like(num)
+    np.divide(num, den, out=out, where=den > min_count)
+    return out
+
+
+def _divide_by_upsampled(block, bg, step):
+    """``block`` divided by the low-res background ``bg`` (with a one-cell
+    halo on every face), linearly interpolated to the block's voxels."""
+    block = np.asarray(block, dtype=np.float32)
+    coords = np.meshgrid(
+        *[(np.arange(n) + 0.5) / s - 0.5 + 1 for n, s in zip(block.shape, step)],
+        indexing="ij",
+        sparse=True,
+    )
+    coords = np.broadcast_arrays(*coords)
+    bgf = ndi.map_coordinates(bg, coords, order=1, mode="nearest")
+    out = np.zeros_like(block)
+    np.divide(block, bgf, out=out, where=(block > 0) & (bgf > 0))
+    return out
+
+
+def local_normalize(darr, spacing_um, sigma_um, chunk_size=None):
+    """Divide a 3D dask array by its smooth local tissue mean.
+
+    Removes slowly varying multiplicative gain (tile flat-field shading,
+    residual bias field) so the Frangi response and the global threshold
+    depend on local, not absolute, contrast.  The background is the
+    tissue-weighted (``> 0``) mean blurred with a Gaussian of ``sigma_um``
+    (per axis or scalar), computed on a grid coarsened by about
+    ``sigma_um / 2`` and linearly interpolated back, so its cost does not
+    grow with ``sigma_um``.  Zeros (non-tissue) stay zero.  The output has
+    the chunks of ``darr`` (rechunked to ``chunk_size`` if given); the
+    coarsening step divides every chunk but the last.
+    """
+    import dask.array as da
+
+    if chunk_size is not None:
+        darr = darr.rechunk(chunk_size)
+    sigma_um = np.broadcast_to(np.asarray(sigma_um, dtype=float), (3,))
+    step = []
+    for ch, sp, sg in zip(darr.chunks, spacing_um, sigma_um):
+        c = ch[0]
+        target = max(1, int(sg / sp / 2))
+        step.append(max(d for d in range(1, c + 1) if c % d == 0 and d <= target))
+    step = tuple(step)
+    low_chunks = tuple(tuple(-(-c // s) for c in ch) for ch, s in zip(darr.chunks, step))
+    sums = da.map_blocks(
+        _tissue_block_sums,
+        darr,
+        step=step,
+        new_axis=0,
+        chunks=((2,),) + low_chunks,
+        dtype=np.float32,
+    )
+    sigma_low = tuple(float(g / (p * s)) for g, p, s in zip(sigma_um, spacing_um, step))
+    depth = tuple(int(math.ceil(TRUNCATE * sg)) + 1 for sg in sigma_low)
+    # blur on low-res chunks at least as deep as the overlap
+    blur_chunks = aligned_chunks(
+        sums.shape[1:], tuple(max(64, 2 * d) for d in depth), (1, 1, 1), min_chunk=depth
+    )
+    sums = sums.rechunk(((2,),) + blur_chunks)
+    ov = da.overlap.overlap(
+        sums, depth={0: 0, 1: depth[0], 2: depth[1], 3: depth[2]}, boundary=0
+    )
+    # cells whose blurred tissue count is below 1% of a cell are background
+    min_count = 1e-2 * float(np.prod(step))
+    bg = ov.map_blocks(
+        _blur_ratio,
+        sigma_low,
+        min_count,
+        drop_axis=0,
+        chunks=ov.chunks[1:],
+        dtype=np.float32,
+    )
+    bg = da.overlap.trim_internal(bg, dict(enumerate(depth)), boundary=0)
+    bg = bg.rechunk(low_chunks)
+    bg = da.overlap.overlap(bg, depth={0: 1, 1: 1, 2: 1}, boundary="nearest")
+    # same block grid, different chunk sizes: pair blocks without rechunking
+    return da.blockwise(
+        _divide_by_upsampled,
+        "ijk",
+        darr,
+        "ijk",
+        bg,
+        "ijk",
+        step=step,
+        dtype=np.float32,
+        align_arrays=False,
+        adjust_chunks={a: c for a, c in zip("ijk", darr.chunks)},
+    )
+
+
 def tissue_blocks(darr, n_blocks, min_fraction=0.5, seed=0):
     """Pick up to ``n_blocks`` random chunks with at least ``min_fraction``
     nonzero voxels (falls back to the most tissue-rich chunks).
@@ -1300,6 +1412,7 @@ def zarrnii_fibre_moments(
     slab_chunks=2,
     psf_fwhm_um=None,
     soft_lo=1.0,
+    local_norm_um=None,
     **kwargs,
 ):
     """Fibre moments of a single-channel ZarrNii, as a ZarrNii.
@@ -1330,6 +1443,10 @@ def zarrnii_fibre_moments(
         puncta in the sampled chunks (``estimate_psf_fwhm``).
     soft_lo : float
         Soft threshold (``soft_weights``); 1 is a hard threshold.
+    local_norm_um : None or float
+        If set, the image is first divided by its local tissue mean blurred
+        at this sigma (``local_normalize``), which removes tile shading and
+        residual bias field from the Frangi response.
     **kwargs
         Passed to ``fibre_moments`` / ``sample_frangi_parameters``
         (``alpha``, ``beta``, ``edge_min_weight``, ...).
@@ -1354,6 +1471,14 @@ def zarrnii_fibre_moments(
     filt_keys = ("alpha", "beta", "edge_min_weight")
     filt = {k: kwargs[k] for k in filt_keys if k in kwargs}
     params = {}
+    if local_norm_um is not None:
+        darr = local_normalize(
+            darr,
+            spacing_um,
+            float(local_norm_um),
+            chunk_size=aligned_chunks(darr.shape, chunk_size, factor),
+        )
+        params["local_norm_um"] = float(local_norm_um)
     sample_arr = darr.rechunk(aligned_chunks(darr.shape, chunk_size, factor))
     need_blocks = (
         gammas is None

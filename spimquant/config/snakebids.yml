@@ -1381,6 +1381,13 @@ fibre_psf_fwhm_um: auto
 # fibre_soft_threshold x the threshold to 1 at the threshold (1 = hard
 # threshold). Fibre density is then the weighted fraction of tissue.
 fibre_soft_threshold: 0.25
+# Local intensity normalisation: before filtering, the image is divided by its
+# tissue mean blurred with a Gaussian of this sigma (um), so the Frangi
+# response and threshold follow local rather than absolute contrast. Removes
+# tile flat-field shading and residual bias field (which otherwise show as a
+# tiling pattern in fibre density). Keep it well above the fibre scales and
+# below the tile size; null to disable.
+fibre_local_norm_um: 150
 # Orientation metrics (ODI, FA, GFA, direction) of a super-voxel are only
 # reported (NaN otherwise) if it holds more (weighted) fibre voxels than this
 # fraction of the voxels in one super-voxel (0.12 of an 8 x 8 x 4 super-voxel

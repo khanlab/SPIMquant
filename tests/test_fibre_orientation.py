@@ -701,3 +701,52 @@ def test_min_fibre_from_params(fo, tmp_path):
     path = tmp_path / "params.json"
     path.write_text(json.dumps({"block_factor": [4, 8, 8]}))
     assert fo.min_fibre_from_params(path, 0.5) == 128
+
+
+def _gain_phantom(shape=(48, 96, 96), seed=3):
+    rng = np.random.default_rng(seed)
+    img = (100 + 5 * rng.standard_normal(shape)).astype(np.float32)
+    img[:, 40:44, :] += 200  # a fibre along x
+    img[:, :, :8] = 0  # non-tissue
+    x = np.arange(shape[2])
+    gain = (1.0 + 0.5 * np.sin(2 * np.pi * x / 48.0)).astype(np.float32)
+    return img, gain[None, None, :]
+
+
+def test_local_normalize_removes_gain(fo):
+    da = pytest.importorskip("dask.array")
+    img, gain = _gain_phantom()
+    spacing = (2.0, 1.0, 1.0)
+    with __import__("dask").config.set(scheduler="synchronous"):
+        flat = fo.local_normalize(da.from_array(img, chunks=32), spacing, 4.0).compute()
+        shaded = fo.local_normalize(
+            da.from_array(img * gain, chunks=32), spacing, 4.0
+        ).compute()
+    tissue = img > 0
+    assert np.all(shaded[~tissue] == 0)
+    # background is ~1 wherever there is tissue, despite the 3x gain range
+    bgvox = tissue.copy()
+    bgvox[:, 30:54, :] = False
+    bgvox[:, :, :16] = False
+    assert abs(np.median(shaded[bgvox]) - 1) < 0.05
+    raw_ratio = np.percentile((img * gain)[bgvox], 95) / np.percentile(
+        (img * gain)[bgvox], 5
+    )
+    norm_ratio = np.percentile(shaded[bgvox], 95) / np.percentile(shaded[bgvox], 5)
+    assert raw_ratio > 2.5 and norm_ratio < 1.4
+    # the gain varies over a few sigma, so allow a small residual
+    rel = np.abs(shaded[bgvox] / flat[bgvox] - 1)
+    assert np.median(rel) < 0.05 and np.mean(rel < 0.2) > 0.97
+
+
+def test_local_normalize_chunk_independent(fo):
+    da = pytest.importorskip("dask.array")
+    img, gain = _gain_phantom()
+    img = img * gain
+    spacing = (2.0, 1.0, 1.0)
+    with __import__("dask").config.set(scheduler="synchronous"):
+        a = fo.local_normalize(da.from_array(img, chunks=(48, 96, 96)), spacing, 6.0)
+        b = fo.local_normalize(da.from_array(img, chunks=(16, 32, 32)), spacing, 6.0)
+        a, b = a.compute(), b.compute()
+    # the coarsening step follows the chunks, so allow small differences
+    np.testing.assert_allclose(a, b, rtol=0.03, atol=1e-3)
