@@ -327,6 +327,9 @@ def get_zarrnii_in_kwargs(wildcards, input):
 
 zarrnii_in_kwargs = get_zarrnii_in_kwargs
 
+# stains of each scan with --landmark_analysis (set below), where they may differ
+lmk_scan_stains = {}
+
 # stains of each scan, for the qc analysis level, where they may differ
 qc_scan_stains = (
     get_stains_per_scan(config["ignore_stains"], config["sample_staining"])
@@ -343,6 +346,11 @@ elif config.get("analysis_level") == "qc":
     # rest of the workflow, which is not run at this level, is set up with all
     # of them
     stains = sorted({s for scan in qc_scan_stains.values() for s in scan})
+elif config.get("landmark_analysis"):
+    # --landmark_analysis registers each scan with its own stains
+    # (rules/landmarks.smk), so scans may have different stains
+    lmk_scan_stains = get_stains_per_scan(config["ignore_stains"])
+    stains = sorted({s for scan in lmk_scan_stains.values() for s in scan})
 else:
     stains = get_stains_all_subjects(ignore_stains=config["ignore_stains"])
 
@@ -382,6 +390,28 @@ else:
         if stain in stains:
             stain_for_reg = stain
             break
+
+if config.get("landmark_analysis") and not use_spim_template:
+    # the brain mask (from stain_for_reg) is needed for every scan, so it has to be
+    # a stain all scans have; without one from --stains_for_reg, use the first
+    _lmk_common = (
+        sorted(set.intersection(*(set(v) for v in lmk_scan_stains.values())))
+        if lmk_scan_stains
+        else list(stains)
+    )
+    if stain_for_reg not in _lmk_common:
+        stain_for_reg = next(
+            (s for s in config["stains_for_reg"] if s in _lmk_common),
+            _lmk_common[0] if _lmk_common else None,
+        )
+        if stain_for_reg is None:
+            raise ValueError(
+                f"--landmark_analysis: no stain is shared by all scans ({lmk_scan_stains}); "
+                "the brain mask needs one"
+            )
+        print(
+            f"Landmark analysis: no shared stain from --stains_for_reg, brain mask from {stain_for_reg}"
+        )
 
 if stain_for_reg is None:
     if config.get("analysis_level") == "qc" and stains:

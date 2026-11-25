@@ -456,6 +456,10 @@ parse_args:
     action: store_true
     default: False
 
+  --landmark_regions:
+    help: "TSV (columns region, pattern) assigning landmarks to regions for the landmark report: a landmark goes to the first region whose regular expression matches its name. Default: a built-in map for the cortex/hemisphere/ventricle/CC/striatum/thalamus/midbrain/cerebellum landmark names; unmatched landmarks are 'other'. (default: %(default)s)"
+    default: null
+
   --register_to_mri:
     help: "Register the lightsheet data directly to a corresponding MRI (from the BIDS dataset)"
     action: store_true

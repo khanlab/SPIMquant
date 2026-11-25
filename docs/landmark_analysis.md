@@ -2,14 +2,19 @@
 
 Measures registration accuracy with manual landmarks: target registration error
 (TRE, µm) for **every registration method × every stain** SPIMquant can run, in one
-participant-level run.
+participant-level run. It sits on top of the normal pipeline: the preprocessing
+(downsampling, N4, brain mask) and the registrations are SPIMquant's own rules; the
+landmark mode adds the method × stain loop, the point warping, the TRE and the report.
 
 ## What one run does
 
 For each SPIM scan that has a landmarks file:
 
 1. Builds the usual level-5 N4 + brain-masked image of **every stain** (one brain
-   mask, from the default registration stain, shared by all stains).
+   mask, from the default registration stain, shared by all stains). Scans may have
+   different stains: each is registered with the stains it has, and the brain mask
+   comes from a stain every scan has (the first such in `--stains_for_reg`, else the
+   first shared stain).
 2. Registers the scan to `--template` with **every method** in `--landmark_methods`
    (default: every single-channel `registration.presets` entry — greedy,
    greedyNoAffine, greedySharp, greedyNCC, ants, fireants, plus any preset added
@@ -44,13 +49,16 @@ pixi run -e gpu spimquant <bids_dir> <output_dir> participant \
   [--register_to_mri --landmarks_mri <derivative>    # sub-*/[ses-*/]anat/*from-<suffix>_landmarks.json
    --filter-mri session=<the landmarked session> ... ]
   [--landmark_methods greedy ants ...] [--landmark_stains YoPro Iba1 ...]
-  [--landmark_keep_warps]
+  [--landmark_keep_warps] [--landmark_regions regions.tsv]
 ```
 
 - Use the `gpu` pixi environment and a GPU allocation if `fireants` is among the
   methods (default). Without a GPU, pass `--landmark_methods` without `fireants`.
 - The MRI landmarks are on one MRI; filter the MRI input to that session (the run
-  stops with an error if a subject has MRI from several sessions).
+  stops with an error if a subject has MRI from several sessions). Several scans of
+  that session matching the filter (e.g. repeated runs) are averaged on the grid of
+  the first (sorted by name), so the MRI landmarks must be in that scan's space; the
+  run prints which scan that is.
 - Landmark files: 3D Slicer markups, `coordinateSystem` LPS (RAS is converted), mm.
   SPIM landmarks are on the level-5 grid of the scan (any stain).
 - Subject→template composite warps are ~1.5 GB each at the 25 µm ABAv3 grid, so
@@ -66,22 +74,46 @@ pixi run -e gpu spimquant <bids_dir> <output_dir> participant \
 - `group/landmarks_tre_summary.tsv` — n, median, IQR, mean, SD, max per
   path × method × stain × inversion (points outside a field excluded).
 - `group/landmarks_tre_per_landmark.tsv` — the same per landmark.
-- `group/report/report.md` (+ `figures/`, `*.tsv`) — landmark report:
+- `sub-*/…/markups/` — where the landmarks land, as 3D Slicer markups (LPS mm),
+  listed in `*_markups.tsv`:
+  - `*_from-<A>_to-<B>_stain-<stain>_desc-<method>_landmarks.mrk.json`: the
+    landmarks of space A carried to space B by that registration (orange); each
+    point's description holds its TRE. SPIM→template and MRI→template use the
+    fixed-point inverse.
+  - `*_space-<B>_desc-target_landmarks.mrk.json`: the landmarks they are compared
+    with (aqua).
+
+  Open them in Slicer on the image of space B: the template (`tpl-<template>/…_anat`),
+  the scan's `micr/*_level-5_desc-N4brain_SPIM.nii.gz` (SPIM), or the subject's
+  `anat/*_desc-brain_<suffix>.nii.gz` (MRI).
+- `group/report/report.md` (+ `figures/`, `*.tsv`, `markups/`) — landmark report,
+  with a summary figure at the top (method, path, subject, region):
   0. failed registrations (median TRE > 2 mm on a scan, e.g. `greedyNoAffine`, which has
      no affine or centre initialisation and does not converge from the raw SPIM pose);
      listed and left out of the sections below;
   1. best method × stain per path (heatmaps);
   2. TRE per landmark (boxplots);
-  3. landmark or registration? Per subject × landmark, the *consensus* (median
+  3. TRE by region, with each path's best method and stain. Regions come from
+     `--landmark_regions` (TSV with columns `region`, `pattern`: a landmark goes to the
+     first region whose regular expression matches its name), or a built-in map for
+     the cortex / hemisphere / ventricle / CC / striatum / thalamus / midbrain /
+     cerebellum names (others are `other`);
+  4. TRE by subject, for every path;
+  5. landmark or registration? Per subject × landmark, the *consensus* (median
      warped position over all method × stain registrations) vs the landmark. A large
      consensus error with a small spread between registrations points at the landmark
      (placement or ambiguous anatomy); a large spread at the registration;
-  4. consistency across subjects in template space (spread, bias of the mean from the
-     template point, subject outliers);
-  5. left/right symmetry of paired landmarks (template and subjects);
-  6. MRI vs lightsheet routes to the template;
-  7. flagged points with screenshots (landmark on the SPIM image and on the template,
+  6. consistency across subjects in template space (spread, bias of the mean from the
+     template point, subject outliers: a subject's consensus point compared with the
+     mean of the *other* subjects);
+  7. left/right symmetry of paired landmarks (template and subjects, with a left vs
+     right plot);
+  8. MRI vs lightsheet routes to the template (table and per-landmark scatter);
+  9. flagged points with screenshots (landmark on the SPIM image and on the template,
      with the consensus position). Flags only; landmarks are never edited.
+
+  `report/markups/` holds the template points and every subject's consensus point in
+  template space (labelled `<subject>_<landmark>`), to view all subjects at once.
 - `xfm/` — the per-stain, per-method composite warps (inverse kept; forward only
   with `--landmark_keep_warps`) and MRI↔SPIM composites.
 
@@ -92,3 +124,6 @@ pixi run -e gpu spimquant <bids_dir> <output_dir> participant \
 - `workflow/scripts/landmark_tre.py` — landmark I/O, point warping (SimpleITK,
   matches `antsApplyTransformsToPoints` to <0.05 µm), fixed-point inversion.
 - `workflow/scripts/landmark_tre_subject.py`, `landmark_tre_summary.py`.
+- `workflow/scripts/landmark_markups.py` — the per-scan Slicer markups.
+- `workflow/scripts/landmark_report.py` — the report; also runs on its own
+  (`python landmark_report.py --tsv … --template-landmarks … --out …`).

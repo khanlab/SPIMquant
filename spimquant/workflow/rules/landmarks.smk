@@ -23,6 +23,11 @@ The registration rules reuse the regular ones (use rule ... with:), with the
 registration stain as the {regstain} wildcard and outputs under landmarks/.
 The brain mask (and so the masked N4 image of every stain) is the one of the
 default registration stain, so stains differ only in the registration channel.
+Scans may have different stains: each is registered with the stains it has, and
+the brain mask stain is one that every scan has.
+
+Besides the TRE tables, every warped landmark set is written as a 3D Slicer
+markups file (landmark_markups), so where the points land can be looked at.
 """
 
 import glob as _glob
@@ -44,6 +49,25 @@ for _s in lmk_stains:
     if _s not in stains:
         raise ValueError(f"--landmark_stains: {_s} not among the scan stains {stains}")
 
+
+def lmk_stains_of(wildcards):
+    """The registration stains of one scan: --landmark_stains that the scan has."""
+    if not lmk_scan_stains:
+        return lmk_stains
+    w = dict(wildcards.items()) if hasattr(wildcards, "items") else vars(wildcards)
+    zl = spim_raw.zip_lists
+    keys = list(zl)
+    for vals in zip(*[zl[k] for k in keys]):
+        row = dict(zip(keys, vals))
+        if all(str(w[k]) == str(row[k]) for k in keys if k in w):
+            have = lmk_scan_stains.get(spim_raw.path.format(**row), lmk_stains)
+            out = [s for s in lmk_stains if s in have]
+            if not out:
+                raise ValueError(f"--landmark_analysis: scan {w} has none of the stains {lmk_stains}")
+            return out
+    return lmk_stains
+
+
 lmk_do_mri = bool(config["register_to_mri"] and config.get("landmarks_mri"))
 if config.get("landmarks_mri") and not config["register_to_mri"]:
     raise ValueError("--landmarks_mri needs --register_to_mri")
@@ -55,6 +79,8 @@ print(
     f"Landmark analysis: methods {lmk_methods}, registration stains {lmk_stains}"
     + (", with MRI" if lmk_do_mri else "")
 )
+if len({tuple(v) for v in lmk_scan_stains.values()}) > 1:
+    print(f"Landmark analysis: scans have different stains, each uses its own: {lmk_scan_stains}")
 
 
 wildcard_constraints:
@@ -359,7 +385,7 @@ def _lmk_tre_inputs(wildcards):
     mri = lmk_mri_file(wildcards)
     if mri:
         d["mri_landmarks"] = mri
-    for s in lmk_stains:
+    for s in lmk_stains_of(wildcards):
         for m in lmk_methods:
             f = dict(wc, regstain=s, reg=m, template=config["template"])
             d[f"fwd__{s}__{m}"] = _fwd.format(**f)
@@ -379,7 +405,7 @@ rule landmark_tre:
         tsv=bids(root=lmk_root, datatype="tre", suffix="tre.tsv", **inputs["spim"].wildcards),
     params:
         scriptdir=os.path.join(workflow.basedir, "scripts"),
-        stains=lmk_stains,
+        stains=lmk_stains_of,
         methods=lmk_methods,
         mri_suffix=mri_suffix,
         template=config["template"],
@@ -410,8 +436,46 @@ if not lmk_scans:
     raise ValueError(f"--landmark_analysis: no SPIM scan has a landmarks file in {config['landmarks_spim']}")
 print(f"Landmark analysis: {len(lmk_scans)} scans with SPIM landmarks")
 
+if lmk_do_mri:
+    # several MRI scans of a subject are averaged on the grid of the first one
+    # (preproc_mri.smk), so the MRI landmarks have to be in that scan's space
+    for _subj in sorted({w["subject"] for w in lmk_scans}):
+        try:
+            _mris = sorted(inputs["mri"].filter(subject=_subj).expand())
+        except Exception:
+            _mris = []
+        if len(_mris) > 1:
+            print(
+                f"Landmark analysis: sub-{_subj}: {len(_mris)} MRI scans are averaged on the grid "
+                f"of {os.path.basename(_mris[0])}; the MRI landmarks must be in that scan's space"
+            )
+
 lmk_tre_tsvs = [
     bids(root=lmk_root, datatype="tre", suffix="tre.tsv", **inputs["spim"].wildcards).format(**w)
+    for w in lmk_scans
+]
+
+
+rule landmark_markups:
+    """Every warped landmark set of a scan as a 3D Slicer markups file (one per path x
+    method x stain, the TRE of each point in its description), plus the target sets."""
+    input:
+        tsv=bids(root=lmk_root, datatype="tre", suffix="tre.tsv", **inputs["spim"].wildcards),
+    output:
+        index=bids(root=lmk_root, datatype="markups", suffix="markups.tsv", **inputs["spim"].wildcards),
+    params:
+        template=config["template"],
+        mri_suffix=mri_suffix,
+    threads: 1
+    resources:
+        mem_mb=2000,
+        runtime=10,
+    script:
+        "../scripts/landmark_markups.py"
+
+
+lmk_markups = [
+    bids(root=lmk_root, datatype="markups", suffix="markups.tsv", **inputs["spim"].wildcards).format(**w)
     for w in lmk_scans
 ]
 
@@ -444,6 +508,8 @@ rule landmark_report:
     params:
         template_landmarks=config["landmarks_template"],
         run_root=root if root else ".",
+        regions=config.get("landmark_regions"),
+        template=config["template"],
     threads: 1
     resources:
         mem_mb=8000,
@@ -455,5 +521,6 @@ rule landmark_report:
 rule all_landmarks:
     input:
         lmk_tre_tsvs,
+        lmk_markups,
         rules.landmark_tre_summary.output,
         rules.landmark_report.output,
