@@ -1004,17 +1004,24 @@ def aggregate_moments(moments, labels, n_labels=None):
 # ----------------------------------------------------------------------
 
 
-def aligned_chunks(shape, chunk_size, factor):
+def aligned_chunks(shape, chunk_size, factor, min_chunk=None):
     """Chunks along each axis that are multiples of ``factor``.
 
     Every chunk except the last has a size that is the multiple of the
     factor nearest to the requested ``chunk_size`` (at least one factor).
+    A remainder chunk smaller than ``min_chunk`` (per axis, e.g. the
+    overlap depth) is merged into the chunk before it.
     """
+    if min_chunk is None:
+        min_chunk = (0,) * len(shape)
     out = []
-    for n, c, f in zip(shape, chunk_size, factor):
+    for n, c, f, m in zip(shape, chunk_size, factor, min_chunk):
         c = max(int(f), int(round(c / f)) * int(f))
         full, rem = divmod(int(n), c)
-        out.append((c,) * full + ((rem,) if rem else ()))
+        if rem and rem < int(m) and full:
+            out.append((c,) * (full - 1) + (c + rem,))
+        else:
+            out.append((c,) * full + ((rem,) if rem else ()))
     return tuple(out)
 
 
@@ -1056,7 +1063,7 @@ def fibre_moments(
     if chunk_size is None:
         chunk_size = tuple(c[0] for c in darr.chunks)
     depth = overlap_depth(scales_um, spacing_um, psf_sigma_um=psf_sigma_um)
-    chunks = aligned_chunks(darr.shape, chunk_size, factor)
+    chunks = aligned_chunks(darr.shape, chunk_size, factor, min_chunk=depth)
     # overlap needs every chunk to be at least as deep as the overlap
     for ax, (ch, d) in enumerate(zip(chunks, depth)):
         if min(ch) < d and len(ch) > 1:
