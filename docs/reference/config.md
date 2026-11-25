@@ -28,19 +28,30 @@ Complete reference for SPIMquant configuration options.
 
 ## Segmentation Options
 
-<!-- TODO: Document general segmentation configuration -->
+### Segmentation methods per stain
 
-### LANTERN plaque segmentation
-
-Used when `--seg_method` includes `lantern`.  See [Segmentation Methods](../howto/segmentation.md#lantern-plaques-seg_method-lantern) for how these fit together.
+See [Segmentation Methods](../howto/segmentation.md#choosing-methods-per-stain).
 
 | CLI option | Config key | Default | Meaning |
 |---|---|---|---|
-| `--lantern_config` | `lantern_config` | `ki3-abeta@v2` | Ensemble to run, as `<name>[@<revision>]` → Hugging Face repo `apooladi/lantern-<name>` |
+| `--seg_method` | `seg_method` | none (built-in defaults) | Mask method(s) per stain: `STAIN=METHOD[,METHOD...]` or a bare `METHOD` for every stain not named; first is primary |
+| `--object_method` | `object_method` | none (built-in defaults) | Object method(s) per stain, same syntax: `watershed`, `components` or `none` |
+| | `seg_method_defaults` | `default: gmm+n3k1`; `abeta`/`Abeta`/`BetaAmyloid`: `lantern` | Built-in per-stain mask methods |
+| | `object_method_defaults` | `default: components` | Built-in per-stain object methods |
+| `--gpu` | `gpu` | `auto` | Whether GPU methods can be used: `auto` (torch built with CUDA, i.e. the gpu pixi env), `yes`, `no` |
+| | `gpu_seg_method_fallbacks` | `lantern: gmm+n3k1` | CPU method used instead of a default GPU method when there is no GPU |
+| | `sdt_stains` | `[]` | Stains (besides the vessel stain) whose primary mask's signed distance is sampled at every object (`<stain>_sdt`) |
+
+### LANTERN plaque segmentation
+
+Used for every stain whose methods include `lantern` (by default amyloid-beta).  See [Segmentation Methods](../howto/segmentation.md#lantern-plaques-seg_method-lantern) for how these fit together.
+
+| CLI option | Config key | Default | Meaning |
+|---|---|---|---|
+| `--lantern_config` | `lantern_config` | `abeta` | Ensemble to run, as `<name>[@<revision>]` → Hugging Face repo `apooladi/lantern-<name>`; `<revision>` defaults to `main` |
 | `--merge_mode` | `plaque_merge_mode` | `gaussian` | How overlapping tiles' votes are combined: `average`, `gaussian` or `max` |
 | `--min_size` | `min_size` | `4` | Drop plaque components smaller than this many inference-grid voxels (0 disables) |
 | `--label_filter` | `label_filter` | off | 3-class ensembles: drop plaques touching a large "false positive" component (UNVALIDATED) |
-| | `stains_for_plaques` | `abeta`, `Abeta`, `BetaAmyloid` | LANTERN runs on the first of these present in the data |
 | | `plaque_level` | `1` | Starting (and coarsest allowed) pyramid level for inference |
 | | `plaque_iso_res` | `4.0` | Target isotropic inference resolution, µm |
 | | `plaque_n_folds` | `5` | Folds in the ensemble |

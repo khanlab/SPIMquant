@@ -250,49 +250,6 @@ rule fibre_roi_stats:
         "../scripts/fibre_roi_stats.py"
 
 
-rule merge_fibre_roi_stats:
-    """Fibre ROI statistics of all fibre stains as ``desc-frangi`` segstats.
-
-    Columns are ``{stain}+{metric}``, as for the segmentation statistics, so
-    the group-level concatenation, statistics and heatmap rules apply.
-    """
-    input:
-        tsvs=lambda wildcards: [
-            bids(
-                root=root,
-                datatype="tabular",
-                seg="{seg}",
-                from_="{template}",
-                stain=stain,
-                level=config["fibre_output_level"],
-                desc="frangi",
-                suffix="fibrestats.tsv",
-                **inputs["spim"].wildcards,
-            ).format(**wildcards)
-            for stain in stains_for_fibres
-        ],
-    output:
-        tsv=bids(
-            root=root,
-            datatype="tabular",
-            seg="{seg}",
-            from_="{template}",
-            desc="frangi",
-            suffix="mergedsegstats.tsv",
-            **inputs["spim"].wildcards,
-        ),
-    group:
-        "subj_quant"
-    threads: 1
-    resources:
-        mem_mb=1500,
-        runtime=10,
-    params:
-        stains=stains_for_fibres,
-    script:
-        "../scripts/merge_fibre_roi_stats.py"
-
-
 rule deform_fibre_moments_to_template:
     """Warp the non-SH fibre moments (4D) to the template, linear interpolation."""
     input:

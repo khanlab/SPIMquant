@@ -115,7 +115,12 @@ def estimate_radius_from_nvoxels(nvoxels, voxel_size=1.0):
 # Use compound IDs to ensure uniqueness across stains
 # Use vectorized operation for better performance
 df["object_id"] = df["stain"] + "_" + df.index.astype(str)
-df["radius"] = estimate_radius_from_nvoxels(df["nvoxels"].values, voxel_size=0.002)
+if "volume" in df.columns:
+    # physical volume (mm^3) of each object, so the radius is in the same units
+    # as the centroids whatever the voxel size
+    df["radius"] = np.cbrt(3 * df["volume"].values / (4 * np.pi))
+else:
+    df["radius"] = estimate_radius_from_nvoxels(df["nvoxels"].values, voxel_size=0.002)
 
 
 # Get list of unique stains/channels

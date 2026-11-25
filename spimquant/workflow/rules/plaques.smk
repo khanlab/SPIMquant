@@ -100,7 +100,7 @@ rule run_lantern_plaques:
         # globally -- a module-level constraint in an included smk applies to the
         # whole workflow) means a target asking for a lantern mask on any other
         # stain fails at DAG build instead of quietly burning a GPU on it.
-        stain=stain_for_plaques or "^$",
+        stain="|".join(lantern_stains) or "^$",
     threads: 8 * config["plaque_n_gpus"]
     resources:
         gpu=config["plaque_n_gpus"],
@@ -176,7 +176,7 @@ rule binarize_lantern_plaques:
             **inputs["spim"].wildcards,
         ),
     wildcard_constraints:
-        stain=stain_for_plaques or "^$",
+        stain="|".join(lantern_stains) or "^$",
     threads: 32
     resources:
         # Component filtering reads the near-iso probseg once in 512^3 blocks
@@ -184,7 +184,8 @@ rule binarize_lantern_plaques:
         # the sparse plaque voxels. Measured on a 45 G-voxel grid with 32
         # threads: 5 min / 42 GB peak for a binary ensemble, 12 min / 63 GB
         # for a 3-class one with --label_filter, before the upsample/write.
-        mem_mb=scaled_mem_mb(64000, 25, config["segmentation_level"]),
+        # Raised from 64000 after OOM kills at ~70 GB requested (Nov 2026).
+        mem_mb=scaled_mem_mb(128000, 25, config["segmentation_level"]),
         disk_mb=2097152,
         runtime=scaled_runtime(30, 0.1, config["segmentation_level"]),
     params:

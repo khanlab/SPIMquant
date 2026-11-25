@@ -45,5 +45,9 @@ df["template_x"] = points_transformed[:, 0]
 df["template_y"] = points_transformed[:, 1]
 df["template_z"] = points_transformed[:, 2]
 
+# Which stain and methods the objects come from
+for col, value in snakemake.params.labels.items():
+    df[col] = value
+
 # Save the output
 df.to_parquet(snakemake.output.regionprops_transformed_parquet, index=False)

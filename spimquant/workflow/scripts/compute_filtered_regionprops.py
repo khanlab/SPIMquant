@@ -8,6 +8,8 @@ import tempfile
 import zipfile
 from contextlib import contextmanager
 
+import numpy as np
+import pandas as pd
 from dask_setup import get_dask_client
 from zarrnii import ZarrNii
 
@@ -35,3 +37,10 @@ if __name__ == "__main__":
                 region_filters=snakemake.params.region_filters,
                 output_properties=snakemake.params.output_properties,
             )
+            voxel_volume_mm3 = float(np.prod([float(z) for z in znimg.get_zooms()]))
+
+    # physical object volume, so sizes compare across scans and resolutions
+    nvox = snakemake.params.output_properties.get("area", "area")
+    df = pd.read_parquet(snakemake.output.regionprops_parquet)
+    df["volume"] = df[nvox].astype("float64") * voxel_volume_mm3
+    df.to_parquet(snakemake.output.regionprops_parquet, index=False)

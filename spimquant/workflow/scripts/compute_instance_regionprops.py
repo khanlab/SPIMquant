@@ -6,6 +6,7 @@ the method.  Writes the same columns as the connected-components rule
 (centroid and voxel count, named by ``regionprop_outputs``) so everything
 downstream works unchanged, plus:
 
+* ``volume`` -- in mm^3 (voxel count x voxel volume)
 * ``seed_x/y/z`` -- position of the instance's seed (peak), physical units
 * ``mean_intensity``, ``max_intensity`` -- of the corrected image
 * ``peak_intensity`` -- smoothed corrected intensity at the seed
@@ -161,6 +162,7 @@ def main():
                 "differ in shape; both must be at segmentation_level"
             )
         zooms_um = [float(z) * 1000.0 for z in znimg.get_zooms()]  # mm -> um
+        voxel_volume_mm3 = float(np.prod([float(z) for z in znimg.get_zooms()]))
         affine = np.asarray(znimg.affine.matrix)
 
         chunk = int(params.chunk_size)
@@ -222,7 +224,7 @@ def main():
         names = params.output_properties
         pos = names.get("centroid", "centroid")
         nvox = names.get("area", "area")
-        columns = [f"{pos}_x", f"{pos}_y", f"{pos}_z", nvox]
+        columns = [f"{pos}_x", f"{pos}_y", f"{pos}_z", nvox, "volume"]
         columns += ["seed_x", "seed_y", "seed_z"]
         columns += ["mean_intensity", "max_intensity", "peak_intensity", "elongation"]
         schema = pa.schema([pa.field(c, pa.float64()) for c in columns])
@@ -241,6 +243,8 @@ def main():
                         f"{pos}_y": cen[:, 1],
                         f"{pos}_z": cen[:, 2],
                         nvox: res["nvoxels"],
+                        "volume": np.asarray(res["nvoxels"], dtype=np.float64)
+                        * voxel_volume_mm3,
                         "seed_x": seed[:, 0],
                         "seed_y": seed[:, 1],
                         "seed_z": seed[:, 2],
