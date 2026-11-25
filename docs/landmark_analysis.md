@@ -37,6 +37,10 @@ For each SPIM scan that has a landmarks file:
 Points move opposite to images: the transform that resamples B-space images into A
 moves points from A to B. Landmarks are matched by name with any `Template_`,
 `SPIM_`/`MRI_` prefix and `-<n>` suffix stripped; files are never modified.
+Any number of landmarks can be used; each path uses the ones present on both ends.
+Landmarks found on only one side (a misspelt name, or a point not placed in one set)
+are left out of the TRE, so the run prints a warning listing them, and they are in
+`group/landmark_name_check.tsv` and the report's *Landmark names* section.
 
 ## Usage
 

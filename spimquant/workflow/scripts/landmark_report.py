@@ -8,6 +8,7 @@ Run by the landmark_report rule, or:
 
 Sections
  summary figure (methods, paths, subjects, regions)
+ landmark names found on only one side (left out of the TRE)
  0. failed registrations (listed, left out of the rest)
  1. best method x stain per path (median TRE heatmaps)
  2. per-landmark TRE spread (boxplots)
@@ -179,7 +180,7 @@ def _slice_png(img_path, point_lps, ax_row, title, marks=()):
     ax_row[0].set_ylabel(title, fontsize=8)
 
 
-def main(tsv, tpl_dir, tpl_image, run_root, out, regions_file=None, template="template"):
+def main(tsv, tpl_dir, tpl_image, run_root, out, regions_file=None, template="template", name_check=None):
     os.makedirs(os.path.join(out, "figures"), exist_ok=True)
     for old in glob.glob(os.path.join(out, "figures", "flag_*.png")):  # from an earlier report
         os.remove(old)
@@ -205,6 +206,20 @@ def main(tsv, tpl_dir, tpl_image, run_root, out, regions_file=None, template="te
         "",
     ]
     header_end = len(md)
+
+    if name_check and os.path.exists(name_check):
+        nc = pd.read_csv(name_check, sep="\t")
+        md += ["## Landmark names", ""]
+        if nc.empty:
+            md += ["Every landmark name matches across the landmark sets.", ""]
+        else:
+            per = (nc.groupby(["landmark", "found_in", "missing_from"])["scan"]
+                   .agg(lambda x: f"{len(x)}: " + ", ".join(sorted(map(str, x))[:6]) + (" …" if len(x) > 6 else ""))
+                   .reset_index().rename(columns={"scan": "scans"}))
+            md += [f"**{len(nc)} landmark(s) are in one set but not the other, so they are left out of the "
+                   "TRE.** Landmarks are matched by name (after stripping `Template_`, `SPIM_`/`MRI_` and a "
+                   "trailing `-<n>`); check the spelling, or whether the point is missing from one set. "
+                   "All rows: `landmark_name_check.tsv`.", "", md_table(per), ""]
 
     if not failed.empty:
         failed.to_csv(os.path.join(out, "failed_registrations.tsv"), sep="\t", index=False)
@@ -713,7 +728,8 @@ if __name__ == "__main__":
         ti = sm.input.template_image
         ti = ti if isinstance(ti, str) else (list(ti)[0] if len(ti) else None)
         main(sm.input.tsv, sm.params.template_landmarks, ti, sm.params.run_root,
-             os.path.dirname(sm.output.report), sm.params.regions, sm.params.template)
+             os.path.dirname(sm.output.report), sm.params.regions, sm.params.template,
+             sm.input.get("name_check"))
     else:
         ap = argparse.ArgumentParser()
         ap.add_argument("--tsv", required=True)
@@ -723,5 +739,7 @@ if __name__ == "__main__":
         ap.add_argument("--out", required=True)
         ap.add_argument("--regions", default=None, help="TSV with columns region, pattern")
         ap.add_argument("--template", default="template")
+        ap.add_argument("--name-check", default=None, help="landmark_name_check.tsv")
         a = ap.parse_args()
-        main(a.tsv, a.template_landmarks, a.template_image, a.run_root, a.out, a.regions, a.template)
+        main(a.tsv, a.template_landmarks, a.template_image, a.run_root, a.out, a.regions, a.template,
+             a.name_check)

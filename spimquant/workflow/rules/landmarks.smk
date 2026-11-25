@@ -31,6 +31,7 @@ markups file (landmark_markups), so where the points land can be looked at.
 """
 
 import glob as _glob
+from types import SimpleNamespace
 
 
 lmk_root = os.path.join(root, "landmarks")
@@ -436,6 +437,47 @@ if not lmk_scans:
     raise ValueError(f"--landmark_analysis: no SPIM scan has a landmarks file in {config['landmarks_spim']}")
 print(f"Landmark analysis: {len(lmk_scans)} scans with SPIM landmarks")
 
+def lmk_name_check():
+    """Landmarks found on only one side of a comparison, per scan. Landmarks are
+    matched by name, so a misspelt or missing one would otherwise be left out
+    without notice. Rows: scan, landmark, found_in, missing_from."""
+    import sys as _sys
+    from types import SimpleNamespace
+
+    _sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
+    import landmark_tre as _LT
+
+    tpl = set(_LT.load_landmarks(config["landmarks_template"]))
+    rows = []
+    for w in lmk_scans:
+        ns = SimpleNamespace(**w)
+        scan = "_".join(str(w[k]) for k in ("subject", "session", "sample", "acq") if k in w)
+        spim = set(_LT.load_landmarks(lmk_spim_file(ns)))
+        sets = [("SPIM", spim, "template", tpl)]
+        mri_f = lmk_mri_file(ns) if lmk_do_mri else None
+        if mri_f:
+            sets.append(("MRI", set(_LT.load_landmarks(mri_f)), "SPIM", spim))
+        elif lmk_do_mri:
+            rows.append(dict(scan=scan, landmark="(all)", found_in="", missing_from="MRI (no MRI landmarks file)"))
+        for a, A, b, B in sets:
+            rows += [dict(scan=scan, landmark=n, found_in=a, missing_from=b) for n in sorted(A - B)]
+            rows += [dict(scan=scan, landmark=n, found_in=b, missing_from=a) for n in sorted(B - A)]
+    return rows
+
+
+lmk_unmatched = lmk_name_check()
+if lmk_unmatched:
+    print(
+        f"Landmark analysis: WARNING {len(lmk_unmatched)} landmark(s) found on only one side are left out "
+        "of the TRE (names must match); listed in landmarks/group/landmark_name_check.tsv and the report:"
+    )
+    for _r in lmk_unmatched[:20]:
+        print(f"  {_r['scan']}: {_r['landmark']} in {_r['found_in'] or '-'}, not in {_r['missing_from']}")
+    if len(lmk_unmatched) > 20:
+        print(f"  ... and {len(lmk_unmatched) - 20} more")
+else:
+    print("Landmark analysis: every landmark name matches across SPIM, template" + (" and MRI" if lmk_do_mri else ""))
+
 if lmk_do_mri:
     # several MRI scans of a subject are averaged on the grid of the first one
     # (preproc_mri.smk), so the MRI landmarks have to be in that scan's space
@@ -480,6 +522,26 @@ lmk_markups = [
 ]
 
 
+rule landmark_name_check:
+    """Landmarks found on only one side of a comparison (left out of the TRE)."""
+    input:
+        spim=[lmk_spim_file(SimpleNamespace(**w)) for w in lmk_scans],
+        mri=[f for f in (lmk_mri_file(SimpleNamespace(**w)) for w in lmk_scans) if f],
+    output:
+        tsv=os.path.join(lmk_root, "group", "landmark_name_check.tsv"),
+    params:
+        template_landmarks=config["landmarks_template"],
+    threads: 1
+    resources:
+        mem_mb=1000,
+        runtime=5,
+    run:
+        import pandas as pd
+
+        cols = ["scan", "landmark", "found_in", "missing_from"]
+        pd.DataFrame(lmk_name_check(), columns=cols).to_csv(output.tsv, sep="\t", index=False)
+
+
 rule landmark_tre_summary:
     """All scans' TRE in one table, and median/IQR per path x method x stain (x landmark)."""
     input:
@@ -502,6 +564,7 @@ rule landmark_report:
     screenshots. Flags only; landmarks are never changed."""
     input:
         tsv=rules.landmark_tre_summary.output.all_tsv,
+        name_check=rules.landmark_name_check.output.tsv,
         template_image=expand(rules.import_template_anat.output.anat, template=config["template"]),
     output:
         report=os.path.join(lmk_root, "group", "report", "report.md"),
