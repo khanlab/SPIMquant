@@ -111,6 +111,10 @@ rule run_lantern_plaques:
         # Setting this to 0 skips the flag entirely (submit_string.py:82), leaving
         # one task that sees all N GPUs -- which is what DevicePool expects.
         tasks_per_gpu=0,
+        # That one task needs all N GPUs on one machine; without --nodes=1 SLURM
+        # may split the GPUs over two nodes and srun fails at once with "Invalid
+        # generic resource (gres) specification".
+        nodes=1,
         cpus_per_gpu=8,
         # Sized by the input at plaque_level, although inference runs on the
         # plaque_iso_res grid; re-check if either is changed from the default.
