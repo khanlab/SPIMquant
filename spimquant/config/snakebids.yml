@@ -1075,6 +1075,97 @@ templates:
       ABAv3:
         from: https://zenodo.org/records/24246603/files/tpl-YoPro99_from-ABAv3_to-YoPro99_desc-antsMulti_xfm.nii.gz
         to: https://zenodo.org/records/24246603/files/tpl-YoPro99_from-YoPro99_to-ABAv3_desc-antsMulti_xfm.nii.gz       
+
+  Iba1sixty:
+    anat: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_anat.nii.gz
+    mask: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_desc-brain_mask.nii.gz
+    spim_templates:
+      Iba1: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_stain-Iba1_SPIM.nii.gz
+    default_segs:
+    - all
+    - coarse
+    - mid
+    - fine
+    atlases:
+      all:
+        dseg: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-all_dseg.nii.gz
+        tsv: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-all_dseg.tsv
+      allsym:
+        dseg: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-allsym_dseg.nii.gz
+        tsv: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-allsym_dseg.tsv
+      coarse:
+        dseg: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-coarse_dseg.nii.gz
+        tsv: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-coarse_dseg.tsv
+      mid:
+        dseg: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-mid_dseg.nii.gz
+        tsv: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-mid_dseg.tsv
+      fine:
+        dseg: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-fine_dseg.nii.gz
+        tsv: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-fine_dseg.tsv
+      roi22:
+        dseg: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-roi22_dseg.nii.gz
+        tsv: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-roi22_dseg.tsv
+      roi82:
+        dseg: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-roi82_dseg.nii.gz
+        tsv: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-roi82_dseg.tsv
+      roi198:
+        dseg: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-roi198_dseg.nii.gz
+        tsv: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_seg-roi198_dseg.tsv
+    cohort_warps:
+      warps_dir: /nfs/trident3/lightsheet/khan/template_Iba1/derivatives/spimquant-v0.13.0rc1-cohorttemplate/cohort_template/work-Iba1sixty/fireants/buildtemplate/warps
+      orig_template: ABAv3
+      orig_root: /nfs/trident3/lightsheet/khan/template_Iba1/derivatives/spimquant-v0.13.0rc1-cohorttemplate
+      reg_stain: Iba1
+    xfms:
+      ABAv3:
+        from: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_from-ABAv3_to-Iba1sixty_desc-antsMulti_xfm.nii.gz
+        to: https://zenodo.org/records/24568241/files/tpl-Iba1sixty_from-Iba1sixty_to-ABAv3_desc-antsMulti_xfm.nii.gz
+
+  CD31:
+    anat: https://zenodo.org/records/24570359/files/tpl-CD31_anat.nii.gz
+    mask: https://zenodo.org/records/24570359/files/tpl-CD31_desc-brain_mask.nii.gz
+    spim_templates:
+      CD31: https://zenodo.org/records/24570359/files/tpl-CD31_stain-CD31_SPIM.nii.gz
+    default_segs:
+    - all
+    - coarse
+    - mid
+    - fine
+    atlases:
+      all:
+        dseg: https://zenodo.org/records/24570359/files/tpl-CD31_seg-all_dseg.nii.gz
+        tsv: https://zenodo.org/records/24570359/files/tpl-CD31_seg-all_dseg.tsv
+      allsym:
+        dseg: https://zenodo.org/records/24570359/files/tpl-CD31_seg-allsym_dseg.nii.gz
+        tsv: https://zenodo.org/records/24570359/files/tpl-CD31_seg-allsym_dseg.tsv
+      coarse:
+        dseg: https://zenodo.org/records/24570359/files/tpl-CD31_seg-coarse_dseg.nii.gz
+        tsv: https://zenodo.org/records/24570359/files/tpl-CD31_seg-coarse_dseg.tsv
+      mid:
+        dseg: https://zenodo.org/records/24570359/files/tpl-CD31_seg-mid_dseg.nii.gz
+        tsv: https://zenodo.org/records/24570359/files/tpl-CD31_seg-mid_dseg.tsv
+      fine:
+        dseg: https://zenodo.org/records/24570359/files/tpl-CD31_seg-fine_dseg.nii.gz
+        tsv: https://zenodo.org/records/24570359/files/tpl-CD31_seg-fine_dseg.tsv
+      roi22:
+        dseg: https://zenodo.org/records/24570359/files/tpl-CD31_seg-roi22_dseg.nii.gz
+        tsv: https://zenodo.org/records/24570359/files/tpl-CD31_seg-roi22_dseg.tsv
+      roi82:
+        dseg: https://zenodo.org/records/24570359/files/tpl-CD31_seg-roi82_dseg.nii.gz
+        tsv: https://zenodo.org/records/24570359/files/tpl-CD31_seg-roi82_dseg.tsv
+      roi198:
+        dseg: https://zenodo.org/records/24570359/files/tpl-CD31_seg-roi198_dseg.nii.gz
+        tsv: https://zenodo.org/records/24570359/files/tpl-CD31_seg-roi198_dseg.tsv
+    cohort_warps:
+      warps_dir: /nfs/trident3/lightsheet/khan/template_CD31/derivatives/spimquant-v0.13.0rc1-cohorttemplate/cohort_template/work-CD31/fireants/buildtemplate/warps
+      orig_template: ABAv3
+      orig_root: /nfs/trident3/lightsheet/khan/template_CD31/derivatives/spimquant-v0.13.0rc1-cohorttemplate
+      reg_stain: CD31
+    xfms:
+      ABAv3:
+        from: https://zenodo.org/records/24570359/files/tpl-CD31_from-ABAv3_to-CD31_desc-antsMulti_xfm.nii.gz
+        to: https://zenodo.org/records/24570359/files/tpl-CD31_from-CD31_to-ABAv3_desc-antsMulti_xfm.nii.gz
+
 models:
   vesselfm: https://huggingface.co/bwittmann/vesselFM/resolve/main/vesselFM_base.pt
   # URL template for one fold of a LANTERN ensemble. {name} and {revision}
