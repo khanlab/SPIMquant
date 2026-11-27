@@ -201,6 +201,10 @@ Columns per metric:
 
 An accompanying **`*_groupstats.json`** sidecar describes each column.
 
+### Group QC Report
+
+Every group run also writes `group/qc/groupqc.html`, a page to step through the registration and segmentation QC of all subjects, with outlier flags. See [Group QC Report](../howto/group_qc.md).
+
 ### Visualizations
 
 **`*_contrast-<label>_groupstats.png`**: Heatmap of t-statistics across all brain regions and metrics for one contrast.
