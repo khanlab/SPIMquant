@@ -1570,6 +1570,19 @@ instance_task_batch: 512
 
 vessel_seg_method: vesselfm
 
+# vesselFM tiled inference (see tiled_inference.py). The tile is the 128^3
+# patch vesselFM was trained on; stride sets the overlap (tile - stride, half a
+# tile by default, as in vesselFM's own config) and the halo read around each
+# chunk-sized block. merge_mode is average, gaussian or max; the merged sigmoid
+# probability is cut at vessel_threshold.
+vessel_tile: 128
+vessel_stride: 64
+vessel_batch_size: 8
+vessel_chunk: 512
+vessel_merge_mode: gaussian
+vessel_threshold: 0.5
+vessel_n_gpus: 1
+
 vessel_metrics:
   - fieldfrac
 

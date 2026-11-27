@@ -107,8 +107,16 @@ def open_inference_array(path, level, target_scale, **from_file_kwargs):
     A singleton leading time axis, if the store has one, is dropped.  This is
     what reader processes call to open the input themselves, so that only the
     arguments (not a dask graph) have to be sent to them.
+
+    With ``target_scale`` None the image is loaded at ``level`` as is, via
+    ``ZarrNii.from_file`` (pass e.g. ``downsample_near_isotropic=True`` in
+    *from_file_kwargs*), for models that run at a pyramid level rather than at
+    a physical resolution.
     """
-    znimg = load_near_isotropic(path, level, target_scale, **from_file_kwargs)
+    if target_scale is None:
+        znimg = ZarrNii.from_file(path, level=level, **from_file_kwargs)
+    else:
+        znimg = load_near_isotropic(path, level, target_scale, **from_file_kwargs)
     data = znimg.data
     if data.ndim == 5 and data.shape[0] == 1:
         data = data[0]
