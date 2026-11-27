@@ -50,7 +50,10 @@ rule run_vesselfm:
         # level 0) plus inference_read_procs readers (~1.6 GB each): measured
         # 21.5 GB with 4 readers (AS40F2, 4x, level 0).
         mem_mb=scaled_mem_mb(24000 + 1700 * config["inference_read_procs"], 20),
-        runtime=scaled_runtime(30, 0.75),
+        # Inference splits across GPUs, the pyramid write does not. Measured on
+        # AS40F2 (4x, level 0, 183 GB/channel): 67 min inference on 2 GPUs
+        # (~17 s/block on 1), 27 min write; ~1.5x headroom here.
+        runtime=scaled_runtime(30, 0.15 + 1.0 / config["vessel_n_gpus"]),
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,
         tile=config["vessel_tile"],
