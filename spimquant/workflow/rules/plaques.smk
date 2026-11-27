@@ -137,6 +137,7 @@ rule run_lantern_plaques:
         batch_size=config["plaque_batch_size"],
         chunk=config["plaque_chunk"],
         n_gpus=config["plaque_n_gpus"],
+        read_procs=config["inference_read_procs"],
     script:
         "../scripts/lantern_plaques.py"
 

@@ -9,10 +9,25 @@ rule import_vesselfm_model:
 
 
 rule run_vesselfm:
+    """Segment vessels with vesselFM, via the shared tiled-inference engine.
+
+    Overlapping 128^3 tiles (--vessel_stride) are merged across block
+    boundaries before the sigmoid probability is thresholded; tiles and blocks
+    outside the low-res brain mask are skipped (see vesselfm.py).
+    """
     input:
         spim=spim_input,
         spim_json=spim_json_input,
         model_path="resources/models/vesselfm.pt",
+        mask=bids(
+            root=root,
+            datatype="micr",
+            stain=stain_for_reg,
+            level=config["correction_level"],
+            desc="brain",
+            suffix="mask.nii.gz",
+            **inputs["spim"].wildcards,
+        ),
     output:
         mask=bids_oz_out(
             root=root,
@@ -23,21 +38,32 @@ rule run_vesselfm:
             suffix="mask.{ext}",
             **inputs["spim"].wildcards,
         ),
-    threads: 8
+    threads: 8 * config["vessel_n_gpus"] if gpu_available else 8
     resources:
         # vesselfm runs on the CPU when torch has no CUDA; request a GPU only
         # where it can be used (see --gpu)
-        gpu=1 if gpu_available else 0,
+        gpu=config["vessel_n_gpus"] if gpu_available else 0,
+        # one task that sees every GPU (see run_lantern_plaques)
+        tasks_per_gpu=0,
         cpus_per_gpu=8 if gpu_available else 0,
-        # Slurm measured 8.6 GB where psutil measured 2.5 GB (F1A1Te4, level 1).
-        mem_mb=scaled_mem_mb(12000, 20),
-        runtime=scaled_runtime(30, 0.75),
+        # Up to `threads` blocks in flight (~3 GB each at chunk 512 + halo,
+        # level 0) plus inference_read_procs readers (~1.6 GB each): measured
+        # 21.5 GB with 4 readers (AS40F2, 4x, level 0).
+        mem_mb=scaled_mem_mb(24000 + 1700 * config["inference_read_procs"], 20),
+        # Inference splits across GPUs, the pyramid write does not. Measured on
+        # AS40F2 (4x, level 0, 183 GB/channel): 67 min inference on 2 GPUs
+        # (~17 s/block on 1), 27 min write; ~1.5x headroom here.
+        runtime=scaled_runtime(30, 0.15 + 1.0 / config["vessel_n_gpus"]),
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,
-        vesselfm_kwargs=lambda wildcards, input: {
-            "chunk_size": (1, 128, 128, 128),
-            "model_path": input.model_path,
-        },
+        tile=config["vessel_tile"],
+        stride=config["vessel_stride"],
+        batch_size=config["vessel_batch_size"],
+        chunk=config["vessel_chunk"],
+        merge_mode=config["vessel_merge_mode"],
+        threshold=config["vessel_threshold"],
+        n_gpus=config["vessel_n_gpus"],
+        read_procs=config["inference_read_procs"],
     script:
         "../scripts/vesselfm.py"
 
