@@ -417,6 +417,7 @@ def main():
             config,
             mask_path=snakemake.input.mask,
             threads=snakemake.threads,
+            read_procs=snakemake.params.read_procs,
             tmpdir=snakemake.resources.tmpdir,
         ) as prob:
             # float32 costs ~4 bytes/voxel, so a level-1 whole brain is ~100 GB

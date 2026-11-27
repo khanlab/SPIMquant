@@ -106,6 +106,7 @@ def main():
             config,
             mask_path=snakemake.input.mask,
             threads=snakemake.threads,
+            read_procs=snakemake.params.read_procs,
             tmpdir=snakemake.resources.tmpdir,
         ) as mask:
             znimg_mask = with_channels(

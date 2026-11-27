@@ -1583,6 +1583,11 @@ vessel_merge_mode: gaussian
 vessel_threshold: 0.5
 vessel_n_gpus: 1
 
+# Reader processes for deep-learning inference (vesselFM, LANTERN). Imaris
+# reads over NFS are latency bound and scale with readers (AS40F2, level 0:
+# ~11 MB/s from 1, ~20 from 4, ~47 from 16); each costs ~1.6 GB of memory.
+inference_read_procs: 8
+
 vessel_metrics:
   - fieldfrac
 

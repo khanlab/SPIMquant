@@ -46,8 +46,10 @@ rule run_vesselfm:
         # one task that sees every GPU (see run_lantern_plaques)
         tasks_per_gpu=0,
         cpus_per_gpu=8 if gpu_available else 0,
-        # Slurm measured 8.6 GB where psutil measured 2.5 GB (F1A1Te4, level 1).
-        mem_mb=scaled_mem_mb(12000, 20),
+        # Up to `threads` blocks in flight (~3 GB each at chunk 512 + halo,
+        # level 0) plus inference_read_procs readers (~1.6 GB each): measured
+        # 21.5 GB with 4 readers (AS40F2, 4x, level 0).
+        mem_mb=scaled_mem_mb(24000 + 1700 * config["inference_read_procs"], 20),
         runtime=scaled_runtime(30, 0.75),
     params:
         zarrnii_kwargs=zarrnii_in_kwargs,
@@ -58,6 +60,7 @@ rule run_vesselfm:
         merge_mode=config["vessel_merge_mode"],
         threshold=config["vessel_threshold"],
         n_gpus=config["vessel_n_gpus"],
+        read_procs=config["inference_read_procs"],
     script:
         "../scripts/vesselfm.py"
 

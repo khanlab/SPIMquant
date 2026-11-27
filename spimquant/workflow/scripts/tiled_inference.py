@@ -173,12 +173,18 @@ def merge_tiles(acc, weight, batch_out, batch, tile, importance=None):
     outputs and `weight` (z, y, x), shared by every channel, the weights --
     uniform when `importance` is None ("average"), else the Gaussian map --
     and predict_block divides one by the other at the end.
+
+    Works on NumPy arrays or on torch tensors (all on one device), with the
+    same arithmetic either way.
     """
     for j, (z, y, x) in enumerate(batch):
         window = (slice(z, z + tile), slice(y, y + tile), slice(x, x + tile))
         region = acc[(slice(None),) + window]
         if weight is None:
-            np.maximum(region, batch_out[:, j], out=region)
+            if isinstance(region, torch.Tensor):
+                region.copy_(torch.maximum(region, batch_out[:, j]))
+            else:
+                np.maximum(region, batch_out[:, j], out=region)
         elif importance is None:
             region += batch_out[:, j]
             weight[window] += 1.0
@@ -227,6 +233,13 @@ def predict_block(
     time, this keeps models whose per-tile normalisation would blow pure-air
     sensor noise up to unit variance from hallucinating far from the brain.
 
+    The block is copied to `device` once, and the merge buffers live there
+    too, so tiles are cut and merged on the device rather than on the CPU
+    while the device waits (a quarter of a 640^3 LANTERN block's time under
+    gaussian merging); only the merged result comes back.  This costs about
+    `(n_out + 2) * 4` bytes per voxel of device memory per block (~2 GB at
+    640^3, one output channel).
+
     The caller owns `device` exclusively for the duration of this call (see
     DevicePool), so no additional locking is needed here.
     """
@@ -241,12 +254,17 @@ def predict_block(
             brain = np.pad(brain, [(0, p) for p in pad], mode="edge")
 
     if merge_mode == "max":
-        acc = np.zeros((n_out,) + vol.shape, dtype=tile_dtype)
+        acc_dtype = torch.from_numpy(np.empty(0, dtype=tile_dtype)).dtype
+        acc = torch.zeros((n_out,) + vol.shape, dtype=acc_dtype, device=device)
         weight = importance = None
     else:
-        acc = np.zeros((n_out,) + vol.shape, dtype=np.float32)
-        weight = np.zeros(vol.shape, dtype=np.float32)
-        importance = gaussian_importance_map(tile) if merge_mode == "gaussian" else None
+        acc = torch.zeros((n_out,) + vol.shape, dtype=torch.float32, device=device)
+        weight = torch.zeros(vol.shape, dtype=torch.float32, device=device)
+        importance = (
+            torch.from_numpy(gaussian_importance_map(tile)).to(device)
+            if merge_mode == "gaussian"
+            else None
+        )
     crop = (slice(None),) + tuple(slice(0, n) for n in orig_shape)
     coords = [
         (z, y, x)
@@ -264,23 +282,25 @@ def predict_block(
     if counter is not None:
         counter.add(len(coords), n_all - len(coords))
     if not coords:
-        return acc[crop]
+        return acc[crop].cpu().numpy()
 
+    vol_dev = torch.from_numpy(np.ascontiguousarray(vol, dtype=np.float32)).to(device)
     for start in range(0, len(coords), batch_size):
         batch = coords[start : start + batch_size]
-        arr = np.stack(
-            [vol[z : z + tile, y : y + tile, x : x + tile] for z, y, x in batch]
+        tiles = torch.stack(
+            [vol_dev[z : z + tile, y : y + tile, x : x + tile] for z, y, x in batch]
         )
-        out = predict_tiles(torch.from_numpy(arr).to(device))
-        if isinstance(out, torch.Tensor):
-            out = out.cpu().numpy()
-        merge_tiles(acc, weight, out, batch, tile, importance)
+        out = predict_tiles(tiles)
+        if not isinstance(out, torch.Tensor):
+            out = torch.from_numpy(np.asarray(out))
+        merge_tiles(acc, weight, out.to(device), batch, tile, importance)
+    del vol_dev
 
     if weight is not None:
         # Voxels that no tile covered (every covering tile was skipped for having
         # no brain) keep weight 0 and stay at 0.
-        np.divide(acc, weight, out=acc, where=weight > 0)
-    return acc[crop]
+        acc = torch.where(weight > 0, acc / weight.clamp_min(1e-30), acc)
+    return acc[crop].cpu().numpy()
 
 
 # ----------------------------------------------------------------------
@@ -525,7 +545,9 @@ def run_blocks(
 
 
 @contextlib.contextmanager
-def run_inference(adapter, spec, config, *, mask_path=None, threads=8, tmpdir=None):
+def run_inference(
+    adapter, spec, config, *, mask_path=None, threads=8, read_procs=None, tmpdir=None
+):
     """Run `adapter` over the image described by `spec`; yield the output.
 
     `spec` holds the arguments to ``zarrnii_compat.open_inference_array``
@@ -535,8 +557,14 @@ def run_inference(adapter, spec, config, *, mask_path=None, threads=8, tmpdir=No
     it reads from a temporary zarr that is removed when the context exits, so
     write it out inside the ``with``.
 
-    `threads` is the CPU budget: half go to reader processes, all of it to
-    in-flight blocks (reading, waiting for a device, or on one).
+    `threads` bounds the blocks in flight (being read, waiting for a device,
+    or on one), and so the memory: each holds its halo-grown input and its
+    float32 merge buffers.  `read_procs` is the number of reader processes,
+    half of `threads` by default.  Reads from Imaris over NFS are latency
+    bound and scale with the number of readers well past one per core (on
+    the cluster: ~11 MB/s from one, ~47 MB/s from 16), but each reader holds
+    its own copy of the input's dask graph (~1.6 GB for a level-0 Imaris
+    image).
     """
     import dask.array as da
     import zarr
@@ -588,7 +616,7 @@ def run_inference(adapter, spec, config, *, mask_path=None, threads=8, tmpdir=No
             chunks=(1,) + (config.chunk,) * 3,
             dtype=adapter.tile_dtype if config.merge_mode == "max" else np.float32,
         )
-        read = BlockReader(spec, n_procs=max(1, threads // 2))
+        read = BlockReader(spec, n_procs=max(1, read_procs or threads // 2))
         try:
             run_blocks(
                 data.shape,
