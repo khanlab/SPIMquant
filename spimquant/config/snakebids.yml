@@ -105,6 +105,7 @@ parse_args_groups:
   "QC": "Extra QC figures of the participant level."
   "DATASET QC (qc level)": "The qc analysis level: a quick report on every scan of the dataset."
   "GROUP STATISTICS (group level)": "Region-wise models and contrasts at the group level."
+  "GROUP QC (group level)": "The group QC report of all subjects (group/qc/groupqc.html)."
   "COMPUTE AND STORAGE": "Temporary files, memory, parallelism and storage of intermediate images."
 
 #configuration for the command-line parameters to make available
@@ -726,16 +727,19 @@ parse_args:
     nargs: '+'
 
   --no_groupqc:
+    group: "GROUP QC (group level)"
     help: "group analysis level: do not write the group QC report (group/qc/groupqc.html), which shows the registration and segmentation QC of every subject in one page"
     action: store_true
     default: False
 
   --groupqc_group_by:
+    group: "GROUP QC (group level)"
     help: "group analysis level: columns of participants.tsv to color, filter and sort subjects by in the group QC report (default: the --group-stats-pairwise factors)"
     default: null
     nargs: '+'
 
   --groupqc_embed_figures:
+    group: "GROUP QC (group level)"
     help: "group analysis level: embed each subject's QC figures in the group QC report (downsized), so it can be shared on its own; by default they are linked from the output folder"
     action: store_true
     default: False
