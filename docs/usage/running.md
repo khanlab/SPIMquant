@@ -33,7 +33,7 @@ Run SPIMquant on the login node with the Snakemake SLURM executor; it submits
 each job and waits:
 
 ```bash
-spimquant bids/ out/ participant --executor slurm --jobs 100 --retries 1
+spimquant bids/ out/ participant --executor slurm --jobs 100 --retries 1 --latency-wait 60
 ```
 
 - The many short steps of each subject are submitted together, one job per
@@ -46,6 +46,9 @@ spimquant bids/ out/ participant --executor slurm --jobs 100 --retries 1
   another node is not yet visible on a shared filesystem.
 - `--max-mem-mb` (default 450000) caps the memory any job requests, so a
   retried job still fits on a node.
+- `--latency-wait 60` gives a shared filesystem a minute to show a file
+  written on a compute node before Snakemake declares it missing (the
+  built-in profile waits 10 s, which is too short on busy NFS).
 - Run the login-node process in `tmux` or `screen`: it must stay alive
   until the last job finishes.
 
@@ -57,7 +60,8 @@ driver, which login nodes usually lack, so tell it to assume one:
 
 ```bash
 export CONDA_OVERRIDE_CUDA=12.8
-pixi run -e gpu spimquant bids/ out/ participant --executor slurm --jobs 100
+pixi run -e gpu spimquant bids/ out/ participant --executor slurm --jobs 100 \
+  --latency-wait 60 --retries 1
 ```
 
 The login node only schedules; the GPU jobs run on GPU nodes with their real
