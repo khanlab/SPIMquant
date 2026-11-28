@@ -4,29 +4,29 @@ digraph snakemake_dag {
     edge[penwidth=2, color=grey];
 	0[label = "all_participant", color = "0.08 0.6 0.85", style="rounded"];
 	10[label = "create_mask_from_gmm_and_prior", color = "0.32 0.6 0.85", style="rounded"];
-	11[label = "post_atropos", color = "0.51 0.6 0.85", style="rounded"];
+	11[label = "post_atropos", color = "0.52 0.6 0.85", style="rounded"];
 	12[label = "atropos_seg", color = "0.14 0.6 0.85", style="rounded"];
 	13[label = "pre_atropos", color = "0.52 0.6 0.85", style="rounded"];
 	14[label = "affine_transform_template_mask_to_subject", color = "0.01 0.6 0.85", style="rounded"];
-	15[label = "import_mask", color = "0.43 0.6 0.85", style="rounded"];
+	15[label = "import_mask", color = "0.44 0.6 0.85", style="rounded"];
 	16[label = "init_affine_reg", color = "0.45 0.6 0.85", style="rounded"];
 	17[label = "deform_reg", color = "0.35 0.6 0.85", style="rounded"];
 	18[label = "registration_qc_report", color = "0.59 0.6 0.85", style="rounded"];
 	19[label = "import_dseg", color = "0.42 0.6 0.85", style="rounded"];
 	1[label = "deform_spim_nii_to_template_nii", color = "0.35 0.6 0.85", style="rounded"];
-	20[label = "deform_fieldfrac_nii_to_template_nii", color = "0.35 0.6 0.85", style="rounded"];
+	20[label = "deform_fieldfrac_nii_to_template_nii", color = "0.34 0.6 0.85", style="rounded"];
 	21[label = "fieldfrac", color = "0.39 0.6 0.85", style="rounded"];
 	22[label = "run_vesselfm", color = "0.61 0.6 0.85", style="rounded"];
-	23[label = "import_vesselfm_model", color = "0.44 0.6 0.85", style="rounded"];
-	24[label = "gmmthresh", color = "0.41 0.6 0.85", style="rounded"];
-	25[label = "n4_biasfield", color = "0.50 0.6 0.85", style="rounded"];
-	26[label = "n4_pre_quant", color = "0.50 0.6 0.85", style="rounded"];
-	27[label = "reslice_mask_to_level", color = "0.60 0.6 0.85", style="rounded"];
+	23[label = "import_vesselfm_model", color = "0.45 0.6 0.85", style="rounded"];
+	24[label = "reslice_mask_to_level", color = "0.60 0.6 0.85", style="rounded"];
+	25[label = "gmmthresh", color = "0.40 0.6 0.85", style="rounded"];
+	26[label = "n4_biasfield", color = "0.50 0.6 0.85", style="rounded"];
+	27[label = "n4_pre_quant", color = "0.51 0.6 0.85", style="rounded"];
 	28[label = "counts_per_voxel", color = "0.30 0.6 0.85", style="rounded"];
 	29[label = "compute_filtered_regionprops", color = "0.28 0.6 0.85", style="rounded"];
 	2[label = "get_downsampled_nii", color = "0.40 0.6 0.85", style="rounded"];
 	30[label = "counts_per_voxel_template", color = "0.30 0.6 0.85", style="rounded"];
-	31[label = "transform_regionprops_to_template", color = "0.63 0.6 0.85", style="rounded"];
+	31[label = "transform_regionprops_to_template", color = "0.64 0.6 0.85", style="rounded"];
 	32[label = "merge_into_segstats_tsv", color = "0.48 0.6 0.85", style="rounded"];
 	33[label = "map_regionprops_to_atlas_rois", color = "0.46 0.6 0.85", style="rounded"];
 	34[label = "annotate_object_distances", color = "0.13 0.6 0.85", style="rounded"];
@@ -35,10 +35,10 @@ digraph snakemake_dag {
 	37[label = "signed_distance_transform", color = "0.62 0.6 0.85", style="rounded"];
 	38[label = "deform_template_dseg_to_subject_nii", color = "0.36 0.6 0.85", style="rounded"];
 	39[label = "import_lut_tsv", color = "0.43 0.6 0.85", style="rounded"];
-	3[label = "import_template_anat", color = "0.43 0.6 0.85", style="rounded"];
-	40[label = "map_fieldfrac_img_to_seg_tsv", color = "0.45 0.6 0.85", style="rounded"];
+	3[label = "import_template_anat", color = "0.44 0.6 0.85", style="rounded"];
+	40[label = "map_fieldfrac_img_to_seg_tsv", color = "0.46 0.6 0.85", style="rounded"];
 	41[label = "map_segstats_tsv_dseg_to_template_nii", color = "0.47 0.6 0.85", style="rounded"];
-	42[label = "merge_indiv_and_coloc_segstats_tsv", color = "0.47 0.6 0.85", style="rounded"];
+	42[label = "merge_indiv_and_coloc_segstats_tsv", color = "0.48 0.6 0.85", style="rounded"];
 	43[label = "generic_lut_bids_to_itksnap", color = "0.40 0.6 0.85", style="rounded"];
 	44[label = "warp_mri_to_template_via_spim", color = "0.65 0.6 0.85", style="rounded"];
 	45[label = "average_mri", color = "0.16 0.6 0.85", style="rounded"];
@@ -52,24 +52,24 @@ digraph snakemake_dag {
 	52[label = "transform_template_mask_to_mri", color = "0.64 0.6 0.85", style="rounded"];
 	53[label = "rigid_nlin_reg_mri_to_template", color = "0.61 0.6 0.85", style="rounded"];
 	54[label = "affine_nlin_reg_mri_to_spim", color = "0.00 0.6 0.85", style="rounded"];
-	55[label = "mri_spim_registration_qc_report", color = "0.48 0.6 0.85", style="rounded"];
+	55[label = "mri_spim_registration_qc_report", color = "0.49 0.6 0.85", style="rounded"];
 	56[label = "qc_intensity_histogram", color = "0.53 0.6 0.85", style="rounded"];
 	57[label = "qc_segmentation_overview", color = "0.56 0.6 0.85", style="rounded"];
 	58[label = "qc_segmentation_roi_zoom", color = "0.56 0.6 0.85", style="rounded"];
 	59[label = "qc_vessels_overview", color = "0.57 0.6 0.85", style="rounded"];
 	5[label = "compose_subject_to_template_warp", color = "0.27 0.6 0.85", style="rounded"];
 	60[label = "qc_vessels_roi_zoom", color = "0.57 0.6 0.85", style="rounded"];
-	61[label = "qc_zprofile", color = "0.57 0.6 0.85", style="rounded"];
+	61[label = "qc_zprofile", color = "0.58 0.6 0.85", style="rounded"];
 	62[label = "qc_objectstats", color = "0.54 0.6 0.85", style="rounded"];
 	63[label = "qc_roi_summary", color = "0.55 0.6 0.85", style="rounded"];
-	64[label = "create_tabular_json_sidecar_from_tsv", color = "0.34 0.6 0.85", style="rounded"];
+	64[label = "create_tabular_json_sidecar_from_tsv", color = "0.33 0.6 0.85", style="rounded"];
 	65[label = "create_tabular_json_sidecar_from_parquet", color = "0.33 0.6 0.85", style="rounded"];
-	6[label = "convert_ras_to_itk", color = "0.30 0.6 0.85", style="rounded"];
+	6[label = "convert_ras_to_itk", color = "0.29 0.6 0.85", style="rounded"];
 	7[label = "affine_reg", color = "0.00 0.6 0.85", style="rounded"];
 	8[label = "apply_mask_to_corrected", color = "0.13 0.6 0.85", style="rounded"];
 	9[label = "n4", color = "0.49 0.6 0.85", style="rounded"];
 	1 -> 0
-	10 -> 27
+	10 -> 24
 	10 -> 8
 	10 -> 9
 	11 -> 10
@@ -90,7 +90,7 @@ digraph snakemake_dag {
 	2 -> 13
 	2 -> 14
 	2 -> 16
-	2 -> 26
+	2 -> 24
 	2 -> 27
 	2 -> 38
 	2 -> 5
@@ -105,13 +105,14 @@ digraph snakemake_dag {
 	22 -> 59
 	22 -> 60
 	23 -> 22
-	24 -> 21
-	24 -> 29
-	24 -> 57
-	24 -> 58
-	25 -> 24
+	24 -> 22
+	24 -> 26
+	24 -> 27
+	25 -> 21
+	25 -> 29
+	25 -> 57
+	25 -> 58
 	26 -> 25
-	27 -> 25
 	27 -> 26
 	28 -> 0
 	29 -> 28

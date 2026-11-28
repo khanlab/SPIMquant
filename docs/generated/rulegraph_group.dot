@@ -22,13 +22,13 @@ digraph snakemake_dag {
 	25[label = "affine_reg", color = "0.00 0.6 0.85", style="rounded"];
 	26[label = "apply_mask_to_corrected", color = "0.13 0.6 0.85", style="rounded"];
 	27[label = "n4", color = "0.51 0.6 0.85", style="rounded"];
-	28[label = "deform_reg", color = "0.36 0.6 0.85", style="rounded"];
+	28[label = "deform_reg", color = "0.35 0.6 0.85", style="rounded"];
 	29[label = "gmmthresh", color = "0.42 0.6 0.85", style="rounded"];
-	2[label = "merge_indiv_and_coloc_segstats_tsv", color = "0.49 0.6 0.85", style="rounded"];
+	2[label = "merge_indiv_and_coloc_segstats_tsv", color = "0.50 0.6 0.85", style="rounded"];
 	30[label = "n4_biasfield", color = "0.51 0.6 0.85", style="rounded"];
 	31[label = "n4_pre_quant", color = "0.52 0.6 0.85", style="rounded"];
-	32[label = "import_dseg", color = "0.43 0.6 0.85", style="rounded"];
-	33[label = "import_lut_tsv", color = "0.44 0.6 0.85", style="rounded"];
+	32[label = "import_dseg", color = "0.44 0.6 0.85", style="rounded"];
+	33[label = "import_lut_tsv", color = "0.45 0.6 0.85", style="rounded"];
 	34[label = "map_fieldfrac_img_to_seg_tsv", color = "0.47 0.6 0.85", style="rounded"];
 	35[label = "fieldfrac", color = "0.40 0.6 0.85", style="rounded"];
 	36[label = "deform_template_dseg_to_subject_nii", color = "0.37 0.6 0.85", style="rounded"];
@@ -43,13 +43,17 @@ digraph snakemake_dag {
 	44[label = "create_tabular_json_sidecar_from_tsv", color = "0.34 0.6 0.85", style="rounded"];
 	45[label = "concat_subj_regionpropstats", color = "0.29 0.6 0.85", style="rounded"];
 	46[label = "create_stats_heatmap", color = "0.33 0.6 0.85", style="rounded"];
-	47[label = "perform_group_stats", color = "0.52 0.6 0.85", style="rounded"];
-	48[label = "map_groupstats_to_template_nii", color = "0.47 0.6 0.85", style="rounded"];
-	49[label = "group_counts_per_voxel", color = "0.43 0.6 0.85", style="rounded"];
+	47[label = "perform_group_stats", color = "0.53 0.6 0.85", style="rounded"];
+	48[label = "map_groupstats_to_template_nii", color = "0.48 0.6 0.85", style="rounded"];
+	49[label = "group_counts_per_voxel", color = "0.42 0.6 0.85", style="rounded"];
 	4[label = "map_coloc_to_atlas_rois", color = "0.47 0.6 0.85", style="rounded"];
 	50[label = "concat_subj_parquet", color = "0.29 0.6 0.85", style="rounded"];
 	51[label = "group_coloc_counts_per_voxel", color = "0.42 0.6 0.85", style="rounded"];
 	52[label = "create_tabular_json_sidecar_from_parquet", color = "0.34 0.6 0.85", style="rounded"];
+	53[label = "groupqc_report", color = "0.43 0.6 0.85", style="rounded"];
+	54[label = "groupqc_subject", color = "0.43 0.6 0.85", style="rounded"];
+	55[label = "deform_spim_nii_to_template_nii", color = "0.36 0.6 0.85", style="rounded"];
+	56[label = "deform_fieldfrac_nii_to_template_nii", color = "0.35 0.6 0.85", style="rounded"];
 	5[label = "colocalize_regionprops", color = "0.26 0.6 0.85", style="rounded"];
 	6[label = "aggregate_regionprops_across_stains", color = "0.01 0.6 0.85", style="rounded"];
 	7[label = "transform_regionprops_to_template", color = "0.64 0.6 0.85", style="rounded"];
@@ -62,6 +66,7 @@ digraph snakemake_dag {
 	12 -> 10
 	12 -> 30
 	12 -> 31
+	12 -> 42
 	13 -> 12
 	13 -> 15
 	13 -> 17
@@ -71,6 +76,7 @@ digraph snakemake_dag {
 	13 -> 27
 	13 -> 31
 	13 -> 36
+	13 -> 55
 	14 -> 12
 	14 -> 26
 	14 -> 27
@@ -79,8 +85,11 @@ digraph snakemake_dag {
 	17 -> 16
 	18 -> 14
 	19 -> 18
+	19 -> 53
+	19 -> 54
 	2 -> 1
 	2 -> 47
+	2 -> 54
 	20 -> 18
 	21 -> 20
 	21 -> 23
@@ -88,7 +97,14 @@ digraph snakemake_dag {
 	21 -> 28
 	21 -> 49
 	21 -> 51
+	21 -> 53
+	21 -> 54
+	21 -> 55
+	21 -> 56
 	22 -> 36
+	22 -> 54
+	22 -> 55
+	22 -> 56
 	22 -> 7
 	23 -> 22
 	24 -> 23
@@ -106,6 +122,7 @@ digraph snakemake_dag {
 	32 -> 36
 	32 -> 4
 	32 -> 48
+	32 -> 53
 	33 -> 34
 	33 -> 38
 	33 -> 4
@@ -114,6 +131,7 @@ digraph snakemake_dag {
 	34 -> 3
 	34 -> 37
 	35 -> 34
+	35 -> 56
 	36 -> 34
 	36 -> 38
 	37 -> 2
@@ -124,6 +142,7 @@ digraph snakemake_dag {
 	4 -> 3
 	40 -> 39
 	41 -> 40
+	42 -> 35
 	42 -> 41
 	43 -> 42
 	44 -> 0
@@ -143,6 +162,10 @@ digraph snakemake_dag {
 	50 -> 52
 	51 -> 0
 	52 -> 0
+	53 -> 0
+	54 -> 53
+	55 -> 54
+	56 -> 54
 	6 -> 39
 	6 -> 40
 	6 -> 5

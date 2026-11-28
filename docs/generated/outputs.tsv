@@ -13,6 +13,8 @@ cohort_template/work-cohort/xfm/antsMulti_affinewarped.nii.gz	cohort_template_re
 cohort_template/work-cohort/xfm/antsMulti_deformwarped.nii.gz	cohort_template_reg_ants	yes	cohort_template
 cohort_template/work-cohort/xfm/antsMulti_invwarp.nii.gz	cohort_template_reg_ants	yes	cohort_template
 cohort_template/work-cohort/xfm/antsMulti_warp.nii.gz	cohort_template_reg_ants	yes	cohort_template
+group/qc/groupqc.html	groupqc_report	no	group
+group/qc/groupqc.tsv	groupqc_report	no	group
 group/{label}/seg-{atlas}_from-{template}_allsubjects.json	create_tabular_json_sidecar_from_tsv	no	group
 group/{label}/seg-{atlas}_from-{template}_allsubjects.tsv	concat_subj_segstats	no	group
 group/{label}/seg-{atlas}_from-{template}_contrast-{contrast}_groupstats.json	create_tabular_json_sidecar_from_tsv	no	group
@@ -101,6 +103,7 @@ sub-{subject}/qc/sub-{subject}_sample-{sample}_acq-{acq}_from-subject_to-templat
 sub-{subject}/qc/sub-{subject}_sample-{sample}_acq-{acq}_from-subject_to-template_desc-qcreg_xfm.txt	qc_register	yes	qc
 sub-{subject}/qc/sub-{subject}_sample-{sample}_acq-{acq}_from-template_to-subject_desc-qcreg_warp.nii.gz	qc_register	yes	qc
 sub-{subject}/qc/sub-{subject}_sample-{sample}_acq-{acq}_from-{template}_desc-qcreg_dseg.nii.gz	qc_register	no	qc
+sub-{subject}/qc/sub-{subject}_sample-{sample}_acq-{acq}_groupqc.json	groupqc_subject	no	group
 sub-{subject}/qc/sub-{subject}_sample-{sample}_acq-{acq}_qcscan.json	qc_scan	no	qc
 sub-{subject}/qc/sub-{subject}_sample-{sample}_acq-{acq}_seg-{atlas}_from-{template}_roisummary.png	qc_roi_summary	no	participant
 sub-{subject}/qc/sub-{subject}_sample-{sample}_acq-{acq}_space-{template}_desc-qcreg_SPIM.nii.gz	qc_register	yes	qc

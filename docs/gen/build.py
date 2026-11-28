@@ -188,16 +188,24 @@ def templates_page(desc):
 
 
 def config_entries():
-    """Top-level keys of the config with the comment block above each."""
-    entries, comment = [], []
+    """Top-level keys of the config with their description: the comment
+    block above the key, or, for a key without one, a pointer to the key
+    whose comment starts its block (keys not separated by a blank line)."""
+    entries, comment, block_head = [], [], None
     for line in CONFIG.read_text().splitlines():
         if line.startswith("#"):
             comment.append(line.lstrip("#").strip())
         elif m := re.match(r"^([A-Za-z_][\w]*):", line):
-            entries.append((m.group(1), " ".join(c for c in comment if c)))
+            key = m.group(1)
+            text = " ".join(c for c in comment if c)
+            if text:
+                block_head = key
+            elif block_head:
+                text = f"See `{block_head}`."
+            entries.append((key, text))
             comment = []
         elif not line.strip():
-            comment = [] if not line.startswith(" ") else comment
+            comment, block_head = [], None
     return entries
 
 

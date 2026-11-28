@@ -14,23 +14,23 @@ digraph snakemake_dag {
 	18[label = "n4", color = "0.51 0.6 0.85", style="rounded"];
 	19[label = "create_mask_from_gmm_and_prior", color = "0.32 0.6 0.85", style="rounded"];
 	1[label = "deform_spim_nii_to_template_nii", color = "0.36 0.6 0.85", style="rounded"];
-	20[label = "post_atropos", color = "0.52 0.6 0.85", style="rounded"];
-	21[label = "atropos_seg", color = "0.13 0.6 0.85", style="rounded"];
+	20[label = "post_atropos", color = "0.53 0.6 0.85", style="rounded"];
+	21[label = "atropos_seg", color = "0.14 0.6 0.85", style="rounded"];
 	22[label = "pre_atropos", color = "0.53 0.6 0.85", style="rounded"];
 	23[label = "affine_transform_template_mask_to_subject", color = "0.00 0.6 0.85", style="rounded"];
-	24[label = "import_mask", color = "0.44 0.6 0.85", style="rounded"];
-	25[label = "import_dseg", color = "0.43 0.6 0.85", style="rounded"];
+	24[label = "import_mask", color = "0.45 0.6 0.85", style="rounded"];
+	25[label = "import_dseg", color = "0.44 0.6 0.85", style="rounded"];
 	26[label = "cohort_template_regqc", color = "0.22 0.6 0.85", style="rounded"];
-	27[label = "cohort_template_warp_dseg", color = "0.25 0.6 0.85", style="rounded"];
+	27[label = "cohort_template_warp_dseg", color = "0.24 0.6 0.85", style="rounded"];
 	28[label = "deform_fieldfrac_nii_to_template_nii", color = "0.35 0.6 0.85", style="rounded"];
 	29[label = "fieldfrac", color = "0.40 0.6 0.85", style="rounded"];
 	2[label = "get_downsampled_nii", color = "0.41 0.6 0.85", style="rounded"];
 	30[label = "run_vesselfm", color = "0.62 0.6 0.85", style="rounded"];
 	31[label = "import_vesselfm_model", color = "0.46 0.6 0.85", style="rounded"];
-	32[label = "gmmthresh", color = "0.42 0.6 0.85", style="rounded"];
-	33[label = "n4_biasfield", color = "0.51 0.6 0.85", style="rounded"];
-	34[label = "n4_pre_quant", color = "0.51 0.6 0.85", style="rounded"];
-	35[label = "reslice_mask_to_level", color = "0.61 0.6 0.85", style="rounded"];
+	32[label = "reslice_mask_to_level", color = "0.61 0.6 0.85", style="rounded"];
+	33[label = "gmmthresh", color = "0.41 0.6 0.85", style="rounded"];
+	34[label = "n4_biasfield", color = "0.51 0.6 0.85", style="rounded"];
+	35[label = "n4_pre_quant", color = "0.52 0.6 0.85", style="rounded"];
 	36[label = "counts_per_voxel", color = "0.30 0.6 0.85", style="rounded"];
 	37[label = "compute_filtered_regionprops", color = "0.28 0.6 0.85", style="rounded"];
 	38[label = "counts_per_voxel_template", color = "0.31 0.6 0.85", style="rounded"];
@@ -45,24 +45,24 @@ digraph snakemake_dag {
 	46[label = "deform_template_dseg_to_subject_nii", color = "0.37 0.6 0.85", style="rounded"];
 	47[label = "import_lut_tsv", color = "0.44 0.6 0.85", style="rounded"];
 	48[label = "map_fieldfrac_img_to_seg_tsv", color = "0.47 0.6 0.85", style="rounded"];
-	49[label = "map_segstats_tsv_dseg_to_template_nii", color = "0.48 0.6 0.85", style="rounded"];
-	4[label = "select_subject_to_template_warp", color = "0.62 0.6 0.85", style="rounded"];
+	49[label = "map_segstats_tsv_dseg_to_template_nii", color = "0.49 0.6 0.85", style="rounded"];
+	4[label = "select_subject_to_template_warp", color = "0.63 0.6 0.85", style="rounded"];
 	50[label = "merge_indiv_and_coloc_segstats_tsv", color = "0.49 0.6 0.85", style="rounded"];
 	51[label = "generic_lut_bids_to_itksnap", color = "0.41 0.6 0.85", style="rounded"];
 	52[label = "qc_intensity_histogram", color = "0.54 0.6 0.85", style="rounded"];
 	53[label = "qc_segmentation_overview", color = "0.57 0.6 0.85", style="rounded"];
-	54[label = "qc_segmentation_roi_zoom", color = "0.57 0.6 0.85", style="rounded"];
+	54[label = "qc_segmentation_roi_zoom", color = "0.58 0.6 0.85", style="rounded"];
 	55[label = "qc_vessels_overview", color = "0.58 0.6 0.85", style="rounded"];
 	56[label = "qc_vessels_roi_zoom", color = "0.59 0.6 0.85", style="rounded"];
 	57[label = "qc_zprofile", color = "0.59 0.6 0.85", style="rounded"];
 	58[label = "qc_objectstats", color = "0.55 0.6 0.85", style="rounded"];
 	59[label = "qc_roi_summary", color = "0.56 0.6 0.85", style="rounded"];
-	5[label = "compose_subject_warp_via_cohort", color = "0.28 0.6 0.85", style="rounded"];
+	5[label = "compose_subject_warp_via_cohort", color = "0.27 0.6 0.85", style="rounded"];
 	60[label = "create_tabular_json_sidecar_from_tsv", color = "0.34 0.6 0.85", style="rounded"];
 	61[label = "create_tabular_json_sidecar_from_parquet", color = "0.34 0.6 0.85", style="rounded"];
 	6[label = "build_cohort_template", color = "0.16 0.6 0.85", style="rounded"];
 	7[label = "cohort_template_inputs", color = "0.20 0.6 0.85", style="rounded"];
-	8[label = "cohort_template_affine_input", color = "0.16 0.6 0.85", style="rounded"];
+	8[label = "cohort_template_affine_input", color = "0.17 0.6 0.85", style="rounded"];
 	9[label = "cohort_template_affine_warp", color = "0.18 0.6 0.85", style="rounded"];
 	1 -> 0
 	10 -> 9
@@ -83,14 +83,14 @@ digraph snakemake_dag {
 	18 -> 17
 	19 -> 17
 	19 -> 18
-	19 -> 35
+	19 -> 32
 	2 -> 1
 	2 -> 11
 	2 -> 18
 	2 -> 20
 	2 -> 22
 	2 -> 23
-	2 -> 34
+	2 -> 32
 	2 -> 35
 	2 -> 46
 	2 -> 5
@@ -128,13 +128,14 @@ digraph snakemake_dag {
 	30 -> 55
 	30 -> 56
 	31 -> 30
-	32 -> 29
-	32 -> 37
-	32 -> 53
-	32 -> 54
-	33 -> 32
+	32 -> 30
+	32 -> 34
+	32 -> 35
+	33 -> 29
+	33 -> 37
+	33 -> 53
+	33 -> 54
 	34 -> 33
-	35 -> 33
 	35 -> 34
 	36 -> 0
 	37 -> 36

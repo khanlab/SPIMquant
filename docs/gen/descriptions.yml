@@ -75,7 +75,7 @@ folders:
   qc: QC figures for each stain and method.
   anat: The subject's MRI (`--register_to_mri`).
   tpl-{template}: The template, its brain mask and atlases, as used by the run.
-  group: Group-level tables, statistics and maps, under `group/<label>/` (`--group-stats-label`, default `1`).
+  group: Group-level tables, statistics and maps, under `group/<label>/` (`--group-stats-label`, default `1`), and the group QC report under `group/qc/`.
   resources: Downloaded model weights.
   dataset-qc: The dataset QC report and its per-scan metrics (`qc` level), under `qc/`.
   cohort_template: The cohort template, its atlases and warps (`--reg_cohort_template`, `cohort_template` level).
@@ -201,6 +201,14 @@ outputs:
   roisummary.png: Per-region values of every stain and metric for this subject.
   vesselslices.png: Slices of the image with the vessel mask overlaid.
   vesselroimontage.png: Zoomed crops of atlas regions with the vessel mask overlaid.
+  # group QC report
+  groupqc.html: >-
+    Group QC report: the registration and segmentation QC of every subject
+    on one page, with a montage, an animated flip through the subjects and
+    outlier flags. Written by every group run unless `--no_groupqc`. See
+    [Group QC report](../howto/group_qc.md).
+  groupqc.tsv: The per-subject QC metrics and outlier flags shown in the group QC report.
+  groupqc.json: This subject's QC metrics and figure paths, read by the group QC report.
   # dataset QC level
   qcreport.html: The dataset QC report (`qc` level).
   qcmetrics.tsv: Per-scan QC metrics shown in the report (`qc` level).

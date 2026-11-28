@@ -110,7 +110,7 @@ def make_normalizer(entities):
             )
 
     def norm(path):
-        path = re.sub(r"^group/[^/]+/", "group/{label}/", path)
+        path = re.sub(r"^group/(?!qc/)[^/]+/", "group/{label}/", path)
         path = re.sub(r"(?<=_)metric-[^_]+(?=_)", "metric-{metric}", path)
         for rx, rep in subs:
             path = rx.sub(rep, path)
