@@ -69,7 +69,8 @@ hatch-vcs = "*"
 
 [tool.pixi.package.run-dependencies]
 snakemake = ">=9.5.1,<10"
-snakebids = ">=0.17.0,<0.18"
+# 0.18: argument groups (`group:` in parse_args)
+snakebids = ">=0.18.0,<0.19"
 snakemake-storage-plugin-s3 = ">=0.3.3,<0.4"
 snakemake-storage-plugin-gcs = ">=1.1.4,<2"
 snakemake-storage-plugin-fs = ">=1.1.2,<2"
@@ -122,6 +123,9 @@ docutils = "<0.22"
 # ----------------------------------------------------------------------
 
 [tool.pixi.feature.runtime.dependencies]
+# snakebids 0.18 is on the khanlab channel only (bioconda has 0.17), and the
+# channels are searched in priority order, so name the channel
+snakebids = { version = ">=0.18.0,<0.19", channel = "https://prefix.dev/akhanf/khanlab" }
 spimquant = { path = "." }
 
 # the CUDA platform is only solved for the gpu environment
@@ -171,7 +175,7 @@ micro_sam = ">=1.6.2,<2"
 # CLI parser (spimquant/run.py). Kept small so Read the Docs can install it.
 [tool.pixi.feature.docs.dependencies]
 python = ">=3.11,<3.13"
-snakebids = ">=0.17.0,<0.18"
+snakebids = { version = ">=0.18.0,<0.19", channel = "https://prefix.dev/akhanf/khanlab" }
 pyyaml = "*"
 mkdocs = ">=1.6,<2"
 mkdocs-material = ">=9.5,<10"
