@@ -1,0 +1,73 @@
+intro: Outputs of one full-resolution brain, as SPIMquant writes them. Every file is described in the
+  [output reference](../reference/outputs.md).
+dataset: one mouse brain (sub-AS40F2), 4x Imaris scan, 339 GB
+resolution: "1.625 \xD7 1.625 \xD7 2.75 \xB5m"
+stains: Abeta (LANTERN), CD31 (vesselFM), YoPro (registration)
+spimquant_version: 'v0.13.0 + #255 + #256 (f566389)'
+command: spimquant bids/ out/ participant --executor slurm --jobs 20 --latency-wait 60 --retries 1 --benchmark
+collected: '2026-11-28'
+items:
+- section: Registration
+  title: Registration QC report
+  text: The subject warped to the template and the template warped to the subject, with atlas contours.
+    Open this first for every brain.
+  file: assets/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-YoPro_from-SPIM_to-ABAv3_desc-greedy_regqc.html
+  source: sub-AS40F2/ses-exvivo/xfm/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-YoPro_from-SPIM_to-ABAv3_desc-greedy_regqc.html
+- section: Segmentation
+  title: 'Segmentation overview: Abeta'
+  text: Slices through the whole brain with the mask overlaid.
+  file: assets/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_desc-lantern_segslices.png
+  source: sub-AS40F2/ses-exvivo/qc/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_desc-lantern_segslices.png
+- section: Segmentation
+  title: 'Regions at full resolution: Abeta'
+  text: Zoomed crops of atlas regions at the segmentation level, with the mask.
+  file: assets/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_seg-all_from-ABAv3_desc-lantern_roimontage.png
+  source: sub-AS40F2/ses-exvivo/qc/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_seg-all_from-ABAv3_desc-lantern_roimontage.png
+- section: Segmentation
+  title: 'Intensity histogram: Abeta'
+  text: Raw intensity histogram at full resolution.
+  file: assets/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_histogram.png
+  source: sub-AS40F2/ses-exvivo/qc/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_histogram.png
+- section: Segmentation
+  title: 'Intensity histogram: CD31'
+  text: Raw intensity histogram at full resolution.
+  file: assets/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-CD31_histogram.png
+  source: sub-AS40F2/ses-exvivo/qc/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-CD31_histogram.png
+- section: Segmentation
+  title: 'Intensity histogram: YoPro'
+  text: Raw intensity histogram at full resolution.
+  file: assets/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-YoPro_histogram.png
+  source: sub-AS40F2/ses-exvivo/qc/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-YoPro_histogram.png
+- section: Segmentation
+  title: 'Objects: Abeta'
+  text: Distributions of object volume and shape.
+  file: assets/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_obj-components_desc-lantern_objectstats.png
+  source: sub-AS40F2/ses-exvivo/qc/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_obj-components_desc-lantern_objectstats.png
+- section: Segmentation
+  title: 'Depth profile: Abeta'
+  text: Field fraction against slice position, to spot depth-dependent artefacts.
+  file: assets/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_desc-lantern_zprofile.png
+  source: sub-AS40F2/ses-exvivo/qc/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_desc-lantern_zprofile.png
+- section: Vessels
+  title: 'Vessel overview: CD31'
+  text: Slices with the vesselFM mask overlaid.
+  file: assets/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-CD31_desc-vesselfm_vesselslices.png
+  source: sub-AS40F2/ses-exvivo/qc/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-CD31_desc-vesselfm_vesselslices.png
+- section: Regions
+  title: Per-region summary
+  text: Per-region values of every stain and metric for this brain.
+  file: assets/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_seg-all_from-ABAv3_roisummary.png
+  source: sub-AS40F2/ses-exvivo/qc/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_seg-all_from-ABAv3_roisummary.png
+- section: Regions
+  title: Field fraction in the template
+  text: Each region's field fraction painted into the template (`featuremap/`), over the template image.
+  file: assets/featuremap_fieldfrac.png
+  source: sub-AS40F2/ses-exvivo/featuremap/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_space-ABAv3_seg-coarse_Abeta+fieldfrac.nii.gz
+- section: Tables
+  title: Per-region table (`mergedsegstats.tsv`)
+  file: assets/mergedsegstats.md
+  source: sub-AS40F2/ses-exvivo/tabular/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_seg-coarse_from-ABAv3_mergedsegstats.tsv
+- section: Tables
+  title: All objects (`regionprops.parquet`)
+  file: assets/regionprops.md
+  source: sub-AS40F2/ses-exvivo/tabular/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_space-ABAv3_regionprops.parquet

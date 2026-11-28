@@ -42,7 +42,7 @@ ITEMS = [
     (
         "Registration",
         "Registration QC report",
-        "sub-*/xfm/*_desc-*_regqc.html",
+        "sub-*/**/xfm/*_desc-*_regqc.html",
         "The subject warped to the template and the template warped to the "
         "subject, with atlas contours. Open this first for every brain.",
         True,
@@ -50,56 +50,57 @@ ITEMS = [
     (
         "Segmentation",
         "Segmentation overview: {stain}",
-        "sub-*/qc/*_stain-*_desc-*_segslices.png",
+        "sub-*/**/qc/*_stain-*_desc-*_segslices.png",
         "Slices through the whole brain with the mask overlaid.",
         True,
     ),
     (
         "Segmentation",
         "Regions at full resolution: {stain}",
-        "sub-*/qc/*_stain-*_seg-*_desc-*_roimontage.png",
+        "sub-*/**/qc/*_stain-*_seg-*_desc-*_roimontage.png",
         "Zoomed crops of atlas regions at the segmentation level, with the mask.",
         True,
     ),
     (
         "Segmentation",
         "Threshold: {stain}",
-        "sub-*/seg/*_stain-*_desc-*_thresholds.png",
-        "The intensity histogram of the corrected image, the fitted mixture and the threshold.",
-        True,
+        "sub-*/**/seg/*_stain-*_desc-*_thresholds.png",
+        "The intensity histogram of the corrected image, the fitted mixture and "
+        "the threshold (histogram methods such as gmm only).",
+        False,
     ),
     (
         "Segmentation",
         "Intensity histogram: {stain}",
-        "sub-*/qc/*_stain-*_histogram.png",
+        "sub-*/**/qc/*_stain-*_histogram.png",
         "Raw intensity histogram at full resolution.",
         True,
     ),
     (
         "Segmentation",
         "Objects: {stain}",
-        "sub-*/qc/*_stain-*_obj-*_objectstats.png",
+        "sub-*/**/qc/*_stain-*_obj-*_objectstats.png",
         "Distributions of object volume and shape.",
         True,
     ),
     (
         "Segmentation",
         "Depth profile: {stain}",
-        "sub-*/qc/*_stain-*_desc-*_zprofile.png",
+        "sub-*/**/qc/*_stain-*_desc-*_zprofile.png",
         "Field fraction against slice position, to spot depth-dependent artefacts.",
         True,
     ),
     (
         "Vessels",
         "Vessel overview: {stain}",
-        "sub-*/qc/*_stain-*_desc-*_vesselslices.png",
+        "sub-*/**/qc/*_stain-*_desc-*_vesselslices.png",
         "Slices with the vesselFM mask overlaid.",
         False,
     ),
     (
         "Regions",
         "Per-region summary",
-        "sub-*/qc/*_seg-*_from-*_roisummary.png",
+        "sub-*/**/qc/*_seg-*_from-*_roisummary.png",
         "Per-region values of every stain and metric for this brain.",
         True,
     ),
@@ -149,14 +150,22 @@ def render_featuremap(out_dir, dest_dir):
     import numpy as np
 
     maps = sorted(
-        glob.glob(f"{out_dir}/sub-*/featuremap/*_seg-coarse_*+fieldfrac.nii.gz")
-    ) or sorted(glob.glob(f"{out_dir}/sub-*/featuremap/*+fieldfrac.nii.gz"))
+        glob.glob(
+            f"{out_dir}/sub-*/**/featuremap/*_seg-coarse_*+fieldfrac.nii.gz",
+            recursive=True,
+        )
+    ) or sorted(
+        glob.glob(f"{out_dir}/sub-*/**/featuremap/*+fieldfrac.nii.gz", recursive=True)
+    )
     anat = glob.glob(f"{out_dir}/tpl-*/tpl-*_anat.nii.gz")
     if not maps or not anat:
         return None
-    fmap, tpl = nib.load(maps[0]).get_fdata(), nib.load(anat[0]).get_fdata()
-    if fmap.shape != tpl.shape:
-        return None
+    from nibabel.processing import resample_from_to
+
+    tpl_img = nib.load(anat[0])
+    # featuremaps are on their atlas's grid, which can differ from the template's
+    fmap = resample_from_to(nib.load(maps[0]), tpl_img, order=0).get_fdata()
+    tpl = tpl_img.get_fdata()
     zs = np.linspace(0.2, 0.8, 6) * tpl.shape[1]
     fig, axes = plt.subplots(1, 6, figsize=(18, 3.6), facecolor="black")
     vmax = np.percentile(fmap[fmap > 0], 98) if (fmap > 0).any() else 1
@@ -178,8 +187,13 @@ def table_excerpts(out_dir, dest_dir):
 
     items = []
     merged = sorted(
-        glob.glob(f"{out_dir}/sub-*/tabular/*_seg-coarse_from-*_mergedsegstats.tsv")
-    ) or sorted(glob.glob(f"{out_dir}/sub-*/tabular/*_mergedsegstats.tsv"))
+        glob.glob(
+            f"{out_dir}/sub-*/**/tabular/*_seg-coarse_from-*_mergedsegstats.tsv",
+            recursive=True,
+        )
+    ) or sorted(
+        glob.glob(f"{out_dir}/sub-*/**/tabular/*_mergedsegstats.tsv", recursive=True)
+    )
     if merged:
         df = pd.read_csv(merged[0], sep="\t")
         if "index" in df.columns:
@@ -202,7 +216,9 @@ def table_excerpts(out_dir, dest_dir):
         items.append(
             ("Tables", "Per-region table (`mergedsegstats.tsv`)", merged[0], md)
         )
-    props = sorted(glob.glob(f"{out_dir}/sub-*/tabular/*_regionprops.parquet"))
+    props = sorted(
+        glob.glob(f"{out_dir}/sub-*/**/tabular/*_regionprops.parquet", recursive=True)
+    )
     if props:
         df = pd.read_parquet(props[0])
         md = dest_dir / "regionprops.md"
@@ -223,25 +239,29 @@ def benchmark_table(out_dir):
 
     rows = []
     for f in glob.glob(f"{out_dir}/benchmarks/**/*", recursive=True):
-        if not Path(f).is_file():
+        path = Path(f)
+        if not path.is_file():
             continue
-        try:
-            b = pd.read_csv(f, sep="\t")
+        try:  # Snakemake writes .jsonl (one record per run) or TSV benchmarks
+            b = (
+                pd.read_json(f, lines=True)
+                if path.suffix == ".jsonl"
+                else pd.read_csv(f, sep="\t")
+            )
         except Exception:
             continue
         if "s" not in b.columns:
             continue
         rule = (
-            Path(f).parent.name
-            if Path(f).parent != Path(out_dir) / "benchmarks"
-            else Path(f).stem
+            path.parent.name
+            if path.parent != Path(out_dir) / "benchmarks"
+            else path.stem
+        )
+        num = lambda c: (
+            pd.to_numeric(b[c], errors="coerce") if c in b else pd.Series([0.0])
         )
         rows.append(
-            {
-                "rule": rule,
-                "s": b["s"].max(),
-                "max_rss": b.get("max_rss", pd.Series([0])).max(),
-            }
+            {"rule": rule, "s": num("s").max(), "max_rss": num("max_rss").max()}
         )
     if not rows:
         return None
@@ -272,6 +292,10 @@ def main():
     ap.add_argument("--resolution", required=True)
     ap.add_argument("--stains", default="")
     ap.add_argument("--command", required=True)
+    ap.add_argument(
+        "--version",
+        help="SPIMquant version the run used (default: git describe of this checkout)",
+    )
     args = ap.parse_args()
     out = Path(args.output_dir)
 
@@ -280,7 +304,7 @@ def main():
     ASSETS.mkdir(parents=True)
     entries, missing = [], []
     for section, title, pattern, text, required in ITEMS:
-        files = sorted(glob.glob(str(out / pattern)))
+        files = sorted(glob.glob(str(out / pattern), recursive=True))
         files = [f for f in files if "nomask" not in f]
         if not files:
             if required:
@@ -343,12 +367,15 @@ def main():
         "Group",
     ]
     entries.sort(key=lambda e: order.index(e["section"]))
-    version = subprocess.run(
-        ["git", "describe", "--tags", "--always"],
-        cwd=DOCS.parent,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
+    version = (
+        args.version
+        or subprocess.run(
+            ["git", "describe", "--tags", "--always"],
+            cwd=DOCS.parent,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    )
     manifest = {
         "intro": "Outputs of one full-resolution brain, as SPIMquant writes them. "
         "Every file is described in the [output reference](../reference/outputs.md).",

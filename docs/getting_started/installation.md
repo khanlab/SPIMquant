@@ -42,11 +42,14 @@ conda, mamba and micromamba work with the same channels.
 
 ## Disk and memory
 
-Plan for local or fast network storage of about the size of the input
-for the output and working files of each brain: full-resolution masks and
-corrected images are written as OME-Zarr. Memory per job is set by each rule
-from the image size; [Running SPIMquant](../usage/running.md#resources) lists
-measured run times and memory.
+For the example brain (339 GB of Imaris at 1.625 × 1.625 × 2.75 µm, Abeta
+with LANTERN and CD31 with vesselFM) the output directory takes 110 GB. Most
+of it (101 GB) is the full-resolution distance map to the vessels
+(`vessels/*_dist.ozx`); without vessels (`--no_vessels`) it is under 10 GB.
+Temporary files written during the run come on top of this; put them on fast
+local disk with `--work_dir`. Memory per job is set by each rule from the
+image size; [Running SPIMquant](../usage/running.md#resources) lists measured
+run times and memory.
 
 ## Next
 

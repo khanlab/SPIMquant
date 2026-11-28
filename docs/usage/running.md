@@ -82,12 +82,35 @@ Intermediate OME-Zarr stores are written as single zip files (`.ozx`,
 
 ## Resources
 
-Measured on one brain scanned at 1.6 × 1.6 × 2.75 µm (Abeta, CD31, YoPro;
-339 GB of Imaris), with the default settings. See
-[Example outputs](../examples/index.md) for the outputs of this run.
+Measured on one brain scanned at 1.625 × 1.625 × 2.75 µm (Abeta, CD31,
+YoPro; 339 GB of Imaris), with the default settings, on the SLURM cluster
+described above (GPU jobs on one A100). LANTERN and vesselFM read the raw
+image, so no full-resolution bias correction runs. The whole participant level
+took 3 h 40 min from submission. Steps that took under a minute are left out;
+the brain-masking steps ran on a 12-core workstation. See
+[Example outputs](../examples/index.md) for this run's outputs.
 
-<!-- RESOURCES-TABLE: filled from tools/summarize_benchmarks.py on the
-example run; see AGENTS.md -->
+<!-- RESOURCES-TABLE: from docs/gen/collect_examples.py on the example run; see AGENTS.md -->
+| Rule | Jobs | Longest job | Peak memory |
+|---|---|---|---|
+| `run_vesselfm` | 1 | 2.9 h | 31.3 GB |
+| `signed_distance_transform` | 1 | 31 min | 92.8 GB |
+| `run_lantern_plaques` | 1 | 22 min | 35.5 GB |
+| `compute_filtered_regionprops` | 1 | 10 min | 31.2 GB |
+| `binarize_lantern_plaques` | 1 | 9 min | 48.3 GB |
+| `sample_sdt_at_objects` | 1 | 6 min | 0.7 GB |
+| `qc_vessels_roi_zoom` | 4 | 5 min | 3.4 GB |
+| `qc_segmentation_roi_zoom` | 4 | 5 min | 3.4 GB |
+| `deform_reg` | 1 | 4 min | 12.5 GB |
+| `init_affine_reg` | 1 | 2 min | 3.1 GB |
+| `compose_subject_to_template_warp` | 1 | 2 min | 5.8 GB |
+| `affine_reg` | 1 | 1 min | 3.4 GB |
+| `n4_pre_quant` | 1 | 1 min | 0.1 GB |
+| `registration_qc_report` | 1 | 1 min | 4.5 GB |
+| `atropos_seg` | 1 | 1 min | 0.2 GB |
+
+Total over all jobs: 5.3 h of wall time (jobs run in parallel).
+<!-- /RESOURCES-TABLE -->
 
 To measure your own data, add `--benchmark`: each job's run time, peak memory
 and CPU use are written to `OUTPUT_DIR/benchmarks/`, and
