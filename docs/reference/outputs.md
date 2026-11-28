@@ -253,6 +253,12 @@ One row per brain region containing the outcome of statistical tests comparing t
 
 Annotated heatmap visualising the per-region statistical results.  Rows are brain regions, columns are stain-metric combinations.  Colour encodes effect size; significance markers (stars) indicate FDR-corrected p < 0.05.
 
+### Group QC Report (`group/qc/`)
+
+**Files:** `groupqc.html`, `groupqc.tsv`
+
+One HTML page with the registration and segmentation QC of every subject: a view of each subject at the same template slices, a montage of all subjects, an animated flip through them, and a table of QC metrics with outlier flags (also written as `groupqc.tsv`). Built from the per-subject `sub-*/qc/*_groupqc.json`. See [Group QC Report](../howto/group_qc.md).
+
 ---
 
 ## Intermediate Files

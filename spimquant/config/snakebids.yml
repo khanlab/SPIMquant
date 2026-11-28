@@ -641,6 +641,21 @@ parse_args:
     default: null
     nargs: '+'
 
+  --no_groupqc:
+    help: "group analysis level: do not write the group QC report (group/qc/groupqc.html), which shows the registration and segmentation QC of every subject in one page"
+    action: store_true
+    default: False
+
+  --groupqc_group_by:
+    help: "group analysis level: columns of participants.tsv to color, filter and sort subjects by in the group QC report (default: the --group-stats-pairwise factors)"
+    default: null
+    nargs: '+'
+
+  --groupqc_embed_figures:
+    help: "group analysis level: embed each subject's QC figures in the group QC report (downsized), so it can be shared on its own; by default they are linked from the output folder"
+    action: store_true
+    default: False
+
   --sloppy:
     help: "Use low-quality parameters for speed (USE FOR TESTING ONLY)"
     action: store_true
@@ -1179,6 +1194,18 @@ models:
   
 templatereg:
   desc: N4brain
+
+# group QC report (group analysis level, rules/groupqc.smk)
+groupqc:
+  # template slices per plane, the same for every subject
+  slices:
+    coronal: 5
+    axial: 2
+    sagittal: 2
+  image_quality: 80 # WebP quality of the embedded slices
+  outlier_z: 3.0 # robust z-score beyond which a metric is flagged
+  jacobian: true # Jacobian determinant metrics of each subject's warp
+  outline_seg: null # atlas drawn as outlines (default: coarse, else roi22, else the first)
 
 # qc analysis level: a report on the raw data, without segmentation. Unlike the
 # other levels, scans do not need to have the same stains.

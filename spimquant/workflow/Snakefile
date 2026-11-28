@@ -1941,6 +1941,10 @@ rule all_group:
         if do_fibres and pairwise_contrast_labels
         else [],
         rules.all_group_stats_tabular_sidecars.input,
+        # defined in groupqc.smk (included below)
+        []
+        if config["no_groupqc"]
+        else os.path.join(root, "group", "qc", "groupqc.html"),
 
 
 include: "rules/import.smk"
@@ -1961,6 +1965,7 @@ include: "rules/patches.smk"
 include: "rules/groupstats.smk"
 include: "rules/qc.smk"
 include: "rules/qcreport.smk"
+include: "rules/groupqc.smk"
 include: "rules/sidecars.smk"
 include: "rules/cohort_template.smk"
 
