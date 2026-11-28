@@ -100,7 +100,7 @@ parse_args_groups:
   "FIBRES": "Fibre orientation analysis."
   "MRI": "Registration to the same brain's MRI."
   "MULTIPLE SCANS": "Additional scans of the same sample (--aux_spim)."
-  "REUSING OUTPUTS": "Reuse of brain masks and transforms from an earlier run."
+  "REUSING OUTPUTS": "Reuse of brain masks, transforms, segmentations and vessel masks from an earlier run."
   "TEMPLATE-SPACE DATA, PATCHES AND CROPS": "Full-resolution image data in template space, and patches and crops of atlas regions."
   "QC": "Extra QC figures of the participant level."
   "DATASET QC (qc level)": "The qc analysis level: a quick report on every scan of the dataset."
@@ -676,10 +676,12 @@ parse_args:
 
   --reuse_outputs:
     group: "REUSING OUTPUTS"
-    help: "Which outputs to reuse from --reuse_derivatives (default: %(default)s). 'brainmask' reuses the SPIM brain masks, 'transforms' the composite subject<->template warps of --registration_method (warps from datasets made before registration methods existed count as greedy). The registration QC report is skipped for subjects whose transforms are reused."
+    help: "Which outputs to reuse from --reuse_derivatives (default: %(default)s). 'brainmask' reuses the SPIM brain masks, 'transforms' the composite subject<->template warps of --registration_method (warps from datasets made before registration methods existed count as greedy). The registration QC report is skipped for subjects whose transforms are reused. 'segmentation' (opt-in) reuses the masks of the --seg_method methods, the LANTERN vote maps and the signed distance transforms of segmented stains; 'vessels' (opt-in) the vessel mask, its signed distance transform and, if present, the vessel skeleton and graph. Objects, tables and QC are computed again from them. Settings that change these outputs but not their file names (e.g. --correction_method for gmm, otsu and th masks, --vessel_threshold for vessels) are compared with the prior dataset's config/snakebids.yml, and a group of outputs whose settings differ is computed instead of reused."
     choices:
       - brainmask
       - transforms
+      - segmentation
+      - vessels
     default:
       - brainmask
       - transforms

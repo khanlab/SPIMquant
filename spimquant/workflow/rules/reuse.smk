@@ -20,9 +20,20 @@ and Snakemake falls back to the computing rule for that file only.
 QC of a reused output would only re-check the prior run, so the registration QC
 report is skipped for subjects whose transforms are reused (the brain mask has
 no QC output of its own).
+
+Segmentation and vessel outputs (opt-in: --reuse_outputs segmentation vessels)
+depend on settings their paths do not name (e.g. --correction_method for a gmm
+mask). Those settings are compared with the prior dataset's
+config/snakebids.yml first, and a group of outputs whose settings differ is not
+reused at all (see scripts/reuse_check.py). Their QC reports are made as usual:
+they are cheap, and show this run's tables.
 """
 
 import glob as _glob
+import re as _re
+import shlex
+
+from snakemake.io import strip_wildcard_constraints as _strip_constraints
 
 reuse_root = config.get("reuse_derivatives")
 
@@ -43,8 +54,11 @@ if reuse_root:
 reuse_outputs = config.get("reuse_outputs") or []
 
 # --reuse_symlink links to the prior dataset instead of copying (composite warps
-# are ~1.5 GB per subject); input paths are absolute, so the links are too
+# are ~1.5 GB per subject); input paths are absolute, so the links are too.
+# OME-Zarr outputs are directories, so they are copied recursively (-L: a prior
+# dataset made with --reuse_symlink holds links, copy what they point to).
 reuse_cmd = "ln -s" if config.get("reuse_symlink") else "cp"
+reuse_tree_cmd = "ln -s" if config.get("reuse_symlink") else "cp -rL"
 
 
 def reuse_path(path):
@@ -171,6 +185,272 @@ if reuse_root and "transforms" in reuse_outputs:
             "Atlas labels from these warps will inherit that error, so register again "
             "if you need accurate labels."
         )
+
+
+# --- segmentation and vessel outputs (opt-in) --------------------------------
+
+from reuse_check import (
+    REUSE_SETTINGS,
+    format_differences,
+    load_prior_config,
+    setting_differences,
+)
+from seg_plan import SEG_METHOD_PATTERNS
+
+
+def _reuse_output(path):
+    """Output path of a reuse rule: OME-Zarr stores are directories."""
+    path = str(path)
+    return directory(path) if path.endswith(".ome.zarr") else path
+
+
+def _reuse_input(path):
+    """The prior dataset's copy of an output path (minus wildcard regexes)."""
+    return reuse_path(_strip_constraints(str(path)))
+
+
+def _alternation(values):
+    return "|".join(_re.escape(v) for v in values) or "^$"
+
+
+def _seg_method_kind(method):
+    return next(k for k, p in SEG_METHOD_PATTERNS.items() if p.match(method))
+
+
+def _reuse_settings_ok(group, what):
+    """Whether a group's settings match the prior dataset's (says why if not)."""
+    if _prior_config is None:
+        return False
+    diffs = setting_differences(_prior_config, config, REUSE_SETTINGS[group])
+    if diffs:
+        print(
+            f"Not reusing {what} from {reuse_root}, settings differ: "
+            f"{format_differences(diffs)}. They will be computed."
+        )
+    return not diffs
+
+
+# files written together with a seg method's mask, by kind of method: a mask is
+# only reused when these are in the prior dataset too
+_seg_mask_siblings = {
+    "otsu": ["thresholds.png"],
+    "gmm": ["thresholds.png"],
+    "dog": ["thresholds.png", "poolmask.nii.gz"],
+}
+
+
+def _with_siblings(mask_path, siblings):
+    base = str(mask_path).rsplit("_mask.", 1)[0]
+    return [mask_path] + [f"{base}_{s}" for s in siblings]
+
+
+def _print_found(what, path_sets, unit):
+    """How many of ``path_sets`` (files reused together) the prior dataset has."""
+    n_found = sum(
+        all(os.path.exists(reuse_path(p)) for p in paths) for paths in path_sets
+    )
+    print(
+        f"Reusing {what} from {reuse_root} for {n_found} of {len(path_sets)} "
+        f"{unit}; the rest will be computed"
+    )
+
+
+# reuse rules to define: (name, producing rule's name, wildcard constraints)
+_reuse_specs = []
+_prior_config = None
+
+if reuse_root and {"segmentation", "vessels"} & set(reuse_outputs):
+    _prior_config = load_prior_config(reuse_root)
+    if _prior_config is None:
+        print(
+            f"Not reusing segmentation or vessel outputs from {reuse_root}: it has "
+            "no config/snakebids.yml to check their settings against"
+        )
+
+
+def _seg_mask_paths(where):
+    return seg_expand(
+        bids_oz_in(
+            root=root,
+            datatype="seg",
+            stain="{stain}",
+            level=config["segmentation_level"],
+            desc="{desc}",
+            suffix="mask.{ext}",
+            **inputs["spim"].wildcards,
+        ),
+        kind="mask",
+        where=where,
+    )
+
+
+if _prior_config is not None and "segmentation" in reuse_outputs:
+    _kinds = {m: _seg_method_kind(m) for m in seg_plan.all_seg_methods()}
+    # methods whose masks (and SDTs) are reused
+    _reused_methods = []
+
+    def _stains_of_kind(kind):
+        return [
+            s for m, k in _kinds.items() if k == kind for s in seg_plan.stains_using(m)
+        ]
+
+    _threshold_kinds = [k for k in ("th", "otsu", "gmm") if k in _kinds.values()]
+    if _threshold_kinds and _reuse_settings_ok(
+        "threshold", "th/otsu/gmm segmentation masks"
+    ):
+        for kind, producer in [
+            ("th", "threshold"),
+            ("otsu", "multiotsu"),
+            ("gmm", "gmmthresh"),
+        ]:
+            if kind in _threshold_kinds:
+                _reuse_specs.append(
+                    (
+                        f"reuse_{producer}",
+                        producer,
+                        {"stain": _alternation(_stains_of_kind(kind))},
+                    )
+                )
+        _reused_methods += [m for m, k in _kinds.items() if k in _threshold_kinds]
+
+    if "dog" in _kinds.values() and _reuse_settings_ok("dog", "dog segmentation masks"):
+        _reuse_specs.append(
+            (
+                "reuse_dogthresh",
+                "dogthresh",
+                {"stain": _alternation(_stains_of_kind("dog"))},
+            )
+        )
+        _reused_methods += [m for m, k in _kinds.items() if k == "dog"]
+
+    if lantern_stains and _reuse_settings_ok(
+        "lantern_probseg", "LANTERN vote maps (probseg)"
+    ):
+        _reuse_specs.append(
+            (
+                "reuse_lantern_probseg",
+                "run_lantern_plaques",
+                {"stain": _alternation(lantern_stains)},
+            )
+        )
+        _print_found(
+            "LANTERN vote maps",
+            [
+                [p]
+                for p in inputs["spim"].expand(
+                    rules.binarize_lantern_plaques.input.probseg, stain=lantern_stains
+                )
+            ],
+            "scan(s)",
+        )
+        if _reuse_settings_ok("lantern_mask", "LANTERN plaque masks"):
+            _reuse_specs.append(
+                (
+                    "reuse_lantern_mask",
+                    "binarize_lantern_plaques",
+                    {"stain": _alternation(lantern_stains)},
+                )
+            )
+            _reused_methods += [m for m, k in _kinds.items() if k == "lantern"]
+
+    if _reused_methods:
+        _print_found(
+            f"segmentation masks ({', '.join(_reused_methods)})",
+            [
+                _with_siblings(p, _seg_mask_siblings.get(_kinds[m], []))
+                for m in _reused_methods
+                for p in _seg_mask_paths(lambda method: method == m)
+            ],
+            "mask(s)",
+        )
+        # signed distance transforms of these masks (sdt_stains)
+        _reuse_specs.append(
+            (
+                "reuse_seg_dist",
+                "signed_distance_transform",
+                {
+                    "datatype": "seg",
+                    "stain": _alternation(list(seg_plan.stains)),
+                    "desc": _alternation(_reused_methods),
+                },
+            )
+        )
+
+if (
+    _prior_config is not None
+    and "vessels" in reuse_outputs
+    and do_vessels
+    and _reuse_settings_ok("vessels", "vessel outputs")
+):
+    _vessel_constraints = {
+        "stain": _re.escape(stain_for_vessels),
+        "desc": _re.escape(config["vessel_seg_method"]),
+    }
+    for producer in [
+        "run_vesselfm",
+        "skeletonize_vessels_mask",
+        "vessel_skeleton_graph",
+        "vessel_graph_to_nodes_edges",
+    ]:
+        _reuse_specs.append((f"reuse_{producer}", producer, _vessel_constraints))
+    _reuse_specs.append(
+        (
+            "reuse_vessel_dist",
+            "signed_distance_transform",
+            {"datatype": "vessels", **_vessel_constraints},
+        )
+    )
+    _print_found(
+        "vessel masks",
+        [
+            [p]
+            for p in inputs["spim"].expand(
+                str(rules.run_vesselfm.output.mask),
+                stain=stain_for_vessels,
+                level=config["segmentation_level"],
+            )
+        ],
+        "scan(s)",
+    )
+
+
+# One rule per producing rule, copying (or linking) all of its outputs from the
+# prior dataset, so the producing rule is never needed for one output while the
+# reuse rule makes another. Where the outputs are not all in the prior dataset,
+# the input is missing and Snakemake falls back to the producing rule.
+for _name, _producer_name, _constraints in _reuse_specs:
+    _producer = getattr(rules, _producer_name)
+
+    rule:
+        name:
+            _name
+        input:
+            **{k: _reuse_input(v) for k, v in _producer.output.items()},
+        output:
+            # the SDT rule's inline {datatype,seg|vessels} would override the
+            # constraint here; elsewhere keep the producer's inline regexes
+            **{
+                k: _reuse_output(
+                    _strip_constraints(str(v)) if "datatype" in _constraints else v
+                )
+                for k, v in _producer.output.items()
+            },
+        wildcard_constraints:
+            **_constraints,
+        localrule: True
+        params:
+            # a function with the keys bound now: rules defined in a loop
+            # evaluate their shell string when the job runs, after the loop
+            cmd=lambda wildcards, input, output, keys=list(
+                _producer.output.keys()
+            ): " && ".join(
+                f"{reuse_tree_cmd} {shlex.quote(input[k])} {shlex.quote(output[k])}"
+                for k in keys
+            ),
+        shell:
+            "{params.cmd}"
+
+    workflow.ruleorder(_name, _producer_name)
 
 
 def get_regqc_targets(wildcards):

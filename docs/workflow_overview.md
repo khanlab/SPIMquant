@@ -115,4 +115,4 @@ distributions and depth profiles.
 | `--register_to_mri` | Registration of the lightsheet scan to the same brain's MRI, and of both to the template ([MRI registration](howto/mri_registration.md)) |
 | `--aux_spim` | Processing of extra scans of the same brain, registered to the reference scan ([Multiple scans](howto/multiple_scans.md)) |
 | `--template-spim-res`, `--bbox_config`, `--save_patches`, `--crop_labels` | Full-resolution data in template space, crops and patches ([Template-space outputs](howto/template_space_outputs.md)) |
-| `--reuse-derivatives` | Reuse of masks and transforms from an earlier run ([Reusing outputs](howto/reuse_derivatives.md)) |
+| `--reuse-derivatives` | Reuse of brain masks and transforms, and optionally segmentation and vessel masks, from an earlier run ([Reusing outputs](howto/reuse_derivatives.md)) |
