@@ -4,19 +4,17 @@ SPIMquant segments each stain with a mask method (`--seg_method`) and splits the
 
 ## Overview
 
-```mermaid
-flowchart LR
-    A[Raw SPIM] --> B[Intensity Correction]
-    B --> C{seg_method}
-    C -->|threshold| D[Threshold]
-    C -->|otsu+k3i2| E[Multi-Otsu + k-means]
-    D --> F[Binary Mask]
-    E --> F
-    F --> G[Clean: remove edge / small objects]
-    G --> H[Segmentation Output]
-```
+For each segmented stain:
 
-After segmentation the binary mask is used to compute [field fraction](../reference/outputs.md#field-fraction-map-seg), [object count](../reference/outputs.md#object-count-map-seg), and [per-object region properties](../reference/outputs.md#region-properties-statistics-table-tabular).
+1. the image is intensity-corrected (`--correction-method`, below);
+2. the **mask method** turns it into a binary mask at `--segmentation-level`
+   (`seg/*_desc-{seg_method}_mask.ozx`, values 0/100);
+3. the mask is downsampled to the registration level as a
+   [field fraction](../reference/outputs.md#seg-fieldfrac-nii-gz) (percent of
+   each voxel covered);
+4. the **object method** splits the mask into objects, which are counted
+   ([counts](../reference/outputs.md#seg-counts-nii-gz)) and measured
+   ([per-object table](../reference/outputs.md#tabular-regionpropstats-tsv)).
 
 ---
 
@@ -97,6 +95,29 @@ On marmoset pS129 aSyn crops, `dog+s3r4k6` masks from `none` agreed closely with
 ---
 
 ## Segmentation Methods
+
+### Gaussian mixture tail (`--seg_method gmm+n3k1`)
+
+The built-in default for every stain except amyloid-beta.  A histogram of
+the corrected image is computed over the whole brain, between the 1st and
+99.5th percentiles of the nonzero voxels (`--seg-hist-percentile-range`, bin
+width `--seg-hist-bin-width`).  A Gaussian mixture with `n` components is
+fitted to it, and the threshold is placed `k` standard deviations above the
+mean of the brightest component:
+
+    threshold = mean_n + k × sigma_n
+
+With `gmm+n3k1`, three components (roughly background tissue, dimmer and
+brighter signal) and one standard deviation above the brightest.  `k` may
+use `p` as the decimal separator (`gmm+n2k2p5`: n = 2, k = 2.5).  The
+histogram, the fitted components and the threshold are saved as
+`seg/*_thresholds.png`; check it for each new stain or protocol.
+
+**When to use:** Stains whose positive signal forms the bright tail of the
+histogram (plaques, microglia, cells).  Because the threshold is set from
+each brain's own histogram, it adapts to staining and imaging differences
+between brains; this also means it marks the brightest part of the signal
+in every brain, so a brain with no positive signal still gets a threshold.
 
 ### Threshold (`--seg_method th<value>`)
 
@@ -282,5 +303,5 @@ To change a stain's built-in methods for every run (e.g. once a model is validat
 ## Further Reading
 
 - [Output Files Reference](../reference/outputs.md) — description of segmentation output files
-- [How SPIMquant Works Under the Hood](../workflow_overview.md#stage-7--segmentation) — pipeline context for segmentation
-- [Imaris Crops](imaris_crops.md) — export patches for visual inspection
+- [How it works](../workflow_overview.md#5-segmentation) — where segmentation sits in the pipeline
+- [Template-space data, crops and patches](template_space_outputs.md) — patches of the mask and image for review or training

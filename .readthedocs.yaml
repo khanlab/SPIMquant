@@ -1,26 +1,14 @@
-# .readthedocs.yaml
-# Read the Docs configuration file
-# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
-
-# Required
+# Read the Docs configuration: https://docs.readthedocs.io/en/stable/config-file/v2.html
+#
+# The docs are built in the pixi `docs` environment, which has snakebids:
+# docs/hooks.py reads the CLI parser and the config to generate the reference
+# pages (see AGENTS.md).
 version: 2
 
-# Set the OS, Python version and other tools you might need
 build:
-  os: ubuntu-22.04
+  os: ubuntu-24.04
   tools:
-    python: "3.11"
-
-# Build documentation with MkDocs
-mkdocs:
-  configuration: mkdocs.yml
-
-# Optionally build your docs in additional formats such as PDF and ePub
-# formats:
-#    - pdf
-#    - epub
-
-# Python requirements to build documentation
-python:
-  install:
-    - requirements: docs/requirements.txt
+    python: "3.12"
+  commands:
+    - curl -fsSL https://pixi.sh/install.sh | bash
+    - NO_MKDOCS_2_WARNING=1 $HOME/.pixi/bin/pixi run -e docs mkdocs build --strict --site-dir $READTHEDOCS_OUTPUT/html

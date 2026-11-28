@@ -1,197 +1,86 @@
-# Quick Start
+# Quick start
 
-This guide will walk you through running your first SPIMquant workflow.
+This runs the small test dataset that comes with the repository: one mouse
+brain, downsampled to about 100 µm, with Abeta, CD31 and YoPro channels. It
+is too coarse for meaningful numbers, but it runs every step in about
+<!-- QS-TIME -->20 minutes on 4 cores, and produces every kind of output.
+[Example outputs](../examples/index.md) shows the same outputs from a
+full-resolution brain.
 
-## Prerequisites
+## 1. Dry run
 
-Before starting, ensure you have:
-
-1. [Installed SPIMquant](installation.md)
-2. A BIDS-formatted SPIM dataset (see [SPIMprep](https://github.com/khanlab/SPIMprep) for converting raw data)
-3. Sufficient disk space and memory (see [Hardware Requirements](hardware.md))
-
-## Step 1: Prepare Your Data
-
-SPIMquant requires a BIDS dataset with SPIM microscopy data. Your directory structure should look like:
-
-```
-bids_dataset/
-├── dataset_description.json
-├── participants.tsv
-└── sub-01/
-    └── micr/
-        └── sub-01_sample-brain_stain-YOPRO_SPIM.ome.zarr.zip
-```
-
-!!! tip "Using SPIMprep"
-    Use [SPIMprep](https://github.com/khanlab/SPIMprep) to convert your raw microscopy data to BIDS format.
-
-## Step 2: Run a Dry Run
-
-Always start with a dry run to verify the workflow:
+From the repository (see [Installation](installation.md)):
 
 ```bash
-pixi run spimquant /path/to/bids/dir /path/to/output/dir participant -n
+pixi run spimquant $PWD/tests/bids_ds /tmp/spimquant_out participant -n \
+  --registration-level 0 --segmentation-level 0 --atlas-segs roi198
 ```
 
-The `-n` flag performs a dry run that:
+`-n` builds the list of jobs without running them. The test image has only a
+few pyramid levels, so registration and segmentation both use level 0 here;
+for real data leave the defaults. The start of the output says which stain
+is used for registration and which method segments each stain:
 
-- Validates your input data
-- Shows what jobs would be executed
-- Checks for missing files or configuration issues
-- Does not actually process any data
+```
+Segmentation methods (first of each is primary):
+  Abeta: seg_method gmm+n3k1 (default, no-GPU fallback), object_method components (default)
+```
 
-!!! tip "Using Test Data"
-    For your first run, use the absolute path to the test dataset:
-    ```bash
-    pixi run spimquant /absolute/path/to/SPIMquant/tests/bids_ds /tmp/output participant -n
-    ```
-
-## Step 3: Run the Workflow
-
-Once the dry run succeeds, run the full workflow:
+## 2. Run
 
 ```bash
-pixi run spimquant /path/to/bids/dir /path/to/output/dir participant --cores all
+pixi run spimquant $PWD/tests/bids_ds /tmp/spimquant_out participant --cores 4 \
+  --registration-level 0 --segmentation-level 0 --atlas-segs roi198
 ```
 
-Options explained:
+## 3. Look at the results
 
-- `participant`: Run subject-level analysis
-- `--cores all`: Use all available CPU cores
-- Alternative: `--cores 8` to use 8 cores
+```
+/tmp/spimquant_out/
+├── sub-AS36F2/
+│   ├── micr/        # images at the registration level, brain mask, warped to the template
+│   ├── xfm/         # warps, and the registration QC report (*_regqc.html)
+│   ├── parc/        # atlas labels in the subject
+│   ├── seg/         # masks (.ozx), field fraction and count maps
+│   ├── vessels/     # CD31 vessel mask and distance map
+│   ├── tabular/     # per-region and per-object tables
+│   ├── featuremap/  # per-region values painted into the template
+│   └── qc/          # QC figures
+├── tpl-ABAv3/       # the template and atlas used
+└── logs/
+```
 
-### For Zarr Zipstore Data
+Start with:
 
-If your SPIM files end with `*.ome.zarr.zip`, add the filter option:
+1. `sub-AS36F2/xfm/*_regqc.html`: open it in a browser; the atlas contours
+   should follow the brain's anatomy.
+2. `sub-AS36F2/qc/*_segslices.png`: the Abeta mask over the image.
+3. `sub-AS36F2/tabular/*_seg-roi198_from-ABAv3_mergedsegstats.tsv`: one row
+   per region, one column per stain and metric:
+
+```python
+import pandas as pd
+df = pd.read_csv("sub-AS36F2/tabular/sub-AS36F2_sample-brain_acq-downsampled_seg-roi198_from-ABAv3_mergedsegstats.tsv", sep="\t")
+df.sort_values("Abeta+fieldfrac", ascending=False)[["name", "Abeta+fieldfrac", "Abeta+density"]].head()
+```
+
+Every file is described in the [output reference](../reference/outputs.md).
+
+## 4. Group level
 
 ```bash
-pixi run spimquant /path/to/bids/dir /path/to/output/dir participant \
-  --filter-spim extension='ome.zarr.zip' \
-  --cores all
+pixi run spimquant $PWD/tests/bids_ds /tmp/spimquant_out group --cores 4 --atlas-segs roi198
 ```
 
-## Step 4: Monitor Progress
+With one subject this only stacks the tables into
+`group/1/seg-roi198_from-ABAv3_allsubjects.tsv`, with the columns of
+`participants.tsv` added. With more subjects, add a model to compare groups;
+see [Group analysis](../usage/group_analysis.md).
 
-SPIMquant will display progress as it processes:
+## Your own data
 
-```
-Building DAG of jobs...
-Job counts:
-    count   jobs
-    1       all
-    3       create_template_crop
-    ...
-[Mon Jan 15 10:23:45 2024]
-rule convert_to_nifti:
-    input: ...
-    output: ...
-```
-
-Processing time depends on:
-
-- Dataset size
-- Available compute resources
-- Number of subjects
-- Resolution of data
-
-## Step 5: View Results
-
-After processing completes, find your results in the output directory.
-
-Key output files:
-
-- `micr/*_space-{template}_SPIM.nii.gz`: Registered SPIM data in template space
-- `seg/*_mask.ozx`: Full-resolution segmentation results
-- `parc/*_from-{template}_dseg.nii.gz`: Atlas-based parcellation maps
-- `tabular/*_segstats.tsv`: Quantitative statistics by brain region
-- `group/*_groupstats.tsv`: Group-level statistical results
-
-## Step 6: Generate a Report
-
-Create an HTML report of the workflow:
-
-```bash
-pixi run spimquant /path/to/bids/dir /path/to/output/dir participant --report
-```
-
-This generates `report.html` with:
-
-- Workflow graph with all jobs
-- Runtime statistics
-- Configuration details
-- Clickable nodes to inspect code
-
-## Common Issues
-
-### Memory Errors
-
-If you encounter out-of-memory errors:
-
-```bash
-# Use fewer cores
-pixi run spimquant ... --cores 4
-
-# Or process one subject at a time
-pixi run spimquant ... --cores all --until convert_to_nifti
-```
-
-### Input Data Not Found
-
-Ensure your data follows BIDS naming conventions:
-
-- Files must have proper BIDS entities (sub-, sample-, stain-)
-- Must be in correct directory structure (sub-XX/micr/)
-- Check file extensions match your filter
-
-### Registration Failures
-
-If registration fails:
-
-1. Check input data quality
-2. Verify template compatibility
-3. Try different registration stain
-4. Adjust registration parameters in config
-
-## Next Steps
-
-- [Configuration Guide](../usage/configuration.md): Customize your workflow
-- [Group Analysis](../usage/group_analysis.md): Compare across experimental groups  
-- [CLI Reference](../usage/cli.md): Explore all command options
-- [Tutorials](../tutorials/basic_registration.md): In-depth workflow examples
-
-## Example Workflows
-
-### Basic Processing
-
-```bash
-# Process all subjects with default settings
-pixi run spimquant ./bids ./output participant --cores all
-```
-
-### Custom Template
-
-```bash
-# Use specific template
-pixi run spimquant ./bids ./output participant \
-  --template gubra \
-  --cores all
-```
-
-### Cloud Data
-
-```bash
-# Process data stored in S3
-pixi run spimquant s3://bucket/bids ./output participant \
-  --cores all
-```
-
-### Group Statistics
-
-```bash
-# After participant-level, run group analysis
-pixi run spimquant ./bids ./output group \
-  --contrast_column treatment \
-  --contrast_values control drug \
-  --cores all
-```
+- Arrange it as described in [Input data](input_data.md), and check it with
+  the [dataset QC report](../howto/dataset_qc.md).
+- Drop the level options; run with `--cores all` on a workstation, or on a
+  cluster as in [Running SPIMquant](../usage/running.md).
+- For amyloid-beta, run in the `gpu` environment to use LANTERN.

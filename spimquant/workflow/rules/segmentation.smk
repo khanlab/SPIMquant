@@ -361,11 +361,11 @@ rule multiotsu:
 rule gmmthresh:
     """Perform GMM tail-thresholding for segmentation.
 
-    Fits a Gaussian Mixture Model with n components to the log1p-transformed
-    global intensity histogram.  Components are sorted by mean intensity
+    Fits a Gaussian Mixture Model with n components to the global intensity
+    histogram (linear intensities).  Components are sorted by mean intensity
     ascending.  The threshold is defined as:
 
-        threshold = expm1(mean_n + k * sigma_n)
+        threshold = mean_n + k * sigma_n
 
     where mean_n and sigma_n are the mean and standard deviation of the
     highest-intensity component (nth component).  Outputs a QC figure

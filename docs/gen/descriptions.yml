@@ -1,0 +1,231 @@
+# Hand-written descriptions used by docs/gen/build.py.
+#
+# Everything else in the reference pages is generated from the code: the CLI
+# options (spimquant/run.py), the templates and config keys
+# (spimquant/config/snakebids.yml) and the output files and rule graphs
+# (docs/generated/, from `pixi run docs-introspect`).
+#
+# `pixi run -e docs docs-check` fails if an analysis level, template, output
+# folder or output suffix has no entry here, so a new one cannot reach the
+# docs undescribed. Keep each entry to what a user needs to know: what the
+# file holds, its units, and what it is used for.
+
+analysis_levels:
+  participant: >-
+    Per-subject processing: brain mask, intensity correction, registration
+    to the template, segmentation, per-region tables and QC figures.
+  group: >-
+    Combines the participant outputs of all subjects into cohort tables and,
+    with `--group-stats-model`, region-wise statistics and maps. Run after
+    `participant` on the same output directory.
+  qc: >-
+    A quick dataset-wide check before full processing: one HTML report with
+    thumbnails, an optional coarse registration and high-resolution crops of
+    every scan. See [Dataset QC Report](../howto/dataset_qc.md).
+  tune_n4: >-
+    Writes N4 bias-correction results for a grid of parameters, to choose
+    the `--correction-*` settings.
+  tune_dog: >-
+    Writes a report comparing difference-of-Gaussian (`dog+...`) settings
+    for `--seg_method`. See [Segmentation](../howto/segmentation.md#tuning-report-tune_dog).
+  tune_reg: >-
+    Registers each subject with every method in `--registration_tune_methods`
+    and writes a report comparing them. See
+    [Registration Methods](../howto/registration_methods.md).
+  cohort_template: >-
+    Builds a template from the subjects themselves and registers it to
+    `--template`. See [Cohort Templates](../howto/cohort_template.md).
+  cohort_template_tune_reg: >-
+    Compares registration methods for the cohort template to `--template`.
+  cohort_template_export: >-
+    Packages a cohort template, its atlases and warps for reuse with
+    `--via-template` (optionally uploading to Zenodo).
+
+templates:
+  ABAv3: >-
+    Allen Mouse Brain Common Coordinate Framework v3 (CCFv3), with the
+    Allen atlas at several granularities. The default.
+  MouseIn: >-
+    In vivo mouse MRI template (MP2RAGE), used with `--register_to_mri` to
+    mask the MRI; no atlas.
+  MBMv3: Marmoset Brain Mapping v3 (T2w MRI), with the Paxinos atlas.
+  turone: Turone mouse brain template and atlas (T2w MRI).
+  DSURQE: >-
+    Mouse Imaging Centre (Toronto) 40 µm ex vivo MRI average with the
+    DSURQE atlas (Dorr, Steadman, Ullmann, Richards, Qiu, Egan).
+  vachtchatyopro: >-
+    Lightsheet cohort template (VAChT/ChAT/YoPro mice), with warps to
+    ABAv3; use with `--via-template`.
+  NeuN10: Lightsheet NeuN cohort template with warps to ABAv3; use with `--via-template`.
+  YoPro99: Lightsheet YoPro cohort template with warps to ABAv3; use with `--via-template`.
+  Iba1sixty: Lightsheet Iba1 cohort template with warps to ABAv3; use with `--via-template`.
+  CD31: Lightsheet CD31 cohort template with warps to ABAv3; use with `--via-template`.
+
+# Output folders: the datatype directory under sub-<subject>/, or a
+# top-level directory.
+folders:
+  micr: Microscopy images at the registration level, the brain mask and bias-corrected images, and images warped to the template.
+  parc: The template atlases warped into the subject.
+  seg: Segmentation masks, field fraction and object-count maps for each stain and method.
+  vessels: Vessel segmentation (vesselFM) and its distance transform.
+  fibres: Fibre orientation maps (`--fibres`).
+  tabular: Per-region and per-object tables.
+  featuremap: Per-region values painted into the template, one image per stain and metric.
+  xfm: Transforms between the subject, the template and the MRI, and registration QC reports.
+  qc: QC figures for each stain and method.
+  anat: The subject's MRI (`--register_to_mri`).
+  tpl-{template}: The template, its brain mask and atlases, as used by the run.
+  group: Group-level tables, statistics and maps, under `group/<label>/` (`--group-stats-label`, default `1`).
+  resources: Downloaded model weights.
+  dataset-qc: The dataset QC report and its per-scan metrics (`qc` level), under `qc/`.
+  cohort_template: The cohort template, its atlases and warps (`--reg_cohort_template`, `cohort_template` level).
+
+# Output files, keyed by the last part of the file name (the suffix and
+# extension). The entities before it (stain-, level-, desc-...) are listed
+# with each pattern in the generated page. A key `folder/suffix` overrides
+# the description in that folder only.
+outputs:
+  cohort_template/SPIM.nii.gz: The cohort template image of each stain.
+  cohort_template/dseg.nii.gz: Atlas labels of `--template` warped to the cohort template.
+  fibres/dseg.nii.gz: Atlas labels warped to the subject at the fibre output level, for the per-region fibre metrics.
+  qc/dseg.nii.gz: Atlas labels warped to the subject by the quick registration of the `qc` level, used to place the crops.
+  # images
+  SPIM.nii.gz: >-
+    The image at one pyramid level (`level-`; 0 is full resolution). With
+    `space-{template}`, warped to the template. `desc-N4` is bias-corrected,
+    `desc-N4brain` also masked (the registration input), `desc-prequantN4`
+    the correction used for segmentation.
+  SPIM.ozx: >-
+    The image resampled into template space at full resolution as OME-Zarr
+    (`--template-spim-res`).
+  SPIM.patches: >-
+    A folder of image patches sampled in atlas regions (`--save_patches`), as
+    NIfTI, one per region and index.
+  SPIM.imaris: Imaris crops of atlas regions (`--crop_labels`), at full resolution.
+  mask.patches: Segmentation-mask patches matching the image patches.
+  biasfield.nii.gz: The multiplicative bias field divided out of the image (`desc-N4`, `desc-prequantN4`).
+  mask.nii.gz: >-
+    Binary brain mask (`desc-brain`) of the subject, or the template's brain
+    mask.
+  anat.nii.gz: The template image.
+  T2w.nii.gz: The subject's MRI, preprocessed (`desc-preproc`), brain-extracted (`desc-brain`), or warped to the template through the lightsheet (`via-SPIM`).
+  # parcellation
+  dseg.nii.gz: >-
+    Atlas labels (integers). In `parc/`, the template atlas warped to the
+    subject at the registration level; in `tpl-{template}/`, the atlas
+    itself.
+  dseg.tsv: Label table of an atlas (`index`, `name`, `abbreviation`, colour).
+  dseg.itksnap.txt: The label table in ITK-SNAP format.
+  # segmentation
+  mask.ozx: >-
+    Segmentation mask at `--segmentation-level`, OME-Zarr in a zip store.
+    Values are 0 or 100, so that downsampling gives percent occupancy.
+  probseg.ozx: >-
+    LANTERN plaque probability on its near-isotropic inference grid
+    (`level-neariso4`, ~4 µm), before thresholding.
+  fieldfrac.nii.gz: >-
+    Field fraction: percent of each voxel at the registration level covered
+    by the mask (0-100). With `space-{template}`, in template space.
+  counts.nii.gz: Number of objects whose centroid lies in each voxel.
+  coloccount.nii.gz: Colocalized object pairs per voxel in template space, summed over subjects.
+  coloccounts.nii.gz: Number of colocalized object pairs per voxel, in template space.
+  dist.ozx: >-
+    Signed distance (mm) to the nearest vessel wall at the segmentation
+    level: negative inside vessels. Used to give each object its distance to
+    vessels (`<vessel stain>_sdt`).
+  thresholds.png: >-
+    The intensity histogram with the threshold the method chose (or, for
+    `--fibres`, the Frangi response threshold).
+  # tables
+  segstats.tsv: >-
+    One row per atlas region for one stain and one combination of methods:
+    field fraction, object count, volume, density, and region means of the
+    object properties and distances.
+  regionpropstats.tsv: >-
+    One row per object of one stain, with its properties and the atlas
+    region its centroid lies in.
+  mergedsegstats.tsv: >-
+    The main per-subject table: one row per atlas region, with a column per
+    stain and metric (`<stain>+<metric>`, e.g. `Abeta+fieldfrac`) from each
+    stain's primary methods, plus colocalization (`coloc+...`) and fibre
+    columns. Its rows feed the group level.
+  regionprops.parquet: >-
+    Every object of every stain (primary methods): centroid in subject and
+    template space (mm), size, intensity, and distances to the nearest
+    object of each stain (`<stain>_dist`, `<stain>_edgedist`) and to vessels
+    (`<vessel stain>_sdt`). In `group/`, all subjects.
+  coloc.parquet: Pairs of overlapping objects of two stains, with their overlap and distance. In `group/`, all subjects.
+  instances.json: Settings and counts of the watershed object split (`--object_method STAIN=watershed`).
+  fibrestats.tsv: Fibre metrics per atlas region, pooled from the fibre moments (`--fibres`).
+  allsubjects.tsv: >-
+    `mergedsegstats.tsv` of every subject stacked, with the columns of
+    `participants.tsv` added. The table to load for your own statistics.
+  allsubjects_regionpropstats.tsv: The `regionpropstats.tsv` tables of every subject stacked, with participant columns.
+  groupstats.tsv: >-
+    One row per region for one contrast: group sizes and means, t-statistic,
+    uncorrected p-value and Cohen's d for each metric.
+  groupstats.png: Heatmap of the t-statistics of one contrast, regions by metrics.
+  tstat.nii.gz: t-statistic of one contrast and metric painted into the template atlas.
+  pval.nii.gz: Uncorrected p-value of one contrast and metric painted into the template atlas.
+  cohensd.nii.gz: Cohen's d of one contrast and metric painted into the template atlas.
+  json: >-
+    BIDS sidecar describing the columns (name, description, units) of the
+    table with the same name.
+  # featuremaps
+  "{stain}+count.nii.gz": Object count per region, painted into the template atlas.
+  "{stain}+density.nii.gz": Objects per mm³ per region, painted into the template atlas.
+  "{stain}+fieldfrac.nii.gz": Field fraction (%) per region, painted into the template atlas.
+  "{stain}+nvoxels.nii.gz": Number of mask voxels per region, painted into the template atlas.
+  "{stain}+volume.nii.gz": Mask volume (mm³) per region, painted into the template atlas.
+  coloc+count.nii.gz: Colocalized pairs per region, painted into the template atlas.
+  coloc+density.nii.gz: Colocalized pairs per mm³ per region, painted into the template atlas.
+  coloc+distance.nii.gz: Mean centroid distance of colocalized pairs per region, painted into the template atlas.
+  coloc+overlapratio.nii.gz: Mean overlap ratio of colocalized pairs per region, painted into the template atlas.
+  # transforms and registration QC
+  xfm.nii.gz: >-
+    Composite warp (affine and deformable) between subject and template
+    (`from-subject_to-{template}` and back), between lightsheet and MRI, or
+    between a cohort template and `--template`. `desc-` names the
+    registration method; the file without `desc-` is the one the run uses.
+  regqc.html: >-
+    Registration QC report: the subject warped to the template (and back)
+    with atlas contours, as a self-contained HTML page.
+  # QC figures
+  histogram.png: Intensity histogram of the stain at full resolution.
+  segslices.png: Slices of the image with the mask overlaid, across the brain.
+  zprofile.png: Field fraction against slice position, to spot depth-dependent artefacts.
+  objectstats.png: Distributions of object size and shape.
+  roimontage.png: >-
+    Zoomed crops of atlas regions with the mask overlaid (`desc-...nomask`:
+    the same crops without it).
+  roisummary.png: Per-region values of every stain and metric for this subject.
+  vesselslices.png: Slices of the image with the vessel mask overlaid.
+  vesselroimontage.png: Zoomed crops of atlas regions with the vessel mask overlaid.
+  # dataset QC level
+  qcreport.html: The dataset QC report (`qc` level).
+  qcmetrics.tsv: Per-scan QC metrics shown in the report (`qc` level).
+  qcscan.json: Metadata and metrics of one scan for the dataset QC report.
+  # fibres
+  moments.ozx: Per-super-voxel fibre moments (counts, orientation tensor, spherical-harmonic sums), from which the fibre maps are computed.
+  params.json: Frangi scales, background and threshold used for this stain.
+  fibredensity.nii.gz: Fraction of each super-voxel that is fibre.
+  frangi.nii.gz: Mean Frangi (vesselness) response of the fibre voxels.
+  scale.nii.gz: Mean Frangi scale (µm) of the fibre voxels, a proxy for fibre calibre.
+  odi.nii.gz: Orientation dispersion index (0 aligned, 1 isotropic).
+  odipri.nii.gz: Dispersion in the primary plane.
+  odisec.nii.gz: Dispersion in the secondary plane.
+  odianis.nii.gz: Anisotropy of the dispersion.
+  fa.nii.gz: Fractional anisotropy of the orientation tensor.
+  gfa.nii.gz: Generalised fractional anisotropy of the ODF.
+  dir.nii.gz: Principal fibre direction (world x, y, z).
+  dec.nii.gz: Direction-encoded colour map of the principal direction.
+  odf.nii.gz: Fibre ODF as real spherical-harmonic coefficients (MRtrix3 convention).
+  # vessel graph
+  graph.parquet: Vessel graph summary (`--vessel_graph`, experimental).
+  nodes.parquet: Vessel graph nodes (`--vessel_graph`, experimental).
+  edges.parquet: Vessel graph edges with length and calibre (`--vessel_graph`, experimental).
+  # cohort template
+  buildtemplate: Working directory of the cohort template build (FireANTs).
+  # models
+  model.pt: LANTERN model weights (one per fold).
+  vesselfm.pt: vesselFM model weights.
