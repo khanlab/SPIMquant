@@ -43,9 +43,10 @@ conda, mamba and micromamba work with the same channels.
 ## Disk and memory
 
 For the example brain (339 GB of Imaris at 1.625 × 1.625 × 2.75 µm, Abeta
-with LANTERN and CD31 with vesselFM) the output directory takes 110 GB. Most
-of it (101 GB) is the full-resolution distance map to the vessels
-(`vessels/*_dist.ozx`); without vessels (`--no_vessels`) it is under 10 GB.
+with LANTERN and CD31 with vesselFM) the output directory takes about 9 GB,
+most of it full-resolution masks. The full-resolution distance map to the
+vessels (101 GB here) is deleted once the object distances are computed;
+set `keep_sdt: true` in a `--configfile` to keep it.
 Temporary files written during the run come on top of this; put them on fast
 local disk with `--work_dir`. Memory per job is set by each rule from the
 image size; [Running SPIMquant](../usage/running.md#resources) lists measured

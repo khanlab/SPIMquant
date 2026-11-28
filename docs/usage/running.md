@@ -67,7 +67,9 @@ pixi run -e gpu spimquant bids/ out/ participant --executor slurm --jobs 100 \
 The login node only schedules; the GPU jobs run on GPU nodes with their real
 driver. In the `default` environment, `--gpu auto` replaces default GPU
 methods with CPU ones (Abeta: `gmm+n3k1`) and prints a note; a GPU method you
-ask for explicitly is an error.
+ask for explicitly is an error. vesselFM has no CPU replacement and runs on
+the CPU instead, which is slow at full resolution; skip vessels with
+`--no_vessels` if there is no GPU.
 
 ## Inside a job
 

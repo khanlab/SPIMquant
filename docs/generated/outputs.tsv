@@ -154,7 +154,7 @@ sub-{subject}/vessels/sub-{subject}_sample-{sample}_acq-{acq}_stain-{stain}_leve
 sub-{subject}/vessels/sub-{subject}_sample-{sample}_acq-{acq}_stain-{stain}_level-{level}_desc-vesselfm+skeleton_graph.parquet	vessel_skeleton_graph	no	vessel_graph
 sub-{subject}/vessels/sub-{subject}_sample-{sample}_acq-{acq}_stain-{stain}_level-{level}_desc-vesselfm+skeleton_mask.ozx	skeletonize_vessels_mask	no	vessel_graph
 sub-{subject}/vessels/sub-{subject}_sample-{sample}_acq-{acq}_stain-{stain}_level-{level}_desc-vesselfm+skeleton_nodes.parquet	vessel_graph_to_nodes_edges	no	vessel_graph
-sub-{subject}/vessels/sub-{subject}_sample-{sample}_acq-{acq}_stain-{stain}_level-{level}_desc-{seg_method}_dist.ozx	signed_distance_transform	no	participant
+sub-{subject}/vessels/sub-{subject}_sample-{sample}_acq-{acq}_stain-{stain}_level-{level}_desc-{seg_method}_dist.ozx	signed_distance_transform	yes	participant
 sub-{subject}/vessels/sub-{subject}_sample-{sample}_acq-{acq}_stain-{stain}_level-{level}_desc-{seg_method}_fieldfrac.nii.gz	fieldfrac	no	participant
 sub-{subject}/vessels/sub-{subject}_sample-{sample}_acq-{acq}_stain-{stain}_level-{level}_desc-{seg_method}_mask.ozx	run_vesselfm	no	participant
 sub-{subject}/vessels/sub-{subject}_sample-{sample}_acq-{acq}_stain-{stain}_space-{template}_level-{level}_desc-{seg_method}_fieldfrac.nii.gz	deform_fieldfrac_nii_to_template_nii	no	participant

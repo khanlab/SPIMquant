@@ -3,7 +3,7 @@
 This runs the small test dataset that comes with the repository: one mouse
 brain, downsampled to about 100 µm, with Abeta, CD31 and YoPro channels. It
 is too coarse for meaningful numbers, but it runs every step in about
-30 minutes on 4 cores, and writes the same kinds of outputs as a real run.
+35 minutes on 4 cores, and writes the same kinds of outputs as a real run.
 [Example outputs](../examples/index.md) shows the same outputs from a
 full-resolution brain.
 
@@ -12,22 +12,24 @@ full-resolution brain.
 From the repository (see [Installation](installation.md)):
 
 ```bash
-OPTS="--registration-level 0 --segmentation-level 0 --correction-level 1 \
-  --correction-method gaussian --atlas-segs roi198 --no_vessels"
+OPTS="--registration-level 0 --segmentation-level 0 --atlas-segs roi198"
 pixi run spimquant $PWD/tests/bids_ds /tmp/spimquant_out participant -n $OPTS
 ```
 
 `-n` builds the list of jobs without running them. The test image is tiny
-(about 100 µm voxels, few pyramid levels), so these options keep every step
-at levels it has: registration and segmentation at level 0, the bias field
-at level 1 with the Gaussian method, a single atlas (`roi198`), and no
-vessels (vesselFM needs a GPU). For real data leave them out. The start of the output says which stain
-is used for registration and which method segments each stain:
+(about 100 µm voxels, few pyramid levels), so these options run registration
+and segmentation at level 0 and use a single atlas (`roi198`); for real data
+leave them out. The start of the output says how the run is set up:
 
 ```
+Note: using --correction-level 2 instead of 6: at that level an image has fewer than 16 voxels along an axis, too few for N4
 Segmentation methods (first of each is primary):
   Abeta: seg_method gmm+n3k1 (default, no-GPU fallback), object_method components (default)
 ```
+
+Without a GPU, Abeta is segmented with `gmm+n3k1` instead of LANTERN, and
+vesselFM segments CD31 on the CPU (seconds on this image; a whole brain at
+full resolution takes 2.9 h on one A100 GPU, and far longer on a CPU).
 
 ## 2. Run
 
@@ -44,6 +46,7 @@ pixi run spimquant $PWD/tests/bids_ds /tmp/spimquant_out participant --cores 4 $
 │   ├── xfm/         # warps, and the registration QC report (*_regqc.html)
 │   ├── parc/        # atlas labels in the subject
 │   ├── seg/         # masks (.ozx), field fraction and count maps
+│   ├── vessels/     # CD31 vessel mask and field fraction
 │   ├── tabular/     # per-region and per-object tables
 │   ├── featuremap/  # per-region values painted into the template
 │   └── qc/          # QC figures

@@ -300,12 +300,55 @@ else:
 include: "rules/common.smk"
 
 
+# Stain names to treat as the same stain: ALIAS -> CANONICAL, from the config
+# (stain_synonyms: {PI: YoPro}) and --stain-synonyms PI=YoPro (CLI wins).
+stain_synonyms = dict(config.get("stain_synonyms") or {})
+for _spec in config.get("stain_synonyms_cli") or []:
+    _alias, _sep, _canonical = str(_spec).partition("=")
+    if not _sep or not _alias or not _canonical:
+        raise ValueError(
+            f"--stain-synonyms expects ALIAS=CANONICAL (e.g. PI=YoPro), got {_spec!r}"
+        )
+    stain_synonyms[_alias] = _canonical
+if stain_synonyms:
+    print(
+        "Stain synonyms: "
+        + ", ".join(f"{a} -> {c}" for a, c in sorted(stain_synonyms.items()))
+    )
+
+
 # prepopulate json sidecar metadata for every spim input
 spim_json_overrides = {
     str(spim_path): get_spim_json_overrides(spim_path)
     for spim_path in spim_raw.expand()
 }
 zarrnii_cli_kwargs = {}
+
+# N4 fits a B-spline grid to the image at correction_level; on a small image
+# (e.g. the test dataset) a coarse level leaves too few voxels per axis for the
+# grid ("number of control points must be greater than the spline order").
+# Use the coarsest level up to correction_level that keeps every axis of every
+# scan at least this long.
+_MIN_N4_VOXELS = 16
+if config["correction_method"] == "n4" and config["correction_level"] > 0:
+    _level = config["correction_level"]
+    for _spim_path in spim_raw.expand():
+        while _level > 0 and (
+            min(
+                n
+                for d, n in get_spim_info(str(_spim_path), _level)["shape"].items()
+                if d in ("x", "y", "z")
+            )
+            < _MIN_N4_VOXELS
+        ):
+            _level -= 1
+    if _level != config["correction_level"]:
+        print(
+            f"Note: using --correction-level {_level} instead of "
+            f"{config['correction_level']}: at that level an image has fewer "
+            f"than {_MIN_N4_VOXELS} voxels along an axis, too few for N4"
+        )
+        config["correction_level"] = _level
 
 
 def get_zarrnii_in_kwargs(wildcards, input):
@@ -336,7 +379,7 @@ qc_scan_stains = (
 
 if config["sample_staining"]:
     print(f"Using sample_staining override at data import: {config['sample_staining']}")
-    stains = config["sample_staining"]
+    stains = [canonical_stain(s) for s in config["sample_staining"]]
     zarrnii_cli_kwargs["set_channel_labels"] = stains
 elif config.get("analysis_level") == "qc":
     # the qc level reports on each scan's own stains (rules/qcreport.smk); the
@@ -2059,3 +2102,16 @@ if config.get("benchmark", False):
         _name = "_".join(f"{w}-{{{w}}}" for w in _wildcards) or _rule.name
         _rule.benchmark_modifier = workflow.modifier.path_modifier
         _rule.benchmark = os.path.join("benchmarks", _rule.name, f"{_name}.jsonl")
+
+
+# Every rule that asks for GPUs gets them on one node. With --gpus=N alone,
+# SLURM may spread the GPUs over several nodes, and the job's single task then
+# fails ("Invalid generic resource (gres) specification"). Set here for all
+# rules, so that a new GPU rule cannot miss it; a rule can still set nodes.
+for _rule in workflow.rules:
+    if (
+        _rule.resources is not None
+        and "gpu" in _rule.resources
+        and "nodes" not in _rule.resources
+    ):
+        _rule.resources["nodes"] = 1

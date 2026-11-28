@@ -2,10 +2,11 @@
 
 ### Do I need a GPU?
 
-No. Without one, SPIMquant uses CPU methods everywhere: Abeta is segmented
-with `gmm+n3k1` instead of LANTERN, and a note is printed. A GPU (and the
-`gpu` pixi environment) is needed for LANTERN, vesselFM vessel segmentation,
-FireANTs registration and building cohort templates. See
+No. Without one, Abeta is segmented with `gmm+n3k1` instead of LANTERN (a
+note is printed), and vesselFM runs on the CPU, which is fine for small
+images but slow for a whole brain at full resolution (2.9 h on one A100 for a
+339 GB brain). Use the `gpu` pixi environment on a GPU node for LANTERN,
+vesselFM, FireANTs registration and building cohort templates. See
 [Running SPIMquant](usage/running.md#gpu-steps).
 
 ### Which level should I segment at?

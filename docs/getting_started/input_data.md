@@ -49,6 +49,12 @@ A stain named in `--seg_method STAIN=...` is segmented even if it is not in
 `--stains_for_seg`. Use `--ignore-stains` to drop channels that only some
 brains have, so that the cohort is uniform.
 
+If the same dye is labelled differently in different datasets, map the
+names with `--stain-synonyms ALIAS=CANONICAL` (or the `stain_synonyms` config
+mapping). Channels labelled ALIAS are then processed, and named in the outputs,
+as CANONICAL. For example, to register PI-stained brains to the YoPro cohort
+template: `--stain-synonyms PI=YoPro --via-template YoPro99`.
+
 The orientation of the image axes comes from `--orientation`, the
 `OrientationStringXYZ` key of the sidecar, or the OME-Zarr metadata. It is
 written in XYZ order with the letter each axis increases towards: Blaze data
