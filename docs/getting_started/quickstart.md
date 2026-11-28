@@ -3,7 +3,7 @@
 This runs the small test dataset that comes with the repository: one mouse
 brain, downsampled to about 100 µm, with Abeta, CD31 and YoPro channels. It
 is too coarse for meaningful numbers, but it runs every step in about
-<!-- QS-TIME -->20 minutes on 4 cores, and produces every kind of output.
+30 minutes on 4 cores, and writes the same kinds of outputs as a real run.
 [Example outputs](../examples/index.md) shows the same outputs from a
 full-resolution brain.
 
@@ -12,13 +12,16 @@ full-resolution brain.
 From the repository (see [Installation](installation.md)):
 
 ```bash
-pixi run spimquant $PWD/tests/bids_ds /tmp/spimquant_out participant -n \
-  --registration-level 0 --segmentation-level 0 --atlas-segs roi198
+OPTS="--registration-level 0 --segmentation-level 0 --correction-level 1 \
+  --correction-method gaussian --atlas-segs roi198 --no_vessels"
+pixi run spimquant $PWD/tests/bids_ds /tmp/spimquant_out participant -n $OPTS
 ```
 
-`-n` builds the list of jobs without running them. The test image has only a
-few pyramid levels, so registration and segmentation both use level 0 here;
-for real data leave the defaults. The start of the output says which stain
+`-n` builds the list of jobs without running them. The test image is tiny
+(about 100 µm voxels, few pyramid levels), so these options keep every step
+at levels it has: registration and segmentation at level 0, the bias field
+at level 1 with the Gaussian method, a single atlas (`roi198`), and no
+vessels (vesselFM needs a GPU). For real data leave them out. The start of the output says which stain
 is used for registration and which method segments each stain:
 
 ```
@@ -29,8 +32,7 @@ Segmentation methods (first of each is primary):
 ## 2. Run
 
 ```bash
-pixi run spimquant $PWD/tests/bids_ds /tmp/spimquant_out participant --cores 4 \
-  --registration-level 0 --segmentation-level 0 --atlas-segs roi198
+pixi run spimquant $PWD/tests/bids_ds /tmp/spimquant_out participant --cores 4 $OPTS
 ```
 
 ## 3. Look at the results
@@ -42,7 +44,6 @@ pixi run spimquant $PWD/tests/bids_ds /tmp/spimquant_out participant --cores 4 \
 │   ├── xfm/         # warps, and the registration QC report (*_regqc.html)
 │   ├── parc/        # atlas labels in the subject
 │   ├── seg/         # masks (.ozx), field fraction and count maps
-│   ├── vessels/     # CD31 vessel mask and distance map
 │   ├── tabular/     # per-region and per-object tables
 │   ├── featuremap/  # per-region values painted into the template
 │   └── qc/          # QC figures
@@ -69,8 +70,12 @@ Every file is described in the [output reference](../reference/outputs.md).
 ## 4. Group level
 
 ```bash
-pixi run spimquant $PWD/tests/bids_ds /tmp/spimquant_out group --cores 4 --atlas-segs roi198
+pixi run spimquant $PWD/tests/bids_ds /tmp/spimquant_out group --cores 4 $OPTS
 ```
+
+Give the group level the same options as the participant level: it checks
+that the participant outputs are up to date, and with different options it
+would plan (and run) a different participant level.
 
 With one subject this only stacks the tables into
 `group/1/seg-roi198_from-ABAv3_allsubjects.tsv`, with the columns of

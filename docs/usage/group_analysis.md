@@ -8,6 +8,11 @@ and, optionally, compares groups region by region. Run it after
 spimquant bids/ out/ group --cores all
 ```
 
+Pass the same options as to the participant run (levels, atlases, methods,
+`--no_vessels`...): the group level checks that the participant outputs are
+up to date, and with different options it plans, and runs, a different
+participant level.
+
 Without a model this only writes the combined tables. All group outputs go
 to `out/group/<label>/` (`--group-stats-label`, default `1`), so analyses with
 different models or subjects do not overwrite each other.
