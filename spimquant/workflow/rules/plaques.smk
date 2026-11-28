@@ -104,6 +104,10 @@ rule run_lantern_plaques:
     threads: 8 * config["plaque_n_gpus"]
     resources:
         gpu=config["plaque_n_gpus"],
+        # all GPUs on one node: --gpus=N alone lets SLURM spread them over nodes,
+        # and the job's single task then cannot use them ("Invalid generic
+        # resource (gres) specification")
+        nodes=1,
         # Suppress the executor's default --ntasks-per-gpu=1. With --gpus=N that
         # asks SLURM for N tasks, so srun launches the whole job N times, each task
         # pinned to one GPU: the ensemble runs N times over the same volume, every
