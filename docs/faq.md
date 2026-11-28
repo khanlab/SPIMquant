@@ -49,10 +49,11 @@ stain and metric). For the cohort, run the `group` level and use
 
 No. See [Group analysis](usage/group_analysis.md#region-wise-statistics).
 
-### Can I reuse registrations from an earlier run?
+### Can I reuse registrations or segmentations from an earlier run?
 
-Yes, with `--reuse-derivatives`; see
-[Reusing outputs](howto/reuse_derivatives.md).
+Yes, with `--reuse-derivatives`. Brain masks and transforms are reused by
+default; segmentation and vessel masks with `--reuse_outputs ... segmentation
+vessels`. See [Reusing outputs](howto/reuse_derivatives.md).
 
 ### "Lock directory exists"
 
