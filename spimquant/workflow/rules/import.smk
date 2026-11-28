@@ -68,7 +68,8 @@ rule import_template_anat:
 
     Copies or downloads the template reference image specified in the configuration.
     Supports both local paths (relative to resources/) and remote URLs.
-    Templates can include ABAv3, gubra, MBMv3, turone, and MouseIn.
+    Templates can include ABAv3, MBMv3, turone, DSURQE, MouseIn and the lightsheet cohort templates.
+
     """
     input:
         anat=lambda wildcards: storage(

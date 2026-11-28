@@ -1,0 +1,176 @@
+digraph snakemake_dag {
+    graph[bgcolor=white, margin=0];
+    node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
+    edge[penwidth=2, color=grey];
+	0[label = "all_group", color = "0.04 0.6 0.85", style="rounded"];
+	10[label = "run_lantern_plaques", color = "0.62 0.6 0.85", style="rounded"];
+	11[label = "import_lantern_fold", color = "0.44 0.6 0.85", style="rounded"];
+	12[label = "reslice_mask_to_level", color = "0.61 0.6 0.85", style="rounded"];
+	13[label = "get_downsampled_nii", color = "0.41 0.6 0.85", style="rounded"];
+	14[label = "create_mask_from_gmm_and_prior", color = "0.32 0.6 0.85", style="rounded"];
+	15[label = "post_atropos", color = "0.53 0.6 0.85", style="rounded"];
+	16[label = "atropos_seg", color = "0.14 0.6 0.85", style="rounded"];
+	17[label = "pre_atropos", color = "0.53 0.6 0.85", style="rounded"];
+	18[label = "affine_transform_template_mask_to_subject", color = "0.00 0.6 0.85", style="rounded"];
+	19[label = "import_mask", color = "0.45 0.6 0.85", style="rounded"];
+	1[label = "concat_subj_segstats", color = "0.29 0.6 0.85", style="rounded"];
+	20[label = "init_affine_reg", color = "0.46 0.6 0.85", style="rounded"];
+	21[label = "import_template_anat", color = "0.45 0.6 0.85", style="rounded"];
+	22[label = "select_subject_to_template_warp", color = "0.63 0.6 0.85", style="rounded"];
+	23[label = "compose_subject_to_template_warp", color = "0.27 0.6 0.85", style="rounded"];
+	24[label = "convert_ras_to_itk", color = "0.30 0.6 0.85", style="rounded"];
+	25[label = "affine_reg", color = "0.00 0.6 0.85", style="rounded"];
+	26[label = "apply_mask_to_corrected", color = "0.13 0.6 0.85", style="rounded"];
+	27[label = "n4", color = "0.51 0.6 0.85", style="rounded"];
+	28[label = "deform_reg", color = "0.35 0.6 0.85", style="rounded"];
+	29[label = "gmmthresh", color = "0.42 0.6 0.85", style="rounded"];
+	2[label = "merge_indiv_and_coloc_segstats_tsv", color = "0.50 0.6 0.85", style="rounded"];
+	30[label = "n4_biasfield", color = "0.51 0.6 0.85", style="rounded"];
+	31[label = "n4_pre_quant", color = "0.52 0.6 0.85", style="rounded"];
+	32[label = "import_dseg", color = "0.44 0.6 0.85", style="rounded"];
+	33[label = "import_lut_tsv", color = "0.45 0.6 0.85", style="rounded"];
+	34[label = "map_fieldfrac_img_to_seg_tsv", color = "0.47 0.6 0.85", style="rounded"];
+	35[label = "fieldfrac", color = "0.40 0.6 0.85", style="rounded"];
+	36[label = "deform_template_dseg_to_subject_nii", color = "0.37 0.6 0.85", style="rounded"];
+	37[label = "merge_into_segstats_tsv", color = "0.50 0.6 0.85", style="rounded"];
+	38[label = "map_regionprops_to_atlas_rois", color = "0.48 0.6 0.85", style="rounded"];
+	39[label = "annotate_object_distances", color = "0.13 0.6 0.85", style="rounded"];
+	3[label = "merge_into_colocsegstats_tsv", color = "0.50 0.6 0.85", style="rounded"];
+	40[label = "sample_sdt_at_objects", color = "0.62 0.6 0.85", style="rounded"];
+	41[label = "signed_distance_transform", color = "0.63 0.6 0.85", style="rounded"];
+	42[label = "run_vesselfm", color = "0.62 0.6 0.85", style="rounded"];
+	43[label = "import_vesselfm_model", color = "0.46 0.6 0.85", style="rounded"];
+	44[label = "create_tabular_json_sidecar_from_tsv", color = "0.34 0.6 0.85", style="rounded"];
+	45[label = "concat_subj_regionpropstats", color = "0.29 0.6 0.85", style="rounded"];
+	46[label = "create_stats_heatmap", color = "0.33 0.6 0.85", style="rounded"];
+	47[label = "perform_group_stats", color = "0.53 0.6 0.85", style="rounded"];
+	48[label = "map_groupstats_to_template_nii", color = "0.48 0.6 0.85", style="rounded"];
+	49[label = "group_counts_per_voxel", color = "0.42 0.6 0.85", style="rounded"];
+	4[label = "map_coloc_to_atlas_rois", color = "0.47 0.6 0.85", style="rounded"];
+	50[label = "concat_subj_parquet", color = "0.29 0.6 0.85", style="rounded"];
+	51[label = "group_coloc_counts_per_voxel", color = "0.42 0.6 0.85", style="rounded"];
+	52[label = "create_tabular_json_sidecar_from_parquet", color = "0.34 0.6 0.85", style="rounded"];
+	53[label = "groupqc_report", color = "0.43 0.6 0.85", style="rounded"];
+	54[label = "groupqc_subject", color = "0.43 0.6 0.85", style="rounded"];
+	55[label = "deform_spim_nii_to_template_nii", color = "0.36 0.6 0.85", style="rounded"];
+	56[label = "deform_fieldfrac_nii_to_template_nii", color = "0.35 0.6 0.85", style="rounded"];
+	5[label = "colocalize_regionprops", color = "0.26 0.6 0.85", style="rounded"];
+	6[label = "aggregate_regionprops_across_stains", color = "0.01 0.6 0.85", style="rounded"];
+	7[label = "transform_regionprops_to_template", color = "0.64 0.6 0.85", style="rounded"];
+	8[label = "compute_filtered_regionprops", color = "0.28 0.6 0.85", style="rounded"];
+	9[label = "binarize_lantern_plaques", color = "0.16 0.6 0.85", style="rounded"];
+	1 -> 0
+	1 -> 44
+	10 -> 9
+	11 -> 10
+	12 -> 10
+	12 -> 30
+	12 -> 31
+	12 -> 42
+	13 -> 12
+	13 -> 15
+	13 -> 17
+	13 -> 18
+	13 -> 20
+	13 -> 23
+	13 -> 27
+	13 -> 31
+	13 -> 36
+	13 -> 55
+	14 -> 12
+	14 -> 26
+	14 -> 27
+	15 -> 14
+	16 -> 15
+	17 -> 16
+	18 -> 14
+	19 -> 18
+	19 -> 53
+	19 -> 54
+	2 -> 1
+	2 -> 47
+	2 -> 54
+	20 -> 18
+	21 -> 20
+	21 -> 23
+	21 -> 25
+	21 -> 28
+	21 -> 49
+	21 -> 51
+	21 -> 53
+	21 -> 54
+	21 -> 55
+	21 -> 56
+	22 -> 36
+	22 -> 54
+	22 -> 55
+	22 -> 56
+	22 -> 7
+	23 -> 22
+	24 -> 23
+	25 -> 24
+	25 -> 28
+	26 -> 25
+	26 -> 28
+	27 -> 26
+	28 -> 23
+	29 -> 35
+	29 -> 8
+	3 -> 2
+	30 -> 29
+	31 -> 30
+	32 -> 36
+	32 -> 4
+	32 -> 48
+	32 -> 53
+	33 -> 34
+	33 -> 38
+	33 -> 4
+	33 -> 46
+	33 -> 48
+	34 -> 3
+	34 -> 37
+	35 -> 34
+	35 -> 56
+	36 -> 34
+	36 -> 38
+	37 -> 2
+	38 -> 37
+	38 -> 45
+	39 -> 38
+	39 -> 50
+	4 -> 3
+	40 -> 39
+	41 -> 40
+	42 -> 35
+	42 -> 41
+	43 -> 42
+	44 -> 0
+	45 -> 0
+	45 -> 44
+	46 -> 0
+	47 -> 0
+	47 -> 44
+	47 -> 46
+	47 -> 48
+	48 -> 0
+	49 -> 0
+	5 -> 4
+	5 -> 50
+	50 -> 49
+	50 -> 51
+	50 -> 52
+	51 -> 0
+	52 -> 0
+	53 -> 0
+	54 -> 53
+	55 -> 54
+	56 -> 54
+	6 -> 39
+	6 -> 40
+	6 -> 5
+	7 -> 6
+	8 -> 7
+	9 -> 35
+	9 -> 8
+}

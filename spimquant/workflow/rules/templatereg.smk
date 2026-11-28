@@ -14,7 +14,7 @@ Key workflow stages:
 6. Label resampling and warping
 7. Quality control report generation
 
-The workflow supports multiple templates (ABAv3, gubra, MBMv3, turone, MouseIn) and handles
+The workflow supports multiple templates (ABAv3, MBMv3, turone, DSURQE, MouseIn and the lightsheet cohort templates) and handles
 both NIfTI and OME-Zarr formats for different resolution levels.
 """
 

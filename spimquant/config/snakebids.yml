@@ -102,12 +102,13 @@ parse_args:
     choices: 
      - ABAv3
      - DSURQE
-     - gubra
      - MBMv3
      - turone
      - vachtchatyopro
      - NeuN10
      - YoPro99
+     - Iba1sixty
+     - CD31
 
   --atlas_segs:
     help: "Atlas segmentations to use with the chosen template (default: predefined list or all)"
@@ -315,10 +316,11 @@ parse_args:
       selects the 2nd threshold (between the 2nd and 3rd class).
 
       ``gmm+n<n>k<k>`` – Gaussian Mixture Model (GMM) tail-thresholding.
-      Fits a GMM with n components to the log1p-transformed global intensity
-      histogram, sorts the components by mean intensity ascending, and defines
+      Fits a GMM with n components to the global intensity histogram of the
+      corrected image (within the --seg_hist_percentile_range of the nonzero
+      voxels), sorts the components by mean intensity ascending, and defines
       the threshold from the highest-intensity component as
-      ``threshold = expm1(mean_n + k * sigma_n)``.  The float multiplier k
+      ``threshold = mean_n + k * sigma_n``.  The float multiplier k
       may be encoded with 'p' as a decimal separator to keep BIDS-compatible
       filenames, e.g. ``gmm+n2k2p5`` → n=2, k=2.5.
 

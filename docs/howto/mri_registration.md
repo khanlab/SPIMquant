@@ -31,59 +31,15 @@ E.g. consider this more complicated example BIDS dataset snippet below:
 ```
 sub-AS134F1
 ├── ses-11m
-│   └── anat
-│       ├── sub-AS134F1_ses-11m_acq-GRE_rec-avgecho_run-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_rec-avgecho_run-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_rec-avgecho_run-3_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_rec-avgecho_run-4_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_rec-avgecho_run-5_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_rec-avgecho_run-6_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-1_echo-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-1_echo-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-1_echo-3_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-2_echo-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-2_echo-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-2_echo-3_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-3_echo-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-3_echo-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-3_echo-3_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-4_echo-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-4_echo-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-4_echo-3_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-5_echo-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-5_echo-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-5_echo-3_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-6_echo-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-6_echo-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-11m_acq-GRE_run-6_echo-3_T2starw.nii.gz
-│       └── sub-AS134F1_ses-11m_acq-TOF_run-1_angio.nii.gz
+│   └── anat
+│       ├── sub-AS134F1_ses-11m_acq-GRE_rec-avgecho_run-{1..6}_T2starw.nii.gz
+│       ├── sub-AS134F1_ses-11m_acq-GRE_run-{1..6}_echo-{1..3}_T2starw.nii.gz
+│       └── sub-AS134F1_ses-11m_acq-TOF_run-1_angio.nii.gz
 ├── ses-14m
-│   └── anat
-│       ├── sub-AS134F1_ses-14m_acq-GRE_rec-avgecho_run-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_rec-avgecho_run-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_rec-avgecho_run-3_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_rec-avgecho_run-4_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_rec-avgecho_run-5_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_rec-avgecho_run-6_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-1_echo-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-1_echo-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-1_echo-3_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-2_echo-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-2_echo-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-2_echo-3_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-3_echo-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-3_echo-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-3_echo-3_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-4_echo-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-4_echo-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-4_echo-3_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-5_echo-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-5_echo-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-5_echo-3_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-6_echo-1_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-6_echo-2_T2starw.nii.gz
-│       ├── sub-AS134F1_ses-14m_acq-GRE_run-6_echo-3_T2starw.nii.gz
-│       └── sub-AS134F1_ses-14m_acq-TOF_run-1_angio.nii.gz
+│   └── anat
+│       ├── sub-AS134F1_ses-14m_acq-GRE_rec-avgecho_run-{1..6}_T2starw.nii.gz
+│       ├── sub-AS134F1_ses-14m_acq-GRE_run-{1..6}_echo-{1..3}_T2starw.nii.gz
+│       └── sub-AS134F1_ses-14m_acq-TOF_run-1_angio.nii.gz
 └── ses-exvivo14m1
     └── micr
         ├── sub-AS134F1_ses-exvivo14m1_sample-brain_acq-imaris4x_SPIM.json
@@ -100,7 +56,7 @@ to the exvivo session where the microscopy lives). This is done with the followi
 pixi run spimquant /nfs/trident3/mri/prado/ki3/bids output_dir participant
    --register-to-mri --no-segmentation \
    --filter-mri suffix=T2starw reconstruction=avgecho session=14m \
-   -c all  --mri-resample-percent 200
+   --cores all --mri-resample-percent 200
 ```
 
 This ends up selecting these images for the registration:

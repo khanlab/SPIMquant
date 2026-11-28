@@ -1,335 +1,105 @@
-# Group-Level Statistical Analysis
+# Group analysis
 
-SPIMquant supports group-level statistical analysis to compare pathology metrics across experimental groups using a formula-based OLS model (via [statsmodels](https://www.statsmodels.org/) and [patsy](https://patsy.readthedocs.io/)).
+The `group` level combines the participant outputs in an output directory
+and, optionally, compares groups region by region. Run it after
+`participant`, on the same output directory:
 
-## Overview
+```bash
+spimquant bids/ out/ group --cores all
+```
 
-Group analysis performs statistical comparisons of:
+Pass the same options as to the participant run (levels, atlases, methods,
+`--no_vessels`...): the group level checks that the participant outputs are
+up to date, and with different options it plans, and runs, a different
+participant level.
 
-- **Field fraction**: Proportion of pathology signal per atlas region
-- **Density**: Cell/particle count per unit volume
-- **Count / Volume / Voxel counts**: Other quantification metrics
-- **Colocalization metrics**: Overlap ratio, distance, density, count
+Without a model this only writes the combined tables. All group outputs go
+to `out/group/<label>/` (`--group-stats-label`, default `1`), so analyses with
+different models or subjects do not overwrite each other.
 
-Results are provided as:
+## participants.tsv
 
-- Merged per-subject ROI tables for export to external stats tools
-- Merged per-stain region-property ROI tables retaining atlas labels
-- Statistical tables per pairwise contrast (t-statistics, p-values, Cohen's d, group means)
-- Heatmap visualizations
-- 3D volumetric stat maps
-
-## Prerequisites
-
-Before running group analysis:
-
-1. **Complete participant-level processing** for all subjects
-2. **Create participants.tsv** with group assignments
-
-## Creating participants.tsv
-
-Create a tab-separated file in your BIDS root directory with participant metadata:
+The columns of `participants.tsv` in the BIDS directory are joined onto every
+row of the group tables and are the variables of the model:
 
 ```tsv
 participant_id	treatment	genotype	sex	age
 sub-01	vehicle	WT	M	12
-sub-02	vehicle	WT	F	13
-sub-03	drug	WT	M	11
-sub-04	drug	WT	F	12
-sub-05	vehicle	KO	M	12
-sub-06	vehicle	KO	F	14
-sub-07	drug	KO	M	11
-sub-08	drug	KO	F	12
+sub-02	drug	WT	F	13
+sub-03	vehicle	KO	M	11
 ```
 
-Required columns:
+## Combined tables
 
-- `participant_id`: Subject identifiers matching BIDS subject IDs (e.g. `sub-01`)
-- At least one grouping column (e.g., `treatment`, `genotype`)
+| File | Rows |
+|---|---|
+| `seg-{atlas}_from-{template}_allsubjects.tsv` | subject × region: every column of `mergedsegstats.tsv` plus the participant columns |
+| `stain-{stain}_..._allsubjects_regionpropstats.tsv` | every object of one stain in every subject, with its region and participant columns |
+| `space-{template}_regionprops.parquet` | every object of every stain in every subject, with distances |
+| `space-{template}_coloc.parquet` | every colocalized pair in every subject |
 
-## Running Group Analysis
+These are the tables to load for analyses of your own (R, pandas, Prism).
+Each has a JSON sidecar describing its columns.
 
-### Minimal Example
+## Group QC report
 
-Fit a simple two-group model and compute all pairwise contrasts for `treatment`:
+Every group run also writes `group/qc/groupqc.html`: the registration and
+segmentation QC of all subjects on one page, with a montage, an animated
+flip through the subjects and outlier flags (`group/qc/groupqc.tsv`). Check
+it before the statistics; see [Group QC report](../howto/group_qc.md).
+
+## Region-wise statistics
 
 ```bash
-pixi run spimquant /bids /output group \
-  --group-stats-model "metric ~ C(treatment)" \
-  --group-stats-pairwise treatment \
-  --cores all
-```
-
-### Including Covariates
-
-Add continuous or categorical covariates to the model:
-
-```bash
-pixi run spimquant /bids /output group \
+spimquant bids/ out/ group \
   --group-stats-model "metric ~ C(treatment) + age + C(sex)" \
-  --group-stats-pairwise treatment \
-  --cores all
+  --group-stats-pairwise treatment
 ```
 
-### Interaction Effects
+| Option | |
+|---|---|
+| `--group-stats-model` | A [patsy](https://patsy.readthedocs.io/) formula with `metric` as the response. It is fitted by ordinary least squares, separately for every region and every metric (`Abeta+fieldfrac`, `Iba1+density`, ...). |
+| `--group-stats-pairwise` | Factor(s) whose levels are compared pairwise. Repeat for several factors. |
+| `--group-stats-within` | Factor(s) to stratify by: each contrast is computed within every combination of their levels (e.g. `genotype sex` gives WT/M, WT/F, KO/M, KO/F). |
+| `--group-stats-where` | A [pandas query](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.query.html) that selects the subjects used for fitting and contrasts, e.g. `"treatment in ['vehicle', 'drug'] and qc_pass == 1"`. |
+| `--group-stats-label` | Name of the output folder under `group/`. |
 
-Fit a full factorial model with interaction terms:
+For each contrast, e.g. `contrast-treatment+vehiclevsdrug` (or
+`contrast-treatment+vehiclevsdrug+genotype-WT+sex-M` with strata), it writes:
+
+| File | Content |
+|---|---|
+| `*_contrast-{contrast}_groupstats.tsv` | One row per region: group sizes, and for each metric the two model-predicted group means, t-statistic, p-value and Cohen's d. |
+| `*_contrast-{contrast}_groupstats.png` | Heatmap of the t-statistics, regions × metrics. |
+| `*_contrast-{contrast}_metric-{metric}_{tstat,pval,cohensd}.nii.gz` | The same values painted into the template atlas, one image per metric and statistic. |
+
+How a contrast is computed: the model is fitted on the subjects passing
+`--group-stats-where`. The means of the two levels are predicted with
+continuous covariates at their mean, other categorical factors at their most
+frequent level, and strata at the requested level. The difference of the two
+predictions is tested against the model's covariance (t-statistic, p-value).
+Cohen's d uses the pooled standard deviation of the two groups.
+
+!!! warning "Multiple comparisons"
+    p-values are not corrected. With hundreds of regions and several metrics,
+    correct them yourself, e.g. with `statsmodels.stats.multitest.multipletests`
+    in Python or `p.adjust()` in R, on the `groupstats.tsv` columns.
+
+## Examples
+
+Genotype within each sex:
 
 ```bash
-pixi run spimquant /bids /output group \
-  --group-stats-model "metric ~ C(treatment) * C(genotype) * C(sex) + age" \
-  --group-stats-pairwise treatment \
-  --group-stats-pairwise genotype \
-  --cores all
-```
-
-Multiple `--group-stats-pairwise` flags enumerate pairwise contrasts for each factor independently.
-
-### Stratified Contrasts
-
-Use `--group-stats-within` to compute treatment contrasts *within* each combination of stratifying factors (e.g., separately for each genotype × sex combination):
-
-```bash
-pixi run spimquant /bids /output group \
-  --group-stats-model "metric ~ C(treatment) * C(genotype) * C(sex) + age" \
-  --group-stats-pairwise treatment \
-  --group-stats-within genotype sex \
-  --cores all
-```
-
-This produces one set of output files per stratum combination (e.g., `WT`/`M`, `WT`/`F`, `KO`/`M`, `KO`/`F`).
-
-### Filtering Subjects
-
-Use `--group-stats-where` to restrict which subjects are included in model fitting and contrasts.
-The expression is a [pandas query string](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.query.html):
-
-```bash
-# Exclude subjects not meeting QC criteria
-pixi run spimquant /bids /output group \
-  --group-stats-model "metric ~ C(treatment) + age" \
-  --group-stats-pairwise treatment \
-  --group-stats-where "treatment in ['vehicle', 'drug'] and qc_pass == 1" \
-  --cores all
-```
-
-Subjects that do not match the expression are excluded from both model fitting and contrast enumeration.
-
-### Labelling Analysis Runs
-
-Use `--group-stats-label` to assign a name to each analysis run. Outputs are placed under `<output_dir>/group/<label>/`, so different analyses (different models, different filters, etc.) never overwrite each other:
-
-```bash
-# First analysis
-pixi run spimquant /bids /output group \
-  --group-stats-label treatment_only \
-  --group-stats-model "metric ~ C(treatment)" \
-  --group-stats-pairwise treatment \
-  --cores all
-
-# Second analysis with covariates
-pixi run spimquant /bids /output group \
-  --group-stats-label treatment_with_covariates \
-  --group-stats-model "metric ~ C(treatment) + age + C(sex)" \
-  --group-stats-pairwise treatment \
-  --cores all
-```
-
-Default label is `1` if not specified.
-
-## Group Analysis Options Summary
-
-| Option | Description |
-|--------|-------------|
-| `--group-stats-model` | Patsy/statsmodels formula with `metric` as response placeholder, e.g. `"metric ~ C(treatment) + age"` |
-| `--group-stats-pairwise` | Factor(s) for which all pairwise comparisons are computed. Can be repeated for multiple factors. |
-| `--group-stats-within` | Stratifying factor(s) — contrasts are computed separately within each level combination. |
-| `--group-stats-where` | Pandas query expression to filter subjects before model fitting. |
-| `--group-stats-label` | Label for this run; outputs go under `group/<label>/` (default: `1`). |
-
-## Output Files
-
-All group outputs are placed under `<output_dir>/group/<label>/`.
-
-### Merged Subject Table (always produced)
-
-**`*_allsubjects.tsv`**: All subject-level ROI statistics concatenated into a single file, joined with participant metadata from `participants.tsv`. Produced whenever `analysis_level=group`, regardless of whether any contrasts are specified.
-
-```tsv
-index	name	Abeta+fieldfrac	Abeta+density	...	participant_id	treatment	sex	age
-0	Isocortex	0.023	1452	...	sub-01	vehicle	M	12
-0	Isocortex	0.031	1893	...	sub-03	drug	M	11
-...
-```
-
-Useful for exporting to R, Python (pandas/seaborn), or GraphPad Prism for custom analysis.
-
-An accompanying **`*_allsubjects.json`** sidecar describes each column.
-
-### Merged Region-Property Tables (always produced)
-
-**`*_allsubjects_regionpropstats.tsv`**: All subject-level `regionpropstats.tsv` files for one atlas, stain, and level concatenated into a single file, joined with participant metadata from `participants.tsv`.
-
-```tsv
-index	name	count	volume_mean	intensity_mean	...	participant_id	treatment	sex	age
-0	Isocortex	152	102.3	0.84	...	sub-01	vehicle	M	12
-0	Isocortex	189	118.7	0.91	...	sub-03	drug	M	11
-...
-```
-
-These tables preserve the atlas `index` / `name` labelling from the participant-level files while making it easy to compare per-stain region summaries across subjects in downstream tools.
-
-### Statistical Results (per pairwise contrast)
-
-**`*_contrast-<label>_groupstats.tsv`**: Per-region statistics for one pairwise contrast.
-
-The contrast label encodes the factor, levels, and any strata — for example:
-- `contrast-treatment+vehiclevsdrug` — vehicle vs. drug, no strata
-- `contrast-treatment+vehiclevsdrug+genotype-WT+sex-M` — same contrast within WT males
-
-```tsv
-index	name	n_vehicle	n_drug	Abeta+fieldfrac_mean_vehicle	Abeta+fieldfrac_mean_drug	Abeta+fieldfrac_tstat	Abeta+fieldfrac_pval	Abeta+fieldfrac_cohensd	...
-0	Isocortex	10	10	0.023	0.031	-2.14	0.042	-0.95	...
-1	Hippocampus	10	10	0.015	0.024	-1.88	0.071	-0.84	...
-```
-
-Columns per metric:
-- `<metric>_mean_<levelA>` / `<metric>_mean_<levelB>`: Group means
-- `<metric>_tstat`: OLS-derived t-statistic for the marginal mean contrast
-- `<metric>_pval`: Corresponding p-value (uncorrected)
-- `<metric>_cohensd`: Cohen's d effect size
-
-An accompanying **`*_groupstats.json`** sidecar describes each column.
-
-### Group QC Report
-
-Every group run also writes `group/qc/groupqc.html`, a page to step through the registration and segmentation QC of all subjects, with outlier flags. See [Group QC Report](../howto/group_qc.md).
-
-### Visualizations
-
-**`*_contrast-<label>_groupstats.png`**: Heatmap of t-statistics across all brain regions and metrics for one contrast.
-
-### 3D Maps
-
-**`*_contrast-<label>_groupstats.nii`**: Volumetric map of t-statistics registered to the template space.
-
-View in FSLeyes, ITK-SNAP, or 3D Slicer.
-
-## Statistical Methods
-
-SPIMquant fits a single **OLS (Ordinary Least Squares)** model per brain region and metric using the formula you supply:
-
-1. The user formula (e.g. `metric ~ C(treatment) + age`) is evaluated for each region × metric combination using patsy for design matrix construction.
-2. The model is fit on all rows passing the `--group-stats-where` filter.
-3. **Marginal means** for the two contrast levels are predicted at reference covariate values (continuous covariates at their mean, categorical at their mode; strata factors fixed at the requested level).
-4. The **contrast vector** (levelA − levelB) is evaluated against the model's covariance matrix to produce the t-statistic and p-value.
-5. **Cohen's d** is computed from pooled standard deviation.
-
-!!! note "Multiple comparison correction"
-    P-values in the output are uncorrected. Apply FDR or Bonferroni correction in your downstream analysis (e.g. using `statsmodels.stats.multitest.multipletests` in Python or `p.adjust()` in R).
-
-## Example Workflows
-
-### Drug Treatment Study
-
-```bash
-# 1. Process all subjects (participant level)
-pixi run spimquant /bids /output participant --cores all
-
-# 2. Run group analysis comparing drug vs. vehicle
-pixi run spimquant /bids /output group \
-  --group-stats-label drug_study \
-  --group-stats-model "metric ~ C(treatment) + age + C(sex)" \
-  --group-stats-pairwise treatment \
-  --cores all
-```
-
-### Genotype Comparison with Sex Stratification
-
-```bash
-pixi run spimquant /bids /output group \
-  --group-stats-label genotype_by_sex \
+spimquant bids/ out/ group --group-stats-label genotype_by_sex \
   --group-stats-model "metric ~ C(genotype) * C(sex) + age" \
-  --group-stats-pairwise genotype \
-  --group-stats-within sex \
-  --cores all
+  --group-stats-pairwise genotype --group-stats-within sex
 ```
 
-This produces separate statistical maps for male and female cohorts.
-
-### Multi-Factor Study with Subject Exclusion
+Two treatment arms, excluding subjects that failed QC:
 
 ```bash
-pixi run spimquant /bids /output group \
-  --group-stats-label lecanemab_qc \
+spimquant bids/ out/ group --group-stats-label lecanemab \
   --group-stats-model "metric ~ C(treatment) * C(sex) + age" \
   --group-stats-pairwise treatment \
-  --group-stats-where "treatment in ['PBS', 'Lecanemab'] and qc_pass == 1" \
-  --cores all
+  --group-stats-where "treatment in ['PBS', 'Lecanemab'] and qc_pass == 1"
 ```
-
-### Merged Table Only (No Statistics)
-
-To obtain only the merged subject table without running any statistical contrasts, simply omit `--group-stats-pairwise`:
-
-```bash
-pixi run spimquant /bids /output group --cores all
-```
-
-This always runs when `analysis_level=group` and produces `*_allsubjects.tsv` for all subjects.
-It also produces `*_allsubjects_regionpropstats.tsv` for each atlas/stain combination.
-
-## Interpreting Results
-
-### Statistical Significance
-
-- Interpret p-values in the context of the number of regions and metrics tested
-- Apply appropriate multiple comparison correction for your use case
-- Consider effect sizes (Cohen's d) alongside p-values
-
-### Effect Sizes (Cohen's d)
-
-| d | Interpretation |
-|---|----------------|
-| < 0.2 | Small |
-| 0.2 – 0.8 | Medium |
-| ≥ 0.8 | Large |
-
-### Heatmap Color Scale
-
-- **Positive t-statistic** (warm colors): levelA > levelB
-- **Negative t-statistic** (cool colors): levelA < levelB
-- Intensity reflects the magnitude of the difference
-
-## Troubleshooting
-
-### Missing participants.tsv
-
-Error: `participants.tsv not found`
-
-- Create `participants.tsv` in the BIDS root directory
-- Ensure tab-separated format
-
-### NaN in tstat / pval columns
-
-Check the log file at `logs/group_stats/<entities>_groupstats.log`. Common causes:
-- Fewer than 2 subjects per group in a region (logged as a skip message)
-- A column referenced in the formula is missing from the data
-- A contrast level is absent after `--group-stats-where` filtering
-
-### Contrast Level Not Found
-
-Error: `Contrast level 'X' ... is not present in the filtered data`
-
-- Verify the spelling of level names in `participants.tsv`
-- Check that `--group-stats-where` does not exclude subjects with that level
-
-### Group Size Warnings
-
-Minimum 2 subjects per group are required to fit the model. Larger groups increase statistical power.
-
-## Next Steps
-
-- [CLI Reference](cli.md): Full group analysis option reference
-- [Visualization](../howto/visualization.md): Advanced visualization techniques
-- [FAQ](../faq.md): Common questions about group analysis

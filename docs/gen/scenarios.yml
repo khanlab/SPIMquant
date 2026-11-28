@@ -1,0 +1,100 @@
+# Dry-run scenarios for docs/gen/introspect.py (pixi run docs-introspect).
+#
+# Each scenario is a dry run on a test dataset. Its outputs are added to
+# docs/generated/outputs.tsv (a file is attributed to the first scenario that
+# writes it, so put the default run first), and, unless rulegraph is false,
+# its rule graph to docs/generated/rulegraph_<name>.dot.
+#
+# `label` and `flags` are shown in the docs: the outputs reference says which
+# options produce the files that the default run does not.
+#
+# To document a new optional output: add a scenario that turns it on, run
+# `pixi run docs-introspect`, and describe any new suffix in
+# docs/gen/descriptions.yml (`pixi run -e docs docs-check` lists them).
+
+# Entity values of the test datasets, replaced by placeholders in the
+# outputs reference.
+placeholders:
+  subject: [AS36F2, AS36F3, B]
+  contrast: [treatment+controlvsdrug, treatment+drugvscontrol]
+  sample: [brain]
+  acq: [downsampled]
+  stain: [AutoF, abeta, Abeta, Iba1, CD31, YoPro]
+  template: [ABAv3, MouseIn]
+  atlas: [all, coarse, mid, fine, roi22, roi82, roi198]
+  seg_method: [gmm+n3k1, lantern, vesselfm]
+  object_method: [components, watershed]
+  level: ["0", "1", "2", "3", "4", "5", "6"]
+
+scenarios:
+  - name: participant
+    label: Participant level (default)
+    flags: ""
+    args: [--gpu, "yes", --sample_staining, AutoF, abeta, Iba1, CD31]
+
+  - name: group
+    label: Group level
+    flags: ""
+    level: group
+    # two subjects in two groups, so that a contrast is defined
+    prepare: &second_subject |
+      mkdir -p sub-B/micr
+      ln -s "$PWD/sub-AS36F2/micr/sub-AS36F2_sample-brain_acq-downsampled_SPIM.ome.zarr" sub-B/micr/sub-B_sample-brain_acq-downsampled_SPIM.ome.zarr
+      sed -i -e '$a\\' participants.tsv samples.tsv
+      printf 'sub-B\tdrug\t12\tM\n' >> participants.tsv
+      printf 'sub-B\tsample-brain\ttissue\n' >> samples.tsv
+    args: [--gpu, "yes", --sample_staining, AutoF, abeta, Iba1, CD31,
+           --group-stats-model, "metric ~ C(treatment)",
+           --group-stats-pairwise, treatment]
+
+  - name: qc
+    label: Dataset QC level
+    flags: ""
+    level: qc
+    args: []
+
+  - name: fibres
+    label: Fibre orientation
+    flags: --fibres
+    rulegraph: false
+    args: [--gpu, "yes", --sample_staining, AutoF, abeta, Iba1, CD31,
+           --fibres, --stains_for_fibres, Iba1]
+
+  - name: vessel_graph
+    label: Vessel graph
+    flags: --vessel_graph
+    rulegraph: false
+    args: [--gpu, "yes", --sample_staining, AutoF, abeta, Iba1, CD31,
+           --vessel_graph]
+
+  - name: watershed
+    label: Watershed objects
+    flags: --object_method STAIN=watershed
+    rulegraph: false
+    args: [--gpu, "yes", --sample_staining, AutoF, abeta, Iba1, CD31,
+           --object_method, Iba1=watershed]
+
+  - name: patches
+    label: Atlas patches
+    flags: --save_patches
+    rulegraph: false
+    args: [--save_patches]
+
+  - name: template_spim
+    label: Full-resolution template-space OME-Zarr
+    flags: --template-spim-res RES
+    rulegraph: false
+    args: [--template-spim-res, "25"]
+
+  - name: mri
+    label: Registration to the subject's MRI
+    flags: --register_to_mri
+    bids: tests/bids_ds_withmri
+    args: [--register_to_mri]
+
+  - name: cohort_template
+    label: Cohort template
+    flags: --reg_cohort_template
+    # a cohort template needs 2+ subjects
+    prepare: *second_subject
+    args: [--reg_cohort_template]

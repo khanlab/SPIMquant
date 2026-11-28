@@ -1,5 +1,5 @@
 site_name: SPIMquant Documentation
-site_url: https://www.khanlab.ca/SPIMquant/
+site_url: https://spimquant.readthedocs.io/en/latest/
 site_description: Quantitative analysis of SPIM (lightsheet) brain data
 site_author: Ali Khan
 
@@ -8,33 +8,31 @@ repo_url: https://github.com/khanlab/SPIMquant
 
 nav:
   - Home: index.md
-  - How It Works: workflow_overview.md
-  - Getting Started:
+  - Getting started:
       - Installation: getting_started/installation.md
-      - Quick Start: getting_started/quickstart.md
-      - Hardware Requirements: getting_started/hardware.md
-  - Usage:
-      - Command Line Interface: usage/cli.md
-      - Configuration: usage/configuration.md
-      - Running Workflows: usage/workflows.md
-      - Group Analysis: usage/group_analysis.md
-      - Cloud Processing: usage/cloud.md
-  - How-To Guides:
-      - Segmentation Methods: howto/segmentation.md
-      - MRI Registration: howto/mri_registration.md
-      - Registration Methods: howto/registration_methods.md
-      - Multiple Scans of a Sample: howto/multiple_scans.md
-      - Reusing Previous Outputs: howto/reuse_derivatives.md
-      - Cohort Templates: howto/cohort_template.md
-      - Dataset QC Report: howto/dataset_qc.md
-      - Adding a Deep-Learning Model: howto/deep_learning_models.md
-      - Group QC Report: howto/group_qc.md
+      - Quick start: getting_started/quickstart.md
+      - Input data: getting_started/input_data.md
+      - Example outputs: examples/index.md
+  - How it works: workflow_overview.md
+  - Guides:
+      - Running SPIMquant: usage/running.md
+      - Segmentation: howto/segmentation.md
+      - Registration methods: howto/registration_methods.md
+      - Cohort templates: howto/cohort_template.md
+      - MRI registration: howto/mri_registration.md
+      - Multiple scans of a sample: howto/multiple_scans.md
+      - Reusing outputs: howto/reuse_derivatives.md
+      - Template-space data, crops and patches: howto/template_space_outputs.md
+      - Dataset QC report: howto/dataset_qc.md
+      - Group analysis: usage/group_analysis.md
+      - Group QC report: howto/group_qc.md
+      - Adding a deep-learning model: howto/deep_learning_models.md
   - Reference:
-      - CLI Reference: reference/cli_reference.md
-      - Output Files: reference/outputs.md
-      - Workflow Visualization: workflow_visualization.md
-  - Examples:
-      - Sample Datasets: examples/datasets.md
+      - Command line: reference/cli.md
+      - Output files: reference/outputs.md
+      - Templates: reference/templates.md
+      - Configuration keys: reference/config.md
+      - Workflow graphs: reference/workflow.md
   - FAQ: faq.md
   - Contributing: contributing.md
 
@@ -60,7 +58,6 @@ theme:
   features:
     - navigation.tabs
     - navigation.sections
-    - navigation.expand
     - navigation.top
     - search.suggest
     - search.highlight
@@ -90,13 +87,16 @@ markdown_extensions:
 
 plugins:
   - search
-  - mkdocstrings:
-      handlers:
-        python:
-          options:
-            show_source: true
-            merge_init_into_class: true
-            docstring_style: numpy
 
 hooks:
   - docs/hooks.py
+
+# generator code and its data (see AGENTS.md), not pages
+exclude_docs: |
+  gen/
+  generated/
+
+validation:
+  links:
+    unrecognized_links: warn
+    anchors: warn

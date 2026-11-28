@@ -152,6 +152,11 @@ snakefmt = ">=2.1.0,<3.0.0"
 pytest = "*"
 jupyterlab = ">=4.4.7,<5"
 
+[tool.pixi.feature.runtime.tasks]
+# regenerate docs/generated/ (rule graphs, output listings) from dry runs on
+# tests/bids_ds; needs the workflow environment, so not part of the docs env
+docs-introspect = "python docs/gen/introspect.py"
+
 [tool.pixi.feature.dev.tasks]
 quality_check = "isort --profile black spimquant/*.py -c && black spimquant --check && snakefmt spimquant --check"
 quality_fix = "isort --profile black spimquant/*.py && black spimquant && snakefmt spimquant"
@@ -161,6 +166,22 @@ napari = ">=0.6.6,<0.7"
 napari-ome-zarr = ">=0.6.1,<0.7"
 pyqt = ">=5.15.11,<6"
 micro_sam = ">=1.6.2,<2"
+
+# Documentation: mkdocs plus snakebids, which docs/hooks.py needs to read the
+# CLI parser (spimquant/run.py). Kept small so Read the Docs can install it.
+[tool.pixi.feature.docs.dependencies]
+python = ">=3.11,<3.13"
+snakebids = ">=0.17.0,<0.18"
+pyyaml = "*"
+mkdocs = ">=1.6,<2"
+mkdocs-material = ">=9.5,<10"
+pymdown-extensions = ">=10.0"
+graphviz = "*"
+
+[tool.pixi.feature.docs.tasks]
+docs-build = "mkdocs build --strict"
+docs-serve = "mkdocs serve"
+docs-check = "python docs/gen/build.py --check"
 
 
 # ----------------------------------------------------------------------
@@ -172,3 +193,4 @@ default = ["runtime", "cpu"]
 gpu = ["runtime", "gpu"]
 dev = ["runtime", "dev", "vis", "cpu"]
 dev-only = { features = ["dev", "cpu"], no-default-feature = true }
+docs = { features = ["docs"], no-default-feature = true }
