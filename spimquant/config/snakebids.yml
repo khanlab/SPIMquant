@@ -87,16 +87,39 @@ pybids_inputs:
       - extension
 
 
+# Sections of --help and of the command-line reference in the docs, in this
+# order. Every option in parse_args names its section with `group:`.
+parse_args_groups:
+  "INPUT": "Which scans and channels are processed, and how they are read."
+  "REGISTRATION": "Registration of each scan to the template."
+  "COHORT TEMPLATES": "Registration through a template built from the cohort, in this run or beforehand."
+  "INTENSITY CORRECTION": "Bias-field correction before segmentation."
+  "SEGMENTATION": "Which stains are segmented, how, and at which level."
+  "LANTERN": "Settings of the LANTERN amyloid-beta plaque models (--seg_method lantern)."
+  "VESSELS": "Vessel segmentation with vesselFM."
+  "FIBRES": "Fibre orientation analysis."
+  "MRI": "Registration to the same brain's MRI."
+  "MULTIPLE SCANS": "Additional scans of the same sample (--aux_spim)."
+  "REUSING OUTPUTS": "Reuse of brain masks and transforms from an earlier run."
+  "TEMPLATE-SPACE DATA, PATCHES AND CROPS": "Full-resolution image data in template space, and patches and crops of atlas regions."
+  "QC": "Extra QC figures of the participant level."
+  "DATASET QC (qc level)": "The qc analysis level: a quick report on every scan of the dataset."
+  "GROUP STATISTICS (group level)": "Region-wise models and contrasts at the group level."
+  "GROUP QC (group level)": "The group QC report of all subjects (group/qc/groupqc.html)."
+  "COMPUTE AND STORAGE": "Temporary files, memory, parallelism and storage of intermediate images."
+
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
 parse_args:
   --work_dir:
+    group: "COMPUTE AND STORAGE"
     help: "Local path to use for temporary files\n"
     type: str
     dest: work
     default: null
 
   --template:
+    group: "REGISTRATION"
     help: "Template to use for SPIM registration\n"
     default: ABAv3
     choices: 
@@ -111,12 +134,14 @@ parse_args:
      - CD31
 
   --atlas_segs:
+    group: "REGISTRATION"
     help: "Atlas segmentations to use with the chosen template (default: predefined list or all)"
     default: null
     action: store
     nargs: '+'
 
   --template_crop:
+    group: "REGISTRATION"
     help: "Crop template along X-axis to retain specific hemisphere for registration (default: %(default)s)"
     choices: 
       - left
@@ -124,18 +149,21 @@ parse_args:
     default: null
 
   --sample_staining:
+    group: "INPUT"
     help: "Override sample staining for input data. When absent, sample staining are read from OME-Zarr channel_labels metadata and overridden by _SPIM.json sidecars (SampleStaining key) if present. CLI values take highest precedence."
     default: null
     action: store
     nargs: '+'
 
   --ignore_stains:
+    group: "INPUT"
     help: "Stain(s) to ignore when setting up the workflow. Can use this option to make the dataset staining uniform (e.g. by ignoring stains that are not present in all the subjects)."
     default: null
     action: store
     nargs: '+'
 
   --stains_for_reg:
+    group: "REGISTRATION"
     help: "Possible stains to use for registration (will choose first available, in order)\n (default: %(default)s)"
     default: 
       - PI
@@ -148,6 +176,7 @@ parse_args:
     nargs: '+'
 
   --stains_for_seg:
+    group: "SEGMENTATION"
     help: "List of stains to use for segmentation and quantification (will segment any that match the data)\n (default: %(default)s)"
     default: 
       - abeta
@@ -164,6 +193,7 @@ parse_args:
     nargs: '+'
 
   --stains_for_vessels:
+    group: "VESSELS"
     help: "List of stains to use for vessel segmentation and quantification (will choose first available, in order)\n (default: %(default)s)"
     default: 
       - CD31
@@ -172,31 +202,37 @@ parse_args:
     nargs: '+'
 
   --registration_level:
+    group: "REGISTRATION"
     help: "Downsampling level to use for registration (level 0 is full res, level 1 is typically downsampled by 2, ...) (default: 5)"
     type: int
     default: 5
 
   --segmentation_level:
+    group: "SEGMENTATION"
     help: "Downsampling level to use for segmentation (including vessels) (level 0 is full res, level 1 is typically downsampled by 2, ...) (default: 0)"
     type: int
     default: 0
 
   --no_segmentation:
+    group: "SEGMENTATION"
     help: "Skip segmentation and quantification of stains, i.e. perform registration only (default: %(default)s)"
     action: store_true
     default: False
 
   --no_vessels:
+    group: "VESSELS"
     help: "Skip segmentation and quantification of vessels (default: %(default)s)"
     action: store_true
     default: False
 
   --vessel_graph:
+    group: "VESSELS"
     help: "Also build the vessel skeleton graph (skeleton, graph/nodes/edges parquet tables); experimental, not yet validated (default: %(default)s)"
     action: store_true
     default: False
 
   --fibres:
+    group: "FIBRES"
     help: >
       Run fibre orientation analysis (multiscale Frangi filter, orientation
       distribution functions, dispersion and anisotropy maps) on the stains in
@@ -205,6 +241,7 @@ parse_args:
     default: False
 
   --stains_for_fibres:
+    group: "FIBRES"
     help: "List of stains to use for fibre orientation analysis with --fibres (will analyse any that match the data)\n (default: %(default)s)"
     default:
       - VAChT
@@ -215,11 +252,13 @@ parse_args:
     nargs: '+'
 
   --fibre_level:
+    group: "FIBRES"
     help: "Pyramid level of the image the fibre filter runs on with --fibres (default: %(default)s)"
     type: int
     default: 1
 
   --fibre_output_level:
+    group: "FIBRES"
     help: >
       Pyramid level of the fibre maps written by --fibres, which is the level
       in their file names. Each voxel at this level is one super-voxel that
@@ -231,6 +270,7 @@ parse_args:
     default: null
 
   --fibre_scale_max_factor:
+    group: "FIBRES"
     help: >
       Largest Frangi scale (Gaussian sigma) for --fibres, as a multiple of the
       finest voxel edge at --fibre_level. The scales run geometrically from
@@ -243,6 +283,7 @@ parse_args:
     default: 2.0
 
   --fibre_threshold:
+    group: "FIBRES"
     help: >
       Fibre threshold for --fibres, as a fraction of the 99th percentile of
       the Frangi response in tissue: voxels responding more strongly than
@@ -255,6 +296,7 @@ parse_args:
     default: 0.05
 
   --correction_method:
+    group: "INTENSITY CORRECTION"
     help: >
       Intensity preprocessing before segmentation (default: %(default)s).
       ``n4`` and ``gaussian`` fit a smooth bias field at --correction_level and
@@ -272,23 +314,27 @@ parse_args:
     default: n4
 
   --correction_level:
+    group: "INTENSITY CORRECTION"
     help: "Pyramid level at which to perform bias field correction (default: %(default)s). Higher values (coarser resolution) may be needed for high-resolution datasets; lower values for low-resolution datasets."
     default: 6
     type: int
 
 
   --correction_n4_iters:
+    group: "INTENSITY CORRECTION"
     help: "Number of iterations to use at each multi-res level (default: %(default)s). Higher values should provide more correction."
     default: 200
     type: int
 
   --correction_n4_spline_spacing:
+    group: "INTENSITY CORRECTION"
     help: "Spline spacing (in mm) for the lowest-res grid, will halve 3 times for the total 4 multi-res levels (default: %(default)s). Decreasing this number allows for sharper correction fields."
     default: 2
     type: float
 
 
   --seg_method:
+    group: "SEGMENTATION"
     help: >
       Mask method(s) for microscopy segmentation (e.g. plaques, protein
       deposits, cells), per stain.  Each SPEC is either ``STAIN=METHOD``
@@ -349,6 +395,7 @@ parse_args:
     nargs: '+'
 
   --object_method:
+    group: "SEGMENTATION"
     help: >
       How each stain's mask is split into objects for counts, density, the
       per-object tables, colocalization and object distances.  Field
@@ -372,6 +419,7 @@ parse_args:
     nargs: '+'
 
   --gpu:
+    group: "SEGMENTATION"
     help: >
       Whether GPU methods (e.g. ``lantern``) can be used.  ``auto`` (default)
       checks whether this environment's torch is built with CUDA, i.e. the
@@ -388,6 +436,7 @@ parse_args:
     default: auto
 
   --lantern_config:
+    group: "LANTERN"
     help: >
       Which LANTERN ensemble ``--seg_method lantern`` runs, as
       ``<name>[@<revision>]``.  ``<name>`` selects the Hugging Face repo
@@ -414,6 +463,7 @@ parse_args:
     type: str
 
   --min_size:
+    group: "LANTERN"
     help: >
       LANTERN only.  Plaque connected components (26-connectivity) smaller
       than this many voxels on the near-isotropic inference grid are dropped
@@ -423,6 +473,7 @@ parse_args:
     type: int
 
   --label_filter:
+    group: "LANTERN"
     help: >
       LANTERN only, 3-class ensembles only (ignored, with a note, for binary
       ones).  Also drop plaque components that touch a class-2 ("annotated
@@ -433,6 +484,7 @@ parse_args:
     default: False
 
   --merge_mode:
+    group: "LANTERN"
     dest: plaque_merge_mode
     help: >
       LANTERN only.  How the fold votes of overlapping inference tiles are
@@ -454,6 +506,7 @@ parse_args:
     default: gaussian
 
   --seg_hist_percentile_range:
+    group: "SEGMENTATION"
     help: "Percentile range to use for histogram calculation in histogram-based segmentation methods (otsu+k{}i{} and gmm+n{}k{}). Specify 2 numbers for the low and high percentiles (default: %(default)s)"
     default:
       - 1
@@ -462,17 +515,20 @@ parse_args:
     type: float
 
   --seg_hist_bin_width:
+    group: "SEGMENTATION"
     help: "Bin width to use for histogram calculation in histogram-based segmentation methods (otsu+k{}i{} and gmm+n{}k{}). (default: %(default)s)"
     default: 1
     type: float
 
 
   --register_to_mri:
+    group: "MRI"
     help: "Register the lightsheet data directly to a corresponding MRI (from the BIDS dataset)"
     action: store_true
     default: False
 
   --template_mri:
+    group: "MRI"
     help: "Template to use for MRI registration to obtain brain mask\n"
     default: MouseIn
     choices:
@@ -482,15 +538,18 @@ parse_args:
       - turone
 
   --mri_resample_percent:
+    group: "MRI"
     help: "Resampling factor for multi-MRI averaging to create super-resolved images, as a percent (default: %(default)s). Use 200 for upsampling to twice the resolution"
     default: 100
 
   --orientation:
+    group: "INPUT"
     help: "Forcefully set the orientation for all input SPIM datasets. When absent, orientation is read from OME-Zarr metadata and overridden by _SPIM.json sidecars if present (with the JSON key OrientationStringXYZ). CLI values take highest precedence. Note, this orientation string is defined in XYZ, with the letter of the increasing direction. Generally speaking, Blaze data stitched with SPIMprep should be RPI, Imaris stitched data should be RAI, and Lifecanvas stitched data should be RAS (though this may differ if brains are upside down, etc...) "
     default: null
     
 
   --dask_scheduler:
+    group: "COMPUTE AND STORAGE"
     help: "Dask scheduler to use for parallel processing in workflow scripts (default: %(default)s)"
     choices:
       - threads
@@ -498,21 +557,25 @@ parse_args:
     default: distributed
 
   --max_mem_mb:
+    group: "COMPUTE AND STORAGE"
     help: "Upper limit on the memory (MB) a job requests, e.g. the memory of a cluster node. Memory that scales with the input size or with the retry attempt (--retries) is capped here, so that a retried job is still schedulable (default: %(default)s)"
     type: int
     default: 450000
 
   --qc_instance_seg:
+    group: "QC"
     help: "Generate instance-level QC outputs, including animated gifs (default: %(default)s)"
     action: store_true
     default: False
 
   --qc_roi_zoom_bg_n4:
+    group: "QC"
     help: "Use n4 bias-field corrected OME-Zarr as background image in the ROI zoom montage QC figures instead of the raw SPIM (only effective when --correction_method n4) (default: %(default)s)"
     action: store_true
     default: False
 
   --zarr-store-ext:
+    group: "COMPUTE AND STORAGE"
     help: "File format for intermediate OME-Zarr stores: 'ome.zarr' (directory) or 'ozx' (single zip file) (default: %(default)s)"
     choices:
       - ome.zarr
@@ -521,6 +584,7 @@ parse_args:
     dest: zarr_store_ext
 
   --zarr-store-chunks:
+    group: "COMPUTE AND STORAGE"
     help: "Chunk size (c, x, y, z) for intermediate OME-Zarr stores (default: %(default)s)"
     default:
       - 1
@@ -532,6 +596,7 @@ parse_args:
     dest: zarr_store_chunks
 
   --zarr-store-shards:
+    group: "COMPUTE AND STORAGE"
     help: "Shard size (c, x, y, z) for intermediate OME-Zarr stores. Disabled by default and when --zarr-store-ext is 'ozx'."
     default: null
     nargs: 4
@@ -539,15 +604,18 @@ parse_args:
     dest: zarr_store_shards
 
   --registration_method:
+    group: "REGISTRATION"
     help: "Registration method for subject to template registration: a name from registration.presets in the config, which is also the desc- of its output transforms. The built-in methods use greedy (greedy...), antsRegistration (ants...) or FireANTs (fireants..., needs a GPU and the gpu environment). A template with two or more SPIM templates of the subjects' stains uses the method's multichannel variant, <method>Multi, unless --registration_single_channel. (default: %(default)s)"
     default: greedy
 
   --registration_single_channel:
+    group: "REGISTRATION"
     help: "Register with one stain (see --stains_for_reg) even if the template has SPIM templates of more of the subjects' stains. (default: %(default)s)"
     action: store_true
     default: false
 
   --registration_tune_methods:
+    group: "REGISTRATION"
     help: "Registration methods to compare in the tune_reg analysis level, which writes a side-by-side report per subject. Multichannel methods are left out if the template shares fewer than two stains with the subjects. (default: %(default)s)"
     default:
       - greedy
@@ -560,11 +628,13 @@ parse_args:
     nargs: '+'
 
   --aux_spim:
+    group: "MULTIPLE SCANS"
     help: "Also process the additional SPIM scans selected by the spim_aux component (e.g. higher-resolution, narrower field-of-view scans of the same samples). Use --filter-spim to select the reference scan of each sample, which is registered to the template, and --filter-spim_aux to select the additional scans, e.g. --filter-spim acquisition=1x --filter-spim_aux acquisition=12x. Each additional scan is registered to the reference scan of the same subject, session and sample, and gets atlas labels and template-space outputs through it; additional scans without a reference scan are skipped with a warning. (default: %(default)s)"
     action: store_true
     default: False
 
   --aux_reg_method:
+    group: "MULTIPLE SCANS"
     help: "Registration of additional scans (--aux_spim) to their reference scan, with greedy: rigid, affine (rigid then affine), or deform (affine then deformable). (default: %(default)s)"
     choices:
       - rigid
@@ -573,6 +643,7 @@ parse_args:
     default: affine
 
   --aux_reg_init:
+    group: "MULTIPLE SCANS"
     help: "Initialization of the registration of additional scans to their reference scan: match finds the translation that best matches the additional scan within the reference scan (normalized cross-correlation over all positions, for a narrower field of view anywhere in the sample), centers aligns the image centers, and physical uses the physical coordinates of the images as they are (only if both scans share a stage coordinate system). (default: %(default)s)"
     choices:
       - match
@@ -581,25 +652,30 @@ parse_args:
     default: match
 
   --aux_reg_stains:
+    group: "MULTIPLE SCANS"
     help: "Stains (channels) to register additional scans to their reference scan with; all are used together (multichannel). (default: all stains)"
     default: null
     nargs: '+'
 
   --aux_min_coverage:
+    group: "MULTIPLE SCANS"
     help: "In the group statistics of additional scans (--aux_spim), which are computed separately for each acquisition, a region's metrics are only used for scans whose field of view covers at least this fraction of the region (the coverage column of their mergedsegstats.tsv). (default: %(default)s)"
     type: float
     default: 0.5
 
   --reuse_derivatives:
+    group: "REUSING OUTPUTS"
     help: "Path to an existing SPIMquant output dataset to reuse outputs from (see --reuse_outputs), instead of computing them again. Files are matched by the same BIDS paths SPIMquant writes, so they are only reused when the relevant settings (e.g. --template, --registration_level) match; anything not found is computed as usual. Reused files are copied into the output directory (see --reuse_symlink)."
     default: null
 
   --reuse_symlink:
+    group: "REUSING OUTPUTS"
     help: "Symlink reused files from --reuse_derivatives instead of copying them. Saves disk space (composite warps are ~1.5 GB per subject), but the output dataset then depends on the prior dataset staying in place."
     action: store_true
     default: False
 
   --reuse_outputs:
+    group: "REUSING OUTPUTS"
     help: "Which outputs to reuse from --reuse_derivatives (default: %(default)s). 'brainmask' reuses the SPIM brain masks, 'transforms' the composite subject<->template warps of --registration_method (warps from datasets made before registration methods existed count as greedy). The registration QC report is skipped for subjects whose transforms are reused."
     choices:
       - brainmask
@@ -610,61 +686,73 @@ parse_args:
     nargs: '+'
 
   --qc_no_reg:
+    group: "DATASET QC (qc level)"
     help: "qc analysis level: skip the quick registration to the template, and place the high-resolution crops evenly through the tissue instead of in atlas regions (default: %(default)s)"
     action: store_true
     default: False
 
   --qc_atlas_seg:
+    group: "DATASET QC (qc level)"
     help: "qc analysis level: atlas segmentation of the template whose regions the high-resolution crops are placed in, and whose outlines are drawn on the overviews (default: coarse if the template has it, or else the first of its segmentations)"
     default: null
 
   --qc_crop_labels:
+    group: "DATASET QC (qc level)"
     help: "qc analysis level: atlas regions (names, abbreviations or indices in --qc_atlas_seg) to take high-resolution crops from (default: the --qc_n_crops largest regions)"
     default: null
     nargs: '+'
 
   --qc_n_crops:
+    group: "DATASET QC (qc level)"
     help: "qc analysis level: number of high-resolution crops per scan (default: %(default)s)"
     type: int
     default: 6
 
   --qc_crop_size:
+    group: "DATASET QC (qc level)"
     help: "qc analysis level: size of the high-resolution crops, in pixels of --qc_crop_level (default: %(default)s)"
     type: int
     default: 512
 
   --qc_crop_level:
+    group: "DATASET QC (qc level)"
     help: "qc analysis level: pyramid level of the high-resolution crops (default: %(default)s)"
     type: int
     default: 0
 
   --qc_group_by:
+    group: "DATASET QC (qc level)"
     help: "qc analysis level: columns of participants.tsv to show and filter by in the report, e.g. a staining protocol (default: all columns)"
     default: null
     nargs: '+'
 
   --no_groupqc:
+    group: "GROUP QC (group level)"
     help: "group analysis level: do not write the group QC report (group/qc/groupqc.html), which shows the registration and segmentation QC of every subject in one page"
     action: store_true
     default: False
 
   --groupqc_group_by:
+    group: "GROUP QC (group level)"
     help: "group analysis level: columns of participants.tsv to color, filter and sort subjects by in the group QC report (default: the --group-stats-pairwise factors)"
     default: null
     nargs: '+'
 
   --groupqc_embed_figures:
+    group: "GROUP QC (group level)"
     help: "group analysis level: embed each subject's QC figures in the group QC report (downsized), so it can be shared on its own; by default they are linked from the output folder"
     action: store_true
     default: False
 
   --sloppy:
+    group: "COMPUTE AND STORAGE"
     help: "Use low-quality parameters for speed (USE FOR TESTING ONLY)"
     action: store_true
     default: False
 
 
   --skip-bids-validation:
+    group: "INPUT"
     help: |
       Skip validation of BIDS dataset. BIDS validation is performed by
       default using the bids-validator plugin (if installed/enabled) or with the pybids
@@ -674,11 +762,13 @@ parse_args:
     default: False
 
   --save_patches:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "Extract and save patches from each ROI in the atlas, customize with --patch_* options"
     action: "store_true"
     default: False
 
   --patch_size:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "Size of patches to extract in voxels (x, y, z) (default: %(default)s)"
     default:
       - 256
@@ -688,6 +778,7 @@ parse_args:
     type: int
 
   --patch_atlas_segs:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "Atlas segmentations to use for extracting patches (default: coarse)"
     default:
       - coarse
@@ -696,26 +787,31 @@ parse_args:
 
 
   --n_patches_per_label:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "Number of patches to extract per atlas label (default: %(default)s)"
     default: 5
     type: int
 
   --patch_labels:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "List of atlas label names, abbreviations, or indices to extract patches from. If not specified, patches are extracted from all labels."
     default: null
     nargs: '+'
 
   --patch_seed:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "Random seed for reproducible patch sampling (default: %(default)s)"
     default: 42
     type: int
 
   --crop_labels:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "List of atlas label names, abbreviations, or indices to extract as Imaris crops. If not specified, all labels are cropped."
     default: null
     nargs: '+'
 
   --crop_atlas_segs:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "Atlas segmentations to use for extracting Imaris crops (default: coarse)"
     default:
       - coarse
@@ -723,11 +819,13 @@ parse_args:
     nargs: '+'
 
   --no_patch_uint8:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "Disable conversion of patch NIfTI files to uint8 using robust percentile scaling. By default, patches are converted to uint8 to avoid endianness issues in downstream applications (e.g. SyGlass). (default: %(default)s)"
     action: store_true
     default: False
 
   --template_spim_res:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: >
       Resample the SPIM data into template space as OME-Zarr, at exactly this
       isotropic resolution in microns (e.g. 2.5), covering the registration
@@ -739,21 +837,25 @@ parse_args:
     default: null
 
   --template_spim_level:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "Pyramid level of the SPIM data to resample with --template_spim_res (default: %(default)s)"
     type: int
     default: 0
 
   --template_spim_corrected:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "Resample the intensity corrected image (--correction_method, at --template_spim_level) instead of the raw data with --template_spim_res; outputs are named desc-corrected<method> instead of desc-raw (default: %(default)s)"
     action: store_true
     default: False
 
   --template_spim_chunks:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "Chunk size (voxels per axis) of the template-space OME-Zarr from --template_spim_res; each output chunk is one task (default: %(default)s)"
     type: int
     default: 256
 
   --template_spim_io:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: "How --template_spim_res resampling reads its input: graph (each input chunk read once and shared between output chunks) or direct (each output chunk reads its own input, re-reading overlaps; independent tasks, which may suit the distributed scheduler with object storage) (default: %(default)s)"
     choices:
       - graph
@@ -761,6 +863,7 @@ parse_args:
     default: graph
 
   --bbox_config:
+    group: "TEMPLATE-SPACE DATA, PATCHES AND CROPS"
     help: >
       Path to a YAML file defining custom bounding boxes for extracting cropped regions
       at full resolution in template space. Each entry specifies a name, xyz coordinates
@@ -785,74 +888,90 @@ parse_args:
     type: str
 
   --group-stats-model:
+    group: "GROUP STATISTICS (group level)"
     help: "Statistical model formula in patsy/statsmodels format, with 'metric' as a placeholder for the response variable (e.g. 'metric ~ C(treatment) * C(genotype) + age'). Required when using --group-stats-pairwise."
 
   --group-stats-pairwise:
+    group: "GROUP STATISTICS (group level)"
     help: "Factor(s) in participants.tsv for which all pairwise comparisons should be computed. Can be specified multiple times (e.g. '--group-stats-pairwise treatment --group-stats-pairwise genotype'). Requires --group-stats-model."
     default: null
     nargs: '+'
 
   --group-stats-within:
+    group: "GROUP STATISTICS (group level)"
     help: "Factors defining strata within which pairwise contrasts are computed (e.g. '--group-stats-within genotype sex'). All combinations of these factor levels will be used as separate strata."
     default: null
     nargs: '+'
 
   --group-stats-where:
+    group: "GROUP STATISTICS (group level)"
     help: "Pandas query expression applied to the participants.tsv rows before model fitting and contrast enumeration. Subjects not matching the expression are excluded from the inference cohort (model + contrasts). Example: \"treatment in ['pbs', 'lecanemab'] and qc_pass == 1\". Backward-compatible: omitting this option includes all subjects."
     default: null
 
   --group-stats-label:
+    group: "GROUP STATISTICS (group level)"
     help: "Label for this group-stats run. Outputs are placed under group/{label}/ so that different analyses (e.g. different models or --group-stats-where filters) do not overwrite each other. (default: %(default)s)"
     default: "1"
 
   --reg-cohort-template:
+    group: "COHORT TEMPLATES"
     help: "Register subjects to --template through a cohort template built in the same run: each subject's affine to --template, its warp from building the cohort template, and the cohort template's registration to --template (--cohort-template-reg-method) are combined into one subject<->template warp (desc-viacohort). Outputs stay in --template space. The template is built from all subjects in the run (see the --cohort-template-* options) on a GPU, so all subjects must be run together. With --reuse_derivatives, subjects with no desc-viacohort warps in the prior dataset are registered (--registration_method) to its cohort template instead of building a new one. (default: %(default)s)"
     action: store_true
     default: False
 
   --via-template:
+    group: "COHORT TEMPLATES"
     help: "Register subjects to this template instead of --template, and append its warps to --template, giving subject<->template warps (desc-via<name>) whose outputs stay in --template space with its atlases. For a pre-built cohort template in the subjects' own contrast (e.g. vachtchatyopro), which they register to more accurately than to --template. Its templates: entry needs xfms: for --template, as written by the cohort_template_export analysis level. Use --reg-cohort-template to build a cohort template from the subjects in the run instead. (default: %(default)s)"
     default: null
 
   --cohort-template-name:
+    group: "COHORT TEMPLATES"
     help: "Name (tpl- label) for the cohort template built by the cohort_template analysis level. Must be alphanumeric and must not clash with an existing --template choice. (default: %(default)s)"
     default: cohort
 
   --cohort-template-stains:
+    group: "COHORT TEMPLATES"
     help: "Stains to build the cohort template from. All stains are built jointly as one multivariate template, so every stain template shares the same space. (default: all stains)"
     default: null
     nargs: '+'
 
   --cohort-template-level:
+    group: "COHORT TEMPLATES"
     help: "Downsampling level of the subject images (affine-registered to --template) used to build the cohort template (default: --registration_level)"
     default: null
     type: int
 
   --cohort-template-iterations:
+    group: "COHORT TEMPLATES"
     help: "Number of FireANTs template-building iterations (default: %(default)s)"
     default: 10
     type: int
 
   --cohort-template-resample-mm:
+    group: "COHORT TEMPLATES"
     help: "Isotropic voxel size (mm) to resample the subject images to before building the cohort template, e.g. 0.05. Lowers GPU memory use and run time, e.g. for a finer --cohort-template-level or --template. (default: --template resolution)"
     default: null
     type: float
 
   --cohort-template-n-gpus:
+    group: "COHORT TEMPLATES"
     help: "Number of GPUs for FireANTs template building; subjects are split across GPUs (default: %(default)s)"
     default: 1
     type: int
 
   --cohort-template-extra-inputs:
+    group: "COHORT TEMPLATES"
     help: "Additional SPIMquant output directories (from other datasets registered to the same --template) whose subjects are added to the cohort template. Subject images are found by globbing for the same space/level/stain files in each directory."
     default: null
     nargs: '+'
 
   --cohort-template-reg-method:
+    group: "COHORT TEMPLATES"
     help: "Registration method for the original template to cohort template registration: a name from registration.presets in the config. (default: %(default)s)"
     default: antsMulti
 
   --cohort-template-reg-tune-methods:
+    group: "COHORT TEMPLATES"
     help: "Registration methods to compare in the cohort_template_tune_reg analysis level. (default: %(default)s)"
     default:
       - greedy
@@ -866,16 +985,19 @@ parse_args:
     nargs: '+'
 
   --cohort-template-warp-raw:
+    group: "COHORT TEMPLATES"
     help: "Also make a desc-rawintensity template per stain: the subjects' un-normalized images warped with the final template-building warps and averaged, keeping the original intensities. (default: %(default)s)"
     action: store_true
     default: False
 
   --cohort-template-zenodo-deposition:
+    group: "COHORT TEMPLATES"
     help: "Zenodo deposition ID (an unpublished draft you created) to upload the exported cohort template to, in the cohort_template_export analysis level. Requires SNAKEMAKE_STORAGE_ZENODO_ACCESS_TOKEN to be set. When absent, the export is only prepared locally. (default: %(default)s)"
     default: null
     type: int
 
   --benchmark:
+    group: "COMPUTE AND STORAGE"
     help: "Record the run time, peak memory and CPU use of every job to benchmarks/{rule}/*.jsonl in the output folder, along with the threads and resources each job requested. Use for tuning the resources of each rule. (default: %(default)s)"
     action: store_true
     default: False

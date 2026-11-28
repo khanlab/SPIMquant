@@ -83,6 +83,17 @@ def get_parser():
     return _get()
 
 
+ACRONYMS = {"MRI", "QC", "LANTERN", "BIDS", "GPU"}
+
+
+def section_title(title):
+    """`DATASET QC (qc level)` -> `Dataset QC (qc level)`."""
+    words = title.split(" ")
+    out = [w if w in ACRONYMS or not w.isupper() else w.lower() for w in words]
+    out[0] = out[0][0].upper() + out[0][1:]
+    return " ".join(out)
+
+
 def cli_page(desc):
     parser = get_parser()
     fmt = parser._get_formatter()
@@ -104,7 +115,9 @@ def cli_page(desc):
         text = desc["analysis_levels"].get(level, "")
         out.append(f"| `{level}` | {text} |")
     out.append("")
-    for group in parser._action_groups:
+    groups = [g for g in parser._action_groups if g.title != "options"]
+    groups += [g for g in parser._action_groups if g.title == "options"]
+    for group in groups:
         actions = [
             a
             for a in group._group_actions
@@ -112,13 +125,15 @@ def cli_page(desc):
         ]
         if not actions or group.title == "positional arguments":
             continue
-        title = "Options" if group.title == "options" else group.title.capitalize()
+        title = (
+            "Other options" if group.title == "options" else section_title(group.title)
+        )
         out.append(f"## {title}\n")
         if group.description:
             out.append(md_text(group.description) + "\n")
         for a in actions:
             long_flags = [f for f in a.option_strings if f.startswith("--")]
-            name = min(long_flags, key=lambda f: ("-" in f[2:], f))
+            name = long_flags[0]  # as written in the config
             anchor = name.lstrip("-").replace("-", "_")
             meta = ""
             if a.nargs != 0:
@@ -486,6 +501,15 @@ def check():
         )
     for n in sorted(spim_templates - choices):
         problems.append(f"template `{n}` has atlases but is not a --template choice")
+    declared = cfg.get("parse_args_groups") or {}
+    for name, arg in cfg["parse_args"].items():
+        group = (arg or {}).get("group")
+        if group is None:
+            problems.append(f"option `{name}` has no `group:` in parse_args")
+        elif group not in declared:
+            problems.append(
+                f"option `{name}`: group `{group}` is not in parse_args_groups"
+            )
     for p in dict.fromkeys(problems):
         print("undocumented:", p)
     return 1 if problems else 0

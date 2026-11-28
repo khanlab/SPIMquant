@@ -52,7 +52,7 @@ you change the workflow:
 
 | You changed | Do |
 |---|---|
-| A CLI option or its help text | Nothing: the [command-line reference](reference/cli.md) is built from it. Write help text for users, with units and the default. |
+| A CLI option or its help text | Give the option a `group:` from `parse_args_groups` in `snakebids.yml`; the [command-line reference](reference/cli.md) and `--help` are built from it. Write help text for users, with units and the default. |
 | A config key without a CLI option | Put a comment above it in `snakebids.yml`; it becomes the description in the [configuration reference](reference/config.md). |
 | Rules or output files | `pixi run docs-introspect`, then commit `docs/generated/`. CI fails if it is out of date. |
 | A new output suffix, folder, template or analysis level | Describe it in `docs/gen/descriptions.yml`. `pixi run -e docs docs-check` lists what is missing; CI runs it too. |
