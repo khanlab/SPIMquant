@@ -132,7 +132,11 @@ def get_stains_per_scan(ignore_stains=None, sample_staining=None):
     table = {
         str(path): [
             s
-            for s in (sample_staining or get_spim_channels(path))
+            for s in (
+                [canonical_stain(x) for x in sample_staining]
+                if sample_staining
+                else get_spim_channels(path)
+            )
             if s not in ignore_set
         ]
         for path in spim_raw.expand()
@@ -335,11 +339,24 @@ def _extract_channels_from_json(metadata):
     return None
 
 
+def canonical_stain(name):
+    """The stain name SPIMquant uses for *name*: the target of a
+    ``stain_synonyms`` entry (``--stain-synonyms ALIAS=CANONICAL``), or
+    *name* itself."""
+    return stain_synonyms.get(name, name)
+
+
 def get_spim_json_overrides(spim_path):
     json_path = get_spim_json_path(spim_path)
     json_file = Path(json_path)
     if not json_file.exists():
-        return {}
+        if not stain_synonyms:
+            return {}
+        # no sidecar: rename the image's own channel labels if a synonym
+        # applies, so that channels are read by their canonical names
+        labels = ZarrNii.from_file(spim_path).list_channels()
+        renamed = [canonical_stain(c) for c in labels]
+        return {"set_channel_labels": renamed} if renamed != list(labels) else {}
 
     with json_file.open() as fp:
         metadata = json.load(fp)
@@ -347,7 +364,7 @@ def get_spim_json_overrides(spim_path):
     overrides = {}
     channels = _extract_channels_from_json(metadata)
     if channels:
-        overrides["set_channel_labels"] = channels
+        overrides["set_channel_labels"] = [canonical_stain(c) for c in channels]
 
     orientation = metadata.get("OrientationStringXYZ")
     if orientation:

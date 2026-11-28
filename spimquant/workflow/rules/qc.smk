@@ -120,7 +120,8 @@ rule qc_vessels_overview:
     """Vessel segmentation overview slice montage QC.
 
     Identical visualisation to ``qc_segmentation_overview`` but applied to the
-    vessel binary mask.  Loads data via ZarrNii with ``downsample_near_isotropic``
+    vessel binary mask, with the overlay scaled to this brain's vessel
+    coverage (75th to 99.5th percentile), so that the larger vessels show.  Loads data via ZarrNii with ``downsample_near_isotropic``
     for isotropic display and physically correct aspect ratio.
     """
     input:
@@ -151,6 +152,8 @@ rule qc_vessels_overview:
     params:
         level=config["registration_level"],
         mask_level=config["registration_level"] - config["segmentation_level"],
+        # vessels cover part of almost every voxel: scale to this brain
+        overlay_scale="relative",
         zarrnii_kwargs=zarrnii_in_kwargs,
     script:
         "../scripts/qc_segmentation_overview.py"

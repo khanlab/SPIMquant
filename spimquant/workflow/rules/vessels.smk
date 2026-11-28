@@ -88,14 +88,31 @@ rule signed_distance_transform:
             **inputs["spim"].wildcards,
         ),
     output:
-        dist=bids_oz_out(
-            root=root,
-            datatype="{datatype,seg|vessels}",
-            stain="{stain}",
-            level="{level}",
-            desc="{desc}",
-            suffix="dist.{ext}",
-            **inputs["spim"].wildcards,
+        # Full resolution and float32, so about as large as the input; only
+        # sampled at object centroids (and skeletons), so temporary unless
+        # keep_sdt is set.
+        dist=(
+            bids_oz_out(
+                root=root,
+                datatype="{datatype,seg|vessels}",
+                stain="{stain}",
+                level="{level}",
+                desc="{desc}",
+                suffix="dist.{ext}",
+                **inputs["spim"].wildcards,
+            )
+            if config["keep_sdt"]
+            else temp(
+                bids_oz_out(
+                    root=root,
+                    datatype="{datatype,seg|vessels}",
+                    stain="{stain}",
+                    level="{level}",
+                    desc="{desc}",
+                    suffix="dist.{ext}",
+                    **inputs["spim"].wildcards,
+                )
+            )
         ),
     threads: 64 if config["dask_scheduler"] == "distributed" else 32
     resources:

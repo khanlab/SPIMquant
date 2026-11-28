@@ -15,7 +15,8 @@ items:
   source: sub-AS40F2/ses-exvivo/xfm/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-YoPro_from-SPIM_to-ABAv3_desc-greedy_regqc.html
 - section: Segmentation
   title: 'Segmentation overview: Abeta'
-  text: Slices through the whole brain with the mask overlaid.
+  text: Axial, coronal and sagittal slices through the whole brain at the registration level, with the
+    mask overlaid, and a maximum-intensity projection.
   file: assets/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_desc-lantern_segslices.png
   source: sub-AS40F2/ses-exvivo/qc/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_desc-lantern_segslices.png
 - section: Segmentation
@@ -50,7 +51,10 @@ items:
   source: sub-AS40F2/ses-exvivo/qc/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-Abeta_desc-lantern_zprofile.png
 - section: Vessels
   title: 'Vessel overview: CD31'
-  text: Slices with the vesselFM mask overlaid.
+  text: 'Vessel coverage relative to this brain (75th to 99.5th percentile), so the denser vessels stand
+    out, with a mean projection. Here the projection shows vertical stripes and a central block of high
+    coverage: a sign of tile or light-sheet striping in the CD31 channel rather than anatomy, worth checking
+    in the full-resolution montage.'
   file: assets/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-CD31_desc-vesselfm_vesselslices.png
   source: sub-AS40F2/ses-exvivo/qc/sub-AS40F2_ses-exvivo_sample-brain_acq-4x_stain-CD31_desc-vesselfm_vesselslices.png
 - section: Regions
