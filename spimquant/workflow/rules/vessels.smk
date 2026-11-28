@@ -43,10 +43,6 @@ rule run_vesselfm:
         # vesselfm runs on the CPU when torch has no CUDA; request a GPU only
         # where it can be used (see --gpu)
         gpu=config["vessel_n_gpus"] if gpu_available else 0,
-        # all GPUs on one node: --gpus=N alone lets SLURM spread them over nodes,
-        # and the job's single task then cannot use them ("Invalid generic
-        # resource (gres) specification")
-        nodes=1,
         # one task that sees every GPU (see run_lantern_plaques)
         tasks_per_gpu=0,
         cpus_per_gpu=8 if gpu_available else 0,

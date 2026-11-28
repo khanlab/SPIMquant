@@ -473,10 +473,6 @@ rule build_cohort_template:
     threads: 8 * cohort_n_gpus
     resources:
         gpu=cohort_n_gpus,
-        # all GPUs on one node: --gpus=N alone lets SLURM spread them over nodes,
-        # and the job's single task then cannot use them ("Invalid generic
-        # resource (gres) specification")
-        nodes=1,
         # one task that launches one process per GPU via torchrun (see plaques.smk)
         tasks_per_gpu=0,
         cpus_per_gpu=8,

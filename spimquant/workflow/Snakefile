@@ -2102,3 +2102,16 @@ if config.get("benchmark", False):
         _name = "_".join(f"{w}-{{{w}}}" for w in _wildcards) or _rule.name
         _rule.benchmark_modifier = workflow.modifier.path_modifier
         _rule.benchmark = os.path.join("benchmarks", _rule.name, f"{_name}.jsonl")
+
+
+# Every rule that asks for GPUs gets them on one node. With --gpus=N alone,
+# SLURM may spread the GPUs over several nodes, and the job's single task then
+# fails ("Invalid generic resource (gres) specification"). Set here for all
+# rules, so that a new GPU rule cannot miss it; a rule can still set nodes.
+for _rule in workflow.rules:
+    if (
+        _rule.resources is not None
+        and "gpu" in _rule.resources
+        and "nodes" not in _rule.resources
+    ):
+        _rule.resources["nodes"] = 1
